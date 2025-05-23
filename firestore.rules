@@ -1,16 +1,122 @@
+rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /{document=**} {
-      // This rule allows anyone with your database reference to view, edit,
-      // and delete all data in your database. It is useful for getting
-      // started, but it is configured to expire after 30 days because it
-      // leaves your app open to attackers. At that time, all client
-      // requests to your database will be denied.
-      //
-      // Make sure to write security rules for your app before that time, or
-      // else all client requests to your database will be denied until you
-      // update your rules.
-      allow read, write: if request.time < timestamp.date(2025, 6, 22);
+
+    // Helper functions for authentication and authorization
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function hasRole(role) {
+      return isAuthenticated() && request.auth.token.roles.hasAny([role]);
+    }
+
+    function isAdmin() {
+      return hasRole('admin');
+    }
+
+    function isPropertyManager() {
+      return hasRole('property_manager');
+    }
+
+    function isPropertyStaff() {
+      return hasRole('property_staff');
+    }
+
+    function isResident() {
+      return hasRole('resident');
+    }
+
+    function isOrgUser(orgId) {
+      return isAuthenticated() && request.auth.token.organizationId == orgId;
+    }
+
+    function isPropertyResident(orgId, propId) {
+      return isAuthenticated() &&
+             request.auth.token.organizationId == orgId &&
+             request.auth.token.propertyId == propId;
+    }
+
+    // Rules for top-level collections
+    match /mail/{document=**} {
+      // Allow authenticated users to create mail documents (e.g., for sending emails)
+      // Admins can read/write all mail documents
+      allow read, write: if isAuthenticated();
+    }
+
+    match /templates/{document=**} {
+      // Allow only admins to read/write email templates
+      allow read, write: if isAdmin();
+    }
+
+    match /users/{userId} {
+      // This is the temporary root 'users' collection for pending assignments
+      // Only allow authenticated users to read their own profile
+      // Admins can read/write all
+      allow read: if isAuthenticated() && request.auth.uid == userId;
+      allow write: if isAdmin() || (isAuthenticated() && request.auth.uid == userId && request.resource.data.status == 'pending_assignment');
+    }
+
+    match /admins/{adminId} {
+      // Only allow admin role to read/write admin profiles
+      allow read, write: if isAdmin();
+    }
+
+    match /organizations/{organizationId} {
+      // Admins can create, read, update, delete organizations
+      allow create, read, update, delete: if isAdmin();
+
+      // Organization users can read their own organization's document
+      allow read: if isOrgUser(organizationId);
+
+      // Subcollection: users (Property Managers, Staff)
+      match /users/{orgUserId} {
+        // Admins can manage all organization users
+        allow read, write: if isAdmin();
+        // Property Managers can manage users within their organization
+        allow read, write: if isPropertyManager() && isOrgUser(organizationId);
+        // Property Staff can read users within their organization
+        allow read: if isPropertyStaff() && isOrgUser(organizationId);
+      }
+
+      // Subcollection: properties
+      match /properties/{propertyId} {
+        // Admins can manage all properties
+        allow read, write: if isAdmin();
+        // Property Managers can manage properties within their organization
+        allow read, write: if isPropertyManager() && isOrgUser(organizationId);
+        // Property Staff can read properties within their organization
+        allow read: if isPropertyStaff() && isOrgUser(organizationId);
+
+        // Subcollection: residents
+        match /residents/{residentId} {
+          // Admins can manage all residents
+          allow read, write: if isAdmin();
+          // Property Managers can manage residents within their organization and property
+          allow read, write: if isPropertyManager() && isOrgUser(organizationId) && request.auth.token.propertyId == propertyId;
+          // Residents can only read/update their own profile
+          allow read, update: if isResident() && request.auth.uid == residentId && isPropertyResident(organizationId, propertyId);
+        }
+      }
+
+      // Subcollection: invitations
+      match /invitations/{invitationId} {
+        // Admins can manage all invitations
+        allow read, write: if isAdmin();
+        // Property Managers can create/read/update invitations within their organization
+        allow read, write: if isPropertyManager() && isOrgUser(organizationId);
+      }
+
+      // Subcollection: services
+      match /services/{serviceId} {
+        // Admins can manage all services
+        allow read, write: if isAdmin();
+        // Property Managers/Staff can manage services within their organization and property
+        allow read, write: if (isPropertyManager() || isPropertyStaff()) && isOrgUser(organizationId) && request.resource.data.propertyId == request.auth.token.propertyId;
+        // Residents can create/read/update their own service requests
+        allow create: if isResident() && request.resource.data.residentId == request.auth.uid && isPropertyResident(organizationId, request.resource.data.propertyId);
+        allow read, update: if isResident() && request.resource.data.residentId == request.auth.uid && isPropertyResident(organizationId, request.resource.data.propertyId);
+      }
     }
   }
 }

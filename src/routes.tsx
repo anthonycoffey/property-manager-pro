@@ -2,9 +2,9 @@ import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import LoginForm from './components/LoginForm';
 import SignupForm from './components/SignupForm';
-import Dashboard from './components/Dashboard'; // Placeholder
-import ProtectedRoute from './components/ProtectedRoute'; // To be created
-// import { AuthProvider } from './context/AuthContext'; // Will be used in main.tsx or App.tsx
+import Dashboard from './components/Dashboard';
+import ProtectedRoute from './components/ProtectedRoute';
+import PropertyManagerManagement from './components/Admin/PropertyManagerManagement'; // Import new component
 
 const AppRoutes: React.FC = () => {
   return (
@@ -19,6 +19,16 @@ const AppRoutes: React.FC = () => {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/admin/property-managers"
+        element={
+          <ProtectedRoute allowedRoles={['admin']}>
+            <PropertyManagerManagement />
+          </ProtectedRoute>
+        }
+      />
+      {/* Placeholder for unauthorized access */}
+      <Route path="/unauthorized" element={<div>You are not authorized to view this page.</div>} />
       {/* Add more public and protected routes as needed */}
       <Route path="/" element={<LoginForm />} /> {/* Default route */}
     </Routes>

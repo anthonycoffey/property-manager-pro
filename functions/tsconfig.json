@@ -8,10 +8,16 @@
     "outDir": "lib",
     "sourceMap": true,
     "strict": true,
-    "target": "es2017"
+    "target": "es2021", // Updated target
+    "lib": ["es2021"], // Added lib
+    "skipLibCheck": true, // Added to skip library type checking
+    "resolveJsonModule": true, // Added for JSON module imports
+    "types": ["node", "firebase-functions"] // Explicitly include firebase-functions types
   },
   "compileOnSave": true,
-  "include": [
-    "src"
+  "include": ["src"],
+  "exclude": [
+    // Exclude lib directory from compilation
+    "lib"
   ]
 }

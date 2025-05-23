@@ -24,9 +24,9 @@ To develop a multi-tenant ERP-style web application for property management. The
 
 ## 3. Key Technologies
 
-*   **Frontend:** React 19 (Client Components, Server Components), Material UI, Material Icons, Zustand, React Context API.
+*   **Frontend:** React 19 (Client Components, Server Components), Material UI, Material Icons, React Hooks and React Context API.
 *   **Backend:** Firebase (Authentication, Cloud Firestore, Cloud Functions, Hosting).
-*   **Data Fetching (Client-side):** `Workspace` API, with potential future integration of React Query.
+*   **Data Fetching (Client-side):** Fetch API, with potential future integration of React Query.
 
 ## 4. High-Level Architecture
 

@@ -46,7 +46,7 @@ The application employs a modern web architecture with a React-based frontend an
     *   **Global State (React Context):** For broadly shared, less frequently updated data (e.g., authenticated user object, theme settings).
     *   **Local/Feature State (Zustand):** For more complex, dynamic, or localized state within specific features or component trees, offering a simpler API than Redux for these use cases.
 *   **Data Fetching:**
-    *   **Client-Side:** Primarily using the standard `Workspace` API (assuming this refers to `fetch` or a similar browser API).
+    *   **Client-Side:** Primarily using the standard Fetch API
     *   **Server-Side (via Server Components):** Direct data fetching from Firestore using Firebase Admin SDK or by invoking Cloud Functions.
     *   The architecture is open to future integration of libraries like React Query if client-side caching and data synchronization needs become more complex.
 

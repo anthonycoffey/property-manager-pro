@@ -66,6 +66,7 @@ The remaining application functionality includes:
 *   **2025-05-22:** Decided to use Highcharts for analytics and reporting features.
 *   **2025-05-23:** Finalized the detailed multi-tenant database architecture for Firestore and the Firebase Auth custom claims strategy. This adopts a hierarchical model based on organizations and array-based roles. The canonical documentation for this is in `memory-bank/systemPatterns.md`, with `memory-bank/projectRoadmap.md` updated to reflect this and refer to `systemPatterns.md`.
 *   **2025-05-23:** Resolved Firebase Functions v2 `identity` module import issue by identifying `beforeUserCreated` as the correct function for user creation triggers and updating `tsconfig.json` for `nodenext` compatibility.
+*   **2025-05-23:** Updated `apphosting.yaml` to include `build` and `release` configurations for Firebase App Hosting, ensuring correct deployment of the Vite application.
 
 ## 6. Immediate Next Steps
 

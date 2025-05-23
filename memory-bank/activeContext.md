@@ -22,6 +22,7 @@ The current focus is on the active implementation of Role-Based Access Control (
     *   Created the `src/components/Admin` directory and the `src/components/Admin/PropertyManagerManagement.tsx` component as a starting point for the Admin Dashboard.
     *   Implemented `createPropertyManager`, `updatePropertyManager`, and `deletePropertyManager` Cloud Functions in `functions/src/index.ts` to handle backend operations for property manager management.
     *   Integrated the "Add New Property Manager" form in `src/components/Admin/PropertyManagerManagement.tsx` to interact with the `createPropertyManager` Cloud Function.
+*   **Deployment Configuration Updated:** Modified `apphosting.yaml` to include `build` and `release` configurations for Firebase App Hosting, ensuring correct deployment of the Vite application.
 
 ## 3. Next Steps
 

@@ -58,7 +58,7 @@ export const onUserCreate = beforeUserCreated(async (event: AuthBlockingEvent) =
   }
 });
 
-import { onRequest, onCall } from "firebase-functions/v2/https"; // Import onCall for callable functions
+import { onCall } from "firebase-functions/v2/https"; // Import onCall for callable functions
 import { HttpsError } from "firebase-functions/v2/https"; // Import HttpsError
 
 // The original helloWorld function was commented out, keeping it that way.

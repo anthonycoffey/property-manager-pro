@@ -61,11 +61,30 @@ export const onUserCreate = beforeUserCreated(async (event: AuthBlockingEvent) =
 import { onCall } from "firebase-functions/v2/https"; // Import onCall for callable functions
 import { HttpsError } from "firebase-functions/v2/https"; // Import HttpsError
 
-// The original helloWorld function was commented out, keeping it that way.
-// export const helloWorld = onRequest((request, response) => {
-//   logger.info("Hello logs!", {structuredData: true});
-//   response.send("Hello from Firebase!");
-// });
+// Helper function to handle errors and throw HttpsError
+function handleHttpsError(error: unknown, defaultMessage: string): HttpsError {
+  logger.error(defaultMessage, error);
+
+  if (error instanceof HttpsError) {
+    return error; // Already an HttpsError, re-throw as is
+  }
+
+  // Check for Firebase Auth errors specifically
+  if (typeof error === 'object' && error !== null && 'code' in error && typeof (error as { code: string }).code === 'string') {
+    const firebaseErrorCode = (error as { code: string }).code;
+    if (firebaseErrorCode === 'auth/email-already-exists') {
+      return new HttpsError('already-exists', 'The email address is already in use by another account.');
+    }
+    // You can add more specific Firebase error codes here if needed
+  }
+
+  // Extract message from error if available, otherwise use default
+  const errorMessage = (typeof error === 'object' && error !== null && 'message' in error && typeof (error as { message: string }).message === 'string')
+    ? (error as { message: string }).message
+    : 'An unknown error occurred.';
+
+  return new HttpsError('internal', defaultMessage, errorMessage);
+}
 
 export const createPropertyManager = onCall(async (request) => {
   // Check if the user is authenticated
@@ -119,12 +138,8 @@ export const createPropertyManager = onCall(async (request) => {
 
     return { success: true, message: 'Property manager created successfully', uid: uid };
 
-  } catch (error) {
-    logger.error('Error creating property manager:', error);
-    if (error.code === 'auth/email-already-exists') {
-      throw new HttpsError('already-exists', 'The email address is already in use by another account.');
-    }
-    throw new HttpsError('internal', 'Failed to create property manager.', error.message);
+  } catch (error: unknown) {
+    throw handleHttpsError(error, 'Failed to create property manager.');
   }
 });
 
@@ -177,9 +192,8 @@ export const updatePropertyManager = onCall(async (request) => {
 
     return { success: true, message: 'Property manager updated successfully' };
 
-  } catch (error) {
-    logger.error('Error updating property manager:', error);
-    throw new HttpsError('internal', 'Failed to update property manager.', error.message);
+  } catch (error: unknown) {
+    throw handleHttpsError(error, 'Failed to update property manager.');
   }
 });
 
@@ -210,8 +224,7 @@ export const deletePropertyManager = onCall(async (request) => {
 
     return { success: true, message: 'Property manager deleted successfully' };
 
-  } catch (error) {
-    logger.error('Error deleting property manager:', error);
-    throw new HttpsError('internal', 'Failed to delete property manager.', error.message);
+  } catch (error: unknown) {
+    throw handleHttpsError(error, 'Failed to delete property manager.');
   }
 });

@@ -37,4 +37,4 @@ To develop a multi-tenant ERP-style web application for property management. The
 
 ## 5. Scope
 
-The initial scope focuses on delivering the core functionalities for Admins, Property Managers, and Residents as outlined in the `projectRoadmap.md`. This includes user authentication, property management, resident management, service requests, and the invitation system. Future enhancements may include CRM integration, advanced analytics, and subscription management.
+The initial scope focuses on delivering the core functionalities for Admins, Property Managers, and Residents as outlined in the project roadmap. This includes user authentication, property management, resident management, service requests, and the invitation system, CRM integration, and basic analytics.

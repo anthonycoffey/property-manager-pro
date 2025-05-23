@@ -148,7 +148,3 @@ Here's a proposed structure for your Firestore collections:
     * **Residents Management (CRUD):**
         * Primarily for customer support, allowing admins to search and view resident details and service history.
         * Ability to edit/delete residents (updating `users` and `residents` documents).
-
----
-
-Let me know if you'd like to dive deeper into any specific section, such as the detailed implementation of the invitation system or the CSV import process!

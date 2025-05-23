@@ -18,3 +18,11 @@ env:
     secret: VITE_FIREBASE_MESSAGING_SENDER_ID
   - variable: VITE_FIREBASE_APP_ID
     secret: VITE_FIREBASE_APP_ID
+
+build:
+  command: npm run build
+  outputDirectory: dist
+
+release:
+  staticFiles:
+    path: dist

@@ -2,58 +2,46 @@
 
 ## 1. Current Work Focus
 
-The current focus is on the initial setup and planning phase of the "Multi-Tenant ERP-Style Web Application" project. This involves:
-*   Understanding the project requirements and architecture as defined in `projectRoadmap.md`.
-*   Establishing the core "Memory Bank" documentation (`projectbrief.md`, `productContext.md`, `systemPatterns.md`, `techContext.md`, `activeContext.md`, `progress.md`).
-*   Preparing to begin the development of core features.
+The current focus is on the active implementation of Role-Based Access Control (RBAC) and Cloud Firestore for the multi-tenant architecture, as outlined in `docs/02-rbac-firestore-implementation.md`. This involves setting up backend functions, defining security rules, and integrating these features into the React frontend.
 
 ## 2. Recent Changes & Activities
 
-*   **`projectRoadmap.md` Reviewed:** The foundational document outlining the project's plan, technologies, architecture, and features has been read and processed.
-*   **Core Memory Bank Files Created:**
-    *   `projectbrief.md`: Defines project goals, requirements, and scope.
-    *   `productContext.md`: Outlines the "why," problems solved, and UX goals.
-    *   `systemPatterns.md`: Describes system architecture, key technical decisions, and design patterns.
-    *   `techContext.md`: Details technologies, setup, constraints, and dependencies.
-    *   This `activeContext.md` file.
-*   **Authentication Redirection Implemented:** Modified `src/components/LoginForm.tsx` and `src/components/SignupForm.tsx` to redirect users to the `/dashboard` page upon successful login or registration.
+*   **RBAC and Firestore Implementation Plan Documented:** Created `docs/02-rbac-firestore-implementation.md` detailing the comprehensive plan for multi-tenant RBAC and Firestore integration.
+*   **Firebase Project Setup & Initial Firestore Structure (Phase 1 Completed):**
+    *   Confirmed Firebase project initialization and Firestore enablement.
+*   **Firebase Authentication & Custom Claims (Phase 2 Completed):**
+    *   Implemented `onUserCreate` Cloud Function (`functions/src/index.ts`) to set default `resident` roles and create user profiles in a temporary root `users` collection upon new user sign-up.
+    *   Resolved persistent TypeScript module resolution errors for `firebase-functions/v2/identity` by identifying the correct import (`beforeUserCreated` from `firebase-functions/v2/identity`) and ensuring `tsconfig.json` was correctly configured (`skipLibCheck: true`, `types: ["node", "firebase-functions"]`, `moduleResolution: "nodenext"`).
+    *   Updated `src/hooks/useAuth.ts` (`CustomUser` type, `AuthContextType` with roles/IDs) and `src/providers/AuthProvider.tsx` (fetching and providing custom claims from `getIdTokenResult`).
+*   **Firestore Security Rules (Phase 3 Completed):**
+    *   Implemented comprehensive multi-tenant and RBAC security rules in `firestore.rules`. These rules control access to `admins`, `organizations`, and their nested `users`, `properties`, `residents`, `invitations`, and `services` collections based on user roles (`request.auth.token.roles`) and assigned IDs (`request.auth.token.organizationId`, `request.auth.token.propertyId`).
+*   **Frontend Integration & UI Adaptation (Phase 4 Completed):**
+    *   Updated `src/components/ProtectedRoute.tsx` to enforce route protection based on `allowedRoles`, `requiredOrgId`, and `requiredPropertyId`.
+    *   Modified `src/components/Dashboard.tsx` to conditionally render content based on the logged-in user's roles and assigned IDs.
+*   **Initial Feature Development (Admin Dashboard - Property Manager CRUD) (Phase 5 Started/Partially Completed):**
+    *   Created the `src/components/Admin` directory and the `src/components/Admin/PropertyManagerManagement.tsx` component as a starting point for the Admin Dashboard.
+    *   Implemented `createPropertyManager`, `updatePropertyManager`, and `deletePropertyManager` Cloud Functions in `functions/src/index.ts` to handle backend operations for property manager management.
+    *   Integrated the "Add New Property Manager" form in `src/components/Admin/PropertyManagerManagement.tsx` to interact with the `createPropertyManager` Cloud Function.
+*   **Deployment Configuration Updated:** Modified `apphosting.yaml` to include `build` and `release` configurations for Firebase App Hosting, ensuring correct deployment of the Vite application.
 
 ## 3. Next Steps
 
-*   **Create `progress.md`:** To complete the initial set of core Memory Bank files.
-*   **Begin Development Planning:** Based on the `projectRoadmap.md`, start outlining the initial development tasks. This will likely involve:
-    *   Setting up the Firebase project.
-    *   Initializing the React frontend application.
-    *   Defining initial Firestore data structures and security rules.
-*   **Prioritize Initial Features:** Based on the roadmap, the first features to tackle will likely be:
-    *   User Authentication (Firebase Auth with custom claims for roles).
-    *   Admin Dashboard: Property Manager CRUD operations.
+*   **Complete Phase 5 (Admin Dashboard - Property Manager CRUD):**
+    *   Implement the listing of existing property managers in `src/components/Admin/PropertyManagerManagement.tsx`.
+    *   Develop forms/modals for editing and deleting property managers, interacting with the `updatePropertyManager` and `deletePropertyManager` Cloud Functions.
+*   **Continue with Project Roadmap:** Proceed with other features outlined in `projectRoadmap.md` and `docs/02-rbac-firestore-implementation.md` (e.g., Property Management, Resident Management, Invitation System).
 
 ## 4. Active Decisions & Considerations
 
-*   **Technology Stack Adherence:** Strictly follow the technologies outlined in `projectRoadmap.md` (React 19, Firebase, MUI).
-*   **Role-Based Access Control (RBAC):** This is a critical aspect. Implementation via Firebase custom claims and Firestore Security Rules needs to be robust from the start.
-*   **Hybrid Rendering (React Server Components):** Strategic application of Server Components for performance as per the roadmap. The setup for RSC needs to be correctly configured.
-*   **Data Modeling:** The detailed multi-tenant Firestore database schema and Firebase Auth custom claims strategy have been finalized.
-    *   **Canonical Source:** The complete and detailed specification is documented in `memory-bank/systemPatterns.md`.
-    *   **High-Level Overview:** `memory-bank/projectRoadmap.md` provides a high-level summary and refers to `systemPatterns.md` for details.
-    *   This refined model supersedes earlier, simpler proposals and is designed for robust multi-tenancy, data isolation, and role-based access. Key aspects include a root `organizations` collection with nested tenant-specific data and array-based roles in custom claims.
-    *   The `mail` and `templates` collections (for the `firestore-send-email` extension) remain as top-level collections.
-*   **Charting/Analytics:** Highcharts will be used for displaying analytics and reports. This will require integrating Highcharts with React components and ensuring data is formatted appropriately for the charts.
-*   **Email Sending:** The `firestore-send-email` extension will be used for templated emails. This needs to be configured and templates created.
-*   **Firebase Emulator Suite:** Leverage heavily for local development and testing of Firebase features, including email sending if supported by the emulator or through mock setup.
+*   **Firebase Functions v2 `identity` module:** Confirmed `beforeUserCreated` from `firebase-functions/v2/identity` is the correct trigger for user creation events in v2, resolving previous module resolution issues.
+*   **Temporary Root `users` collection:** New direct sign-ups are temporarily stored in a root `users` collection. A future mechanism (e.g., invitation acceptance, admin assignment) will be needed to move/link these users to their respective `organizations/{orgId}/users` or `organizations/{orgId}/properties/{propId}/residents` paths.
 
-## 5. Important Patterns & Preferences (from `projectRoadmap.md`)
+## 5. Important Patterns & Preferences
 
-*   **Clear Separation of Concerns:** Frontend (React), Backend (Firebase Cloud Functions), Database (Firestore).
-*   **Security First:** Emphasis on Firestore Security Rules and proper authentication/authorization.
-*   **User-Centric Design:** Tailored experiences for Admin, Property Manager, and Resident roles.
-*   **Scalability:** Firebase services are chosen for their ability to scale.
-*   **Modularity:** Design components and functions to be modular and maintainable.
+*   (No new patterns or preferences to add at this time, existing ones from `projectRoadmap.md` and `systemPatterns.md` still apply).
 
-## 6. Learnings & Project Insights (Initial)
+## 6. Learnings & Project Insights
 
-*   The project has a well-defined technical direction and feature set outlined in the `projectRoadmap.md`.
-*   The use of React 19 Server Components is a key architectural choice for performance.
-*   Firebase is central to the entire backend and data management strategy.
-*   The Memory Bank system is crucial for maintaining context and ensuring consistent development.
+*   **TypeScript Module Resolution with `NodeNext` and Firebase Functions v2:** Encountered significant challenges with `nodenext` module resolution for `firebase-functions/v2/auth` due to the package's `exports` map. Resolved by identifying the correct submodule (`firebase-functions/v2/identity`) and function name (`beforeUserCreated`). This highlights the importance of thoroughly checking `node_modules` `package.json` `exports` for `nodenext` compatibility.
+*   **Firebase Auth Custom Claims:** Successfully integrated custom claims for RBAC, demonstrating their effectiveness for granular access control.
+*   **Firestore Security Rules Complexity:** Emphasized the need for meticulous rule writing and testing for multi-tenant and RBAC systems.

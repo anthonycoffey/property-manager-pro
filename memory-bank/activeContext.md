@@ -10,8 +10,8 @@ The current focus is on the active implementation of Role-Based Access Control (
 *   **Firebase Project Setup & Initial Firestore Structure (Phase 1 Completed):**
     *   Confirmed Firebase project initialization and Firestore enablement.
 *   **Firebase Authentication & Custom Claims (Phase 2 Completed):**
-    *   Implemented `onUserCreate` Cloud Function (`functions/src/index.ts`) to set default `resident` roles and create user profiles in a temporary root `users` collection upon new user sign-up.
-    *   Resolved persistent TypeScript module resolution errors for `firebase-functions/v2/identity` by identifying the correct import (`beforeUserCreated` from `firebase-functions/v2/identity`) and ensuring `tsconfig.json` was correctly configured (`skipLibCheck: true`, `types: ["node", "firebase-functions"]`, `moduleResolution: "nodenext"`).
+    *   **Updated `processSignUp` Cloud Function (`functions/src/index.ts`):** Migrated from a blocking `beforeUserCreated` trigger to a non-blocking `functions.auth.user().onCreate` trigger. Implemented custom claims logic to assign `admin: true` and `accessLevel: 9` for users with `@admin.example.com` emails, and default `resident` roles for others. Also integrated Realtime Database metadata update to force token refresh for admin users.
+    *   Resolved persistent TypeScript module resolution errors for `firebase-functions/v2/identity` by identifying the correct import (`beforeUserCreated` from `firebase-functions/v2/identity`) and ensuring `tsconfig.json` was correctly configured (`skipLibCheck: true`, `types: ["node", "firebase-functions"]`, `moduleResolution: "nodenext"`). (Note: This specific resolution is now superseded by the change to `onCreate` but kept for historical context of previous issues).
     *   Updated `src/hooks/useAuth.ts` (`CustomUser` type, `AuthContextType` with roles/IDs) and `src/providers/AuthProvider.tsx` (fetching and providing custom claims from `getIdTokenResult`).
 *   **Firestore Security Rules (Phase 3 Completed):**
     *   Implemented comprehensive multi-tenant and RBAC security rules in `firestore.rules`. These rules control access to `admins`, `organizations`, and their nested `users`, `properties`, `residents`, `invitations`, and `services` collections based on user roles (`request.auth.token.roles`) and assigned IDs (`request.auth.token.organizationId`, `request.auth.token.propertyId`).
@@ -34,7 +34,7 @@ The current focus is on the active implementation of Role-Based Access Control (
 
 ## 4. Active Decisions & Considerations
 
-*   **Firebase Functions v2 `identity` module:** Confirmed `beforeUserCreated` from `firebase-functions/v2/identity` is the correct trigger for user creation events in v2, resolving previous module resolution issues.
+*   **Firebase Functions User Creation Trigger:** Switched from `beforeUserCreated` (blocking) to `functions.auth.user().onCreate` (non-blocking) for `processSignUp` to resolve deployment errors related to GCIP project requirements. This means custom claims are set *after* user creation, and a Realtime Database flag is used to prompt client-side token refresh.
 *   **Temporary Root `users` collection:** New direct sign-ups are temporarily stored in a root `users` collection. A future mechanism (e.g., invitation acceptance, admin assignment) will be needed to move/link these users to their respective `organizations/{orgId}/users` or `organizations/{orgId}/properties/{propId}/residents` paths.
 
 ## 5. Important Patterns & Preferences
@@ -43,7 +43,8 @@ The current focus is on the active implementation of Role-Based Access Control (
 
 ## 6. Learnings & Project Insights
 
-*   **TypeScript Module Resolution with `NodeNext` and Firebase Functions v2:** Encountered significant challenges with `nodenext` module resolution for `firebase-functions/v2/auth` due to the package's `exports` map. Resolved by identifying the correct submodule (`firebase-functions/v2/identity`) and function name (`beforeUserCreated`). This highlights the importance of thoroughly checking `node_modules` `package.json` `exports` for `nodenext` compatibility.
+*   **Firebase Blocking Functions Limitations:** Learned that Firebase Blocking Functions (`beforeUserCreated`, `beforeUserSignedIn`) are restricted to GCIP (Google Cloud Identity Platform) projects, necessitating a shift to a non-blocking `onCreate` trigger for general Firebase projects when setting custom claims at user creation.
+*   **TypeScript Module Resolution with `NodeNext` and Firebase Functions v2:** Encountered significant challenges with `nodenext` module resolution for `firebase-functions/v2/auth` due to the package's `exports` map. Resolved by identifying the correct submodule (`firebase-functions/v2/identity`) and function name (`beforeUserCreated`). This highlights the importance of thoroughly checking `node_modules` `package.json` `exports` for `nodenext` compatibility. (Note: This specific resolution is now superseded by the change to `onCreate` but kept for historical context of previous issues).
 *   **Firebase Auth Custom Claims:** Successfully integrated custom claims for RBAC, demonstrating their effectiveness for granular access control.
 *   **Firestore Security Rules Complexity:** Emphasized the need for meticulous rule writing and testing for multi-tenant and RBAC systems.
 *   **Firebase Admin SDK ES Module Import:** Discovered and resolved `TypeError: admin.initializeApp is not a function` by adjusting the `firebase-admin` import statement for compatibility with ES module environments in Firebase Functions.

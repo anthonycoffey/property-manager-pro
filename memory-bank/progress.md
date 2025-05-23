@@ -17,8 +17,8 @@ The project is actively implementing Role-Based Access Control (RBAC) and Cloud 
 *   **Phase 1: Firebase Project Setup & Initial Firestore Structure:**
     *   Confirmed Firebase project initialization and Firestore enablement.
 *   **Phase 2: Firebase Authentication & Custom Claims:**
-    *   Implemented `onUserCreate` Cloud Function (`functions/src/index.ts`) to set default `resident` roles and create user profiles.
-    *   Resolved TypeScript module resolution errors for Firebase Functions v2 `identity` module.
+    *   **Updated `processSignUp` Cloud Function (`functions/src/index.ts`):** Migrated from a blocking `beforeUserCreated` trigger to a non-blocking `functions.auth.user().onCreate` trigger. Implemented custom claims logic to assign `admin: true` and `accessLevel: 9` for users with `@admin.example.com` emails, and default `resident` roles for others. Also integrated Realtime Database metadata update to force token refresh for admin users.
+    *   Resolved TypeScript module resolution errors for Firebase Functions v2 `identity` module. (Note: This specific resolution is now superseded by the change to `onCreate` but kept for historical context of previous issues).
     *   Updated `src/hooks/useAuth.ts` and `src/providers/AuthProvider.tsx` to fetch and expose custom claims.
 *   **Phase 3: Firestore Security Rules:**
     *   Implemented comprehensive multi-tenant and RBAC security rules in `firestore.rules`.
@@ -66,9 +66,10 @@ The remaining application functionality includes:
 *   **Initial Decision (from `.clinerules`):** Implement and maintain a "Memory Bank" documentation system.
 *   **2025-05-22:** Decided to use Highcharts for analytics and reporting features.
 *   **2025-05-23:** Finalized the detailed multi-tenant database architecture for Firestore and the Firebase Auth custom claims strategy. This adopts a hierarchical model based on organizations and array-based roles. The canonical documentation for this is in `memory-bank/systemPatterns.md`, with `memory-bank/projectRoadmap.md` updated to reflect this and refer to `systemPatterns.md`.
-*   **2025-05-23:** Resolved Firebase Functions v2 `identity` module import issue by identifying `beforeUserCreated` as the correct function for user creation triggers and updating `tsconfig.json` for `nodenext` compatibility.
+*   **2025-05-23:** Resolved Firebase Functions v2 `identity` module import issue by identifying `beforeUserCreated` as the correct function for user creation triggers and updating `tsconfig.json` for `nodenext` compatibility. (Note: This specific resolution is now superseded by the change to `onCreate` but kept for historical context of previous issues).
 *   **2025-05-23:** Updated `apphosting.yaml` to include `build` and `release` configurations for Firebase App Hosting, ensuring correct deployment of the Vite application.
 *   **2025-05-23:** Resolved `TypeError: admin.initializeApp is not a function` by changing `firebase-admin` import in `functions/src/index.ts` from `import * as admin from 'firebase-admin';` to `import admin from 'firebase-admin';`.
+*   **2025-05-23:** Switched Firebase user creation trigger from blocking `beforeUserCreated` to non-blocking `functions.auth.user().onCreate` in `functions/src/index.ts` to resolve deployment errors related to GCIP project requirements. Implemented custom claims for admin users and Realtime Database metadata update for token refresh.
 
 ## 6. Immediate Next Steps
 

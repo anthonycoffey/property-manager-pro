@@ -1,59 +1,93 @@
 import * as logger from 'firebase-functions/logger';
-import { beforeUserCreated } from 'firebase-functions/v2/identity';
+import * as functions from 'firebase-functions'; // Import the main functions module
 import admin from 'firebase-admin';
-import { AuthBlockingEvent } from 'firebase-functions/v2/identity';
 
 admin.initializeApp();
 const db = admin.firestore();
 
-export const onUserCreate = beforeUserCreated(async (event: AuthBlockingEvent) => {
-  const user = event.data; // AuthBlockingEvent has data property for UserRecord
-
-  if (!user) {
-    logger.error('No user data found in event.');
-    return;
-  }
-
-  const { uid, email, displayName } = user;
+// On sign up.
+export const processSignUp = functions.auth.user().onCreate(async (user) => {
+  const { uid, email, emailVerified } = user;
 
   logger.info(`New user signed up: ${email} (UID: ${uid})`);
 
-  try {
+  // Check if user meets role criteria.
+  if (
+    email &&
+    email.endsWith('@admin.example.com') &&
+    emailVerified
+  ) {
     const customClaims = {
-      roles: ['resident'],
+      admin: true,
+      accessLevel: 9
     };
 
-    // Note: For blocking functions, custom claims are typically set in the response,
-    // but for simplicity and immediate effect, we'll set them directly here.
-    // The blocking function can also modify the user record before creation.
-    await admin.auth().setCustomUserClaims(uid, customClaims);
-    logger.info(
-      `Custom claims set for user ${uid}: ${JSON.stringify(customClaims)}`
-    );
+    try {
+      // Set custom user claims on this newly created user.
+      await admin.auth().setCustomUserClaims(uid, customClaims);
+      logger.info(
+        `Custom claims set for user ${uid}: ${JSON.stringify(customClaims)}`
+      );
 
-    await db
-      .collection('users')
-      .doc(uid)
-      .set({
-        uid: uid,
-        email: email,
-        displayName: displayName || 'New User',
+      // Update real-time database to notify client to force refresh.
+      const metadataRef = admin.database().ref('metadata/' + uid);
+
+      // Set the refresh time to the current UTC timestamp.
+      // This will be captured on the client to force a token refresh.
+      await metadataRef.set({ refreshTime: new Date().getTime() });
+      logger.info(`Metadata updated for user ${uid} to force token refresh.`);
+
+      // Also create a user profile in Firestore for admin users
+      await db
+        .collection('users')
+        .doc(uid)
+        .set({
+          uid: uid,
+          email: email,
+          displayName: user.displayName || 'Admin User',
+          roles: ['admin'], // Assign 'admin' role in Firestore
+          accessLevel: 9,
+          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+          status: 'active',
+        });
+      logger.info(`Admin user profile created in Firestore for ${uid}`);
+
+    } catch (error) {
+      logger.error(
+        `Error setting custom claims or updating metadata for ${uid}:`,
+        error
+      );
+    }
+  } else {
+    // For non-admin users, set default claims and create Firestore profile
+    try {
+      const customClaims = {
         roles: ['resident'],
-        createdAt: admin.firestore.FieldValue.serverTimestamp(),
-        status: 'pending_assignment',
-      });
+      };
+      await admin.auth().setCustomUserClaims(uid, customClaims);
+      logger.info(
+        `Default custom claims set for user ${uid}: ${JSON.stringify(customClaims)}`
+      );
 
-    logger.info(`User profile created in Firestore for ${uid}`);
+      await db
+        .collection('users')
+        .doc(uid)
+        .set({
+          uid: uid,
+          email: email,
+          displayName: user.displayName || 'New User',
+          roles: ['resident'],
+          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+          status: 'pending_assignment',
+        });
+      logger.info(`User profile created in Firestore for ${uid}`);
 
-    // Return an empty object or void if no modifications to the user record are needed
-    return {};
-  } catch (error) {
-    logger.error(
-      `Error setting custom claims or creating user profile for ${uid}:`,
-      error
-    );
-    // Re-throw the error to block user creation if something goes wrong
-    throw error;
+    } catch (error) {
+      logger.error(
+        `Error setting default custom claims or creating user profile for ${uid}:`,
+        error
+      );
+    }
   }
 });
 

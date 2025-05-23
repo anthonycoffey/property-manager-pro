@@ -28,15 +28,102 @@ The application employs a modern web architecture with a React-based frontend an
 ## 2. Key Technical Decisions & Design Patterns
 
 *   **Role-Based Access Control (RBAC):**
-    *   Implemented using Firebase Authentication custom claims (`role: 'admin'`, `role: 'property_manager'`, `role: 'resident'`).
+    *   Implemented using Firebase Authentication custom claims. Roles are stored as an array in the `roles` claim. Additional claims like `organizationId` and `propertyId` are used for granular access control.
+    *   **Custom Claims Strategy:**
+        *   **Super Admins:** `claims: { roles: ["admin"] }`
+        *   **Organization Users (Property Managers, Property Staff):** `claims: { roles: ["property_manager" | "property_staff"], organizationId: "{organizationId}" }`
+        *   **Residents:** `claims: { roles: ["resident"], organizationId: "{organizationId}", propertyId: "{propertyId}" }`
+        *   Minimum defined roles: `admin`, `property_manager`, `property_staff`, `resident`.
     *   Enforced at multiple levels:
-        *   **Frontend:** Conditionally rendering UI elements and routes based on user role.
-        *   **Cloud Firestore:** Through meticulously defined Security Rules that restrict data access based on `request.auth.token.role` and data ownership (e.g., `resource.data.propertyManagerId == request.auth.uid`).
-        *   **Cloud Functions:** Validating user roles before executing sensitive operations.
-*   **Data Modeling (Firestore):**
-    *   Utilizes a collection-based NoSQL structure. Key collections include `users`, `properties`, `residents`, `services`, and `invitations`.
-    *   Relationships are managed primarily through IDs linking documents across collections (e.g., `propertyManagerId` in `properties` links to a document in the `users` collection).
-    *   Consideration for sub-collections vs. top-level collections (e.g., `residents` could be a sub-collection of `properties`). The current roadmap suggests top-level collections with linking IDs.
+        *   **Frontend:** Conditionally rendering UI elements and routes based on user roles and associated IDs in claims.
+        *   **Cloud Firestore:** Through meticulously defined Security Rules that restrict data access based on `request.auth.token.roles` (checking for presence of a role using `hasAny()`, `hasAll()`, or `hasOnly()`), `request.auth.token.organizationId`, `request.auth.token.propertyId`, and data ownership.
+        *   **Cloud Functions:** Validating user roles and associated IDs from the token before executing sensitive operations.
+*   **Data Modeling (Firestore - Multi-Tenant Structure):**
+    *   The Firestore database is designed with a multi-tenant architecture, primarily centered around a root `organizations` collection. This ensures clear data isolation and management for different tenants.
+    *   The `mail` and `templates` collections (for the `firestore-send-email` extension) remain as top-level collections and are not part of the direct multi-tenant data hierarchy for organizations, users, or properties.
+
+    *   **1. `admins` (Root Collection)**
+        *   Purpose: Stores profile data for Super Administrators (distinct from their Firebase Auth record).
+        *   Document ID: `{adminAuthUid}` (Firebase Auth UID)
+        *   Fields:
+            *   `displayName: string`
+            *   `email: string` (matches auth email)
+            *   `roles: ["admin"]` (string array, mirrors claim for consistency)
+            *   `createdAt: timestamp`
+            *   *(Other super_admin specific profile data)*
+
+    *   **2. `organizations` (Root Collection)**
+        *   Purpose: Represents each tenant (e.g., a Property Management company).
+        *   Document ID: `{organizationId}` (e.g., auto-generated unique ID)
+        *   Fields:
+            *   `name: string` (e.g., "Prime Properties LLC")
+            *   `ownerId: string` (Firebase Auth UID of the primary Property Manager for this org)
+            *   `createdAt: timestamp`
+            *   `status: string` (e.g., "active", "trial", "suspended")
+            *   *(Other organization-level settings, billing info, etc.)*
+        *   **Subcollections within each `organization` document:**
+
+            *   **`users`** (Subcollection: `organizations/{organizationId}/users`)
+                *   Purpose: Stores profiles for users belonging to this organization (Property Managers, staff).
+                *   Document ID: `{orgUserAuthUid}` (Firebase Auth UID)
+                *   Fields:
+                    *   `displayName: string`
+                    *   `email: string`
+                    *   `organizationRoles: string[]` (e.g., `["property_manager"]`, `["property_staff"]`, `["property_manager", "property_staff"]`)
+                    *   `permissions?: string[]` (Optional: for more granular permissions within the org beyond base roles)
+                    *   `invitedBy: string` (Auth UID of user who invited them)
+                    *   `createdAt: timestamp`
+
+            *   **`properties`** (Subcollection: `organizations/{organizationId}/properties`)
+                *   Purpose: Stores details of properties managed by this organization.
+                *   Document ID: `{propertyId}` (e.g., auto-generated unique ID)
+                *   Fields:
+                    *   `name: string` (e.g., "The Grand Plaza")
+                    *   `address: object` (street, city, state, zip)
+                    *   `type: string` (e.g., "residential", "commercial")
+                    *   `managedBy: string` (Auth UID of an org user from `organizations/{organizationId}/users`)
+                    *   `createdAt: timestamp`
+                    *   *(Other property-specific details)*
+                *   **Subcollections within each `property` document:**
+
+                    *   **`residents`** (Subcollection: `organizations/{organizationId}/properties/{propertyId}/residents`)
+                        *   Purpose: Stores profiles for residents of a specific property.
+                        *   Document ID: `{residentAuthUid}` (Firebase Auth UID)
+                        *   Fields:
+                            *   `displayName: string`
+                            *   `email: string`
+                            *   `unitNumber: string`
+                            *   `roles: ["resident"]` (string array, mirrors claim for consistency)
+                            *   `leaseStartDate: timestamp`
+                            *   `leaseEndDate: timestamp`
+                            *   `invitedBy: string` (Auth UID of an org user)
+                            *   `createdAt: timestamp`
+                            *   *(Vehicle information, contact preferences, etc.)*
+
+            *   **`invitations`** (Subcollection: `organizations/{organizationId}/invitations`)
+                *   Purpose: Tracks invitations sent for this organization (for new org users or residents).
+                *   Document ID: `{invitationId}` (e.g., auto-generated unique ID)
+                *   Fields:
+                    *   `email: string`
+                    *   `rolesToAssign: string[]` (e.g., `["property_staff"]`, `["resident"]`)
+                    *   `targetPropertyId?: string` (if for a resident, links to `organizations/{organizationId}/properties/{propertyId}`)
+                    *   `status: "pending" | "accepted" | "expired"`
+                    *   `createdBy: string` (Auth UID of an org user)
+                    *   `createdAt: timestamp`
+                    *   `expiresAt: timestamp`
+
+            *   **`services`** (Subcollection: `organizations/{organizationId}/services`)
+                *   Purpose: Tracks service requests for properties within this organization.
+                *   Document ID: `{serviceId}` (e.g., auto-generated unique ID)
+                *   Fields:
+                    *   `propertyId: string` (links to `organizations/{organizationId}/properties/{propertyId}`)
+                    *   `residentId: string` (Auth UID of the resident making the request)
+                    *   `requestType: string` (e.g., "maintenance", "amenity_booking")
+                    *   `description: string`
+                    *   `status: "submitted" | "in_progress" | "completed" | "cancelled"`
+                    *   `submittedAt: timestamp`
+                    *   `assignedTo?: string` (Auth UID of an org user)
+                    *   `completedAt?: timestamp`
 *   **Hybrid Rendering Strategy (React 19):**
     *   **Client Components:** Default for most UI, especially interactive parts.
     *   **Server Components:**

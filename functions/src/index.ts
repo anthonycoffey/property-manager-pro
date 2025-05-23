@@ -119,7 +119,7 @@ export const createPropertyManager = onCall(async (request) => {
 
     return { success: true, message: 'Property manager created successfully', uid: uid };
 
-  } catch (error: any) {
+  } catch (error) {
     logger.error('Error creating property manager:', error);
     if (error.code === 'auth/email-already-exists') {
       throw new HttpsError('already-exists', 'The email address is already in use by another account.');
@@ -177,7 +177,7 @@ export const updatePropertyManager = onCall(async (request) => {
 
     return { success: true, message: 'Property manager updated successfully' };
 
-  } catch (error: any) {
+  } catch (error) {
     logger.error('Error updating property manager:', error);
     throw new HttpsError('internal', 'Failed to update property manager.', error.message);
   }
@@ -210,7 +210,7 @@ export const deletePropertyManager = onCall(async (request) => {
 
     return { success: true, message: 'Property manager deleted successfully' };
 
-  } catch (error: any) {
+  } catch (error) {
     logger.error('Error deleting property manager:', error);
     throw new HttpsError('internal', 'Failed to delete property manager.', error.message);
   }

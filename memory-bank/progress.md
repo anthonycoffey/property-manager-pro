@@ -17,6 +17,7 @@ The project is currently in the **initial setup and planning phase**. The primar
     *   `techContext.md`: Lists technologies, development setup, technical constraints, dependencies, and tool usage patterns.
     *   `activeContext.md`: Defines current work focus, recent changes, next steps, active decisions, important patterns, and initial insights.
     *   This `progress.md` file.
+*   **Authentication Redirection Implemented:** Configured `src/components/LoginForm.tsx` and `src/components/SignupForm.tsx` to redirect users to the `/dashboard` page upon successful login or registration.
 
 ## 3. What's Left to Build (High-Level from `projectRoadmap.md`)
 
@@ -72,6 +73,5 @@ The entire application functionality is yet to be built. Key high-level features
 
 1.  **Firebase Project Setup:** Create and configure the Firebase project.
 2.  **React Application Initialization:** Set up the basic React 19 application structure.
-3.  **Implement Basic Authentication:** Integrate Firebase Authentication for user sign-up and login, including the Cloud Function to set custom claims as per the strategy in `systemPatterns.md`.
-4.  **Define Initial Firestore Schema & Rules:** Implement the Firestore collections and basic security rules according to the detailed multi-tenant schema defined in `memory-bank/systemPatterns.md`.
-5.  **Begin Admin Dashboard - Property Manager CRUD:** Start development of the first core feature set.
+3.  **Define Initial Firestore Schema & Rules:** Implement the Firestore collections and basic security rules according to the detailed multi-tenant schema defined in `memory-bank/systemPatterns.md`.
+4.  **Begin Admin Dashboard - Property Manager CRUD:** Start development of the first core feature set.

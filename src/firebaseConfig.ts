@@ -5,13 +5,16 @@ import { getFirestore } from "firebase/firestore";
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyAnuM1xQVfIjMitYwr4COJLHFmicNpnLew",
-  authDomain: "phoenix-property-manager-pro.firebaseapp.com",
-  projectId: "phoenix-property-manager-pro",
-  storageBucket: "phoenix-property-manager-pro.firebasestorage.app",
-  messagingSenderId: "76291599872",
-  appId: "1:76291599872:web:55d24f0831f430ce67f2e5"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID
 };
+
+console.log('Firebase config:', firebaseConfig);
+console.log('Firebase API Key:', import.meta.env.VITE_FIREBASE_API_KEY);
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);

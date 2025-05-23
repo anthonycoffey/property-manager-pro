@@ -16,6 +16,7 @@ The current focus is on the initial setup and planning phase of the "Multi-Tenan
     *   `systemPatterns.md`: Describes system architecture, key technical decisions, and design patterns.
     *   `techContext.md`: Details technologies, setup, constraints, and dependencies.
     *   This `activeContext.md` file.
+*   **Authentication Redirection Implemented:** Modified `src/components/LoginForm.tsx` and `src/components/SignupForm.tsx` to redirect users to the `/dashboard` page upon successful login or registration.
 
 ## 3. Next Steps
 
@@ -23,7 +24,6 @@ The current focus is on the initial setup and planning phase of the "Multi-Tenan
 *   **Begin Development Planning:** Based on the `projectRoadmap.md`, start outlining the initial development tasks. This will likely involve:
     *   Setting up the Firebase project.
     *   Initializing the React frontend application.
-    *   Implementing basic authentication.
     *   Defining initial Firestore data structures and security rules.
 *   **Prioritize Initial Features:** Based on the roadmap, the first features to tackle will likely be:
     *   User Authentication (Firebase Auth with custom claims for roles).

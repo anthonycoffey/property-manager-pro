@@ -1,8 +1,7 @@
-// import {onRequest} from "firebase-functions/v2/https"; // Keeping this as per original template
 import * as logger from 'firebase-functions/logger';
-import { beforeUserCreated } from 'firebase-functions/v2/identity'; // Corrected function name for v2 auth trigger
+import { beforeUserCreated } from 'firebase-functions/v2/identity';
 import admin from 'firebase-admin';
-import { AuthBlockingEvent } from 'firebase-functions/v2/identity'; // AuthBlockingEvent is exported from identity module
+import { AuthBlockingEvent } from 'firebase-functions/v2/identity';
 
 admin.initializeApp();
 const db = admin.firestore();

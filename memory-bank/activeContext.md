@@ -31,7 +31,7 @@ The current focus is on the initial setup and planning phase of the "Multi-Tenan
 
 ## 4. Active Decisions & Considerations
 
-*   **Technology Stack Adherence:** Strictly follow the technologies outlined in `projectRoadmap.md` (React 19, Firebase, MUI, Zustand, etc.).
+*   **Technology Stack Adherence:** Strictly follow the technologies outlined in `projectRoadmap.md` (React 19, Firebase, MUI).
 *   **Role-Based Access Control (RBAC):** This is a critical aspect. Implementation via Firebase custom claims and Firestore Security Rules needs to be robust from the start.
 *   **Hybrid Rendering (React Server Components):** Strategic application of Server Components for performance as per the roadmap. The setup for RSC needs to be correctly configured.
 *   **Data Modeling:** The Firestore data model proposed in `projectRoadmap.md` will be the starting point. It needs to be implemented with appropriate security rules.

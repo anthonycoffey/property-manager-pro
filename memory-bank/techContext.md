@@ -10,15 +10,15 @@
 *   **Material Icons:** Vector icons.
 *   **State Management:**
     *   **React Context API:** Global state (user auth, theme).
-    *   **Zustand:** Complex/local component state.
-*   **Data Fetching (Client-Side):** Standard `Workspace` API (e.g., `fetch`). Open to React Query if needed.
+    *   **React Hooks:** Local component state.
+*   **Data Fetching (Client-Side):** Standard Fetch API, but server-side data fetching will be done via Server Components and is always preferred over client-side fetching.
 *   **Build Tool:** (Implicit) Likely Vite or Create React App, to be confirmed. Standard Node.js/npm/yarn ecosystem.
 
 ### Backend
 *   **Firebase:**
     *   **Firebase Authentication:** User management, RBAC via custom claims.
     *   **Cloud Firestore:** NoSQL database (data: users, properties, residents, services, invitations). Real-time updates. Firestore Security Rules for access control.
-    *   **Firebase Cloud Functions:** Server-side logic, API (Node.js or Python runtime, to be decided based on team preference or specific needs, though Node.js is common with Firebase).
+    *   **Firebase Cloud Functions:** Server-side logic, API (Node.js runtime)
     *   **Firebase Hosting:** Static asset hosting, CDN.
 
 ## 2. Development Setup & Environment
@@ -37,7 +37,7 @@
 *   **Data Modeling for NoSQL:** Careful consideration of data duplication vs. complex queries is needed for Firestore to ensure performance and scalability. Denormalization might be used strategically.
 *   **React Server Components (RSC):**
     *   Relatively new technology; best practices are still evolving.
-    *   Requires a compatible hosting/build environment (e.g., Next.js, or a custom setup if not using such a framework). The roadmap implies a direct React 19 usage, so this needs careful setup.
+    *   Will be hosted on Firebase App Hosting, which may have specific requirements or limitations.
 *   **Vendor Lock-in:** Heavy reliance on Firebase means a degree of vendor lock-in. This is a trade-off for the integrated services and development speed.
 
 ## 4. Key Dependencies (Conceptual)
@@ -46,7 +46,6 @@
     *   `react`, `react-dom`
     *   `@mui/material`, `@emotion/react`, `@emotion/styled` (for MUI)
     *   `@mui/icons-material`
-    *   `zustand`
     *   Routing library (e.g., `react-router-dom`) - *Not explicitly mentioned but essential for a multi-page app.*
 *   **Backend (Cloud Functions - Node.js example):**
     *   `firebase-admin` (for server-side Firebase access)

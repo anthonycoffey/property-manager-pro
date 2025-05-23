@@ -11,7 +11,6 @@ The application employs a modern web architecture with a React-based frontend an
     *   **Material UI (MUI):** Provides a comprehensive suite of pre-built UI components, ensuring a consistent and professional look and feel.
     *   **State Management:**
         *   **React Context API:** For global state accessible by many components (e.g., user authentication status, current theme).
-        *   **Zustand:** For more complex or frequently updated local/feature-specific component states.
 *   **Backend (Firebase):**
     *   **Firebase Authentication:** Manages user sign-up, login, and session management. Custom claims are used to implement Role-Based Access Control (RBAC).
     *   **Cloud Firestore:** NoSQL database for storing all application data. Real-time capabilities are leveraged for dynamic dashboards. Firestore Security Rules are critical for data integrity and access control.
@@ -44,7 +43,7 @@ The application employs a modern web architecture with a React-based frontend an
     *   Functions will be designed to be granular and secure, performing specific tasks (e.g., `createInvitation`, `processServiceRequest`, `importResidentsFromCSV`).
 *   **State Management Strategy:**
     *   **Global State (React Context):** For broadly shared, less frequently updated data (e.g., authenticated user object, theme settings).
-    *   **Local/Feature State (Zustand):** For more complex, dynamic, or localized state within specific features or component trees, offering a simpler API than Redux for these use cases.
+    *   **Local/Feature State (React Hooks):** For more complex, dynamic, or localized state within specific features or component trees.
 *   **Data Fetching:**
     *   **Client-Side:** Primarily using the standard Fetch API
     *   **Server-Side (via Server Components):** Direct data fetching from Firestore using Firebase Admin SDK or by invoking Cloud Functions.

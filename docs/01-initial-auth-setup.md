@@ -4,38 +4,7 @@ This document outlines the steps for implementing basic user authentication and 
 
 ## Phase 1: Basic Authentication Implementation
 
-1.  **Verify Dependencies:**
-    *   Check `package.json` to ensure `firebase` and `react-router-dom` are listed as dependencies.
-    *   If not present, install them: `npm install firebase react-router-dom`.
-
-2.  **Firebase Configuration File:**
-    *   Confirm or create `src/firebaseConfig.ts` (or a similar file, e.g., `src/firebase.ts`).
-    *   Ensure it correctly initializes and exports the Firebase app instance using the project's Firebase configuration.
-    *   Example structure:
-        ```typescript
-        // src/firebaseConfig.ts
-        import { initializeApp } from "firebase/app";
-        import { getAuth } from "firebase/auth";
-        import { getFirestore } from "firebase/firestore";
-
-        const firebaseConfig = {
-          apiKey: "YOUR_API_KEY",
-          authDomain: "YOUR_AUTH_DOMAIN",
-          projectId: "YOUR_PROJECT_ID",
-          storageBucket: "YOUR_STORAGE_BUCKET",
-          messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-          appId: "YOUR_APP_ID"
-        };
-
-        // Initialize Firebase
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-
-        export { app, auth, db };
-        ```
-
-3.  **Implement Firebase Authentication UI & Logic:**
+1.  **Implement Firebase Authentication UI & Logic:**
     *   Create React components for:
         *   `SignupForm.tsx` (Email/Password)
         *   `LoginForm.tsx` (Email/Password)
@@ -46,7 +15,7 @@ This document outlines the steps for implementing basic user authentication and 
         *   `signInWithEmailAndPassword` (in `LoginForm.tsx`)
         *   `signOut` (in `LogoutButton.tsx` or relevant component)
 
-4.  **Set up Routing and Protected Routes:**
+2.  **Set up Routing and Protected Routes:**
     *   Ensure `react-router-dom` is configured.
     *   Define routes in `App.tsx` or a dedicated routing configuration file (e.g., `src/routes.tsx`):
         *   Public routes: `/login`, `/signup`
@@ -60,22 +29,8 @@ This document outlines the steps for implementing basic user authentication and 
         *   Otherwise, renders the protected component.
     *   Wrap the application with `AuthProvider` and the router in `main.tsx` or `App.tsx`.
 
-5.  **Update Firestore Security Rules:**
+3.  **Update Firestore Security Rules:**
     *   Implement basic Firestore security rules to allow authenticated users to read/write their own document in a `users` collection. This rule should be applied in the Firebase console under Firestore > Rules.
-        ```
-        rules_version = '2';
-        service cloud.firestore {
-          match /databases/{database}/documents {
-            // Users can only read and write their own user document
-            // This assumes user documents are stored with their UID as the document ID
-            match /users/{userId} {
-              allow read, write: if request.auth != null && request.auth.uid == userId;
-            }
-            // Add other rules for other collections as they are created
-          }
-        }
-        ```
-    *   (Optional but recommended) Create a `users` document in Firestore upon successful user registration, storing basic info like email and role (initially, role might be a default like 'resident').
 
 6.  **Basic App Structure & Layout:**
     *   Ensure `App.tsx` is structured to use the router and `AuthProvider`.

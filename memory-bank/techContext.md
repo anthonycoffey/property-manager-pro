@@ -18,8 +18,11 @@
 *   **Firebase:**
     *   **Firebase Authentication:** User management, RBAC via custom claims.
     *   **Cloud Firestore:** NoSQL database (data: users, properties, residents, services, invitations). Real-time updates. Firestore Security Rules for access control.
-    *   **Firebase Cloud Functions:** Server-side logic, API (Node.js runtime)
+    *   **Firebase Cloud Functions:** Server-side logic, API (Node.js runtime).
     *   **Firebase Hosting:** Static asset hosting, CDN.
+    *   **`firestore-send-email` Extension:** For sending templated emails. This involves:
+        *   `mail` collection: Documents written to this collection trigger email sending.
+        *   `templates` collection: Stores email templates (e.g., for invitations, notifications).
 
 ## 2. Development Setup & Environment
 

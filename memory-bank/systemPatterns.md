@@ -17,8 +17,12 @@ The application employs a modern web architecture with a React-based frontend an
     *   **Firebase Cloud Functions:** Provide server-side logic for:
         *   Backend API endpoints.
         *   Business rule enforcement.
-        *   Integrations with third-party services (e.g., CRM, email).
+        *   Integrations with third-party services (e.g., CRM).
         *   Scheduled tasks and background processing (e.g., CSV imports, monthly service count resets).
+    *   **`firestore-send-email` Extension:** Leveraged for sending templated emails.
+        *   Emails are triggered by writing documents to a specific Firestore collection (`mail`).
+        *   Templates are stored in another Firestore collection (`templates`).
+        *   This can be initiated by Cloud Functions or directly by client-side operations (with appropriate security rules) that need to send an email.
     *   **Firebase Hosting:** Hosts the static assets of the React application and provides CDN capabilities.
 
 ## 2. Key Technical Decisions & Design Patterns

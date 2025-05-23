@@ -40,7 +40,10 @@ The current focus is on the initial setup and planning phase of the "Multi-Tenan
     *   `residents`
     *   `services`
     *   `invitations`
-*   **Firebase Emulator Suite:** Leverage heavily for local development and testing of Firebase features.
+    *   `mail` (for `firestore-send-email` extension)
+    *   `templates` (for `firestore-send-email` extension)
+*   **Email Sending:** The `firestore-send-email` extension will be used for templated emails. This needs to be configured and templates created.
+*   **Firebase Emulator Suite:** Leverage heavily for local development and testing of Firebase features, including email sending if supported by the emulator or through mock setup.
 
 ## 5. Important Patterns & Preferences (from `projectRoadmap.md`)
 

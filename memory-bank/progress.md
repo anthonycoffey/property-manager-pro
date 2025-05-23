@@ -40,18 +40,18 @@ The entire application functionality is yet to be built. Key high-level features
     *   View property details.
     *   Manage profile (vehicle info).
     *   Submit and track service requests.
-*   **E. Core Systems & Features:**
-    *   **Data Models in Firestore:** Implementation of `users`, `properties`, `residents`, `services`, `invitations` collections.
+    *   **E. Core Systems & Features:**
+    *   **Data Models in Firestore:** Implementation of `users`, `properties`, `residents`, `services`, `invitations`, `mail`, `templates` collections.
     *   **Invitation System:**
         *   Generation of unique codes (email/QR).
-        *   Cloud Functions for managing invitation lifecycle.
+        *   Cloud Functions for managing invitation lifecycle, triggering emails via `firestore-send-email`.
     *   **Service Request System:**
         *   Forms for request submission.
         *   Status tracking.
         *   Cloud Functions for processing.
     *   **Firebase Cloud Functions for:**
         *   CRM Integration (future).
-        *   Email Sending (invitations, notifications).
+        *   Triggering Email Sending (invitations, notifications) via `firestore-send-email`.
         *   CSV Processing (bulk resident import).
         *   QR Code Generation.
         *   Subscription Management (future).

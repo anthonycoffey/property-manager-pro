@@ -19,8 +19,9 @@ This document outlines a strategic plan for developing your multi-tenant ERP-sty
 ### Backend
 * **Firebase:** This comprehensive platform will serve as the backbone:
     * **Firebase Authentication:** For user registration, login, and robust **role-based access control**.
-    * **Cloud Firestore:** A flexible, scalable NoSQL cloud database for storing all application data (users, properties, residents, services, invitations). Its real-time capabilities are excellent for dashboards.
-    * **Firebase Cloud Functions:** For server-side logic, API integrations (CRM, email sending), scheduled tasks, and enforcing business rules. This is where the "server-side" aspect of your application will largely reside, handling tasks that cannot or should not be done directly on the client.
+    * **Cloud Firestore:** A flexible, scalable NoSQL cloud database for storing all application data (users, properties, residents, services, invitations, mail, templates). Its real-time capabilities are excellent for dashboards.
+    * **Firebase Cloud Functions:** For server-side logic, API integrations (CRM), scheduled tasks, and enforcing business rules. This is where the "server-side" aspect of your application will largely reside, handling tasks that cannot or should not be done directly on the client.
+    * **`firestore-send-email` Extension:** Will be used for sending templated emails (e.g., invitations, notifications). This involves a `mail` collection to trigger emails and a `templates` collection to store email content.
     * **Firebase Hosting:** For fast and secure hosting of your React application.
 
 ---
@@ -40,7 +41,7 @@ The application will follow a hybrid rendering approach, combining Client-Side R
 * **Firestore Database:** All persistent data will be stored in Firestore, with **security rules** meticulously defined to ensure data integrity and restrict access based on user roles and ownership.
 * **Firebase Cloud Functions:** These will serve as the backend API for:
     * **CRM Integration:** Dispatching service requests, fetching analytics.
-    * **Email Invitations:** Sending referral code emails.
+    * **Triggering Email Invitations:** Cloud Functions will write to the `mail` collection to trigger emails via the `firestore-send-email` extension.
     * **CSV Processing:** Handling bulk resident imports securely and efficiently.
     * **QR Code Generation:** Generating QR codes on the server for security and consistency.
     * **Subscription Management:** Potentially integrating with a payment gateway (e.g., Stripe via Firebase Extensions).
@@ -64,6 +65,20 @@ Here's a proposed structure for your Firestore collections:
     * `updatedAt` (timestamp)
     * `isFreeAgent` (boolean, for residents, default `false`)
     * `subscriptionStatus` (string, for free agents, e.g., 'active', 'inactive')
+
+* **`mail` Collection (for `firestore-send-email`):**
+    * `to` (string or array of strings)
+    * `message` (map: `subject`, `html`, `text`)
+    * `template` (map: `name`, `data`) - for using pre-defined templates
+    * `delivery` (map: `startTime`, `state`, `endTime`, `error`, `attempts`, `leaseExpireTime`) - managed by the extension
+
+* **`templates` Collection (for `firestore-send-email`):**
+    * `id` (Document ID - template name)
+    * `subject` (string)
+    * `html` (string - Handlebars template)
+    * `text` (string - Handlebars template, optional)
+    * `createdAt` (timestamp)
+    * `updatedAt` (timestamp)
 
 * **`properties` Collection:**
     * `id` (Document ID)

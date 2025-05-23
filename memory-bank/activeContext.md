@@ -16,6 +16,7 @@ The current focus is on the initial setup and planning phase of the "Multi-Tenan
     *   `systemPatterns.md`: Describes system architecture, key technical decisions, and design patterns.
     *   `techContext.md`: Details technologies, setup, constraints, and dependencies.
     *   This `activeContext.md` file.
+*   **Authentication Redirection Implemented:** Modified `src/components/LoginForm.tsx` and `src/components/SignupForm.tsx` to redirect users to the `/dashboard` page upon successful login or registration.
 
 ## 3. Next Steps
 
@@ -23,7 +24,6 @@ The current focus is on the initial setup and planning phase of the "Multi-Tenan
 *   **Begin Development Planning:** Based on the `projectRoadmap.md`, start outlining the initial development tasks. This will likely involve:
     *   Setting up the Firebase project.
     *   Initializing the React frontend application.
-    *   Implementing basic authentication.
     *   Defining initial Firestore data structures and security rules.
 *   **Prioritize Initial Features:** Based on the roadmap, the first features to tackle will likely be:
     *   User Authentication (Firebase Auth with custom claims for roles).
@@ -34,14 +34,11 @@ The current focus is on the initial setup and planning phase of the "Multi-Tenan
 *   **Technology Stack Adherence:** Strictly follow the technologies outlined in `projectRoadmap.md` (React 19, Firebase, MUI).
 *   **Role-Based Access Control (RBAC):** This is a critical aspect. Implementation via Firebase custom claims and Firestore Security Rules needs to be robust from the start.
 *   **Hybrid Rendering (React Server Components):** Strategic application of Server Components for performance as per the roadmap. The setup for RSC needs to be correctly configured.
-*   **Data Modeling:** The Firestore data model proposed in `projectRoadmap.md` will be the starting point. It needs to be implemented with appropriate security rules.
-    *   `users`
-    *   `properties`
-    *   `residents`
-    *   `services`
-    *   `invitations`
-    *   `mail` (for `firestore-send-email` extension)
-    *   `templates` (for `firestore-send-email` extension)
+*   **Data Modeling:** The detailed multi-tenant Firestore database schema and Firebase Auth custom claims strategy have been finalized.
+    *   **Canonical Source:** The complete and detailed specification is documented in `memory-bank/systemPatterns.md`.
+    *   **High-Level Overview:** `memory-bank/projectRoadmap.md` provides a high-level summary and refers to `systemPatterns.md` for details.
+    *   This refined model supersedes earlier, simpler proposals and is designed for robust multi-tenancy, data isolation, and role-based access. Key aspects include a root `organizations` collection with nested tenant-specific data and array-based roles in custom claims.
+    *   The `mail` and `templates` collections (for the `firestore-send-email` extension) remain as top-level collections.
 *   **Charting/Analytics:** Highcharts will be used for displaying analytics and reports. This will require integrating Highcharts with React components and ensuring data is formatted appropriately for the charts.
 *   **Email Sending:** The `firestore-send-email` extension will be used for templated emails. This needs to be configured and templates created.
 *   **Firebase Emulator Suite:** Leverage heavily for local development and testing of Firebase features, including email sending if supported by the emulator or through mock setup.

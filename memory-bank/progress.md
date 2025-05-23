@@ -4,7 +4,7 @@
 
 The project is currently in the **initial setup and planning phase**. The primary activities have revolved around understanding the project scope via `projectRoadmap.md` and establishing the foundational "Memory Bank" documentation.
 
-*   **Date of this update:** 2025-05-22
+*   **Date of this update:** 2025-05-23
 
 ## 2. What Works / Completed
 
@@ -17,6 +17,7 @@ The project is currently in the **initial setup and planning phase**. The primar
     *   `techContext.md`: Lists technologies, development setup, technical constraints, dependencies, and tool usage patterns.
     *   `activeContext.md`: Defines current work focus, recent changes, next steps, active decisions, important patterns, and initial insights.
     *   This `progress.md` file.
+*   **Authentication Redirection Implemented:** Configured `src/components/LoginForm.tsx` and `src/components/SignupForm.tsx` to redirect users to the `/dashboard` page upon successful login or registration.
 
 ## 3. What's Left to Build (High-Level from `projectRoadmap.md`)
 
@@ -41,7 +42,7 @@ The entire application functionality is yet to be built. Key high-level features
     *   Manage profile (vehicle info).
     *   Submit and track service requests.
     *   **E. Core Systems & Features:**
-    *   **Data Models in Firestore:** Implementation of `users`, `properties`, `residents`, `services`, `invitations`, `mail`, `templates` collections.
+    *   **Data Models in Firestore:** Implementation of the detailed multi-tenant Firestore schema as defined in `memory-bank/systemPatterns.md`. This includes the `admins` and `organizations` root collections with their respective subcollections, as well as the top-level `mail` and `templates` collections.
     *   **Invitation System:**
         *   Generation of unique codes (email/QR).
         *   Cloud Functions for managing invitation lifecycle, triggering emails via `firestore-send-email`.
@@ -65,12 +66,12 @@ The entire application functionality is yet to be built. Key high-level features
 *   **Initial Decision (from `projectRoadmap.md`):** Adopt React 19 with Server Components and Firebase as the core stack.
 *   **Initial Decision (from `.clinerules`):** Implement and maintain a "Memory Bank" documentation system.
 *   **2025-05-22:** Decided to use Highcharts for analytics and reporting features.
+*   **2025-05-23:** Finalized the detailed multi-tenant database architecture for Firestore and the Firebase Auth custom claims strategy. This adopts a hierarchical model based on organizations and array-based roles. The canonical documentation for this is in `memory-bank/systemPatterns.md`, with `memory-bank/projectRoadmap.md` updated to reflect this and refer to `systemPatterns.md`.
 *   *(This section will be updated as significant decisions are made or plans evolve throughout the project lifecycle).*
 
 ## 6. Immediate Next Steps (from `activeContext.md`)
 
 1.  **Firebase Project Setup:** Create and configure the Firebase project.
 2.  **React Application Initialization:** Set up the basic React 19 application structure.
-3.  **Implement Basic Authentication:** Integrate Firebase Authentication for user sign-up and login.
-4.  **Define Initial Firestore Schema & Rules:** Create the collections and basic security rules in Firestore.
-5.  **Begin Admin Dashboard - Property Manager CRUD:** Start development of the first core feature set.
+3.  **Define Initial Firestore Schema & Rules:** Implement the Firestore collections and basic security rules according to the detailed multi-tenant schema defined in `memory-bank/systemPatterns.md`.
+4.  **Begin Admin Dashboard - Property Manager CRUD:** Start development of the first core feature set.

@@ -51,21 +51,13 @@ The application will follow a hybrid rendering approach, combining Client-Side R
 
 ## 3. Data Model (Firestore Collections)
 
-Here's a proposed structure for your Firestore collections:
+The application employs a multi-tenant Firestore database structure designed for clear data isolation and scalability. Data is primarily organized under a root `organizations` collection, with tenant-specific data such as users, properties, and residents housed in subcollections. A separate root `admins` collection manages super administrator profiles.
 
-* **`users` Collection:**
-    * `id` (Document ID: Firebase Auth UID)
-    * `email` (string)
-    * `name` (string)
-    * `role` (enum: 'admin', 'property_manager', 'resident')
-    * `propertyManagerId` (string, `null` for admin/resident) - *If PM, links to their own properties*
-    * `propertyId` (string, `null` for admin/PM) - *If Resident, links to their property*
-    * `phoneNumber` (string, optional)
-    * `address` (string, optional)
-    * `createdAt` (timestamp)
-    * `updatedAt` (timestamp)
-    * `isFreeAgent` (boolean, for residents, default `false`)
-    * `subscriptionStatus` (string, for free agents, e.g., 'active', 'inactive')
+The `mail` and `templates` collections, used by the `firestore-send-email` extension, remain as top-level collections and are not part of the direct multi-tenant data hierarchy for organizations, users, or properties.
+
+**For the detailed Firestore schema, multi-tenancy design, specific collection structures, and field definitions, please refer to the canonical documentation in `memory-bank/systemPatterns.md`.**
+
+The following top-level collections are also part of the system:
 
 * **`mail` Collection (for `firestore-send-email`):**
     * `to` (string or array of strings)
@@ -81,45 +73,6 @@ Here's a proposed structure for your Firestore collections:
     * `createdAt` (timestamp)
     * `updatedAt` (timestamp)
 
-* **`properties` Collection:**
-    * `id` (Document ID)
-    * `name` (string)
-    * `address` (string)
-    * `propertyManagerId` (string, links to `users` collection)
-    * `createdAt` (timestamp)
-    * `updatedAt` (timestamp)
-
-* **`residents` Collection:** (Could be a sub-collection under `properties` or a top-level collection with `propertyId`)
-    * `id` (Document ID: Firebase Auth UID, if they sign up)
-    * `propertyId` (string, links to `properties` collection)
-    * `userId` (string, links to `users` collection)
-    * `vehicleInfo` (map: `make`, `model`, `year`, `licensePlate`)
-    * `monthlyServiceCount` (number, tracks current month's services)
-    * `lastServiceResetDate` (timestamp, for monthly reset)
-    * `createdAt` (timestamp)
-    * `updatedAt` (timestamp)
-
-* **`services` Collection:**
-    * `id` (Document ID)
-    * `residentId` (string, links to `users` collection)
-    * `propertyId` (string, links to `properties` collection)
-    * `serviceType` (string, e.g., 'tire_change', 'jump_start')
-    * `status` (enum: 'requested', 'dispatched', 'completed', 'cancelled')
-    * `requestTimestamp` (timestamp)
-    * `completionTimestamp` (timestamp, optional)
-    * `notes` (string, optional)
-
-* **`invitations` Collection:**
-    * `id` (Document ID)
-    * `code` (string, unique referral code)
-    * `nonce` (string, unique nonce for security)
-    * `propertyId` (string, links to `properties` collection)
-    * `propertyManagerId` (string, links to `users` collection)
-    * `generatedBy` (string, `userId` of PM who generated it)
-    * `expiryDate` (timestamp, 14 days for email, `null` for QR)
-    * `status` (enum: 'active', 'used', 'expired')
-    * `createdAt` (timestamp)
-
 ---
 
 ## 4. Role-Based Features & Implementation Strategy
@@ -127,14 +80,18 @@ Here's a proposed structure for your Firestore collections:
 ### A. Authentication & Authorization
 
 * **Firebase Authentication:** We'll handle user sign-up, login, and password reset using Firebase Auth.
-* **Custom Claims:** After a user signs up or is created by an admin, a Firebase Cloud Function will set a custom claim on their Firebase Auth token (e.g., `role: 'admin'`, `role: 'property_manager'`, `role: 'resident'`). This is key for role-based access control.
-* **Firestore Security Rules:** These are crucial for enforcing data access. Examples:
-    * Admins can read/write all data.
-    * Property Managers can read/write properties they manage and residents/invitations associated with those properties.
-    * Residents can only read/write their own user data, vehicle info, and service requests, and view their property's details.
-    * `allow read, write: if request.auth.token.role == 'admin';`
-    * `allow read, write: if resource.data.propertyManagerId == request.auth.uid;` (for PMs managing properties)
-    * `allow read, write: if resource.data.userId == request.auth.uid;` (for residents accessing their own data)
+* **Custom Claims:** After a user signs up or is created, a Firebase Cloud Function will set custom claims on their Firebase Auth token. These claims are crucial for role-based access control (RBAC) and data scoping.
+    * **Strategy:** Roles are stored as an array in the `roles` claim. Additional claims like `organizationId` and `propertyId` are used for granular access control within the multi-tenant structure.
+        *   **Super Admins:** `claims: { roles: ["admin"] }`
+        *   **Organization Users (Property Managers, Property Staff):** `claims: { roles: ["property_manager" | "property_staff"], organizationId: "{organizationId}" }`
+        *   **Residents:** `claims: { roles: ["resident"], organizationId: "{organizationId}", propertyId: "{propertyId}" }`
+    *   The minimum defined roles are `admin`, `property_manager`, `property_staff`, and `resident`.
+    *   **For detailed custom claims strategy, refer to `memory-bank/systemPatterns.md`.**
+* **Firestore Security Rules:** These are crucial for enforcing data access. Rules will leverage the custom claims (`request.auth.token.roles`, `request.auth.token.organizationId`, `request.auth.token.propertyId`) to ensure:
+    * Admins can access necessary system-wide data.
+    * Property Managers and Property Staff can only access data within their assigned `organizationId`.
+    * Residents can only access their own data within their assigned `organizationId` and `propertyId`.
+    * Data ownership and specific role permissions will be meticulously checked.
 
 ### B. Admin Dashboard
 * **UI:** We'll use React Client Components for interactive tables, forms, and charts, with Server Components for initial data loads to ensure quick rendering.

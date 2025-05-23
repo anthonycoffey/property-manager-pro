@@ -17,7 +17,8 @@ The project is actively implementing Role-Based Access Control (RBAC) and Cloud 
 *   **Phase 1: Firebase Project Setup & Initial Firestore Structure:**
     *   Confirmed Firebase project initialization and Firestore enablement.
 *   **Phase 2: Firebase Authentication & Custom Claims:**
-    *   **Updated `processSignUp` Cloud Function (`functions/src/index.ts`):** Migrated from a blocking `beforeUserCreated` trigger to a non-blocking `functions.auth.user().onCreate` trigger. Implemented custom claims logic to assign `admin: true` and `accessLevel: 9` for users with `@admin.example.com` emails, and default `resident` roles for others. Also integrated Realtime Database metadata update to force token refresh for admin users.
+    *   **Updated `processSignUp` Cloud Function (`functions/src/index.ts`):** Migrated from a blocking `beforeUserCreated` trigger to a non-blocking `functions.auth.user().onCreate` (1st gen) trigger. Implemented custom claims logic to assign `admin: true` and `accessLevel: 9` for users with `@admin.example.com` emails, and default `resident` roles for others. Resolved TypeScript errors related to `functions.auth` and implicit `any` types by correctly importing `functions` and explicitly typing `user` as `admin.auth.UserRecord`.
+    *   **Replaced `firebase-functions/logger` with `console.log`:** All `logger.info` and `logger.error` calls in `functions/src/index.ts` have been replaced with `console.log` and `console.error` respectively, as per user instruction.
     *   Resolved TypeScript module resolution errors for Firebase Functions v2 `identity` module. (Note: This specific resolution is now superseded by the change to `onCreate` but kept for historical context of previous issues).
     *   Updated `src/hooks/useAuth.ts` and `src/providers/AuthProvider.tsx` to fetch and expose custom claims.
 *   **Phase 3: Firestore Security Rules:**
@@ -58,7 +59,7 @@ The remaining application functionality includes:
 
 ## 4. Known Issues & Blockers
 
-*   **None at this stage.** All immediate compilation issues for Cloud Functions have been resolved.
+*   **None at this stage.** The TypeScript error related to `functions.auth` has been resolved by explicitly importing `auth` and `database` from `firebase-functions`.
 
 ## 5. Evolution of Project Decisions
 
@@ -69,7 +70,8 @@ The remaining application functionality includes:
 *   **2025-05-23:** Resolved Firebase Functions v2 `identity` module import issue by identifying `beforeUserCreated` as the correct function for user creation triggers and updating `tsconfig.json` for `nodenext` compatibility. (Note: This specific resolution is now superseded by the change to `onCreate` but kept for historical context of previous issues).
 *   **2025-05-23:** Updated `apphosting.yaml` to include `build` and `release` configurations for Firebase App Hosting, ensuring correct deployment of the Vite application.
 *   **2025-05-23:** Resolved `TypeError: admin.initializeApp is not a function` by changing `firebase-admin` import in `functions/src/index.ts` from `import * as admin from 'firebase-admin';` to `import admin from 'firebase-admin';`.
-*   **2025-05-23:** Switched Firebase user creation trigger from blocking `beforeUserCreated` to non-blocking `functions.auth.user().onCreate` in `functions/src/index.ts` to resolve deployment errors related to GCIP project requirements. Implemented custom claims for admin users and Realtime Database metadata update for token refresh.
+*   **2025-05-23:** Switched Firebase user creation trigger from blocking `beforeUserCreated` to non-blocking `functions.auth.user().onCreate` (1st gen) in `functions/src/index.ts` to resolve deployment errors related to GCIP project requirements and align with user's provided documentation. Implemented custom claims for admin users and Realtime Database metadata update for token refresh. Replaced `firebase-functions/logger` with `console.log` and `console.error` as per user instruction.
+*   **2025-05-23:** Resolved TypeScript error `Property 'auth' does not exist` in `functions/src/index.ts` by explicitly importing `auth` and `database` from `firebase-functions` for v1 function compatibility.
 
 ## 6. Immediate Next Steps
 

@@ -52,6 +52,8 @@ The application employs a modern web architecture with a React-based frontend an
     *   **Client-Side:** Primarily using the standard Fetch API
     *   **Server-Side (via Server Components):** Direct data fetching from Firestore using Firebase Admin SDK or by invoking Cloud Functions.
     *   The architecture is open to future integration of libraries like React Query if client-side caching and data synchronization needs become more complex.
+*   **Analytics & Reporting:**
+    *   Highcharts will be integrated for visualizing data, such as usage statistics and reports. This will involve preparing data (potentially via Cloud Functions or Server Components) and configuring Highcharts components within the React frontend.
 
 ## 3. Component Relationships & Data Flow (Illustrative)
 

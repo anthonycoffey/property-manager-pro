@@ -64,6 +64,7 @@ The entire application functionality is yet to be built. Key high-level features
 
 *   **Initial Decision (from `projectRoadmap.md`):** Adopt React 19 with Server Components and Firebase as the core stack.
 *   **Initial Decision (from `.clinerules`):** Implement and maintain a "Memory Bank" documentation system.
+*   **2025-05-22:** Decided to use Highcharts for analytics and reporting features.
 *   *(This section will be updated as significant decisions are made or plans evolve throughout the project lifecycle).*
 
 ## 6. Immediate Next Steps (from `activeContext.md`)

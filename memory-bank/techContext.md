@@ -12,6 +12,7 @@
     *   **React Context API:** Global state (user auth, theme).
     *   **React Hooks:** Local component state.
 *   **Data Fetching (Client-Side):** Standard Fetch API, but server-side data fetching will be done via Server Components and is always preferred over client-side fetching.
+*   **Charting/Visualization:** Highcharts for displaying analytics and reports.
 *   **Build Tool:** (Implicit) Likely Vite or Create React App, to be confirmed. Standard Node.js/npm/yarn ecosystem.
 
 ### Backend

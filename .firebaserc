@@ -1,5 +1,13 @@
 {
   "projects": {
     "default": "phoenix-property-manager-pro"
+  },
+  "targets": {},
+  "etags": {
+    "phoenix-property-manager-pro": {
+      "extensionInstances": {
+        "firestore-send-email": "854af53d14be2933c0031a4303deec42caf7184e56224f4b7c881fbd090aba58"
+      }
+    }
   }
 }

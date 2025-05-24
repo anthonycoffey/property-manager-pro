@@ -118,6 +118,13 @@ The project has recently completed the implementation of the Admin Organization 
         *   Pre-fill the email input field with the email address fetched from the invitation.
         *   Make the email input field readonly to prevent modification.
         *   Implement loading states and error handling for the invitation detail fetching process, disabling form interactions until details are loaded or if an error occurs.
+*   **Property Manager Dashboard - Dynamic Property Selection for Resident Invitations (2025-05-24):**
+    *   Created `src/components/PropertyManager/PropertyManagerPropertiesList.tsx` for PMs to view and select their managed properties.
+    *   Integrated `PropertyManagerPropertiesList` into `src/components/Dashboard.tsx` for the Property Manager role, including state management for `selectedPropertyIdForPM`.
+    *   Updated the Property Manager section in `Dashboard.tsx` with tabs for "My Properties" and "Invite Resident".
+    *   The `InviteResidentForm` in `Dashboard.tsx` now uses the dynamic `selectedPropertyIdForPM` and `organizationId`, and shows an `Alert` if no property is selected.
+    *   Corrected TypeScript errors in `PropertyManagerPropertiesList.tsx`.
+    *   Confirmed `InviteResidentForm.tsx` correctly uses its props.
 
 ## 3. What's Left to Build (High-Level from `projectRoadmap.md`)
 
@@ -130,9 +137,10 @@ The remaining application functionality includes:
     *   Properties Management (CRUD).
     *   Residents Management (View, Edit, Delete for support).
 *   **C. Property Manager Dashboard:**
-    *   View assigned properties (and allow selection to make `propertyId` dynamic for `InviteResidentForm`).
+    *   View assigned properties (Implemented via `PropertyManagerPropertiesList`).
+    *   Allow selection of property to make `propertyId` dynamic for `InviteResidentForm` (Implemented).
     *   Manage residents for their properties.
-    *   Manage invitations.
+    *   Manage invitations (beyond the initial invite form, e.g., view status, revoke).
     *   Track service requests.
 *   **D. Resident Dashboard:**
     *   View property details.
@@ -141,9 +149,9 @@ The remaining application functionality includes:
 *   **E. Core Systems & Features:**
     *   **Data Models in Firestore:** (Initial implementation complete, ongoing refinement as features are built).
     *   **Invitation System:**
-        *   Thorough end-to-end testing of all invitation flows (including new social sign-on options).
+        *   Thorough end-to-end testing of all invitation flows (Admin invites PM, PM creates Property, PM invites Resident with dynamic property selection, invitee accepts via email/password and social sign-on).
         *   Manually add email templates from `docs/` to Firestore `templates` collection.
-        *   Refine `InviteResidentForm.tsx` in `Dashboard.tsx` to use a dynamic `propertyId`.
+        *   The `InviteResidentForm.tsx` in `Dashboard.tsx` now uses a dynamic `propertyId`.
     *   **Service Request System:** (Full implementation pending).
     *   **Firebase Cloud Functions for:** CRM Integration, Email Sending (beyond invitations), CSV Processing, QR Code Generation, Subscription Management (all pending).
     *   **Firebase Cloud Functions Structure:** All functions are now modularized.
@@ -151,8 +159,8 @@ The remaining application functionality includes:
 ## 4. Known Issues & Blockers
 
 *   **MUI Grid TypeScript Errors:** Lingering TypeScript errors related to MUI `Grid` component props in `CreatePropertyForm.tsx` might indicate a deeper type configuration issue or linter quirk. Functionality is expected to be unaffected. (No change)
-*   **Placeholder `appName`:** The `appName` in `functions/src/index.ts` for email templates is currently a hardcoded placeholder ("Property Manager Pro"). This should ideally be configurable. (No change)
-*   **Placeholder `propertyId`:** The `InviteResidentForm` in `Dashboard.tsx` uses a hardcoded `examplePropertyIdForResidentInvite`. This needs to be made dynamic based on PM's selected property. (No change)
+*   **Placeholder `appName`:** The `appName` in `functions/src/index.ts` (now within `createInvitation.ts`) for email templates is currently a hardcoded placeholder ("Property Manager Pro"). This should ideally be configurable. (No change)
+*   **Placeholder `propertyId` in `InviteResidentForm`:** This has been resolved. The form now uses a dynamic `propertyId` selected by the Property Manager.
 *   **None at this stage.** The "Can't determine Firebase Database URL" error in `processSignUp` has been resolved. The TypeScript error related to `functions.auth` was previously resolved. (No change)
 
 ## 5. Evolution of Project Decisions
@@ -178,12 +186,16 @@ The remaining application functionality includes:
     *   Implemented a new `getInvitationDetails` Cloud Function to fetch the invited email.
     *   The `AcceptInvitationPage.tsx` now calls `getInvitationDetails` to pre-fill and make the email field readonly, enhancing UX and data integrity.
     *   Resolved the `UserCredential` import error.
+*   **2025-05-24 (Property Manager Dashboard - Dynamic Property for Invites):**
+    *   Implemented functionality for Property Managers to select one of their managed properties.
+    *   Integrated this selection into the `InviteResidentForm` on the `Dashboard.tsx`, making the `propertyId` dynamic for resident invitations.
+    *   Updated `Dashboard.tsx` with new tabs and state management for this feature.
+    *   Created `PropertyManagerPropertiesList.tsx` component.
 
 ## 6. Immediate Next Steps
 
 1.  **Invitation System (Phase 3 - Refinement & Testing):**
-    *   Refine `InviteResidentForm.tsx` in `Dashboard.tsx` to use a dynamic `propertyId`.
-    *   Thoroughly test all invitation flows.
+    *   Thoroughly test all invitation flows, including the new dynamic property selection for resident invites.
     *   Verify email content and links.
     *   Manually add email templates from `docs/` to Firestore `templates` collection if not already done.
 2.  **Admin Dashboard - Properties Management:**

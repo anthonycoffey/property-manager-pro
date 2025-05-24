@@ -50,11 +50,17 @@
     "firestore-send-email": "firebase/firestore-send-email@0.2.2"
   },
   "hosting": {
-    "source": ".",
+    "public": "dist",
     "ignore": [
       "firebase.json",
       "**/.*",
       "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
     ],
     "frameworksBackend": {
       "region": "us-central1"

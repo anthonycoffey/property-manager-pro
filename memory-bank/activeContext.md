@@ -125,19 +125,28 @@ With the "Admin Property Manager Management Panel Overhaul" (Step 4 from `docs/0
     - Handle loading states while fetching invitation details and disable form submission until details are loaded or if an error occurs.
     - Improved error handling for invalid/expired invitation links based on `getInvitationDetails` response.
   - Corrected the `UserCredential` import in `AcceptInvitationPage.tsx` to `type UserCredential` to resolve a previous syntax error.
+- **Property Manager Dashboard - Dynamic Property Selection for Resident Invitations (2025-05-24):**
+  - Created `src/components/PropertyManager/PropertyManagerPropertiesList.tsx` to allow PMs to view and select their managed properties.
+  - Integrated `PropertyManagerPropertiesList` into `src/components/Dashboard.tsx` for the Property Manager role.
+  - Updated `Dashboard.tsx` to manage `selectedPropertyIdForPM` state.
+  - Modified the Property Manager section in `Dashboard.tsx` to include tabs for "My Properties" and "Invite Resident".
+  - The `InviteResidentForm` in `Dashboard.tsx` now receives the dynamic `selectedPropertyIdForPM` and `organizationId`, and conditionally renders an `Alert` if no property is selected.
+  - Corrected TypeScript errors in `PropertyManagerPropertiesList.tsx` related to Firestore import and `organizationId` access.
+  - Confirmed `InviteResidentForm.tsx` correctly uses the passed `organizationId` and `propertyId` props.
 
 ## 3. Next Steps
 
 - **Invitation System (Phase 3 - Refinement & Testing):**
-  - Refine `InviteResidentForm.tsx` in `Dashboard.tsx` to use a dynamic `propertyId` (e.g., from a list of managed properties) instead of the current placeholder.
-  - Thoroughly test all invitation flows: Admin invites PM, PM creates Property, PM invites Resident, invitee accepts and signs up.
+  - Thoroughly test all invitation flows: Admin invites PM, PM creates Property, PM invites Resident (including the new dynamic property selection), invitee accepts and signs up (email/password and social).
   - Verify email content and links.
+  - Manually add email templates from `docs/` to Firestore `templates` collection if not already done.
 - **Admin Dashboard - Properties Management:**
   - Begin implementation of property CRUD operations for Admins as per project roadmap.
 - **Continue with Project Roadmap:** Proceed with other features outlined in `projectRoadmap.md`.
 
 ## 4. Active Decisions & Considerations
 
+- **Property Manager Dashboard UI:** Decided to use a tabbed interface in `Dashboard.tsx` for Property Managers to switch between viewing their properties and inviting residents. This keeps the UI organized.
 - **Firebase Functions User Creation Trigger & Token Refresh:** Switched from `beforeUserCreated` (blocking) to `functions.auth.user().onCreate` (non-blocking, 1st gen) for `processSignUp`. Custom claims are set _after_ user creation. **The explicit server-side mechanism to prompt client-side token refresh has been removed from `processSignUp`.**
 - **Logging in Firebase Functions:** Replaced `firebase-functions/logger` with standard `console.log` and `console.error` as per user instruction.
 - **Resolved TypeScript Error:** The TypeScript error `Property 'auth' does not exist on type 'typeof import("d:/repos/property-manager-pro/functions/node_modules/firebase-functions/lib/v2/index")'` for the `functions.auth.user().onCreate` trigger was previously resolved by explicitly importing `auth` from `firebase-functions`. This is now handled within the refactored `functions/src/auth/processSignUp.ts`.

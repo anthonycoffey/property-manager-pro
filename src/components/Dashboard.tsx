@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react'; // Added useRef
+import React, { useState, useRef, useCallback } from 'react'; // Added useRef, useCallback
 import { Link as RouterLink } from 'react-router-dom'; // Added
 import {
   Box,
@@ -8,6 +8,7 @@ import {
   Tabs,
   Tab,
   Button,
+  Alert, // Added Alert
 } from '@mui/material'; // Added Button
 import AddIcon from '@mui/icons-material/Add'; // Added AddIcon
 import { useAuth } from '../hooks/useAuth';
@@ -19,7 +20,8 @@ import PropertyManagerManagement from './Admin/PropertyManagerManagement';
 import OrganizationManagementPanel, { type OrganizationManagementPanelRef } from './Admin/OrganizationManagementPanel'; // Added import and type
 
 // Property Manager Components
-// InviteResidentForm is no longer directly used here
+import PropertyManagerPropertiesList from './PropertyManager/PropertyManagerPropertiesList'; // Added
+import InviteResidentForm from './PropertyManager/InviteResidentForm'; // Added
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -53,7 +55,9 @@ function a11yProps(index: number) {
 const Dashboard: React.FC = () => {
   const { currentUser, roles, organizationId, propertyId } = useAuth();
   const [adminTabValue, setAdminTabValue] = useState(0);
+  const [pmTabValue, setPmTabValue] = useState(0); // Added state for PM tabs
   const [selectedAdminOrgId, setSelectedAdminOrgId] = useState<string | null>(null);
+  const [selectedPropertyIdForPM, setSelectedPropertyIdForPM] = useState<string | null>(null); // Added state for selected property for PM
   const organizationPanelRef = useRef<OrganizationManagementPanelRef>(null); // Added ref
 
   const handleAdminOrgChange = (orgId: string | null) => {
@@ -71,9 +75,15 @@ const Dashboard: React.FC = () => {
     setAdminTabValue(newValue);
   };
 
-  // const handlePmTabChange = (_event: React.SyntheticEvent, newValue: number) => { // Removed handlePmTabChange
-  //   setPmTabValue(newValue);
-  // };
+  const handlePmTabChange = useCallback((_event: React.SyntheticEvent, newValue: number) => {
+    setPmTabValue(newValue);
+  }, []);
+
+  const handlePropertySelectForPM = useCallback((propertyId: string) => {
+    setSelectedPropertyIdForPM(propertyId);
+    // Optionally, switch to the "Invite Resident" tab automatically
+    // setPmTabValue(1); 
+  }, []);
 
   // examplePropertyIdForResidentInvite is no longer needed here
 
@@ -138,27 +148,46 @@ const Dashboard: React.FC = () => {
           <Typography variant='h5' color='secondary' sx={{ mb: 2 }}>
             Property Manager Panel (Org ID: {organizationId || 'N/A'})
           </Typography>
-          <Button
-            variant='contained'
-            component={RouterLink}
-            to='/pm/properties'
-            sx={{ mr: 2 }}
-          >
-            View & Manage My Properties
-          </Button>
-          <Button
-            variant='outlined'
-            component={RouterLink}
-            to='/pm/create-property' // This route points to Dashboard, which will show CreatePropertyForm via its own logic if needed
-          >
-            Create New Property
-          </Button>
-          {/* 
-            Alternatively, if CreatePropertyForm should always be visible on this dashboard for PMs:
-            <Divider sx={{ my: 2 }} />
-            <Typography variant='h6' sx={{ mb: 1 }}>Create a New Property</Typography>
-            <CreatePropertyForm /> 
-          */}
+          <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+            <Tabs
+              value={pmTabValue}
+              onChange={handlePmTabChange}
+              aria-label='property manager actions tabs'
+            >
+              <Tab label='My Properties' {...a11yProps(0)} />
+              <Tab label='Invite Resident' {...a11yProps(1)} />
+              <Tab label='Create Property' {...a11yProps(2)} />
+            </Tabs>
+          </Box>
+          <TabPanel value={pmTabValue} index={0}>
+            <PropertyManagerPropertiesList
+              selectedPropertyId={selectedPropertyIdForPM}
+              onPropertySelect={handlePropertySelectForPM}
+            />
+          </TabPanel>
+          <TabPanel value={pmTabValue} index={1}>
+            {selectedPropertyIdForPM ? (
+              <InviteResidentForm
+                organizationId={organizationId || ''} // Pass organizationId
+                propertyId={selectedPropertyIdForPM}
+              />
+            ) : (
+              <Alert severity="info">Please select a property from the "My Properties" tab to invite a resident.</Alert>
+            )}
+          </TabPanel>
+          <TabPanel value={pmTabValue} index={2}>
+            {/* Placeholder for CreatePropertyForm if you want it in a tab */}
+            {/* For now, linking to the page as before, or you can embed CreatePropertyForm here */}
+            <Typography variant="h6" gutterBottom>Create New Property</Typography>
+            <Button
+              variant='outlined'
+              component={RouterLink}
+              to='/pm/create-property'
+            >
+              Go to Create Property Page
+            </Button>
+            {/* Or embed directly: <CreatePropertyForm /> */}
+          </TabPanel>
         </Paper>
       )}
 

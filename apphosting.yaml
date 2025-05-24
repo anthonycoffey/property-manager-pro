@@ -20,7 +20,7 @@ env:
     secret: VITE_FIREBASE_APP_ID
 
 # App Hosting configuration
-source: src
+source: ./src
 ignore:
   - firebase.json
   - '**/.*'

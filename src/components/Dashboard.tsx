@@ -1,16 +1,25 @@
-import React, { useState } from 'react';
-import { Box, Typography, Paper, Divider, Tabs, Tab } from '@mui/material';
-import LogoutButton from './LogoutButton';
+import React, { useState, useRef } from 'react'; // Added useRef
+import { Link as RouterLink } from 'react-router-dom'; // Added
+import {
+  Box,
+  Typography,
+  Paper,
+  Divider,
+  Tabs,
+  Tab,
+  Button,
+} from '@mui/material'; // Added Button
+import AddIcon from '@mui/icons-material/Add'; // Added AddIcon
 import { useAuth } from '../hooks/useAuth';
 
 // Admin Components
-import OrganizationSelector from './Admin/OrganizationSelector'; // Added import
+import OrganizationSelector from './Admin/OrganizationSelector';
 import PropertyManagerManagement from './Admin/PropertyManagerManagement';
-import InvitePropertyManagerForm from './Admin/InvitePropertyManagerForm';
+// InvitePropertyManagerForm is no longer directly imported here as it's inside PropertyManagerManagement
+import OrganizationManagementPanel, { type OrganizationManagementPanelRef } from './Admin/OrganizationManagementPanel'; // Added import and type
 
 // Property Manager Components
-import CreatePropertyForm from './PropertyManager/CreatePropertyForm';
-import InviteResidentForm from './PropertyManager/InviteResidentForm';
+// InviteResidentForm is no longer directly used here
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -23,17 +32,13 @@ function TabPanel(props: TabPanelProps) {
 
   return (
     <div
-      role="tabpanel"
+      role='tabpanel'
       hidden={value !== index}
       id={`simple-tabpanel-${index}`}
       aria-labelledby={`simple-tab-${index}`}
       {...other}
     >
-      {value === index && (
-        <Box sx={{ p: 3 }}>
-          {children}
-        </Box>
-      )}
+      {value === index && <Box sx={{ p: 3 }}>{children}</Box>}
     </div>
   );
 }
@@ -45,30 +50,32 @@ function a11yProps(index: number) {
   };
 }
 
-
 const Dashboard: React.FC = () => {
   const { currentUser, roles, organizationId, propertyId } = useAuth();
   const [adminTabValue, setAdminTabValue] = useState(0);
-  const [pmTabValue, setPmTabValue] = useState(0);
-  const [selectedAdminOrgId, setSelectedAdminOrgId] = useState<string | null>(null); // Added state for selected org
+  const [selectedAdminOrgId, setSelectedAdminOrgId] = useState<string | null>(null);
+  const organizationPanelRef = useRef<OrganizationManagementPanelRef>(null); // Added ref
 
-  const handleAdminOrgChange = (orgId: string | null) => { // Added handler
+  const handleAdminOrgChange = (orgId: string | null) => {
     setSelectedAdminOrgId(orgId);
-    // Potentially reset adminTabValue or other related states if needed when org changes
   };
 
-  const handleAdminTabChange = (_event: React.SyntheticEvent, newValue: number) => {
+  const handleOpenAddOrgModal = () => {
+    organizationPanelRef.current?.openAddModal();
+  };
+
+  const handleAdminTabChange = (
+    _event: React.SyntheticEvent,
+    newValue: number
+  ) => {
     setAdminTabValue(newValue);
   };
 
-  const handlePmTabChange = (_event: React.SyntheticEvent, newValue: number) => {
-    setPmTabValue(newValue);
-  };
+  // const handlePmTabChange = (_event: React.SyntheticEvent, newValue: number) => { // Removed handlePmTabChange
+  //   setPmTabValue(newValue);
+  // };
 
-  // Example property ID for InviteResidentForm, in a real app this would be dynamic
-  // (e.g., selected from a list of properties the PM manages)
-  const examplePropertyIdForResidentInvite = "property123";
-
+  // examplePropertyIdForResidentInvite is no longer needed here
 
   return (
     <Box sx={{ p: 3 }}>
@@ -77,33 +84,51 @@ const Dashboard: React.FC = () => {
       </Typography>
       {currentUser && (
         <Typography variant='body1' sx={{ mb: 2 }}>
-          Logged in as: {currentUser.email} <LogoutButton />
+          Logged in as: {currentUser.email}
         </Typography>
       )}
 
       {/* Admin Section */}
       {roles.includes('admin') && (
         <Paper elevation={3} sx={{ mb: 4, p: 2 }}>
-          <Typography variant='h5' color='primary' sx={{ mb: 2 }}>
-            Administrator Panel
-          </Typography>
-          <OrganizationSelector
-            selectedOrganizationId={selectedAdminOrgId}
-            onOrganizationChange={handleAdminOrgChange}
-          />
-          <Divider sx={{ my: 2 }} />
+          {/* "Administrator Panel" Typography removed */}
+          {/* OrganizationSelector moved into TabPanels */}
+          {/* Divider related to old OrganizationSelector position removed */}
           <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-            <Tabs value={adminTabValue} onChange={handleAdminTabChange} aria-label="admin actions tabs">
-              <Tab label="Manage Property Managers" {...a11yProps(0)} />
-              <Tab label="Invite Property Manager" {...a11yProps(1)} />
+            <Tabs
+              value={adminTabValue}
+              onChange={handleAdminTabChange}
+              aria-label='admin actions tabs'
+            >
+              <Tab label='Organizations' {...a11yProps(0)} />
+              <Tab label='Property Managers' {...a11yProps(1)} />
             </Tabs>
           </Box>
           <TabPanel value={adminTabValue} index={0}>
-            <PropertyManagerManagement organizationId={selectedAdminOrgId} />
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', mb: 1 }}>
+              {/* OrganizationSelector and its wrapper Box removed from this tab */}
+              <Button
+                variant="contained"
+                startIcon={<AddIcon />}
+                onClick={handleOpenAddOrgModal}
+                // sx={{ ml: 2 }} // ml:2 removed as it's the only item aligned to end
+              >
+                Add Organization
+              </Button>
+            </Box>
+            <Divider sx={{ my: 2 }} />
+            <OrganizationManagementPanel ref={organizationPanelRef} />
           </TabPanel>
           <TabPanel value={adminTabValue} index={1}>
-            <InvitePropertyManagerForm />
+            {/* OrganizationSelector remains in the Property Managers tab, placed directly as before */}
+            <OrganizationSelector
+              selectedOrganizationId={selectedAdminOrgId}
+              onOrganizationChange={handleAdminOrgChange}
+            />
+            <Divider sx={{ my: 2 }} />
+            <PropertyManagerManagement organizationId={selectedAdminOrgId} />
           </TabPanel>
+          {/* TabPanel for InvitePropertyManagerForm removed */}
         </Paper>
       )}
 
@@ -113,46 +138,53 @@ const Dashboard: React.FC = () => {
           <Typography variant='h5' color='secondary' sx={{ mb: 2 }}>
             Property Manager Panel (Org ID: {organizationId || 'N/A'})
           </Typography>
-           <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-            <Tabs value={pmTabValue} onChange={handlePmTabChange} aria-label="property manager actions tabs">
-              <Tab label="Create Property" {...a11yProps(0)} />
-              <Tab label="Invite Resident" {...a11yProps(1)} />
-              {/* Add more tabs for other PM actions like viewing properties, managing residents etc. */}
-            </Tabs>
-          </Box>
-          <TabPanel value={pmTabValue} index={0}>
-            <CreatePropertyForm />
-          </TabPanel>
-          <TabPanel value={pmTabValue} index={1}>
-            {/* In a real app, propertyId would come from a selected property context */}
-            <InviteResidentForm propertyId={examplePropertyIdForResidentInvite} />
-            <Typography variant="caption" display="block" sx={{mt: 1}}>
-                (Note: Currently inviting to a sample property ID: {examplePropertyIdForResidentInvite})
-            </Typography>
-          </TabPanel>
+          <Button
+            variant='contained'
+            component={RouterLink}
+            to='/pm/properties'
+            sx={{ mr: 2 }}
+          >
+            View & Manage My Properties
+          </Button>
+          <Button
+            variant='outlined'
+            component={RouterLink}
+            to='/pm/create-property' // This route points to Dashboard, which will show CreatePropertyForm via its own logic if needed
+          >
+            Create New Property
+          </Button>
+          {/* 
+            Alternatively, if CreatePropertyForm should always be visible on this dashboard for PMs:
+            <Divider sx={{ my: 2 }} />
+            <Typography variant='h6' sx={{ mb: 1 }}>Create a New Property</Typography>
+            <CreatePropertyForm /> 
+          */}
         </Paper>
       )}
 
       {/* Resident Section */}
       {roles.includes('resident') && (
-         <Paper elevation={3} sx={{ mb: 4, p: 2 }}>
-            <Typography variant='h5' color='info' sx={{ mb: 2 }}>
+        <Paper elevation={3} sx={{ mb: 4, p: 2 }}>
+          <Typography variant='h5' color='info' sx={{ mb: 2 }}>
             Resident Portal
-            </Typography>
-            <Typography variant='body1'>
+          </Typography>
+          <Typography variant='body1'>
             Welcome, Resident! Your Organization ID: {organizationId || 'N/A'},
             Property ID: {propertyId || 'N/A'}.
-            </Typography>
-            {/* Resident specific components would go here */}
+          </Typography>
+          {/* Resident specific components would go here */}
         </Paper>
       )}
-      
-      {!roles.includes('admin') && !roles.includes('property_manager') && !roles.includes('resident') && (
-        <Typography variant='body1' sx={{ mt: 2 }}>
-          Your role is currently: {roles.join(', ') || 'Undefined'}. Specific dashboard content will appear once your role is fully provisioned or associated.
-        </Typography>
-      )}
 
+      {!roles.includes('admin') &&
+        !roles.includes('property_manager') &&
+        !roles.includes('resident') && (
+          <Typography variant='body1' sx={{ mt: 2 }}>
+            Your role is currently: {roles.join(', ') || 'Undefined'}. Specific
+            dashboard content will appear once your role is fully provisioned or
+            associated.
+          </Typography>
+        )}
     </Box>
   );
 };

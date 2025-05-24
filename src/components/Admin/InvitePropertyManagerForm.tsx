@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react'; // Added useEffect
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { useAuth } from '../../hooks/useAuth'; // Assuming useAuth provides access to the current user
 import type { CreateInvitationResponse, AppError } from '../../types';
@@ -7,17 +7,32 @@ import type { CreateInvitationResponse, AppError } from '../../types';
 import TextField from '@mui/material/TextField';
 import Button from '@mui/material/Button';
 import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
 import CircularProgress from '@mui/material/CircularProgress';
 import Alert from '@mui/material/Alert';
+import { Stack, Typography } from '@mui/material';
 
-const InvitePropertyManagerForm: React.FC = () => {
+interface InvitePropertyManagerFormProps {
+  selectedOrganizationId: string | null;
+}
+
+const InvitePropertyManagerForm: React.FC<InvitePropertyManagerFormProps> = ({
+  selectedOrganizationId,
+}) => {
   const [inviteeEmail, setInviteeEmail] = useState('');
-  const [organizationId, setOrganizationId] = useState(''); // Admin needs to specify this
+  // const [organizationId, setOrganizationId] = useState(''); // Admin needs to specify this - REMOVED
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const { currentUser, roles } = useAuth(); // To ensure only admins can see/use this
+
+  useEffect(() => {
+    // Clear email if the organization context changes, to avoid sending to wrong org if admin changes selection
+    // and had an email typed.
+    if (selectedOrganizationId) {
+      // Optionally, one might clear inviteeEmail here if desired when org changes
+      // setInviteeEmail('');
+    }
+  }, [selectedOrganizationId]);
 
   const functions = getFunctions();
   const createInvitationFn = httpsCallable(functions, 'createInvitation');
@@ -32,8 +47,15 @@ const InvitePropertyManagerForm: React.FC = () => {
       return;
     }
 
-    if (!inviteeEmail || !organizationId) {
-      setError('Email and Organization ID are required.');
+    if (!selectedOrganizationId) {
+      setError(
+        'An Organization must be selected before sending an invitation.'
+      );
+      return;
+    }
+
+    if (!inviteeEmail) {
+      setError('Email is required.');
       return;
     }
 
@@ -42,7 +64,7 @@ const InvitePropertyManagerForm: React.FC = () => {
     try {
       const result = await createInvitationFn({
         inviteeEmail,
-        organizationId,
+        organizationId: selectedOrganizationId, // Use prop here
         rolesToAssign: ['property_manager'],
         invitedByRole: 'admin',
       });
@@ -51,64 +73,74 @@ const InvitePropertyManagerForm: React.FC = () => {
       const responseData = result.data as CreateInvitationResponse;
 
       if (responseData?.success) {
-        setSuccess(`Invitation sent successfully to ${inviteeEmail}. Invitation ID: ${responseData?.invitationId}`);
+        setSuccess(`Invitation sent successfully to ${inviteeEmail}`);
         setInviteeEmail('');
-        setOrganizationId('');
       } else {
         setError(responseData?.message || 'Failed to send invitation.');
       }
     } catch (err) {
       console.error('Error sending invitation:', err);
-      const appError = err as AppError; // Or use a type guard if err can be other types
+      const appError = err as AppError;
       setError(appError.message || 'An unexpected error occurred.');
     } finally {
       setLoading(false);
     }
   };
 
-  // This component should only be rendered if the user is an admin.
-  // The parent component or route guard should handle this.
   if (!currentUser || !roles.includes('admin')) {
-    return <Alert severity="error">You do not have permission to access this feature.</Alert>;
+    return (
+      <Alert severity='error'>
+        You do not have permission to access this feature.
+      </Alert>
+    );
   }
 
   return (
-    <Box component="form" onSubmit={handleSubmit} sx={{ mt: 3, maxWidth: '500px' }}>
-      <Typography variant="h6" gutterBottom>
-        Invite New Property Manager
+    <Box component='form' onSubmit={handleSubmit}>
+      <Typography variant='h6' gutterBottom>
+        Send Invite Email
       </Typography>
-      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-      {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
-      <TextField
-        label="Invitee Email"
-        type="email"
-        fullWidth
-        value={inviteeEmail}
-        onChange={(e) => setInviteeEmail(e.target.value)}
-        margin="normal"
-        required
-        disabled={loading}
-      />
-      <TextField
-        label="Organization ID"
-        type="text"
-        fullWidth
-        value={organizationId}
-        onChange={(e) => setOrganizationId(e.target.value)}
-        margin="normal"
-        required
-        disabled={loading}
-        helperText="Enter the ID of the organization this manager will belong to."
-      />
-      <Button
-        type="submit"
-        variant="contained"
-        color="primary"
-        disabled={loading}
-        sx={{ mt: 2 }}
+
+      {error && (
+        <Alert severity='error' sx={{ mb: 2 }}>
+          {error}
+        </Alert>
+      )}
+      {success && (
+        <Alert severity='success' sx={{ mb: 2 }}>
+          {success}
+        </Alert>
+      )}
+      <Stack
+        direction='row'
+        spacing={2}
+        sx={{
+          justifyContent: 'flex-end',
+          alignItems: 'center',
+        }}
       >
-        {loading ? <CircularProgress size={24} /> : 'Send Invitation'}
-      </Button>
+        <TextField
+          label='Property Manager Email'
+          type='email'
+          fullWidth
+          value={inviteeEmail}
+          onChange={(e) => setInviteeEmail(e.target.value)}
+          margin='normal'
+          required
+          disabled={loading}
+        />
+
+        <Button
+          size='large'
+          type='submit'
+          variant='contained'
+          color='primary'
+          disabled={loading}
+          sx={{ my: 1, minWidth: 250 }}
+        >
+          {loading ? <CircularProgress size={24} /> : 'Invite User'}
+        </Button>
+      </Stack>
     </Box>
   );
 };

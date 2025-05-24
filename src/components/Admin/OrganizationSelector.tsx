@@ -10,7 +10,13 @@ import {
   type SelectChangeEvent,
 } from '@mui/material';
 import { db } from '../../firebaseConfig'; // Corrected import for Firestore instance
-import { collection, onSnapshot, query, type DocumentData, QueryDocumentSnapshot } from 'firebase/firestore';
+import {
+  collection,
+  onSnapshot,
+  query,
+  type DocumentData,
+  QueryDocumentSnapshot,
+} from 'firebase/firestore';
 
 interface Organization {
   id: string;
@@ -42,16 +48,18 @@ const OrganizationSelector: React.FC<OrganizationSelectorProps> = ({
     const unsubscribe = onSnapshot(
       q,
       (snapshot) => {
-        const orgsData = snapshot.docs.map((doc: QueryDocumentSnapshot<DocumentData>) => ({
-          id: doc.id,
-          name: doc.data().name || 'Unnamed Organization', // Fallback for missing name
-          ...doc.data(), // Spread other fields if needed
-        }));
+        const orgsData = snapshot.docs.map(
+          (doc: QueryDocumentSnapshot<DocumentData>) => ({
+            id: doc.id,
+            name: doc.data().name || 'Unnamed Organization', // Fallback for missing name
+            ...doc.data(), // Spread other fields if needed
+          })
+        );
         setOrganizations(orgsData as Organization[]);
         setLoading(false);
       },
       (err) => {
-        console.error("Error fetching organizations:", err);
+        console.error('Error fetching organizations:', err);
         setError('Failed to load organizations. Please try again later.');
         setLoading(false);
       }
@@ -67,34 +75,44 @@ const OrganizationSelector: React.FC<OrganizationSelectorProps> = ({
 
   if (loading) {
     return (
-      <Box display="flex" alignItems="center" justifyContent="center" sx={{ p: 2 }}>
+      <Box
+        display='flex'
+        alignItems='center'
+        justifyContent='center'
+        sx={{ p: 2 }}
+      >
         <CircularProgress size={24} />
-        <Typography variant="body2" sx={{ ml: 1 }}>Loading organizations...</Typography>
+        <Typography variant='body2' sx={{ ml: 1 }}>
+          Loading organizations...
+        </Typography>
       </Box>
     );
   }
 
   if (error) {
-    return <Typography color="error" sx={{ p: 2 }}>{error}</Typography>;
+    return (
+      <Typography color='error' sx={{ p: 2 }}>
+        {error}
+      </Typography>
+    );
   }
 
   return (
     <Box sx={{ minWidth: 240, p: 1 /*, ...sx*/ }}>
       <FormControl fullWidth>
-        <InputLabel id="organization-select-label">Select Organization</InputLabel>
+        <InputLabel id='organization-select-label'>
+          Select Organization
+        </InputLabel>
         <Select
-          labelId="organization-select-label"
-          id="organization-select"
+          labelId='organization-select-label'
+          id='organization-select'
           value={selectedOrganizationId ?? ''}
-          label="Select Organization"
+          label='Select Organization'
           onChange={handleChange}
         >
-          <MenuItem value="">
-            <em>None (Select an Organization)</em>
-          </MenuItem>
           {organizations.map((org) => (
             <MenuItem key={org.id} value={org.id}>
-              {org.name} (ID: {org.id})
+              {org.name}
             </MenuItem>
           ))}
         </Select>

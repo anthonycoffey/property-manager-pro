@@ -6,6 +6,8 @@ import Dashboard from './components/Dashboard';
 import ProtectedRoute from './components/ProtectedRoute';
 import AcceptInvitationPage from './pages/AcceptInvitationPage';
 import AdminPropertyManagerPage from './pages/AdminPropertyManagerPage';
+import PropertyListPage from './pages/PropertyListPage'; // Added import
+import PropertyManagementPage from './pages/PropertyManagementPage'; // Added import
 
 const AppRoutes: React.FC = () => {
   return (
@@ -25,6 +27,33 @@ const AppRoutes: React.FC = () => {
         element={
           <ProtectedRoute allowedRoles={['admin']}>
             <AdminPropertyManagerPage />
+          </ProtectedRoute>
+        }
+      />
+      {/* Property Manager Routes */}
+      <Route
+        path="/pm/properties"
+        element={
+          <ProtectedRoute allowedRoles={['property_manager']}>
+            <PropertyListPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/pm/property/:propertyId"
+        element={
+          <ProtectedRoute allowedRoles={['property_manager']}>
+            <PropertyManagementPage />
+          </ProtectedRoute>
+        }
+      />
+       <Route
+        path="/pm/create-property" // Route for CreatePropertyForm
+        element={
+          <ProtectedRoute allowedRoles={['property_manager']}>
+            {/* Assuming CreatePropertyForm is rendered within a generic page or Dashboard context */}
+            {/* For now, let's point to Dashboard, assuming it handles this or a new page is made */}
+            <Dashboard /> 
           </ProtectedRoute>
         }
       />

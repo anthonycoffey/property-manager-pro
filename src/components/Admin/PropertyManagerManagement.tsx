@@ -1,25 +1,58 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Box, Typography, Alert, CircularProgress,
-  Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Chip, IconButton, Tooltip,
-  Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Button, Snackbar, TextField
+import {
+  Box,
+  Typography,
+  Alert,
+  CircularProgress,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  Chip,
+  IconButton,
+  Tooltip,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
+  Button,
+  Snackbar,
+  TextField,
 } from '@mui/material'; // Added TextField back
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import RevokeIcon from '@mui/icons-material/Cancel'; // Example icon for revoke
+import InvitePropertyManagerForm from './InvitePropertyManagerForm'; // Add this
 import { useAuth } from '../../hooks/useAuth';
 import { Navigate } from 'react-router-dom';
 import type { AppError } from '../../types';
 import { httpsCallable } from 'firebase/functions';
 import { functions, db } from '../../firebaseConfig';
-import { collection, query, where, onSnapshot, type DocumentData, QueryDocumentSnapshot, Timestamp } from 'firebase/firestore';
+import {
+  collection,
+  query,
+  where,
+  onSnapshot,
+  type DocumentData,
+  QueryDocumentSnapshot,
+  Timestamp,
+} from 'firebase/firestore';
 
 // Define the callable functions that might be used later (update, delete)
 // const createPropertyManagerCallable = httpsCallable(functions, 'createPropertyManager'); // This will be removed
-const updatePropertyManagerCallable = httpsCallable(functions, 'updatePropertyManager');
-const deletePropertyManagerCallable = httpsCallable(functions, 'deletePropertyManager');
+const updatePropertyManagerCallable = httpsCallable(
+  functions,
+  'updatePropertyManager'
+);
+const deletePropertyManagerCallable = httpsCallable(
+  functions,
+  'deletePropertyManager'
+);
 const revokeInvitationCallable = httpsCallable(functions, 'revokeInvitation');
-
 
 interface PropertyManagerManagementProps {
   organizationId: string | null;
@@ -30,50 +63,58 @@ interface PropertyManagerUser {
   id: string; // UID
   displayName: string;
   email: string;
-  createdAt?: Timestamp; 
+  createdAt?: Timestamp;
 }
 
 interface PendingInvitation {
   id: string; // Invitation document ID
-  inviteeEmail: string; 
-  createdAt?: Timestamp; 
-  expiresAt?: Timestamp; 
+  inviteeEmail: string;
+  createdAt?: Timestamp;
+  expiresAt?: Timestamp;
   rolesToAssign?: string[];
   status: 'pending' | 'accepted' | 'expired' | 'revoked'; // Added status for completeness
 }
 
 // Combined type for the table
-type ManagementListItem = 
+type ManagementListItem =
   | ({ type: 'active_pm' } & PropertyManagerUser)
   | ({ type: 'pending_invite' } & PendingInvitation);
 
-
-const PropertyManagerManagement: React.FC<PropertyManagerManagementProps> = ({ organizationId }) => {
+const PropertyManagerManagement: React.FC<PropertyManagerManagementProps> = ({
+  organizationId,
+}) => {
   const { roles, loading: authLoading } = useAuth();
-  
+
   const [combinedList, setCombinedList] = useState<ManagementListItem[]>([]);
   const [dataLoading, setDataLoading] = useState<boolean>(false);
   const [dataError, setDataError] = useState<string | null>(null);
-  
+
   // State for Revoke Invitation Dialog
   const [revokeDialogOpen, setRevokeDialogOpen] = useState(false);
-  const [selectedInvitationForRevoke, setSelectedInvitationForRevoke] = useState<PendingInvitation | null>(null);
+  const [selectedInvitationForRevoke, setSelectedInvitationForRevoke] =
+    useState<PendingInvitation | null>(null);
   const [revokeLoading, setRevokeLoading] = useState(false);
-  
+
   // State for Update PM Dialog
   const [updatePmDialogOpen, setUpdatePmDialogOpen] = useState(false);
-  const [selectedPmForUpdate, setSelectedPmForUpdate] = useState<PropertyManagerUser | null>(null);
-  const [updatePmForm, setUpdatePmForm] = useState({ displayName: '', email: '' });
+  const [selectedPmForUpdate, setSelectedPmForUpdate] =
+    useState<PropertyManagerUser | null>(null);
+  const [updatePmForm, setUpdatePmForm] = useState({
+    displayName: '',
+    email: '',
+  });
   const [updatePmLoading, setUpdatePmLoading] = useState(false);
 
   // State for Delete PM Dialog
   const [deletePmDialogOpen, setDeletePmDialogOpen] = useState(false);
-  const [selectedPmForDelete, setSelectedPmForDelete] = useState<PropertyManagerUser | null>(null);
+  const [selectedPmForDelete, setSelectedPmForDelete] =
+    useState<PropertyManagerUser | null>(null);
   const [deletePmLoading, setDeletePmLoading] = useState(false);
 
   const [snackbarMessage, setSnackbarMessage] = useState<string | null>(null);
-  const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error'>('success');
-
+  const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error'>(
+    'success'
+  );
 
   useEffect(() => {
     if (!organizationId) {
@@ -91,8 +132,11 @@ const PropertyManagerManagement: React.FC<PropertyManagerManagementProps> = ({ o
 
     const mergeAndSetData = () => {
       const newCombinedList: ManagementListItem[] = [
-        ...activePMsData.map(pm => ({ ...pm, type: 'active_pm' as const })),
-        ...pendingInvitesData.map(invite => ({ ...invite, type: 'pending_invite' as const }))
+        ...activePMsData.map((pm) => ({ ...pm, type: 'active_pm' as const })),
+        ...pendingInvitesData.map((invite) => ({
+          ...invite,
+          type: 'pending_invite' as const,
+        })),
       ];
       // Sort by creation date, most recent first (optional)
       newCombinedList.sort((a, b) => {
@@ -106,59 +150,86 @@ const PropertyManagerManagement: React.FC<PropertyManagerManagementProps> = ({ o
 
     // Fetch Active Property Managers
     const usersRef = collection(db, `organizations/${organizationId}/users`);
-    const pmQuery = query(usersRef, where('organizationRoles', 'array-contains', 'property_manager'));
-    
-    const unsubscribePMs = onSnapshot(pmQuery, (snapshot) => {
-      activePMsData = snapshot.docs.map((doc: QueryDocumentSnapshot<DocumentData>) => ({
-        id: doc.id,
-        displayName: doc.data().displayName || 'N/A',
-        email: doc.data().email || 'N/A',
-        createdAt: doc.data().createdAt as Timestamp,
-      }));
-      mergeAndSetData();
-    }, (error) => {
-      console.error("Error fetching property managers:", error);
-      setDataError(prev => prev ? `${prev} Failed to load PMs.` : "Failed to load property managers.");
-      setDataLoading(false); // Stop loading on error
-    });
+    const pmQuery = query(
+      usersRef,
+      where('organizationRoles', 'array-contains', 'property_manager')
+    );
+
+    const unsubscribePMs = onSnapshot(
+      pmQuery,
+      (snapshot) => {
+        activePMsData = snapshot.docs.map(
+          (doc: QueryDocumentSnapshot<DocumentData>) => ({
+            id: doc.id,
+            displayName: doc.data().displayName || 'N/A',
+            email: doc.data().email || 'N/A',
+            createdAt: doc.data().createdAt as Timestamp,
+          })
+        );
+        mergeAndSetData();
+      },
+      (error) => {
+        console.error('Error fetching property managers:', error);
+        setDataError((prev) =>
+          prev
+            ? `${prev} Failed to load PMs.`
+            : 'Failed to load property managers.'
+        );
+        setDataLoading(false); // Stop loading on error
+      }
+    );
 
     // Fetch Pending Property Manager Invitations
-    const invitesRef = collection(db, `organizations/${organizationId}/invitations`);
+    const invitesRef = collection(
+      db,
+      `organizations/${organizationId}/invitations`
+    );
     const inviteQuery = query(
       invitesRef,
       where('status', '==', 'pending'),
       where('rolesToAssign', 'array-contains', 'property_manager')
     );
 
-    const unsubscribeInvites = onSnapshot(inviteQuery, (snapshot) => {
-      pendingInvitesData = snapshot.docs.map((doc: QueryDocumentSnapshot<DocumentData>) => ({
-        id: doc.id,
-        inviteeEmail: doc.data().email || 'N/A',
-        createdAt: doc.data().createdAt as Timestamp,
-        expiresAt: doc.data().expiresAt as Timestamp,
-        rolesToAssign: doc.data().rolesToAssign,
-        status: doc.data().status as PendingInvitation['status'],
-      }));
-      mergeAndSetData();
-    }, (error) => {
-      console.error("Error fetching pending invitations:", error);
-      setDataError(prev => prev ? `${prev} Failed to load invites.` : "Failed to load pending invitations.");
-      setDataLoading(false); // Stop loading on error
-    });
-    
+    const unsubscribeInvites = onSnapshot(
+      inviteQuery,
+      (snapshot) => {
+        pendingInvitesData = snapshot.docs.map(
+          (doc: QueryDocumentSnapshot<DocumentData>) => ({
+            id: doc.id,
+            inviteeEmail: doc.data().email || 'N/A',
+            createdAt: doc.data().createdAt as Timestamp,
+            expiresAt: doc.data().expiresAt as Timestamp,
+            rolesToAssign: doc.data().rolesToAssign,
+            status: doc.data().status as PendingInvitation['status'],
+          })
+        );
+        mergeAndSetData();
+      },
+      (error) => {
+        console.error('Error fetching pending invitations:', error);
+        setDataError((prev) =>
+          prev
+            ? `${prev} Failed to load invites.`
+            : 'Failed to load pending invitations.'
+        );
+        setDataLoading(false); // Stop loading on error
+      }
+    );
+
     return () => {
       unsubscribePMs();
       unsubscribeInvites();
     };
   }, [organizationId]);
 
-
   if (authLoading) {
-    return <Typography sx={{p:2}}>Loading authentication details...</Typography>;
+    return (
+      <Typography sx={{ p: 2 }}>Loading authentication details...</Typography>
+    );
   }
 
   if (!roles.includes('admin')) {
-    return <Navigate to="/unauthorized" replace />;
+    return <Navigate to='/unauthorized' replace />;
   }
 
   // Manual PM Creation form is removed as per plan.
@@ -195,7 +266,7 @@ const PropertyManagerManagement: React.FC<PropertyManagerManagementProps> = ({ o
       handleCloseRevokeDialog();
     }
   };
-  
+
   const handleCloseSnackbar = () => {
     setSnackbarMessage(null);
   };
@@ -212,9 +283,11 @@ const PropertyManagerManagement: React.FC<PropertyManagerManagementProps> = ({ o
     setUpdatePmForm({ displayName: '', email: '' });
   };
 
-  const handleUpdatePmFormChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleUpdatePmFormChange = (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
     const { name, value } = event.target;
-    setUpdatePmForm(prev => ({ ...prev, [name]: value }));
+    setUpdatePmForm((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleConfirmUpdatePm = async () => {
@@ -236,7 +309,9 @@ const PropertyManagerManagement: React.FC<PropertyManagerManagementProps> = ({ o
     } catch (error) {
       console.error('Error updating Property Manager:', error);
       const appError = error as AppError;
-      setSnackbarMessage(appError.message || 'Failed to update Property Manager.');
+      setSnackbarMessage(
+        appError.message || 'Failed to update Property Manager.'
+      );
       setSnackbarSeverity('error');
     } finally {
       setUpdatePmLoading(false);
@@ -268,7 +343,9 @@ const PropertyManagerManagement: React.FC<PropertyManagerManagementProps> = ({ o
     } catch (error) {
       console.error('Error deleting Property Manager:', error);
       const appError = error as AppError;
-      setSnackbarMessage(appError.message || 'Failed to delete Property Manager.');
+      setSnackbarMessage(
+        appError.message || 'Failed to delete Property Manager.'
+      );
       setSnackbarSeverity('error');
     } finally {
       setDeletePmLoading(false);
@@ -276,32 +353,49 @@ const PropertyManagerManagement: React.FC<PropertyManagerManagementProps> = ({ o
     }
   };
 
-
   return (
     <Box sx={{ p: 3 }}>
-      <Typography variant="h5" gutterBottom>
+      {/* <Typography variant="h5" gutterBottom>
         Property Manager Management
-      </Typography>
-      
+      </Typography> */}{' '}
+      {/* Title Removed */}
       {!organizationId && (
-        <Alert severity="info" sx={{ mb: 2 }}>
-          Please select an organization from the dropdown above to view and manage Property Managers.
+        <Alert severity='info' sx={{ mb: 2 }}>
+          Please select an organization from the dropdown above to view and
+          manage Property Managers.
         </Alert>
       )}
-
       {organizationId && (
         <>
+          {/* Add the InvitePropertyManagerForm here */}
+          <Box sx={{ mb: 4 }}>
+            <InvitePropertyManagerForm
+              selectedOrganizationId={organizationId}
+            />
+          </Box>
+
           {dataLoading && (
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', p: 2 }}>
-              <CircularProgress size={24} sx={{mr: 1}} />
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                p: 2,
+              }}
+            >
+              <CircularProgress size={24} sx={{ mr: 1 }} />
               <Typography>Loading data for {organizationId}...</Typography>
             </Box>
           )}
-          {dataError && <Alert severity="error" sx={{ mb: 2 }}>{dataError}</Alert>}
-          
+          {dataError && (
+            <Alert severity='error' sx={{ mb: 2 }}>
+              {dataError}
+            </Alert>
+          )}
+
           {!dataLoading && !dataError && (
             <TableContainer component={Paper} sx={{ mt: 2 }}>
-              <Table aria-label="property manager and invitations list">
+              <Table aria-label='property manager and invitations list'>
                 <TableHead>
                   <TableRow>
                     <TableCell>Identifier</TableCell>
@@ -309,57 +403,90 @@ const PropertyManagerManagement: React.FC<PropertyManagerManagementProps> = ({ o
                     <TableCell>Status</TableCell>
                     <TableCell>Date Created/Sent</TableCell>
                     <TableCell>Expires (Invites)</TableCell>
-                    <TableCell align="right">Actions</TableCell>
+                    <TableCell align='right'>Actions</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
                   {combinedList.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={6} align="center">
-                        No property managers or pending invitations found for this organization.
+                      <TableCell colSpan={6} align='center'>
+                        No property managers or pending invitations found for
+                        this organization.
                       </TableCell>
                     </TableRow>
                   ) : (
                     combinedList.map((item) => (
                       <TableRow key={item.type + '_' + item.id}>
-                        <TableCell component="th" scope="row">
-                          {item.type === 'active_pm' ? item.displayName : item.inviteeEmail}
+                        <TableCell component='th' scope='row'>
+                          {item.type === 'active_pm'
+                            ? item.displayName
+                            : item.inviteeEmail}
                         </TableCell>
                         <TableCell>
-                          {item.type === 'active_pm' ? item.email : item.inviteeEmail}
+                          {item.type === 'active_pm'
+                            ? item.email
+                            : item.inviteeEmail}
                         </TableCell>
                         <TableCell>
                           {item.type === 'active_pm' ? (
-                            <Chip label="Active" color="success" size="small" />
+                            <Chip label='Active' color='success' size='small' />
                           ) : (
-                            <Chip label="Invite Sent" color="info" size="small" />
+                            <Chip
+                              label='Invite Sent'
+                              color='info'
+                              size='small'
+                            />
                           )}
                         </TableCell>
                         <TableCell>
-                          {item.createdAt?.toDate().toLocaleDateString() || 'N/A'}
+                          {item.createdAt?.toDate().toLocaleDateString() ||
+                            'N/A'}
                         </TableCell>
                         <TableCell>
-                          {item.type === 'pending_invite' && item.expiresAt ? 
-                           item.expiresAt.toDate().toLocaleDateString() : 'N/A'}
+                          {item.type === 'pending_invite' && item.expiresAt
+                            ? item.expiresAt.toDate().toLocaleDateString()
+                            : 'N/A'}
                         </TableCell>
-                        <TableCell align="right">
+                        <TableCell align='right'>
                           {item.type === 'active_pm' && (
                             <>
-                              <Tooltip title="Edit PM">
-                                <IconButton size="small" onClick={() => handleOpenUpdatePmDialog(item as PropertyManagerUser)}>
+                              <Tooltip title='Edit PM'>
+                                <IconButton
+                                  size='small'
+                                  onClick={() =>
+                                    handleOpenUpdatePmDialog(
+                                      item as PropertyManagerUser
+                                    )
+                                  }
+                                >
                                   <EditIcon />
                                 </IconButton>
                               </Tooltip>
-                              <Tooltip title="Delete PM">
-                                <IconButton size="small" onClick={() => handleOpenDeletePmDialog(item as PropertyManagerUser)} sx={{ ml: 1 }}>
+                              <Tooltip title='Delete PM'>
+                                <IconButton
+                                  size='small'
+                                  onClick={() =>
+                                    handleOpenDeletePmDialog(
+                                      item as PropertyManagerUser
+                                    )
+                                  }
+                                  sx={{ ml: 1 }}
+                                >
                                   <DeleteIcon />
                                 </IconButton>
                               </Tooltip>
                             </>
                           )}
                           {item.type === 'pending_invite' && (
-                            <Tooltip title="Revoke Invitation">
-                              <IconButton size="small" onClick={() => handleOpenRevokeDialog(item as PendingInvitation)}>
+                            <Tooltip title='Revoke Invitation'>
+                              <IconButton
+                                size='small'
+                                onClick={() =>
+                                  handleOpenRevokeDialog(
+                                    item as PendingInvitation
+                                  )
+                                }
+                              >
                                 <RevokeIcon />
                               </IconButton>
                             </Tooltip>
@@ -374,92 +501,117 @@ const PropertyManagerManagement: React.FC<PropertyManagerManagementProps> = ({ o
           )}
         </>
       )}
-
       {/* Revoke Invitation Confirmation Dialog */}
       <Dialog
         open={revokeDialogOpen}
         onClose={handleCloseRevokeDialog}
-        aria-labelledby="revoke-dialog-title"
-        aria-describedby="revoke-dialog-description"
+        aria-labelledby='revoke-dialog-title'
+        aria-describedby='revoke-dialog-description'
       >
-        <DialogTitle id="revoke-dialog-title">Revoke Invitation?</DialogTitle>
+        <DialogTitle id='revoke-dialog-title'>Revoke Invitation?</DialogTitle>
         <DialogContent>
-          <DialogContentText id="revoke-dialog-description">
-            Are you sure you want to revoke the invitation for {selectedInvitationForRevoke?.inviteeEmail}? This action cannot be undone.
+          <DialogContentText id='revoke-dialog-description'>
+            Are you sure you want to revoke the invitation for{' '}
+            {selectedInvitationForRevoke?.inviteeEmail}? This action cannot be
+            undone.
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseRevokeDialog} disabled={revokeLoading}>Cancel</Button>
-          <Button onClick={handleConfirmRevoke} color="error" disabled={revokeLoading} autoFocus>
-            {revokeLoading ? <CircularProgress size={20}/> : 'Revoke'}
+          <Button onClick={handleCloseRevokeDialog} disabled={revokeLoading}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleConfirmRevoke}
+            color='error'
+            disabled={revokeLoading}
+            autoFocus
+          >
+            {revokeLoading ? <CircularProgress size={20} /> : 'Revoke'}
           </Button>
         </DialogActions>
       </Dialog>
-
       {/* Update PM Dialog */}
       <Dialog open={updatePmDialogOpen} onClose={handleCloseUpdatePmDialog}>
         <DialogTitle>Update Property Manager</DialogTitle>
         <DialogContent>
-          <DialogContentText sx={{mb:1}}>
-            Modify the details for {selectedPmForUpdate?.displayName || 'this Property Manager'}.
+          <DialogContentText sx={{ mb: 1 }}>
+            Modify the details for{' '}
+            {selectedPmForUpdate?.displayName || 'this Property Manager'}.
             Password and role changes are not handled here.
           </DialogContentText>
           <TextField
             autoFocus
-            margin="dense"
-            id="displayName"
-            name="displayName"
-            label="Display Name"
-            type="text"
+            margin='dense'
+            id='displayName'
+            name='displayName'
+            label='Display Name'
+            type='text'
             fullWidth
-            variant="standard"
+            variant='standard'
             value={updatePmForm.displayName}
             onChange={handleUpdatePmFormChange}
             required
           />
           <TextField
-            margin="dense"
-            id="email"
-            name="email"
-            label="Email Address"
-            type="email"
+            margin='dense'
+            id='email'
+            name='email'
+            label='Email Address'
+            type='email'
             fullWidth
-            variant="standard"
+            variant='standard'
             value={updatePmForm.email}
             onChange={handleUpdatePmFormChange}
             required
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseUpdatePmDialog} disabled={updatePmLoading}>Cancel</Button>
+          <Button
+            onClick={handleCloseUpdatePmDialog}
+            disabled={updatePmLoading}
+          >
+            Cancel
+          </Button>
           <Button onClick={handleConfirmUpdatePm} disabled={updatePmLoading}>
-            {updatePmLoading ? <CircularProgress size={20}/> : 'Update'}
+            {updatePmLoading ? <CircularProgress size={20} /> : 'Update'}
           </Button>
         </DialogActions>
       </Dialog>
-
       {/* Delete PM Confirmation Dialog */}
       <Dialog
         open={deletePmDialogOpen}
         onClose={handleCloseDeletePmDialog}
-        aria-labelledby="delete-pm-dialog-title"
-        aria-describedby="delete-pm-dialog-description"
+        aria-labelledby='delete-pm-dialog-title'
+        aria-describedby='delete-pm-dialog-description'
       >
-        <DialogTitle id="delete-pm-dialog-title">Delete Property Manager?</DialogTitle>
+        <DialogTitle id='delete-pm-dialog-title'>
+          Delete Property Manager?
+        </DialogTitle>
         <DialogContent>
-          <DialogContentText id="delete-pm-dialog-description">
-            Are you sure you want to delete the property manager {selectedPmForDelete?.displayName} ({selectedPmForDelete?.email})? 
-            This action will permanently remove their account and access. This cannot be undone.
+          <DialogContentText id='delete-pm-dialog-description'>
+            Are you sure you want to delete the property manager{' '}
+            {selectedPmForDelete?.displayName} ({selectedPmForDelete?.email})?
+            This action will permanently remove their account and access. This
+            cannot be undone.
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseDeletePmDialog} disabled={deletePmLoading}>Cancel</Button>
-          <Button onClick={handleConfirmDeletePm} color="error" disabled={deletePmLoading} autoFocus>
-            {deletePmLoading ? <CircularProgress size={20}/> : 'Delete'}
+          <Button
+            onClick={handleCloseDeletePmDialog}
+            disabled={deletePmLoading}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleConfirmDeletePm}
+            color='error'
+            disabled={deletePmLoading}
+            autoFocus
+          >
+            {deletePmLoading ? <CircularProgress size={20} /> : 'Delete'}
           </Button>
         </DialogActions>
       </Dialog>
-
       {/* Snackbar for feedback */}
       <Snackbar
         open={!!snackbarMessage}
@@ -467,7 +619,11 @@ const PropertyManagerManagement: React.FC<PropertyManagerManagementProps> = ({ o
         onClose={handleCloseSnackbar}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       >
-        <Alert onClose={handleCloseSnackbar} severity={snackbarSeverity} sx={{ width: '100%' }}>
+        <Alert
+          onClose={handleCloseSnackbar}
+          severity={snackbarSeverity}
+          sx={{ width: '100%' }}
+        >
           {snackbarMessage}
         </Alert>
       </Snackbar>

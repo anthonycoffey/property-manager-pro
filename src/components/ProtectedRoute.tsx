@@ -1,6 +1,7 @@
 import React, { type ReactNode } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth'; // Import useAuth from the new hooks directory
+import { CircularProgress, Container, Box } from '@mui/material';
 
 interface ProtectedRouteProps {
   children: ReactNode;
@@ -18,7 +19,18 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   const { currentUser, loading, roles, organizationId, propertyId } = useAuth();
 
   if (loading) {
-    return <div>Loading...</div>; // Or a loading spinner
+    return (
+      <Container maxWidth="sm">
+        <Box
+          display="flex"
+          justifyContent="center"
+          alignItems="center"
+          minHeight="50vh" // Ensure it takes full viewport height to center vertically
+        >
+          <CircularProgress />
+        </Box>
+      </Container>
+    ); 
   }
 
   if (!currentUser) {

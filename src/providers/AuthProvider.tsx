@@ -8,13 +8,15 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null | undefined>(undefined);
-  
+  const [firebaseUser, setFirebaseUser] = useState<
+    FirebaseUser | null | undefined
+  >(undefined);
+
   const [currentUser, setCurrentUser] = useState<CustomUser | null>(null);
   const [roles, setRoles] = useState<string[]>([]);
   const [organizationId, setOrganizationId] = useState<string | null>(null);
   const [propertyId, setPropertyId] = useState<string | null>(null);
-  
+
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -36,22 +38,23 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setLoading(true);
       let isMounted = true;
 
-      firebaseUser.getIdTokenResult(true)
+      firebaseUser
+        .getIdTokenResult(true)
         .then((idTokenResult: IdTokenResult) => {
           if (!isMounted) return;
           const claims = idTokenResult.claims;
           const processedUser: CustomUser = {
             ...firebaseUser,
             customClaims: {
-              roles: claims.roles as string[] || [],
-              organizationId: claims.organizationId as string || undefined,
-              propertyId: claims.propertyId as string || undefined,
+              roles: (claims.roles as string[]) || [],
+              organizationId: (claims.organizationId as string) || undefined,
+              propertyId: (claims.propertyId as string) || undefined,
             },
           };
           setCurrentUser(processedUser);
-          setRoles(claims.roles as string[] || []);
-          setOrganizationId(claims.organizationId as string || null);
-          setPropertyId(claims.propertyId as string || null);
+          setRoles((claims.roles as string[]) || []);
+          setOrganizationId((claims.organizationId as string) || null);
+          setPropertyId((claims.propertyId as string) || null);
           setLoading(false);
         })
         .catch((error: unknown) => {
@@ -63,8 +66,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           setPropertyId(null);
           setLoading(false);
         });
-      
-      return () => { isMounted = false; };
+
+      return () => {
+        isMounted = false;
+      };
     } else {
       setCurrentUser(null);
       setRoles([]);
@@ -81,14 +86,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     organizationId,
     propertyId,
   };
-  
-  if (loading) {
-    return <div>Authenticating...</div>; 
-  }
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

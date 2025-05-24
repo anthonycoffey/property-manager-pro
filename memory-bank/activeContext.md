@@ -19,6 +19,14 @@ The current focus is on the active implementation of Role-Based Access Control (
 *   **Frontend Integration & UI Adaptation (Phase 4 Completed):**
     *   Updated `src/components/ProtectedRoute.tsx` to enforce route protection based on `allowedRoles`, `requiredOrgId`, and `requiredPropertyId`.
     *   Modified `src/components/Dashboard.tsx` to conditionally render content based on the logged-in user's roles and assigned IDs.
+*   **Multi-Tenancy Sign-Up Logic Implemented (2025-05-23):**
+    *   **Modified `processSignUp` Cloud Function (`functions/src/index.ts`):**
+        *   Admin users (`*@24hrcarunlocking.com`) now have their profiles created in the `admins/{uid}` Firestore collection (previously `users/{uid}`).
+        *   Direct non-admin sign-ups are now assigned a `{ roles: ['pending_association'] }` custom claim (previously `['resident']`). Their temporary profiles are created in the root `users/{uid}` collection with `status: 'pending_association'`.
+        *   Added a check to `processSignUp` to skip default logic if an `organizationId` claim already exists on the user (indicating processing by `signUpWithInvitation`).
+    *   **Added `signUpWithInvitation` HTTPS Callable Cloud Function (`functions/src/index.ts`):**
+        *   This new function handles user sign-ups initiated via an invitation.
+        *   It validates the invitation, creates the Firebase Auth user, sets custom claims (`roles`, `organizationId`, `propertyId` as applicable from the invitation), creates the user profile in the correct multi-tenant Firestore path (e.g., `organizations/{orgId}/users/{uid}` or `organizations/{orgId}/properties/{propId}/residents/{uid}`), and updates the invitation status.
 *   **Initial Feature Development (Admin Dashboard - Property Manager CRUD) (Phase 5 Started/Partially Completed):**
     *   Created the `src/components/Admin` directory and the `src/components/Admin/PropertyManagerManagement.tsx` component as a starting point for the Admin Dashboard.
     *   Implemented `createPropertyManager`, `updatePropertyManager`, and `deletePropertyManager` Cloud Functions in `functions/src/index.ts`.
@@ -49,7 +57,10 @@ The current focus is on the active implementation of Role-Based Access Control (
 *   **Firebase Functions User Creation Trigger & Token Refresh:** Switched from `beforeUserCreated` (blocking) to `functions.auth.user().onCreate` (non-blocking, 1st gen) for `processSignUp`. Custom claims are set *after* user creation. **The explicit server-side mechanism to prompt client-side token refresh has been removed from `processSignUp`.**
 *   **Logging in Firebase Functions:** Replaced `firebase-functions/logger` with standard `console.log` and `console.error` as per user instruction.
 *   **Resolved TypeScript Error:** The TypeScript error `Property 'auth' does not exist on type 'typeof import("d:/repos/property-manager-pro/functions/node_modules/firebase-functions/lib/v2/index")'` for the `functions.auth.user().onCreate` trigger has been resolved. This was addressed by explicitly importing `auth` (and previously `database`, which is now removed from `processSignUp`'s direct imports) from `firebase-functions` in `functions/src/index.ts`, ensuring correct type resolution for v1 functions when mixed with v2 functions.
-*   **Temporary Root `users` collection:** New direct sign-ups are temporarily stored in a root `users` collection. A future mechanism (e.g., invitation acceptance, admin assignment) will be needed to move/link these users to their respective `organizations/{orgId}/users` or `organizations/{orgId}/properties/{propId}/residents` paths.
+*   **User Sign-Up and Multi-Tenancy Association:**
+    *   Direct sign-ups (not via invitation) result in a user with `roles: ['pending_association']` and a temporary profile in the root `users` collection.
+    *   Sign-ups via invitation are handled by the `signUpWithInvitation` callable function, which immediately associates the user with an organization and assigns appropriate roles and profile location.
+    *   This two-pronged approach addresses different onboarding scenarios while aligning with the multi-tenancy model.
 
 ## 5. Important Patterns & Preferences
 
@@ -65,3 +76,6 @@ The current focus is on the active implementation of Role-Based Access Control (
 *   **Firebase Admin SDK ES Module Import:** Discovered and resolved `TypeError: admin.initializeApp is not a function` by adjusting the `firebase-admin` import statement for compatibility with ES module environments in Firebase Functions.
     *   **Token Refresh Mechanism:** The explicit server-side token refresh signaling mechanism in `processSignUp` (previously using Realtime Database, then Firestore flags) has been removed to simplify the function, per user request.
 *   **Auth Provider State Management (Race Condition Fix):** The refactor of `AuthProvider.tsx` using two `useEffect` hooks (one for raw Firebase user state, one for processing that state and managing loading/claims) proved effective in resolving a subtle race condition. This highlights the importance of carefully managing loading states when dealing with asynchronous authentication events and React context propagation to route guards. The key was ensuring that `loading` is `true` during the entire period when user data (including claims) is being fetched and set, preventing `ProtectedRoute` from acting on incomplete or stale data.
+*   **Multi-Tenant User Onboarding Strategy (New Insight 2025-05-23):** Adopted a two-part strategy for user creation to support multi-tenancy:
+    1.  The `processSignUp` (`auth.onCreate`) trigger handles initial state for direct sign-ups (assigning `pending_association` role) and admin user setup.
+    2.  A new `signUpWithInvitation` callable Cloud Function manages invited user sign-ups, ensuring immediate association with an organization, correct roles, and profile creation in the designated multi-tenant Firestore path. This separation allows `processSignUp` to remain lean while the callable function handles the more complex, context-rich invitation flow.

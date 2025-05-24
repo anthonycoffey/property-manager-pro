@@ -41,6 +41,13 @@ The project is actively implementing Role-Based Access Control (RBAC) and Cloud 
     *   The fix involved refactoring `AuthProvider.tsx` to use a two-stage `useEffect` approach for more robust management of loading and user authentication states. This ensures that `ProtectedRoute.tsx` evaluates access based on complete and current authentication context.
     *   `ProtectedRoute.tsx` was restored to its full functionality (role and ID checks) after the fix.
     *   Console logs used for debugging were cleaned up from `AuthProvider.tsx` and `ProtectedRoute.tsx`.
+*   **Multi-Tenancy Sign-Up Logic Implemented (2025-05-23):**
+    *   **Modified `processSignUp` Cloud Function (`functions/src/index.ts`):**
+        *   Admin users (`*@24hrcarunlocking.com`) now have their profiles created in the `admins/{uid}` Firestore collection.
+        *   Direct non-admin sign-ups are assigned a `{ roles: ['pending_association'] }` custom claim and a temporary profile in the root `users/{uid}` collection with `status: 'pending_association'`.
+        *   `processSignUp` now checks for existing `organizationId` claims to avoid conflicts with invited user processing.
+    *   **Added `signUpWithInvitation` HTTPS Callable Cloud Function (`functions/src/index.ts`):**
+        *   Handles user sign-ups via an invitation, ensuring immediate association with an organization, correct roles, proper profile creation in multi-tenant Firestore paths, and updates invitation status.
 
 ## 3. What's Left to Build (High-Level from `projectRoadmap.md`)
 
@@ -81,7 +88,10 @@ The remaining application functionality includes:
 *   **2025-05-23:** Resolved `TypeError: admin.initializeApp is not a function` by changing `firebase-admin` import in `functions/src/index.ts` from `import * as admin from 'firebase-admin';` to `import admin from 'firebase-admin';`.
 *   **2025-05-23:** Switched Firebase user creation trigger from blocking `beforeUserCreated` to non-blocking `functions.auth.user().onCreate` (1st gen) in `functions/src/index.ts`. Implemented custom claims for admin users. **The explicit server-side token refresh signaling mechanism in `processSignUp` was removed entirely.** Replaced `firebase-functions/logger` with `console.log` and `console.error`.
 *   **2025-05-23:** Resolved TypeScript error `Property 'auth' does not exist` in `functions/src/index.ts` by explicitly importing `auth` from `firebase-functions` for v1 function compatibility.
-*   **2025-05-23 (Auth Race Condition):** Identified and resolved a race condition in the client-side authentication flow. Refactored `src/providers/AuthProvider.tsx` to use a two-stage `useEffect` pattern. The first `useEffect` subscribes to `onAuthStateChanged` and updates a raw `firebaseUser` state. The second `useEffect` reacts to `firebaseUser` changes, manages a `loading` state explicitly during asynchronous claim fetching and context updates, ensuring that `ProtectedRoute` components receive a consistent and complete auth state. This fixed issues with premature redirects.
+    *   **2025-05-23 (Auth Race Condition):** Identified and resolved a race condition in the client-side authentication flow. Refactored `src/providers/AuthProvider.tsx` to use a two-stage `useEffect` pattern. The first `useEffect` subscribes to `onAuthStateChanged` and updates a raw `firebaseUser` state. The second `useEffect` reacts to `firebaseUser` changes, manages a `loading` state explicitly during asynchronous claim fetching and context updates, ensuring that `ProtectedRoute` components receive a consistent and complete auth state. This fixed issues with premature redirects.
+*   **2025-05-23 (Multi-Tenant Sign-Up Strategy):** Implemented a two-part strategy for user creation to enhance multi-tenancy support:
+    1.  The `processSignUp` (`auth.onCreate`) trigger was modified to handle initial states for direct sign-ups (assigning `pending_association` role) and admin user setup (correcting profile path to `admins/{uid}`).
+    2.  A new `signUpWithInvitation` callable Cloud Function was introduced to manage invited user sign-ups, ensuring immediate and correct association with an organization, roles, and multi-tenant profile creation.
 
 ## 6. Immediate Next Steps
 

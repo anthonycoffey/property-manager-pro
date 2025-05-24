@@ -19,10 +19,17 @@ env:
   - variable: VITE_FIREBASE_APP_ID
     secret: VITE_FIREBASE_APP_ID
 
-build:
-  command: npm run build
-  outputDirectory: dist
+# App Hosting configuration
+source: src
+ignore:
+  - firebase.json
+  - '**/.*'
+  - '**/node_modules/**'
+  - ./functions
 
-release:
-  staticFiles:
-    path: dist
+# Pre-deploy steps
+hooks:
+  # prebuild: npm run prebuild
+
+# Region configuration
+region: us-central1

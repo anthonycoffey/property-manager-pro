@@ -1,7 +1,6 @@
 import { auth } from 'firebase-functions/v1';
 import { initializeApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
-// Removed: import { getDatabase } from 'firebase-admin/database';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 
 // Initialize the Firebase Admin SDK

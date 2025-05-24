@@ -1,5 +1,5 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
-import { db, FieldValue, adminAuth } from '../firebaseAdmin.js'; // adminAuth might not be directly used but good for consistency
+import { db, FieldValue } from '../firebaseAdmin.js';
 import { handleHttpsError } from '../helpers/handleHttpsError.js';
 
 export const createOrganization = onCall(async (request) => {

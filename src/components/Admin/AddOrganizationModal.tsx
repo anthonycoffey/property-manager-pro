@@ -64,9 +64,13 @@ const AddOrganizationModal: React.FC<AddOrganizationModalProps> = ({ open, onClo
       } else {
         setError(resultData.message || "Failed to create organization.");
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Error creating organization:", err);
-      setError(err.message || "An unexpected error occurred.");
+      if (err instanceof Error) {
+        setError(err.message || "An unexpected error occurred.");
+      } else {
+        setError("An unexpected error occurred.");
+      }
     } finally {
       setLoading(false);
     }

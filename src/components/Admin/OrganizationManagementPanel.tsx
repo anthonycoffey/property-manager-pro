@@ -8,7 +8,7 @@ import EditOrganizationModal from './EditOrganizationModal'; // Import EditOrgan
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
-import { collection, getDocs, Timestamp, doc, getDoc, setDoc, deleteDoc, serverTimestamp, query, orderBy } from 'firebase/firestore';
+import { collection, getDocs, Timestamp, query, orderBy } from 'firebase/firestore';
 import { db, functions } from '../../firebaseConfig'; // Assuming db is exported from firebaseConfig
 import { useAuth } from '../../hooks/useAuth';
 import { httpsCallable } from 'firebase/functions';
@@ -24,7 +24,6 @@ export interface Organization {
 }
 
 // Define callable functions
-const updateOrganizationCallable = httpsCallable(functions, 'updateOrganization');
 const deactivateOrganizationCallable = httpsCallable(functions, 'deactivateOrganization');
 
 
@@ -74,10 +73,15 @@ const OrganizationManagementPanel: React.FC = () => {
         } as Organization;
       });
       setOrganizations(orgsData);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Error fetching organizations:", err);
-      setError(err.message || "Failed to fetch organizations.");
-      setSnackbarMessage(err.message || "Failed to fetch organizations.");
+      if (err instanceof Error) {
+        setError(err.message || "Failed to fetch organizations.");
+        setSnackbarMessage(err.message || "Failed to fetch organizations.");
+      } else {
+        setError("An unexpected error occurred while fetching organizations.");
+        setSnackbarMessage("An unexpected error occurred while fetching organizations.");
+      }
       setSnackbarSeverity('error');
       setSnackbarOpen(true);
     } finally {
@@ -141,9 +145,13 @@ const OrganizationManagementPanel: React.FC = () => {
           setSnackbarMessage(data.message || `Failed to deactivate ${orgName}.`);
           setSnackbarSeverity('error');
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error("Error deactivating organization:", err);
-        setSnackbarMessage(err.message || `Failed to deactivate ${orgName}.`);
+        if (err instanceof Error) {
+          setSnackbarMessage(err.message || `Failed to deactivate ${orgName}.`);
+        } else {
+          setSnackbarMessage(`An unexpected error occurred while deactivating ${orgName}.`);
+        }
         setSnackbarSeverity('error');
       } finally {
         setActionLoading(prev => ({ ...prev, [orgId]: false }));
@@ -152,7 +160,7 @@ const OrganizationManagementPanel: React.FC = () => {
     }
   };
 
-  const handleCloseSnackbar = (event?: React.SyntheticEvent | Event, reason?: string) => {
+  const handleCloseSnackbar = (_event?: React.SyntheticEvent | Event, reason?: string) => {
     if (reason === 'clickaway') {
       return;
     }

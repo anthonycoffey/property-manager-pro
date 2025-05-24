@@ -84,9 +84,13 @@ const EditOrganizationModal: React.FC<EditOrganizationModalProps> = ({ open, onC
       } else {
         setError(result.data.message || "Failed to update organization.");
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Error updating organization:", err);
-      setError(err.message || "An unexpected error occurred while updating the organization.");
+      if (err instanceof Error) {
+        setError(err.message || "An unexpected error occurred while updating the organization.");
+      } else {
+        setError("An unexpected error occurred while updating the organization.");
+      }
     } finally {
       setLoading(false);
     }

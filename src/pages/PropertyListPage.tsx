@@ -52,7 +52,7 @@ const PropertyListPage: React.FC = () => {
     };
 
     fetchProperties();
-  }, [currentUser]);
+  }, [currentUser, organizationId]);
 
   if (loading) {
     return (

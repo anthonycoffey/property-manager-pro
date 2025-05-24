@@ -11,7 +11,6 @@ import InvitePropertyManagerForm from './Admin/InvitePropertyManagerForm';
 import OrganizationManagementPanel from './Admin/OrganizationManagementPanel'; // Added import
 
 // Property Manager Components
-import CreatePropertyForm from './PropertyManager/CreatePropertyForm';
 // InviteResidentForm is no longer directly used here
 
 interface TabPanelProps {

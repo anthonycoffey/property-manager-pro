@@ -42,7 +42,7 @@ export const updatePropertyManager = onCall(async (request) => {
     const user = await adminAuth.getUser(uid);
     const currentCustomClaims = user.customClaims || {};
     
-    const newCustomClaims: Record<string, any> = { ...currentCustomClaims };
+    const newCustomClaims: Record<string, string | string[] | boolean | number | undefined> = { ...currentCustomClaims };
     if (roles) newCustomClaims.roles = roles;
     // Ensure organizationId is always present in claims for a property manager
     newCustomClaims.organizationId = organizationId; 

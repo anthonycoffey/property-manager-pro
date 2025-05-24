@@ -46,7 +46,9 @@
     },
     "singleProjectMode": true
   },
-  "extensions": {},
+  "extensions": {
+    "firestore-send-email": "firebase/firestore-send-email@0.2.2"
+  },
   "hosting": {
     "source": ".",
     "ignore": [

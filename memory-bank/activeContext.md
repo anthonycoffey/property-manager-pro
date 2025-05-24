@@ -87,6 +87,22 @@ With the "Admin Property Manager Management Panel Overhaul" (Step 4 from `docs/0
         *   Added loading states and Snackbar feedback for all actions.
     *   **Phase 3: Visual Design & User Experience:**
         *   Core UX requirements (clear list, status chips, intuitive actions, loading indicators, feedback) addressed through MUI components and implementation choices in Phase 2.
+*   **Admin Dashboard - Organization Management Panel Implemented (2025-05-24):**
+    *   Enhanced `src/components/Admin/OrganizationManagementPanel.tsx` to:
+        *   Fetch and display a list of organizations from Firestore.
+        *   Integrate `src/components/Admin/AddOrganizationModal.tsx` for creating new organizations.
+        *   Create and integrate `src/components/Admin/EditOrganizationModal.tsx` for updating organization name and status.
+    *   Corrected `Organization` interface to use `createdBy` instead of `ownerId`.
+    *   Fixed TypeScript import issues (type-only imports for interfaces, `.js` extension for relative imports in Firebase Functions).
+*   **Firebase Functions Refactoring (2025-05-24):**
+    *   All Cloud Functions previously in `functions/src/index.ts` were refactored into individual files under `functions/src/auth/` and `functions/src/callable/` directories.
+    *   Created `functions/src/firebaseAdmin.ts` for shared Firebase Admin SDK initialization.
+    *   Created `functions/src/helpers/handleHttpsError.ts` for a shared error handling utility.
+    *   The main `functions/src/index.ts` now only re-exports these individual functions.
+    *   Added new callable Cloud Functions:
+        *   `functions/src/callable/updateOrganization.ts`: For updating organization details.
+        *   `functions/src/callable/deactivateOrganization.ts`: For soft-deleting (deactivating) organizations.
+    *   Ensured all relative imports in the `functions/src` directory use the `.js` extension as required by the TypeScript configuration.
 
 ## 3. Next Steps
 
@@ -102,11 +118,12 @@ With the "Admin Property Manager Management Panel Overhaul" (Step 4 from `docs/0
 
 *   **Firebase Functions User Creation Trigger & Token Refresh:** Switched from `beforeUserCreated` (blocking) to `functions.auth.user().onCreate` (non-blocking, 1st gen) for `processSignUp`. Custom claims are set *after* user creation. **The explicit server-side mechanism to prompt client-side token refresh has been removed from `processSignUp`.**
 *   **Logging in Firebase Functions:** Replaced `firebase-functions/logger` with standard `console.log` and `console.error` as per user instruction.
-*   **Resolved TypeScript Error:** The TypeScript error `Property 'auth' does not exist on type 'typeof import("d:/repos/property-manager-pro/functions/node_modules/firebase-functions/lib/v2/index")'` for the `functions.auth.user().onCreate` trigger has been resolved. This was addressed by explicitly importing `auth` (and previously `database`, which is now removed from `processSignUp`'s direct imports) from `firebase-functions` in `functions/src/index.ts`, ensuring correct type resolution for v1 functions when mixed with v2 functions.
+*   **Resolved TypeScript Error:** The TypeScript error `Property 'auth' does not exist on type 'typeof import("d:/repos/property-manager-pro/functions/node_modules/firebase-functions/lib/v2/index")'` for the `functions.auth.user().onCreate` trigger was previously resolved by explicitly importing `auth` from `firebase-functions`. This is now handled within the refactored `functions/src/auth/processSignUp.ts`.
 *   **User Sign-Up and Multi-Tenancy Association:**
-    *   Direct sign-ups (not via invitation) result in a user with `roles: ['pending_association']` and a temporary profile in the root `users` collection.
+    *   Direct sign-ups (not via invitation) result in a user with `roles: ['pending_association']` and a temporary profile in the root `users` collection (handled by `processSignUp`).
     *   Sign-ups via invitation are handled by the `signUpWithInvitation` callable function, which immediately associates the user with an organization and assigns appropriate roles and profile location.
     *   This two-pronged approach addresses different onboarding scenarios while aligning with the multi-tenancy model.
+*   **Firebase Functions Structure:** Adopted a modular structure for Firebase Functions, with each function in its own file, categorized into `auth` and `callable` subdirectories. Shared utilities are in `helpers` and `firebaseAdmin` files. The main `index.ts` re-exports all functions. Relative imports within `functions/src` use `.js` extensions.
 
 ## 5. Important Patterns & Preferences
 
@@ -125,3 +142,4 @@ With the "Admin Property Manager Management Panel Overhaul" (Step 4 from `docs/0
 *   **Multi-Tenant User Onboarding Strategy (New Insight 2025-05-23):** Adopted a two-part strategy for user creation to support multi-tenancy:
     1.  The `processSignUp` (`auth.onCreate`) trigger handles initial state for direct sign-ups (assigning `pending_association` role) and admin user setup.
     2.  A new `signUpWithInvitation` callable Cloud Function manages invited user sign-ups, ensuring immediate association with an organization, correct roles, and profile creation in the designated multi-tenant Firestore path. This separation allows `processSignUp` to remain lean while the callable function handles the more complex, context-rich invitation flow.
+*   **TypeScript Configuration for Firebase Functions (New Insight 2025-05-24):** Confirmed that the TypeScript setup for Firebase Functions (likely using `moduleResolution: "nodenext"` or similar) requires explicit `.js` extensions for relative imports within the `functions/src` directory. Type-only imports (`import type { ... } from ...`) are also enforced for type imports when `verbatimModuleSyntax` is enabled.

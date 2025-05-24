@@ -1,16 +1,18 @@
 import React, { useState } from 'react';
-import { Box, Typography, Paper, Divider, Tabs, Tab } from '@mui/material';
+import { Link as RouterLink } from 'react-router-dom'; // Added
+import { Box, Typography, Paper, Divider, Tabs, Tab, Button } from '@mui/material'; // Added Button
 import LogoutButton from './LogoutButton';
 import { useAuth } from '../hooks/useAuth';
 
 // Admin Components
-import OrganizationSelector from './Admin/OrganizationSelector'; // Added import
+import OrganizationSelector from './Admin/OrganizationSelector';
 import PropertyManagerManagement from './Admin/PropertyManagerManagement';
 import InvitePropertyManagerForm from './Admin/InvitePropertyManagerForm';
+import OrganizationManagementPanel from './Admin/OrganizationManagementPanel'; // Added import
 
 // Property Manager Components
 import CreatePropertyForm from './PropertyManager/CreatePropertyForm';
-import InviteResidentForm from './PropertyManager/InviteResidentForm';
+// InviteResidentForm is no longer directly used here
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -49,26 +51,22 @@ function a11yProps(index: number) {
 const Dashboard: React.FC = () => {
   const { currentUser, roles, organizationId, propertyId } = useAuth();
   const [adminTabValue, setAdminTabValue] = useState(0);
-  const [pmTabValue, setPmTabValue] = useState(0);
-  const [selectedAdminOrgId, setSelectedAdminOrgId] = useState<string | null>(null); // Added state for selected org
+  // const [pmTabValue, setPmTabValue] = useState(0); // Removed pmTabValue
+  const [selectedAdminOrgId, setSelectedAdminOrgId] = useState<string | null>(null);
 
-  const handleAdminOrgChange = (orgId: string | null) => { // Added handler
+  const handleAdminOrgChange = (orgId: string | null) => {
     setSelectedAdminOrgId(orgId);
-    // Potentially reset adminTabValue or other related states if needed when org changes
   };
 
   const handleAdminTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setAdminTabValue(newValue);
   };
 
-  const handlePmTabChange = (_event: React.SyntheticEvent, newValue: number) => {
-    setPmTabValue(newValue);
-  };
+  // const handlePmTabChange = (_event: React.SyntheticEvent, newValue: number) => { // Removed handlePmTabChange
+  //   setPmTabValue(newValue);
+  // };
 
-  // Example property ID for InviteResidentForm, in a real app this would be dynamic
-  // (e.g., selected from a list of properties the PM manages)
-  const examplePropertyIdForResidentInvite = "property123";
-
+  // examplePropertyIdForResidentInvite is no longer needed here
 
   return (
     <Box sx={{ p: 3 }}>
@@ -94,14 +92,18 @@ const Dashboard: React.FC = () => {
           <Divider sx={{ my: 2 }} />
           <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
             <Tabs value={adminTabValue} onChange={handleAdminTabChange} aria-label="admin actions tabs">
-              <Tab label="Manage Property Managers" {...a11yProps(0)} />
-              <Tab label="Invite Property Manager" {...a11yProps(1)} />
+              <Tab label="Manage Organizations" {...a11yProps(0)} />
+              <Tab label="Manage Property Managers" {...a11yProps(1)} />
+              <Tab label="Invite Property Manager" {...a11yProps(2)} />
             </Tabs>
           </Box>
           <TabPanel value={adminTabValue} index={0}>
-            <PropertyManagerManagement organizationId={selectedAdminOrgId} />
+            <OrganizationManagementPanel />
           </TabPanel>
           <TabPanel value={adminTabValue} index={1}>
+            <PropertyManagerManagement organizationId={selectedAdminOrgId} />
+          </TabPanel>
+          <TabPanel value={adminTabValue} index={2}>
             <InvitePropertyManagerForm />
           </TabPanel>
         </Paper>
@@ -113,23 +115,27 @@ const Dashboard: React.FC = () => {
           <Typography variant='h5' color='secondary' sx={{ mb: 2 }}>
             Property Manager Panel (Org ID: {organizationId || 'N/A'})
           </Typography>
-           <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-            <Tabs value={pmTabValue} onChange={handlePmTabChange} aria-label="property manager actions tabs">
-              <Tab label="Create Property" {...a11yProps(0)} />
-              <Tab label="Invite Resident" {...a11yProps(1)} />
-              {/* Add more tabs for other PM actions like viewing properties, managing residents etc. */}
-            </Tabs>
-          </Box>
-          <TabPanel value={pmTabValue} index={0}>
-            <CreatePropertyForm />
-          </TabPanel>
-          <TabPanel value={pmTabValue} index={1}>
-            {/* In a real app, propertyId would come from a selected property context */}
-            <InviteResidentForm propertyId={examplePropertyIdForResidentInvite} />
-            <Typography variant="caption" display="block" sx={{mt: 1}}>
-                (Note: Currently inviting to a sample property ID: {examplePropertyIdForResidentInvite})
-            </Typography>
-          </TabPanel>
+          <Button 
+            variant="contained" 
+            component={RouterLink} 
+            to="/pm/properties" 
+            sx={{ mr: 2 }}
+          >
+            View & Manage My Properties
+          </Button>
+          <Button 
+            variant="outlined" 
+            component={RouterLink}
+            to="/pm/create-property" // This route points to Dashboard, which will show CreatePropertyForm via its own logic if needed
+          >
+            Create New Property
+          </Button>
+          {/* 
+            Alternatively, if CreatePropertyForm should always be visible on this dashboard for PMs:
+            <Divider sx={{ my: 2 }} />
+            <Typography variant='h6' sx={{ mb: 1 }}>Create a New Property</Typography>
+            <CreatePropertyForm /> 
+          */}
         </Paper>
       )}
 

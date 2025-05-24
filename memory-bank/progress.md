@@ -2,9 +2,9 @@
 
 ## 1. Current Status: RBAC & Firestore Implementation (As of 2025-05-23)
 
-The project has recently completed the "Admin Property Manager Management Panel Overhaul" (Step 4 of `docs/04-admin-pm-management-plan.md`), enhancing admin capabilities for managing property managers and invitations within an organizational context.
+The project has recently completed the implementation of the Admin Organization Management Panel and a significant refactoring of all Firebase Cloud Functions.
 
-*   **Date of this update:** 2025-05-24
+*   **Date of this update:** 2025-05-24 (Updated)
 
 ## 2. What Works / Completed
 
@@ -86,6 +86,18 @@ The project has recently completed the "Admin Property Manager Management Panel 
         *   Implemented organization-scoped, unified list (MUI Table) for active PMs and pending PM invitations.
         *   Implemented actions (Update PM, Delete PM, Revoke Invitation) with dialogs and feedback.
         *   Addressed core visual design and UX requirements.
+*   **Admin Dashboard - Organization Management Panel Implemented (2025-05-24):**
+    *   Enhanced `src/components/Admin/OrganizationManagementPanel.tsx` to list, add (via `AddOrganizationModal.tsx`), edit (via `EditOrganizationModal.tsx`), and deactivate organizations.
+    *   The `Organization` interface was updated to use `createdBy` instead of `ownerId`.
+    *   Relevant TypeScript import issues were resolved (type-only imports, `.js` extensions for Firebase Functions).
+*   **Firebase Functions Refactoring (2025-05-24):**
+    *   All Cloud Functions from `functions/src/index.ts` were refactored into individual files under `functions/src/auth/` (for auth triggers like `processSignUp`) and `functions/src/callable/` (for HTTPS callable functions).
+    *   Created `functions/src/firebaseAdmin.ts` for shared Firebase Admin SDK initialization and `functions/src/helpers/handleHttpsError.ts` for a common error handling utility.
+    *   The main `functions/src/index.ts` now re-exports all individual functions.
+    *   Added new callable Cloud Functions for organization management:
+        *   `updateOrganization` (in `functions/src/callable/updateOrganization.ts`)
+        *   `deactivateOrganization` (in `functions/src/callable/deactivateOrganization.ts`)
+    *   Ensured all relative imports within the `functions/src` directory use the `.js` extension.
 
 ## 3. What's Left to Build (High-Level from `projectRoadmap.md`)
 
@@ -93,6 +105,7 @@ The remaining application functionality includes:
 
 *   **A. Authentication & Authorization:** (Core setup complete, ongoing refinement)
 *   **B. Admin Dashboard:**
+    *   Organization Management (CRUD - Add, List, Edit, Deactivate implemented).
     *   Property Managers Management (Core UI for listing, editing, deleting, and revoking invites is complete. Future enhancements or minor adjustments as needed).
     *   Properties Management (CRUD).
     *   Residents Management (View, Edit, Delete for support).
@@ -113,6 +126,7 @@ The remaining application functionality includes:
         *   Refine `InviteResidentForm.tsx` in `Dashboard.tsx` to use a dynamic `propertyId`.
     *   **Service Request System:** (Full implementation pending).
     *   **Firebase Cloud Functions for:** CRM Integration, Email Sending (beyond invitations), CSV Processing, QR Code Generation, Subscription Management (all pending).
+    *   **Firebase Cloud Functions Structure:** All functions are now modularized.
 
 ## 4. Known Issues & Blockers
 
@@ -137,6 +151,7 @@ The remaining application functionality includes:
     1.  The `processSignUp` (`auth.onCreate`) trigger was modified to handle initial states for direct sign-ups (assigning `pending_association` role) and admin user setup (correcting profile path to `admins/{uid}`).
     2.  A new `signUpWithInvitation` callable Cloud Function was introduced to manage invited user sign-ups, ensuring immediate and correct association with an organization, roles, and multi-tenant profile creation.
 *   **2025-05-24 (Admin PM Management Overhaul):** Implemented the Admin Property Manager Management panel overhaul as per `docs/04-admin-pm-management-plan.md`. This included adding an organization selector, a new `revokeInvitation` Cloud Function, and refactoring the `PropertyManagerManagement.tsx` component to remove manual PM creation and introduce a unified, organization-scoped list for managing active PMs and pending invitations with appropriate actions (Update, Delete, Revoke).
+*   **2025-05-24 (Organization Management & Functions Refactor):** Implemented CRUD operations for Organizations in the Admin panel. Refactored all Firebase Functions into a modular, per-file structure. Added `updateOrganization` and `deactivateOrganization` Cloud Functions. Corrected TypeScript import issues and interface definitions.
 
 ## 6. Immediate Next Steps
 

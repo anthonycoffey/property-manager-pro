@@ -29,6 +29,13 @@ The current focus is on the active implementation of Role-Based Access Control (
     *   Modified `functions/src/index.ts` to completely remove any explicit server-side mechanism (previously Firestore-based `userTokenRefreshFlags`, and before that Realtime Database) for signaling client-side token refresh after custom claims are set in the `processSignUp` function.
     *   Removed the `userTokenRefreshFlags` collection rules from `firestore.rules`.
     *   This simplifies the `processSignUp` function. The client will rely on its own logic (e.g., periodic refresh, refresh on specific actions, or manual refresh by user) to get updated tokens with new claims.
+*   **Resolved Authentication Race Condition (2025-05-23):**
+    *   Investigated and resolved a race condition where users (especially new signups) were incorrectly redirected from protected routes due to premature evaluation of auth state.
+    *   Refactored `src/providers/AuthProvider.tsx` to use a two-stage `useEffect` process:
+        1.  One `useEffect` subscribes to `onAuthStateChanged` and updates a raw `firebaseUser` state.
+        2.  A second `useEffect` reacts to changes in `firebaseUser`, synchronously sets a `loading` state to `true` if processing is needed, asynchronously fetches claims, updates the main `currentUser` context, and then sets `loading` to `false`.
+    *   This ensures the `loading` state accurately reflects the auth processing period, preventing `ProtectedRoute` from making decisions based on stale or incomplete context.
+    *   Restored `src/components/ProtectedRoute.tsx` to enforce role and ID checks after confirming the fix.
 
 ## 3. Next Steps
 
@@ -56,4 +63,5 @@ The current focus is on the active implementation of Role-Based Access Control (
 *   **Firebase Auth Custom Claims:** Successfully integrated custom claims for RBAC, demonstrating their effectiveness for granular access control.
 *   **Firestore Security Rules Complexity:** Emphasized the need for meticulous rule writing and testing for multi-tenant and RBAC systems.
 *   **Firebase Admin SDK ES Module Import:** Discovered and resolved `TypeError: admin.initializeApp is not a function` by adjusting the `firebase-admin` import statement for compatibility with ES module environments in Firebase Functions.
-*   **Token Refresh Mechanism:** The explicit server-side token refresh signaling mechanism in `processSignUp` (previously using Realtime Database, then Firestore flags) has been removed to simplify the function, per user request.
+    *   **Token Refresh Mechanism:** The explicit server-side token refresh signaling mechanism in `processSignUp` (previously using Realtime Database, then Firestore flags) has been removed to simplify the function, per user request.
+*   **Auth Provider State Management (Race Condition Fix):** The refactor of `AuthProvider.tsx` using two `useEffect` hooks (one for raw Firebase user state, one for processing that state and managing loading/claims) proved effective in resolving a subtle race condition. This highlights the importance of carefully managing loading states when dealing with asynchronous authentication events and React context propagation to route guards. The key was ensuring that `loading` is `true` during the entire period when user data (including claims) is being fetched and set, preventing `ProtectedRoute` from acting on incomplete or stale data.

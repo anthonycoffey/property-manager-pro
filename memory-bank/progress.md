@@ -36,6 +36,11 @@ The project is actively implementing Role-Based Access Control (RBAC) and Cloud 
     *   Modified `functions/src/index.ts` in the `processSignUp` function to completely remove any explicit server-side mechanism for signaling client-side token refresh (this included removing the previously implemented Firestore `userTokenRefreshFlags` and the original Realtime Database calls).
     *   Removed the security rules for the `userTokenRefreshFlags` collection from `firestore.rules`.
     *   This simplifies the `processSignUp` function and ensures the "Can't determine Firebase Database URL" error (related to the initial Realtime Database attempt) remains resolved. The client will now be solely responsible for its token refresh strategy.
+*   **Resolved Authentication Race Condition (2025-05-23):**
+    *   Successfully investigated and fixed a race condition in `src/providers/AuthProvider.tsx` that caused users to be incorrectly redirected from protected routes on initial login.
+    *   The fix involved refactoring `AuthProvider.tsx` to use a two-stage `useEffect` approach for more robust management of loading and user authentication states. This ensures that `ProtectedRoute.tsx` evaluates access based on complete and current authentication context.
+    *   `ProtectedRoute.tsx` was restored to its full functionality (role and ID checks) after the fix.
+    *   Console logs used for debugging were cleaned up from `AuthProvider.tsx` and `ProtectedRoute.tsx`.
 
 ## 3. What's Left to Build (High-Level from `projectRoadmap.md`)
 
@@ -76,6 +81,7 @@ The remaining application functionality includes:
 *   **2025-05-23:** Resolved `TypeError: admin.initializeApp is not a function` by changing `firebase-admin` import in `functions/src/index.ts` from `import * as admin from 'firebase-admin';` to `import admin from 'firebase-admin';`.
 *   **2025-05-23:** Switched Firebase user creation trigger from blocking `beforeUserCreated` to non-blocking `functions.auth.user().onCreate` (1st gen) in `functions/src/index.ts`. Implemented custom claims for admin users. **The explicit server-side token refresh signaling mechanism in `processSignUp` was removed entirely.** Replaced `firebase-functions/logger` with `console.log` and `console.error`.
 *   **2025-05-23:** Resolved TypeScript error `Property 'auth' does not exist` in `functions/src/index.ts` by explicitly importing `auth` from `firebase-functions` for v1 function compatibility.
+*   **2025-05-23 (Auth Race Condition):** Identified and resolved a race condition in the client-side authentication flow. Refactored `src/providers/AuthProvider.tsx` to use a two-stage `useEffect` pattern. The first `useEffect` subscribes to `onAuthStateChanged` and updates a raw `firebaseUser` state. The second `useEffect` reacts to `firebaseUser` changes, manages a `loading` state explicitly during asynchronous claim fetching and context updates, ensuring that `ProtectedRoute` components receive a consistent and complete auth state. This fixed issues with premature redirects.
 
 ## 6. Immediate Next Steps
 

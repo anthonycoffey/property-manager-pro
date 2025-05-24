@@ -22,6 +22,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   }
 
   if (!currentUser) {
+    // console.log('ProtectedRoute: currentUser is null, redirecting to /login. Current loading state:', loading); // Debug log removed
     return <Navigate to="/login" replace />;
   }
 

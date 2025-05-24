@@ -39,6 +39,9 @@
     "rules": "storage.rules"
   },
   "emulators": {
+    "apphosting": {
+      "port": 5173
+    },
     "auth": {
       "port": 9099
     },

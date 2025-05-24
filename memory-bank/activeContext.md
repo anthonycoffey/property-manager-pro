@@ -25,6 +25,10 @@ The current focus is on the active implementation of Role-Based Access Control (
     *   Integrated the "Add New Property Manager" form in `src/components/Admin/PropertyManagerManagement.tsx` to interact with the `createPropertyManager` Cloud Function.
 *   **Deployment Configuration Updated:** Modified `apphosting.yaml` to include `build` and `release` configurations for Firebase App Hosting, ensuring correct deployment of the Vite application.
 *   **Resolved Firebase Admin SDK Initialization Error:** Changed `import * as admin from 'firebase-admin';` to `import admin from 'firebase-admin';` in `functions/src/index.ts` to resolve `TypeError: admin.initializeApp is not a function` during Firebase Functions deployment in an ES module environment.
+*   **Removed Token Refresh Mechanism from `processSignUp` (2025-05-23):**
+    *   Modified `functions/src/index.ts` to completely remove any explicit server-side mechanism (previously Firestore-based `userTokenRefreshFlags`, and before that Realtime Database) for signaling client-side token refresh after custom claims are set in the `processSignUp` function.
+    *   Removed the `userTokenRefreshFlags` collection rules from `firestore.rules`.
+    *   This simplifies the `processSignUp` function. The client will rely on its own logic (e.g., periodic refresh, refresh on specific actions, or manual refresh by user) to get updated tokens with new claims.
 
 ## 3. Next Steps
 
@@ -35,9 +39,9 @@ The current focus is on the active implementation of Role-Based Access Control (
 
 ## 4. Active Decisions & Considerations
 
-*   **Firebase Functions User Creation Trigger:** Switched from `beforeUserCreated` (blocking) to `functions.auth.user().onCreate` (non-blocking, 1st gen) for `processSignUp` to resolve deployment errors related to GCIP project requirements and align with user's provided documentation. This means custom claims are set *after* user creation, and a Realtime Database flag is used to prompt client-side token refresh.
+*   **Firebase Functions User Creation Trigger & Token Refresh:** Switched from `beforeUserCreated` (blocking) to `functions.auth.user().onCreate` (non-blocking, 1st gen) for `processSignUp`. Custom claims are set *after* user creation. **The explicit server-side mechanism to prompt client-side token refresh has been removed from `processSignUp`.**
 *   **Logging in Firebase Functions:** Replaced `firebase-functions/logger` with standard `console.log` and `console.error` as per user instruction.
-*   **Resolved TypeScript Error:** The TypeScript error `Property 'auth' does not exist on type 'typeof import("d:/repos/property-manager-pro/functions/node_modules/firebase-functions/lib/v2/index")'` for the `functions.auth.user().onCreate` trigger has been resolved. This was addressed by explicitly importing `auth` and `database` from `firebase-functions` in `functions/src/index.ts`, ensuring correct type resolution for v1 functions when mixed with v2 functions.
+*   **Resolved TypeScript Error:** The TypeScript error `Property 'auth' does not exist on type 'typeof import("d:/repos/property-manager-pro/functions/node_modules/firebase-functions/lib/v2/index")'` for the `functions.auth.user().onCreate` trigger has been resolved. This was addressed by explicitly importing `auth` (and previously `database`, which is now removed from `processSignUp`'s direct imports) from `firebase-functions` in `functions/src/index.ts`, ensuring correct type resolution for v1 functions when mixed with v2 functions.
 *   **Temporary Root `users` collection:** New direct sign-ups are temporarily stored in a root `users` collection. A future mechanism (e.g., invitation acceptance, admin assignment) will be needed to move/link these users to their respective `organizations/{orgId}/users` or `organizations/{orgId}/properties/{propId}/residents` paths.
 
 ## 5. Important Patterns & Preferences
@@ -52,3 +56,4 @@ The current focus is on the active implementation of Role-Based Access Control (
 *   **Firebase Auth Custom Claims:** Successfully integrated custom claims for RBAC, demonstrating their effectiveness for granular access control.
 *   **Firestore Security Rules Complexity:** Emphasized the need for meticulous rule writing and testing for multi-tenant and RBAC systems.
 *   **Firebase Admin SDK ES Module Import:** Discovered and resolved `TypeError: admin.initializeApp is not a function` by adjusting the `firebase-admin` import statement for compatibility with ES module environments in Firebase Functions.
+*   **Token Refresh Mechanism:** The explicit server-side token refresh signaling mechanism in `processSignUp` (previously using Realtime Database, then Firestore flags) has been removed to simplify the function, per user request.

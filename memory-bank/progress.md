@@ -32,6 +32,10 @@ The project is actively implementing Role-Based Access Control (RBAC) and Cloud 
     *   Integrated the "Add New Property Manager" form in `src/components/Admin/PropertyManagerManagement.tsx` to interact with the `createPropertyManager` Cloud Function.
     *   Added `/admin/property-managers` route to `src/routes.tsx` protected by `ProtectedRoute`.
 *   **Resolved Firebase Admin SDK Initialization Error:** Changed `import * as admin from 'firebase-admin';` to `import admin from 'firebase-admin';` in `functions/src/index.ts` to resolve `TypeError: admin.initializeApp is not a function` during Firebase Functions deployment in an ES module environment.
+*   **Removed Token Refresh Mechanism from `processSignUp` (2025-05-23):**
+    *   Modified `functions/src/index.ts` in the `processSignUp` function to completely remove any explicit server-side mechanism for signaling client-side token refresh (this included removing the previously implemented Firestore `userTokenRefreshFlags` and the original Realtime Database calls).
+    *   Removed the security rules for the `userTokenRefreshFlags` collection from `firestore.rules`.
+    *   This simplifies the `processSignUp` function and ensures the "Can't determine Firebase Database URL" error (related to the initial Realtime Database attempt) remains resolved. The client will now be solely responsible for its token refresh strategy.
 
 ## 3. What's Left to Build (High-Level from `projectRoadmap.md`)
 
@@ -59,7 +63,7 @@ The remaining application functionality includes:
 
 ## 4. Known Issues & Blockers
 
-*   **None at this stage.** The TypeScript error related to `functions.auth` has been resolved by explicitly importing `auth` and `database` from `firebase-functions`.
+*   **None at this stage.** The "Can't determine Firebase Database URL" error in `processSignUp` has been resolved. The TypeScript error related to `functions.auth` was previously resolved.
 
 ## 5. Evolution of Project Decisions
 
@@ -70,8 +74,8 @@ The remaining application functionality includes:
 *   **2025-05-23:** Resolved Firebase Functions v2 `identity` module import issue by identifying `beforeUserCreated` as the correct function for user creation triggers and updating `tsconfig.json` for `nodenext` compatibility. (Note: This specific resolution is now superseded by the change to `onCreate` but kept for historical context of previous issues).
 *   **2025-05-23:** Updated `apphosting.yaml` to include `build` and `release` configurations for Firebase App Hosting, ensuring correct deployment of the Vite application.
 *   **2025-05-23:** Resolved `TypeError: admin.initializeApp is not a function` by changing `firebase-admin` import in `functions/src/index.ts` from `import * as admin from 'firebase-admin';` to `import admin from 'firebase-admin';`.
-*   **2025-05-23:** Switched Firebase user creation trigger from blocking `beforeUserCreated` to non-blocking `functions.auth.user().onCreate` (1st gen) in `functions/src/index.ts` to resolve deployment errors related to GCIP project requirements and align with user's provided documentation. Implemented custom claims for admin users and Realtime Database metadata update for token refresh. Replaced `firebase-functions/logger` with `console.log` and `console.error` as per user instruction.
-*   **2025-05-23:** Resolved TypeScript error `Property 'auth' does not exist` in `functions/src/index.ts` by explicitly importing `auth` and `database` from `firebase-functions` for v1 function compatibility.
+*   **2025-05-23:** Switched Firebase user creation trigger from blocking `beforeUserCreated` to non-blocking `functions.auth.user().onCreate` (1st gen) in `functions/src/index.ts`. Implemented custom claims for admin users. **The explicit server-side token refresh signaling mechanism in `processSignUp` was removed entirely.** Replaced `firebase-functions/logger` with `console.log` and `console.error`.
+*   **2025-05-23:** Resolved TypeScript error `Property 'auth' does not exist` in `functions/src/index.ts` by explicitly importing `auth` from `firebase-functions` for v1 function compatibility.
 
 ## 6. Immediate Next Steps
 

@@ -1,8 +1,8 @@
 import { auth } from 'firebase-functions/v1';
 import { initializeApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
-import { getDatabase } from 'firebase-admin/database';
-import { getFirestore, FieldValue } from 'firebase-admin/firestore'; // Added FieldValue
+// Removed: import { getDatabase } from 'firebase-admin/database';
+import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 
 // Initialize the Firebase Admin SDK
 initializeApp();
@@ -28,14 +28,6 @@ export const processSignUp = auth
         console.log(
           `Custom claims set for user ${uid}: ${JSON.stringify(customClaims)}`
         );
-
-        // Update real-time database to notify client to force refresh.
-        const metadataRef = getDatabase().ref('metadata/' + uid);
-
-        // Set the refresh time to the current UTC timestamp.
-        // This will be captured on the client to force a token refresh.
-        await metadataRef.set({ refreshTime: new Date().getTime() });
-        console.log(`Metadata updated for user ${uid} to force token refresh.`);
 
         // Also create a user profile in Firestore for admin users
         await db

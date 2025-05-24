@@ -4,7 +4,6 @@
   "version": "0.0.1",
   "type": "module",
   "scripts": {
-    "start": "npx serve -s dist -l 8080",
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",

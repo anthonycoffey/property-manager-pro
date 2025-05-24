@@ -57,11 +57,11 @@ const Dashboard: React.FC = () => {
     // Potentially reset adminTabValue or other related states if needed when org changes
   };
 
-  const handleAdminTabChange = (event: React.SyntheticEvent, newValue: number) => {
+  const handleAdminTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setAdminTabValue(newValue);
   };
 
-  const handlePmTabChange = (event: React.SyntheticEvent, newValue: number) => {
+  const handlePmTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setPmTabValue(newValue);
   };
 

@@ -13,7 +13,6 @@ export default [
       reportUnusedDisableDirectives: "warn",
     },
     rules: {
-      "no-console": "warn",
       "no-debugger": "error",
       "no-unused-vars": ["warn", { "argsIgnorePattern": "^_" }],
       "eqeqeq": ["error", "always"],

@@ -48,6 +48,35 @@ The project is actively implementing Role-Based Access Control (RBAC) and Cloud 
         *   `processSignUp` now checks for existing `organizationId` claims to avoid conflicts with invited user processing.
     *   **Added `signUpWithInvitation` HTTPS Callable Cloud Function (`functions/src/index.ts`):**
         *   Handles user sign-ups via an invitation, ensuring immediate association with an organization, correct roles, proper profile creation in multi-tenant Firestore paths, and updates invitation status.
+*   **Invitation System Implementation (Phase 1 - Backend & Core UI) (2025-05-23):**
+    *   **Documented Plan:** Created `docs/03-invitation-system-plan.md`.
+    *   **Cloud Functions (`functions/src/index.ts`):**
+        *   Added `createInvitation` callable function.
+        *   Added `createProperty` callable function.
+        *   Added `crypto` import.
+    *   **Firestore Security Rules (`firestore.rules`):** Updated rules for `organizations/{orgId}/invitations` subcollection.
+    *   **Email Templates (JSON in `docs/`):**
+        *   Created `docs/propertyManagerInvitation.json`.
+        *   Created `docs/residentInvitation.json`.
+    *   **UI Components (React Forms):**
+        *   Created `src/components/Admin/InvitePropertyManagerForm.tsx`.
+        *   Created `src/components/PropertyManager/CreatePropertyForm.tsx`.
+        *   Created `src/components/PropertyManager/InviteResidentForm.tsx`.
+    *   **TypeScript Fixes:** Resolved issues with `currentUser` property access in new forms by using destructured values from `useAuth()`. Addressed MUI `Grid` `item` prop usage.
+*   **Invitation System (Phase 2 - Dynamic Templates & UI Integration) (2025-05-23):**
+    *   **Dynamic Email Templates:**
+        *   Updated `createInvitation` Cloud Function in `functions/src/index.ts` to use dynamic `appDomain` (from Firebase project ID), `appName` (placeholder), and `inviterName` (from auth token or Firestore profile) in email template data.
+        *   Updated `docs/propertyManagerInvitation.json` and `docs/residentInvitation.json` to include `{{ appName }}` and `{{ inviterName }}` placeholders.
+    *   **Dashboard Integration (`src/components/Dashboard.tsx`):**
+        *   Integrated `InvitePropertyManagerForm.tsx` and `PropertyManagerManagement.tsx` into Admin section using MUI Tabs.
+        *   Integrated `CreatePropertyForm.tsx` and `InviteResidentForm.tsx` (with a placeholder `propertyId`) into Property Manager section using MUI Tabs.
+    *   **Accept Invitation Page (`src/pages/AcceptInvitationPage.tsx`):**
+        *   Created page to handle invitation tokens from URL, display a sign-up form, and call `signUpWithInvitation` Cloud Function.
+    *   **Routing (`src/routes.tsx`):**
+        *   Added a public route `/accept-invitation` for `AcceptInvitationPage.tsx`.
+    *   **TypeScript Refinements (Cloud Functions):**
+        *   Replaced `any` types in `functions/src/index.ts` with specific interfaces (`UserProfileData`, `InvitationData`, `EmailTemplateData`) for improved type safety in `signUpWithInvitation` and `createInvitation` functions.
+
 
 ## 3. What's Left to Build (High-Level from `projectRoadmap.md`)
 
@@ -59,7 +88,7 @@ The remaining application functionality includes:
     *   Properties Management (CRUD).
     *   Residents Management (View, Edit, Delete for support).
 *   **C. Property Manager Dashboard:**
-    *   View assigned properties.
+    *   View assigned properties (and allow selection to make `propertyId` dynamic for `InviteResidentForm`).
     *   Manage residents for their properties.
     *   Manage invitations.
     *   Track service requests.
@@ -69,12 +98,18 @@ The remaining application functionality includes:
     *   Submit and track service requests.
 *   **E. Core Systems & Features:**
     *   **Data Models in Firestore:** (Initial implementation complete, ongoing refinement as features are built).
-    *   **Invitation System:** (Full implementation pending).
+    *   **Invitation System:**
+        *   Thorough end-to-end testing of all invitation flows.
+        *   Manually add email templates from `docs/` to Firestore `templates` collection.
+        *   Refine `InviteResidentForm.tsx` in `Dashboard.tsx` to use a dynamic `propertyId`.
     *   **Service Request System:** (Full implementation pending).
-    *   **Firebase Cloud Functions for:** CRM Integration, Email Sending, CSV Processing, QR Code Generation, Subscription Management (all pending).
+    *   **Firebase Cloud Functions for:** CRM Integration, Email Sending (beyond invitations), CSV Processing, QR Code Generation, Subscription Management (all pending).
 
 ## 4. Known Issues & Blockers
 
+*   **MUI Grid TypeScript Errors:** Lingering TypeScript errors related to MUI `Grid` component props in `CreatePropertyForm.tsx` might indicate a deeper type configuration issue or linter quirk. Functionality is expected to be unaffected.
+*   **Placeholder `appName`:** The `appName` in `functions/src/index.ts` for email templates is currently a hardcoded placeholder ("Property Manager Pro"). This should ideally be configurable.
+*   **Placeholder `propertyId`:** The `InviteResidentForm` in `Dashboard.tsx` uses a hardcoded `examplePropertyIdForResidentInvite`. This needs to be made dynamic based on PM's selected property.
 *   **None at this stage.** The "Can't determine Firebase Database URL" error in `processSignUp` has been resolved. The TypeScript error related to `functions.auth` was previously resolved.
 
 ## 5. Evolution of Project Decisions

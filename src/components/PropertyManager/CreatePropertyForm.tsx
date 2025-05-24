@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { useAuth } from '../../hooks/useAuth';
+import type { CreatePropertyResponse, AppError } from '../../types';
 
 // MUI Components
 import TextField from '@mui/material/TextField';
@@ -9,7 +10,6 @@ import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import CircularProgress from '@mui/material/CircularProgress';
 import Alert from '@mui/material/Alert';
-import Grid from '@mui/material/Grid';
 
 interface PropertyAddress {
   street: string;
@@ -67,17 +67,20 @@ const CreatePropertyForm: React.FC = () => {
         // organizationId is implicitly taken from the caller's token in the Cloud Function
       });
 
-      if ((result.data as any)?.success) {
-        setSuccess(`Property "${propertyName}" created successfully. Property ID: ${(result.data as any)?.propertyId}`);
+      const responseData = result.data as CreatePropertyResponse;
+
+      if (responseData?.success) {
+        setSuccess(`Property "${propertyName}" created successfully. Property ID: ${responseData?.propertyId}`);
         setPropertyName('');
         setPropertyType('');
         setAddress({ street: '', city: '', state: '', zip: '' });
       } else {
-        setError((result.data as any)?.message || 'Failed to create property.');
+        setError(responseData?.message || 'Failed to create property.');
       }
-    } catch (err: any) {
+    } catch (err) {
       console.error('Error creating property:', err);
-      setError(err.message || 'An unexpected error occurred.');
+      const appError = err as AppError;
+      setError(appError.message || 'An unexpected error occurred.');
     } finally {
       setLoading(false);
     }
@@ -114,19 +117,22 @@ const CreatePropertyForm: React.FC = () => {
         helperText="e.g., Residential, Commercial"
       />
       <Typography variant="subtitle1" sx={{ mt: 2, mb: 1 }}>Property Address</Typography>
-      <Grid container spacing={2}>
-        <Grid item xs={12}>
-          <TextField
-            label="Street Address"
-            name="street"
-            fullWidth
-            value={address.street}
-            onChange={handleAddressChange}
-            required
-            disabled={loading}
-          />
-        </Grid>
-        <Grid item xs={12} sm={6}>
+      {/* Street Address Field - Full width */}
+      <Box sx={{ mb: 2 }}>
+        <TextField
+          label="Street Address"
+          name="street"
+          fullWidth
+          value={address.street}
+          onChange={handleAddressChange}
+          required
+          disabled={loading}
+        />
+      </Box>
+      {/* Row for City, State, Zip */}
+      <Box display="flex" sx={{ flexDirection: { xs: 'column', sm: 'row' }, gap: 2, mb: 2 }}>
+        {/* City Field: xs=12, sm=6 */}
+        <Box sx={{ width: { xs: '100%', sm: '50%' } }}>
           <TextField
             label="City"
             name="city"
@@ -136,30 +142,35 @@ const CreatePropertyForm: React.FC = () => {
             required
             disabled={loading}
           />
-        </Grid>
-        <Grid item xs={6} sm={3}>
-          <TextField
-            label="State"
-            name="state"
-            fullWidth
-            value={address.state}
-            onChange={handleAddressChange}
-            required
-            disabled={loading}
-          />
-        </Grid>
-        <Grid item xs={6} sm={3}>
-          <TextField
-            label="ZIP Code"
-            name="zip"
-            fullWidth
-            value={address.zip}
-            onChange={handleAddressChange}
-            required
-            disabled={loading}
-          />
-        </Grid>
-      </Grid>
+        </Box>
+        {/* Container for State and Zip: xs=12, sm=6 */}
+        <Box display="flex" sx={{ width: { xs: '100%', sm: '50%' }, gap: 2 }}>
+          {/* State Field: xs=6 (of 12), sm=3 (of 12) -> 50% of its container */}
+          <Box sx={{ width: { xs: '50%', sm: '50%' } }}>
+            <TextField
+              label="State"
+              name="state"
+              fullWidth
+              value={address.state}
+              onChange={handleAddressChange}
+              required
+              disabled={loading}
+            />
+          </Box>
+          {/* Zip Field: xs=6 (of 12), sm=3 (of 12) -> 50% of its container */}
+          <Box sx={{ width: { xs: '50%', sm: '50%' } }}>
+            <TextField
+              label="ZIP Code"
+              name="zip"
+              fullWidth
+              value={address.zip}
+              onChange={handleAddressChange}
+              required
+              disabled={loading}
+            />
+          </Box>
+        </Box>
+      </Box>
       <Button
         type="submit"
         variant="contained"

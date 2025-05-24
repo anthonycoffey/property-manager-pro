@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { Box, TextField, Button, Typography, Container, Paper, CircularProgress, Alert } from '@mui/material';
 import { useAuth } from '../hooks/useAuth'; // To redirect if already logged in
+import type { SignUpWithInvitationResponse, AppError } from '../types';
 
 const AcceptInvitationPage: React.FC = () => {
   const [email, setEmail] = useState(''); // Email might be pre-filled or confirmed
@@ -67,7 +68,9 @@ const AcceptInvitationPage: React.FC = () => {
         invitationId: invitationToken,
       });
 
-      if ((result.data as any)?.success) {
+      const responseData = result.data as SignUpWithInvitationResponse;
+
+      if (responseData?.success) {
         setSuccess('Account created successfully! You will be redirected to login.');
         // Firebase Auth state change should handle redirect via AuthProvider,
         // or navigate to login page after a delay.
@@ -75,11 +78,12 @@ const AcceptInvitationPage: React.FC = () => {
           navigate('/login');
         }, 3000);
       } else {
-        setError((result.data as any)?.message || 'Failed to create account with invitation.');
+        setError(responseData?.message || 'Failed to create account with invitation.');
       }
-    } catch (err: any) {
+    } catch (err) {
       console.error('Error accepting invitation:', err);
-      setError(err.message || 'An unexpected error occurred.');
+      const appError = err as AppError;
+      setError(appError.message || 'An unexpected error occurred.');
     } finally {
       setLoading(false);
     }

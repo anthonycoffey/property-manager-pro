@@ -4,6 +4,7 @@ import LogoutButton from './LogoutButton';
 import { useAuth } from '../hooks/useAuth';
 
 // Admin Components
+import OrganizationSelector from './Admin/OrganizationSelector'; // Added import
 import PropertyManagerManagement from './Admin/PropertyManagerManagement';
 import InvitePropertyManagerForm from './Admin/InvitePropertyManagerForm';
 
@@ -49,6 +50,12 @@ const Dashboard: React.FC = () => {
   const { currentUser, roles, organizationId, propertyId } = useAuth();
   const [adminTabValue, setAdminTabValue] = useState(0);
   const [pmTabValue, setPmTabValue] = useState(0);
+  const [selectedAdminOrgId, setSelectedAdminOrgId] = useState<string | null>(null); // Added state for selected org
+
+  const handleAdminOrgChange = (orgId: string | null) => { // Added handler
+    setSelectedAdminOrgId(orgId);
+    // Potentially reset adminTabValue or other related states if needed when org changes
+  };
 
   const handleAdminTabChange = (event: React.SyntheticEvent, newValue: number) => {
     setAdminTabValue(newValue);
@@ -80,6 +87,11 @@ const Dashboard: React.FC = () => {
           <Typography variant='h5' color='primary' sx={{ mb: 2 }}>
             Administrator Panel
           </Typography>
+          <OrganizationSelector
+            selectedOrganizationId={selectedAdminOrgId}
+            onOrganizationChange={handleAdminOrgChange}
+          />
+          <Divider sx={{ my: 2 }} />
           <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
             <Tabs value={adminTabValue} onChange={handleAdminTabChange} aria-label="admin actions tabs">
               <Tab label="Manage Property Managers" {...a11yProps(0)} />
@@ -87,7 +99,7 @@ const Dashboard: React.FC = () => {
             </Tabs>
           </Box>
           <TabPanel value={adminTabValue} index={0}>
-            <PropertyManagerManagement />
+            <PropertyManagerManagement organizationId={selectedAdminOrgId} />
           </TabPanel>
           <TabPanel value={adminTabValue} index={1}>
             <InvitePropertyManagerForm />

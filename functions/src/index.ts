@@ -710,3 +710,66 @@ export const createProperty = onCall(async (request) => {
     throw handleHttpsError(error, 'Failed to create property.');
   }
 });
+
+export const revokeInvitation = onCall(async (request) => {
+  // 1. Authentication & Authorization
+  if (!request.auth) {
+    throw new HttpsError(
+      'unauthenticated',
+      'The function must be called while authenticated.'
+    );
+  }
+  const callerRoles = (request.auth.token?.roles as string[]) || [];
+  if (!callerRoles.includes('admin')) {
+    throw new HttpsError(
+      'permission-denied',
+      'Only administrators can revoke invitations.'
+    );
+  }
+
+  // 2. Input Validation
+  const { organizationId, invitationId } = request.data;
+  if (!organizationId || !invitationId) {
+    throw new HttpsError(
+      'invalid-argument',
+      'Missing required fields: organizationId, invitationId.'
+    );
+  }
+
+  const invitationPath = `organizations/${organizationId}/invitations/${invitationId}`;
+  const invitationRef = db.doc(invitationPath);
+
+  try {
+    // 3. Fetch Invitation
+    const invitationDoc = await invitationRef.get();
+
+    // 4. Validation
+    if (!invitationDoc.exists) {
+      throw new HttpsError('not-found', `Invitation ${invitationId} not found in organization ${organizationId}.`);
+    }
+
+    const invitationData = invitationDoc.data();
+    if (invitationData?.status !== 'pending') {
+      throw new HttpsError(
+        'failed-precondition',
+        `Invitation ${invitationId} is not in 'pending' status. Current status: ${invitationData?.status}.`
+      );
+    }
+
+    // 5. Action: Delete the invitation document
+    await invitationRef.delete();
+
+    // 6. Logging
+    console.log(
+      `Invitation ${invitationId} in organization ${organizationId} revoked by admin ${request.auth.uid}.`
+    );
+
+    // 7. Return
+    return {
+      success: true,
+      message: `Invitation ${invitationId} successfully revoked.`,
+    };
+  } catch (error: unknown) {
+    throw handleHttpsError(error, 'Failed to revoke invitation.');
+  }
+});

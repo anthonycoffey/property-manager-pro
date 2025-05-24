@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { useAuth } from '../../hooks/useAuth';
+import type { CreateInvitationResponse, AppError } from '../../types';
 
 // MUI Components
 import TextField from '@mui/material/TextField';
@@ -54,15 +55,18 @@ const InviteResidentForm: React.FC<InviteResidentFormProps> = ({ propertyId }) =
         targetPropertyId: propertyId, // The specific property this resident is invited to
       });
 
-      if ((result.data as any)?.success) {
-        setSuccess(`Invitation sent successfully to ${inviteeEmail} for property ${propertyId}. Invitation ID: ${(result.data as any)?.invitationId}`);
+      const responseData = result.data as CreateInvitationResponse;
+
+      if (responseData?.success) {
+        setSuccess(`Invitation sent successfully to ${inviteeEmail} for property ${propertyId}. Invitation ID: ${responseData?.invitationId}`);
         setInviteeEmail('');
       } else {
-        setError((result.data as any)?.message || 'Failed to send invitation.');
+        setError(responseData?.message || 'Failed to send invitation.');
       }
-    } catch (err: any) {
+    } catch (err) {
       console.error('Error sending invitation:', err);
-      setError(err.message || 'An unexpected error occurred.');
+      const appError = err as AppError;
+      setError(appError.message || 'An unexpected error occurred.');
     } finally {
       setLoading(false);
     }

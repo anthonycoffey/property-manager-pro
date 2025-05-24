@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { useAuth } from '../../hooks/useAuth'; // Assuming useAuth provides access to the current user
+import type { CreateInvitationResponse, AppError } from '../../types';
 
 // MUI Components (assuming you are using Material UI)
 import TextField from '@mui/material/TextField';
@@ -46,16 +47,20 @@ const InvitePropertyManagerForm: React.FC = () => {
         invitedByRole: 'admin',
       });
 
-      if ((result.data as any)?.success) {
-        setSuccess(`Invitation sent successfully to ${inviteeEmail}. Invitation ID: ${(result.data as any)?.invitationId}`);
+      // Assuming result.data is what needs to be typed
+      const responseData = result.data as CreateInvitationResponse;
+
+      if (responseData?.success) {
+        setSuccess(`Invitation sent successfully to ${inviteeEmail}. Invitation ID: ${responseData?.invitationId}`);
         setInviteeEmail('');
         setOrganizationId('');
       } else {
-        setError((result.data as any)?.message || 'Failed to send invitation.');
+        setError(responseData?.message || 'Failed to send invitation.');
       }
-    } catch (err: any) {
+    } catch (err) {
       console.error('Error sending invitation:', err);
-      setError(err.message || 'An unexpected error occurred.');
+      const appError = err as AppError; // Or use a type guard if err can be other types
+      setError(appError.message || 'An unexpected error occurred.');
     } finally {
       setLoading(false);
     }

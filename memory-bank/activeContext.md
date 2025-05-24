@@ -2,7 +2,7 @@
 
 ## 1. Current Work Focus
 
-The current focus is on the active implementation of Role-Based Access Control (RBAC) and Cloud Firestore for the multi-tenant architecture, as outlined in `docs/02-rbac-firestore-implementation.md`. This involves setting up backend functions, defining security rules, and integrating these features into the React frontend.
+With the "Admin Property Manager Management Panel Overhaul" (Step 4 from `docs/04-admin-pm-management-plan.md`) now complete, the focus shifts to the next items on the project roadmap. This could include further enhancements to the Admin Dashboard (e.g., Property Management) or completing the Invitation System refinements.
 
 ## 2. Recent Changes & Activities
 
@@ -44,13 +44,59 @@ The current focus is on the active implementation of Role-Based Access Control (
         2.  A second `useEffect` reacts to changes in `firebaseUser`, synchronously sets a `loading` state to `true` if processing is needed, asynchronously fetches claims, updates the main `currentUser` context, and then sets `loading` to `false`.
     *   This ensures the `loading` state accurately reflects the auth processing period, preventing `ProtectedRoute` from making decisions based on stale or incomplete context.
     *   Restored `src/components/ProtectedRoute.tsx` to enforce role and ID checks after confirming the fix.
+*   **Invitation System Implementation (Phase 1 - Backend & Core UI) (2025-05-23):**
+    *   **Documented Plan:** Created `docs/03-invitation-system-plan.md`.
+    *   **Cloud Functions:**
+        *   Added `createInvitation` callable Cloud Function to `functions/src/index.ts` for generating invitation records and triggering emails.
+        *   Added `createProperty` callable Cloud Function to `functions/src/index.ts` for property managers to create properties.
+        *   Added `crypto` import to `functions/src/index.ts`.
+    *   **Firestore Security Rules:** Updated `firestore.rules` to include rules for the `organizations/{orgId}/invitations` subcollection.
+    *   **Email Templates:** Created JSON structures for `propertyManagerInvitation` and `residentInvitation` email templates in `docs/` for manual Firestore setup.
+    *   **UI Components (Initial Forms):**
+        *   Created `src/components/Admin/InvitePropertyManagerForm.tsx`.
+        *   Created `src/components/PropertyManager/CreatePropertyForm.tsx`.
+        *   Created `src/components/PropertyManager/InviteResidentForm.tsx`.
+    *   **TypeScript Fixes:** Corrected `currentUser` property access in the new form components to use destructured `roles` and `organizationId` from `useAuth()`. Addressed MUI `Grid` `item` prop usage in `CreatePropertyForm.tsx`.
+*   **Invitation System (Phase 2 - Dynamic Templates & UI Integration) (2025-05-23):**
+    *   **Dynamic Email Templates:**
+        *   Updated `createInvitation` Cloud Function in `functions/src/index.ts` to use dynamic `appDomain` (from Firebase project ID), `appName` (placeholder), and `inviterName` (from auth token or Firestore profile) in email template data.
+        *   Updated `docs/propertyManagerInvitation.json` and `docs/residentInvitation.json` to include `{{ appName }}` and `{{ inviterName }}` placeholders.
+    *   **Dashboard Integration:**
+        *   Modified `src/components/Dashboard.tsx` to include tabs for Admin and Property Manager roles, integrating:
+            *   `InvitePropertyManagerForm.tsx` and `PropertyManagerManagement.tsx` for Admins.
+            *   `CreatePropertyForm.tsx` and `InviteResidentForm.tsx` (with a placeholder `propertyId`) for Property Managers.
+    *   **Accept Invitation Page:**
+        *   Created `src/pages/AcceptInvitationPage.tsx` to handle invitation tokens from URL, display a sign-up form, and call `signUpWithInvitation` Cloud Function.
+        *   Added a route for `/accept-invitation` in `src/routes.tsx` pointing to `AcceptInvitationPage.tsx`.
+    *   **TypeScript Refinements (Cloud Functions):**
+        *   Replaced `any` types in `functions/src/index.ts` with specific interfaces (`UserProfileData`, `InvitationData`, `EmailTemplateData`) for improved type safety in `signUpWithInvitation` and `createInvitation` functions.
+*   **Admin Property Manager Management Panel Overhaul (Step 4 from `docs/04-admin-pm-management-plan.md`) (2025-05-24):**
+    *   **Phase 0: Organization Context Switcher:**
+        *   Created `src/components/Admin/OrganizationSelector.tsx` to allow Admins to select an organization.
+        *   Integrated `OrganizationSelector` into `src/components/Dashboard.tsx`, passing the selected `organizationId` to `PropertyManagerManagement.tsx`.
+    *   **Phase 1: Backend Adjustments:**
+        *   Implemented the `revokeInvitation` Cloud Function in `functions/src/index.ts` for Admins to cancel pending invitations.
+    *   **Phase 2: Frontend UI/UX Overhaul (`src/components/Admin/PropertyManagerManagement.tsx`):**
+        *   Removed the manual Property Manager creation form.
+        *   Implemented conditional data fetching (active PMs and pending PM invitations) based on the selected `organizationId`.
+        *   Created a unified MUI `Table` to display both active PMs and pending invitations.
+        *   Implemented actions for:
+            *   **Update PM:** Opens a dialog to edit `displayName` and `email`. Calls `updatePropertyManager` Cloud Function.
+            *   **Delete PM:** Opens a confirmation dialog. Calls `deletePropertyManager` Cloud Function.
+            *   **Revoke Invitation:** Opens a confirmation dialog. Calls `revokeInvitation` Cloud Function.
+        *   Added loading states and Snackbar feedback for all actions.
+    *   **Phase 3: Visual Design & User Experience:**
+        *   Core UX requirements (clear list, status chips, intuitive actions, loading indicators, feedback) addressed through MUI components and implementation choices in Phase 2.
 
 ## 3. Next Steps
 
-*   **Complete Phase 5 (Admin Dashboard - Property Manager CRUD):**
-    *   Implement the listing of existing property managers in `src/components/Admin/PropertyManagerManagement.tsx`.
-    *   Develop forms/modals for editing and deleting property managers, interacting with the `updatePropertyManager` and `deletePropertyManager` Cloud Functions.
-*   **Continue with Project Roadmap:** Proceed with other features outlined in `projectRoadmap.md` and `docs/02-rbac-firestore-implementation.md` (e.g., Property Management, Resident Management, Invitation System).
+*   **Invitation System (Phase 3 - Refinement & Testing):**
+    *   Refine `InviteResidentForm.tsx` in `Dashboard.tsx` to use a dynamic `propertyId` (e.g., from a list of managed properties) instead of the current placeholder.
+    *   Thoroughly test all invitation flows: Admin invites PM, PM creates Property, PM invites Resident, invitee accepts and signs up.
+    *   Verify email content and links.
+*   **Admin Dashboard - Properties Management:**
+    *   Begin implementation of property CRUD operations for Admins as per project roadmap.
+*   **Continue with Project Roadmap:** Proceed with other features outlined in `projectRoadmap.md`.
 
 ## 4. Active Decisions & Considerations
 

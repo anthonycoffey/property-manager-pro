@@ -1,6 +1,7 @@
 import { auth } from 'firebase-functions/v1';
 import { initializeApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
+import crypto from 'crypto';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 
 // Initialize the Firebase Admin SDK
@@ -224,7 +225,21 @@ export const signUpWithInvitation = onCall(async (request) => {
 
     // 6. Create Firestore User Profile
     let userProfilePath = '';
-    const userProfileData: { [key: string]: any } = {
+    // Define a more specific type for userProfileData
+    interface UserProfileData {
+      uid: string;
+      email: string;
+      displayName: string;
+      organizationId: string;
+      createdAt: FirebaseFirestore.FieldValue;
+      status: string;
+      invitedBy: string | null;
+      roles?: string[]; // For residents
+      organizationRoles?: string[]; // For org users like PMs
+      propertyId?: string; // For residents
+    }
+
+    const userProfileData: UserProfileData = {
       uid: uid,
       email: email,
       displayName: displayName,
@@ -481,5 +496,280 @@ export const deletePropertyManager = onCall(async (request) => {
     return { success: true, message: 'Property manager deleted successfully' };
   } catch (error: unknown) {
     throw handleHttpsError(error, 'Failed to delete property manager.');
+  }
+});
+
+// New function to create an invitation
+export const createInvitation = onCall(async (request) => {
+  if (!request.auth) {
+    throw new HttpsError('unauthenticated', 'The function must be called while authenticated.');
+  }
+
+  const {
+    inviteeEmail,
+    organizationId,
+    rolesToAssign, // e.g., ['property_manager'] or ['resident']
+    invitedByRole, // 'admin' or 'property_manager'
+    targetPropertyId, // Optional, only for resident invitations
+  } = request.data;
+
+  // Validate basic inputs
+  if (!inviteeEmail || !organizationId || !rolesToAssign || !Array.isArray(rolesToAssign) || rolesToAssign.length === 0 || !invitedByRole) {
+    throw new HttpsError('invalid-argument', 'Missing or invalid required fields for invitation.');
+  }
+
+  const callerUid = request.auth.uid;
+  const callerRoles = (request.auth.token?.roles as string[]) || [];
+  const callerOrgId = request.auth.token?.organizationId as string | undefined;
+
+  try {
+    // Authorization checks
+    if (invitedByRole === 'admin') {
+      if (!callerRoles.includes('admin')) {
+        throw new HttpsError('permission-denied', 'Only administrators can create admin-level invitations.');
+      }
+      // Admin can invite to any specified organizationId, so we trust the input `organizationId`
+    } else if (invitedByRole === 'property_manager') {
+      if (!callerRoles.includes('property_manager') || callerOrgId !== organizationId) {
+        throw new HttpsError('permission-denied', 'Property managers can only invite within their own organization.');
+      }
+      if (rolesToAssign.includes('resident') && !targetPropertyId) {
+        throw new HttpsError('invalid-argument', 'targetPropertyId is required for resident invitations.');
+      }
+      // Further validation: ensure PM manages targetPropertyId if provided
+      if (targetPropertyId) {
+        const propertyRef = db.doc(`organizations/${organizationId}/properties/${targetPropertyId}`);
+        const propertyDoc = await propertyRef.get();
+        if (!propertyDoc.exists) {
+          throw new HttpsError('not-found', `Property ${targetPropertyId} not found in organization ${organizationId}.`);
+        }
+        // Optional: Check if propertyDoc.data()?.managedBy === callerUid if that level of granularity is needed
+      }
+    } else {
+      throw new HttpsError('invalid-argument', 'Invalid invitedByRole specified.');
+    }
+
+    // Generate a unique invitation token (simple UUID for now)
+    const invitationToken = crypto.randomUUID();
+    const invitationPath = `organizations/${organizationId}/invitations/${invitationToken}`;
+
+    // Define a more specific type for invitationData
+    interface InvitationData {
+      email: string;
+      organizationId: string;
+      rolesToAssign: string[];
+      status: 'pending' | 'accepted' | 'expired';
+      createdBy: string;
+      invitedByRole: 'admin' | 'property_manager';
+      createdAt: FirebaseFirestore.FieldValue;
+      expiresAt: Date | FirebaseFirestore.FieldValue; // Can be Date object or serverTimestamp initially
+      invitationType: 'resident' | 'property_manager' | string; // More specific types if known
+      targetPropertyId?: string;
+    }
+
+    const invitationData: InvitationData = {
+      email: inviteeEmail,
+      organizationId: organizationId,
+      rolesToAssign: rolesToAssign,
+      status: 'pending',
+      createdBy: callerUid,
+      invitedByRole: invitedByRole,
+      createdAt: FieldValue.serverTimestamp(),
+      expiresAt: FieldValue.serverTimestamp(), // Placeholder, actual expiration logic below
+      invitationType: rolesToAssign.includes('resident') ? 'resident' : 'property_manager', // Or more specific based on roles
+    };
+
+    if (targetPropertyId && rolesToAssign.includes('resident')) {
+      invitationData.targetPropertyId = targetPropertyId;
+    }
+
+    // Set expiration (e.g., 7 days from now)
+    const sevenDaysInMillis = 7 * 24 * 60 * 60 * 1000;
+    invitationData.expiresAt = new Date(Date.now() + sevenDaysInMillis);
+
+
+    await db.doc(invitationPath).set(invitationData);
+    console.log(`Invitation created at ${invitationPath} for ${inviteeEmail}`);
+
+    // Trigger email using firestore-send-email extension
+    // Get project ID for constructing the default app domain
+    const projectId = process.env.GCLOUD_PROJECT || 'your-project-id-fallback'; // Fallback if not in Firebase env
+    const appDomain = `${projectId}.firebaseapp.com`; // Or your custom domain
+    const appName = "Property Manager Pro";
+
+    let emailTemplateName = '';
+     // Define a more specific type for emailData
+    interface EmailTemplateData {
+        inviteeName: string;
+        invitationLink: string;
+        appName: string;
+        inviterName: string;
+        organizationName?: string;
+        propertyName?: string;
+    }
+
+    const emailData: EmailTemplateData = {
+      inviteeName: inviteeEmail,
+      invitationLink: `https://${appDomain}/accept-invitation?token=${invitationToken}&orgId=${organizationId}`,
+      appName: appName, // Add appName to template data
+      inviterName: 'The Team', // Default inviter name, will be updated
+    };
+    
+    let inviterDisplayName = 'The Team'; // Default inviter name
+    if (request.auth?.token.name) {
+        inviterDisplayName = request.auth.token.name;
+    } else {
+        // Fallback to fetching inviter's profile if name not in token
+        const inviterProfile = await db.doc(`users/${callerUid}`).get(); // Adjust path if admins/org users are in different collections
+        if (inviterProfile.exists && inviterProfile.data()?.displayName) {
+            inviterDisplayName = inviterProfile.data()?.displayName;
+        }
+    }
+    emailData.inviterName = inviterDisplayName;
+
+
+    if (rolesToAssign.includes('property_manager')) {
+      emailTemplateName = 'propertyManagerInvitation';
+      const orgDoc = await db.doc(`organizations/${organizationId}`).get();
+      emailData.organizationName = orgDoc.exists ? orgDoc.data()?.name || organizationId : organizationId;
+    } else if (rolesToAssign.includes('resident') && targetPropertyId) {
+      emailTemplateName = 'residentInvitation';
+      const propDoc = await db.doc(`organizations/${organizationId}/properties/${targetPropertyId}`).get();
+      emailData.propertyName = propDoc.exists ? propDoc.data()?.name || targetPropertyId : targetPropertyId;
+    } else {
+      console.error("Could not determine email template for roles:", rolesToAssign);
+      throw new HttpsError('internal', 'Could not determine email template for the invitation.');
+    }
+
+    await db.collection('mail').add({
+      to: inviteeEmail,
+      template: {
+        name: emailTemplateName,
+        data: emailData,
+      },
+    });
+    console.log(`Email trigger created for invitation ${invitationToken} to ${inviteeEmail}`);
+
+    return {
+      success: true,
+      message: 'Invitation created and email triggered successfully.',
+      invitationId: invitationToken,
+    };
+  } catch (error: unknown) {
+    throw handleHttpsError(error, 'Failed to create invitation.');
+  }
+});
+
+// New function to create a property
+export const createProperty = onCall(async (request) => {
+  if (!request.auth) {
+    throw new HttpsError('unauthenticated', 'The function must be called while authenticated.');
+  }
+
+  const callerUid = request.auth.uid;
+  const callerRoles = (request.auth.token?.roles as string[]) || [];
+  const callerOrgId = request.auth.token?.organizationId as string | undefined;
+
+  if (!callerRoles.includes('property_manager') || !callerOrgId) {
+    throw new HttpsError('permission-denied', 'Only property managers can create properties within their organization.');
+  }
+
+  const { propertyName, address, propertyType } = request.data; // Add other fields as per your data model
+
+  if (!propertyName || !address || !propertyType) {
+    throw new HttpsError('invalid-argument', 'Missing required fields: propertyName, address, propertyType.');
+  }
+  // Add more specific validation for address object if needed
+
+  try {
+    const propertyCollectionRef = db.collection(`organizations/${callerOrgId}/properties`);
+    const newPropertyRef = propertyCollectionRef.doc(); // Auto-generate ID
+
+    const propertyData = {
+      id: newPropertyRef.id, // Store the auto-generated ID within the document
+      name: propertyName,
+      address: address, // e.g., { street, city, state, zip }
+      type: propertyType,
+      organizationId: callerOrgId,
+      managedBy: callerUid, // UID of the property manager creating it
+      createdAt: FieldValue.serverTimestamp(),
+      status: 'active', // Default status
+      // Add any other relevant fields
+    };
+
+    await newPropertyRef.set(propertyData);
+    console.log(`Property created with ID ${newPropertyRef.id} in organization ${callerOrgId}`);
+
+    return {
+      success: true,
+      message: 'Property created successfully.',
+      propertyId: newPropertyRef.id,
+      propertyData: propertyData
+    };
+  } catch (error: unknown) {
+    throw handleHttpsError(error, 'Failed to create property.');
+  }
+});
+
+export const revokeInvitation = onCall(async (request) => {
+  // 1. Authentication & Authorization
+  if (!request.auth) {
+    throw new HttpsError(
+      'unauthenticated',
+      'The function must be called while authenticated.'
+    );
+  }
+  const callerRoles = (request.auth.token?.roles as string[]) || [];
+  if (!callerRoles.includes('admin')) {
+    throw new HttpsError(
+      'permission-denied',
+      'Only administrators can revoke invitations.'
+    );
+  }
+
+  // 2. Input Validation
+  const { organizationId, invitationId } = request.data;
+  if (!organizationId || !invitationId) {
+    throw new HttpsError(
+      'invalid-argument',
+      'Missing required fields: organizationId, invitationId.'
+    );
+  }
+
+  const invitationPath = `organizations/${organizationId}/invitations/${invitationId}`;
+  const invitationRef = db.doc(invitationPath);
+
+  try {
+    // 3. Fetch Invitation
+    const invitationDoc = await invitationRef.get();
+
+    // 4. Validation
+    if (!invitationDoc.exists) {
+      throw new HttpsError('not-found', `Invitation ${invitationId} not found in organization ${organizationId}.`);
+    }
+
+    const invitationData = invitationDoc.data();
+    if (invitationData?.status !== 'pending') {
+      throw new HttpsError(
+        'failed-precondition',
+        `Invitation ${invitationId} is not in 'pending' status. Current status: ${invitationData?.status}.`
+      );
+    }
+
+    // 5. Action: Delete the invitation document
+    await invitationRef.delete();
+
+    // 6. Logging
+    console.log(
+      `Invitation ${invitationId} in organization ${organizationId} revoked by admin ${request.auth.uid}.`
+    );
+
+    // 7. Return
+    return {
+      success: true,
+      message: `Invitation ${invitationId} successfully revoked.`,
+    };
+  } catch (error: unknown) {
+    throw handleHttpsError(error, 'Failed to revoke invitation.');
   }
 });

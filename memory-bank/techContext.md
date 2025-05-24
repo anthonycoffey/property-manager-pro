@@ -66,3 +66,4 @@
 *   **React DevTools:** Browser extension for debugging React components and state.
 *   **IDE Debugger:** For stepping through both frontend and backend (Cloud Functions, if using Node.js and configured for local debugging) code.
 *   **Postman / Insomnia (or similar):** For testing Cloud Function HTTP endpoints directly.
+*   **MUI Layout Components:** Prefer `Box` (with flexbox `sx` props) and `Stack` for creating layouts over `Grid` where `Grid` has shown to cause TypeScript typing issues or if simpler 1D/flex layouts are sufficient. While `Grid` is a powerful 2D layout tool and not deprecated, `Box` and `Stack` can offer more straightforward type safety and simpler API for many common layout scenarios. This preference helps avoid potential `Grid`-related type errors.

@@ -1,0 +1,5 @@
+{
+  "subject": "Invitation to Manage Properties on {{ appName }}",
+  "text": "Hello {{ inviteeName }},\n\nYou have been invited by {{ inviterName }} to join {{ organizationName }} on {{ appName }} as a Property Manager.\n\nPlease click the following link to accept this invitation and create your account:\n{{ invitationLink }}\n\nThis link will expire in 7 days.\n\nIf you were not expecting this invitation, please ignore this email.\n\nThanks,\nThe {{ appName }} Team",
+  "html": "<p>Hello {{ inviteeName }},</p><p>You have been invited by {{ inviterName }} to join <strong>{{ organizationName }}</strong> on {{ appName }} as a Property Manager.</p><p>Please click the following link to accept this invitation and create your account:</p><p><a href=\"{{ invitationLink }}\">{{ invitationLink }}</a></p><p>This link will expire in 7 days.</p><p>If you were not expecting this invitation, please ignore this email.</p><p>Thanks,<br>The {{ appName }} Team</p>"
+}

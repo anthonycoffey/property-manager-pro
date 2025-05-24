@@ -101,10 +101,24 @@ service cloud.firestore {
 
       // Subcollection: invitations
       match /invitations/{invitationId} {
-        // Admins can manage all invitations
+        // Admins can manage all invitations (create, read, update, delete)
         allow read, write: if isAdmin();
-        // Property Managers can create/read/update invitations within their organization
-        allow read, write: if isPropertyManager() && isOrgUser(organizationId);
+
+        // Property Managers can create invitations within their organization.
+        // They can read/update invitations they created or for their organization.
+        allow create: if isPropertyManager() && isOrgUser(organizationId) &&
+                        request.resource.data.createdBy == request.auth.uid &&
+                        request.resource.data.organizationId == organizationId;
+
+        allow read, update: if isPropertyManager() && isOrgUser(organizationId);
+        // No direct delete for PMs unless specifically designed (e.g., only for 'pending' ones they created)
+
+        // Public read for a specific invitation token (e.g., when user clicks link before sign-up)
+        // This is tricky because unauthenticated users can't be easily granted specific doc access.
+        // The `signUpWithInvitation` function will handle token validation server-side.
+        // Client-side, if a page needs to display invitation details pre-auth, it would call a function.
+        // For now, we assume authenticated reads by PM/Admin cover most UI needs.
+        // If unauthenticated read of an invitation is needed, a Cloud Function acting as a proxy would be safer.
       }
 
       // Subcollection: services

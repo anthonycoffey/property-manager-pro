@@ -4,7 +4,9 @@ import LoginForm from './components/LoginForm';
 import SignupForm from './components/SignupForm';
 import Dashboard from './components/Dashboard';
 import ProtectedRoute from './components/ProtectedRoute';
-import PropertyManagerManagement from './components/Admin/PropertyManagerManagement'; // Import new component
+// import PropertyManagerManagement from './components/Admin/PropertyManagerManagement'; // No longer directly used here
+import AcceptInvitationPage from './pages/AcceptInvitationPage'; // Import the new page
+import AdminPropertyManagerPage from './pages/AdminPropertyManagerPage'; // Import the new wrapper page
 
 const AppRoutes: React.FC = () => {
   return (
@@ -23,10 +25,11 @@ const AppRoutes: React.FC = () => {
         path="/admin/property-managers"
         element={
           <ProtectedRoute allowedRoles={['admin']}>
-            <PropertyManagerManagement />
+            <AdminPropertyManagerPage />
           </ProtectedRoute>
         }
       />
+      <Route path="/accept-invitation" element={<AcceptInvitationPage />} />
       {/* Placeholder for unauthorized access */}
       <Route path="/unauthorized" element={<div>You are not authorized to view this page.</div>} />
       {/* Add more public and protected routes as needed */}

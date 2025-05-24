@@ -7,7 +7,7 @@ const AdminPropertyManagerPage: React.FC = () => {
   const [selectedOrgId, setSelectedOrgId] = useState<string | null>(null);
 
   return (
-    <Box sx={{ p: 3 }}> {/* Added a surrounding Box for padding consistent with Dashboard */}
+    <Box sx={{ p: 3 }}>
       <Paper elevation={3} sx={{ p: 2 }}>
         <Typography variant="h5" gutterBottom sx={{ mb: 2 }}>
           Manage Property Managers (Standalone Page)

@@ -4,9 +4,8 @@ import LoginForm from './components/LoginForm';
 import SignupForm from './components/SignupForm';
 import Dashboard from './components/Dashboard';
 import ProtectedRoute from './components/ProtectedRoute';
-// import PropertyManagerManagement from './components/Admin/PropertyManagerManagement'; // No longer directly used here
-import AcceptInvitationPage from './pages/AcceptInvitationPage'; // Import the new page
-import AdminPropertyManagerPage from './pages/AdminPropertyManagerPage'; // Import the new wrapper page
+import AcceptInvitationPage from './pages/AcceptInvitationPage';
+import AdminPropertyManagerPage from './pages/AdminPropertyManagerPage';
 
 const AppRoutes: React.FC = () => {
   return (

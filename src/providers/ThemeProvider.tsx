@@ -1,6 +1,6 @@
 import React, { useState, useMemo, type ReactNode } from 'react';
 import { createTheme, ThemeProvider as MuiThemeProvider, CssBaseline } from '@mui/material';
-import { ThemeContext } from '../hooks/useThemeMode'; // Import the context object
+import { ThemeContext } from '../hooks/useThemeMode';
 import type { PaletteMode } from '@mui/material';
 
 interface ThemeProviderProps {

@@ -102,6 +102,13 @@ The project has recently completed the implementation of the Admin Organization 
     *   Modified `src/components/Admin/InvitePropertyManagerForm.tsx` to accept `selectedOrganizationId` as a prop.
     *   The Organization ID field in this form is now pre-filled and disabled, based on the organization selected in `OrganizationSelector.tsx` on the `Dashboard`.
     *   Updated `src/components/Dashboard.tsx` to pass the `selectedAdminOrgId` to `InvitePropertyManagerForm.tsx`.
+*   **Social Sign-On for Accept Invitation Page (2025-05-24):**
+    *   Enhanced `src/pages/AcceptInvitationPage.tsx` to include UI and logic for Google and Microsoft social sign-on options.
+    *   Modified the `functions/src/callable/signUpWithInvitation.ts` Cloud Function to:
+        *   Handle pre-authenticated users (from social sign-on) by accepting an optional `uid` and making `password` optional.
+        *   Skip Firebase Auth user creation if `uid` is provided.
+        *   Validate that the email from the social provider matches the email on the invitation.
+        *   Use the display name from the social provider for the Firestore user profile.
 
 ## 3. What's Left to Build (High-Level from `projectRoadmap.md`)
 
@@ -125,7 +132,7 @@ The remaining application functionality includes:
 *   **E. Core Systems & Features:**
     *   **Data Models in Firestore:** (Initial implementation complete, ongoing refinement as features are built).
     *   **Invitation System:**
-        *   Thorough end-to-end testing of all invitation flows.
+        *   Thorough end-to-end testing of all invitation flows (including new social sign-on options).
         *   Manually add email templates from `docs/` to Firestore `templates` collection.
         *   Refine `InviteResidentForm.tsx` in `Dashboard.tsx` to use a dynamic `propertyId`.
     *   **Service Request System:** (Full implementation pending).
@@ -153,9 +160,10 @@ The remaining application functionality includes:
     *   **2025-05-23 (Auth Race Condition):** Identified and resolved a race condition in the client-side authentication flow. Refactored `src/providers/AuthProvider.tsx` to use a two-stage `useEffect` pattern. The first `useEffect` subscribes to `onAuthStateChanged` and updates a raw `firebaseUser` state. The second `useEffect` reacts to `firebaseUser` changes, manages a `loading` state explicitly during asynchronous claim fetching and context updates, ensuring that `ProtectedRoute` components receive a consistent and complete auth state. This fixed issues with premature redirects.
 *   **2025-05-23 (Multi-Tenant Sign-Up Strategy):** Implemented a two-part strategy for user creation to enhance multi-tenancy support:
     1.  The `processSignUp` (`auth.onCreate`) trigger was modified to handle initial states for direct sign-ups (assigning `pending_association` role) and admin user setup (correcting profile path to `admins/{uid}`).
-    2.  A new `signUpWithInvitation` callable Cloud Function was introduced to manage invited user sign-ups, ensuring immediate and correct association with an organization, roles, and multi-tenant profile creation.
+    2.  The `signUpWithInvitation` callable Cloud Function was updated to manage invited user sign-ups (both email/password and social sign-on), ensuring immediate and correct association with an organization, roles, and multi-tenant profile creation.
 *   **2025-05-24 (Admin PM Management Overhaul):** Implemented the Admin Property Manager Management panel overhaul as per `docs/04-admin-pm-management-plan.md`. This included adding an organization selector, a new `revokeInvitation` Cloud Function, and refactoring the `PropertyManagerManagement.tsx` component to remove manual PM creation and introduce a unified, organization-scoped list for managing active PMs and pending invitations with appropriate actions (Update, Delete, Revoke).
 *   **2025-05-24 (Organization Management & Functions Refactor):** Implemented CRUD operations for Organizations in the Admin panel. Refactored all Firebase Functions into a modular, per-file structure. Added `updateOrganization` and `deactivateOrganization` Cloud Functions. Corrected TypeScript import issues and interface definitions.
+*   **2025-05-24 (Social Sign-On for Invitation Acceptance):** Added Google and Microsoft social sign-on options to the `AcceptInvitationPage.tsx`. Updated the `signUpWithInvitation` Cloud Function to support this flow by handling pre-authenticated users and ensuring email consistency with the invitation.
 
 ## 6. Immediate Next Steps
 

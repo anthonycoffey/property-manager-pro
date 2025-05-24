@@ -17,14 +17,27 @@ interface UserProfileData {
 }
 
 export const signUpWithInvitation = onCall(async (request) => {
-  const { email, password, displayName, organizationId, invitationId } =
-    request.data;
+  const {
+    email,
+    password, // Optional for social sign-on
+    displayName,
+    organizationId,
+    invitationId,
+    uid: preAuthUid, // UID from social sign-on if user is already authenticated
+  } = request.data;
 
   // 1. Input Validation
-  if (!email || !password || !displayName || !organizationId || !invitationId) {
+  if (!email || !displayName || !organizationId || !invitationId) {
     throw new HttpsError(
       'invalid-argument',
-      'Missing required fields: email, password, displayName, organizationId, invitationId.'
+      'Missing required fields: email, displayName, organizationId, invitationId.'
+    );
+  }
+  // Password is required only if preAuthUid is not provided
+  if (!preAuthUid && !password) {
+    throw new HttpsError(
+      'invalid-argument',
+      'Password is required for email/password sign-up.'
     );
   }
 
@@ -52,6 +65,18 @@ export const signUpWithInvitation = onCall(async (request) => {
         'Invitation is not pending or has already been used.'
       );
     }
+    
+    // Server-side email validation against invitation
+    if (invitationData.email.toLowerCase() !== email.toLowerCase()) {
+        console.error(
+            `Email mismatch: Invitation email (${invitationData.email}) vs provided email (${email}) for invitation ${invitationId}.`
+        );
+        throw new HttpsError(
+            'failed-precondition',
+            'The provided email does not match the invited email address.'
+        );
+    }
+
 
     // 3. Extract Invitation Details
     const rolesToAssign = invitationData.rolesToAssign as string[];
@@ -65,14 +90,37 @@ export const signUpWithInvitation = onCall(async (request) => {
       );
     }
 
-    // 4. Create Firebase Auth User
-    const userRecord = await adminAuth.createUser({
-      email: email,
-      password: password,
-      displayName: displayName,
-    });
-    const uid = userRecord.uid;
-    console.log(`Auth user created via invitation: ${uid} for email ${email}`);
+    let uid: string;
+    let finalDisplayName = displayName;
+
+    // 4. Handle Auth User: Create or Use Existing (for social sign-on)
+    if (preAuthUid) {
+      // User is already authenticated via social sign-on
+      uid = preAuthUid;
+      // Optionally, fetch the user to confirm existence and get their auth display name if preferred
+      try {
+        const existingUser = await adminAuth.getUser(uid);
+        if (existingUser.email?.toLowerCase() !== email.toLowerCase()) {
+            // This is an important server-side check
+            throw new HttpsError('failed-precondition', 'Social account email does not match the invitation email.');
+        }
+        finalDisplayName = existingUser.displayName || displayName; // Prefer auth display name
+        console.log(`Using pre-authenticated user ${uid} for email ${email} from social sign-on.`);
+      } catch (authError) {
+        console.error(`Error fetching pre-authenticated user ${uid}:`, authError);
+        throw new HttpsError('internal', 'Failed to verify pre-authenticated user.');
+      }
+    } else {
+      // Create a new Firebase Auth user (email/password flow)
+      const userRecord = await adminAuth.createUser({
+        email: email,
+        password: password, // Password is guaranteed to be present here by prior validation
+        displayName: displayName,
+      });
+      uid = userRecord.uid;
+      console.log(`Auth user created via invitation: ${uid} for email ${email}`);
+    }
+
 
     // 5. Set Custom Claims
     const claims: {
@@ -102,8 +150,8 @@ export const signUpWithInvitation = onCall(async (request) => {
     let userProfilePath = '';
     const userProfileData: UserProfileData = {
       uid: uid,
-      email: email,
-      displayName: displayName,
+      email: email, // Use the validated email from invitation/input
+      displayName: finalDisplayName, // Use potentially updated display name
       organizationId: organizationId,
       createdAt: FieldValue.serverTimestamp(),
       status: 'active',

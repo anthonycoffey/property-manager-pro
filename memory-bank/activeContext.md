@@ -107,6 +107,15 @@ With the "Admin Property Manager Management Panel Overhaul" (Step 4 from `docs/0
     *   Modified `src/components/Admin/InvitePropertyManagerForm.tsx` to accept `selectedOrganizationId` as a prop.
     *   The Organization ID field in this form is now pre-filled and disabled, based on the organization selected in `OrganizationSelector.tsx` on the `Dashboard`.
     *   Updated `src/components/Dashboard.tsx` to pass the `selectedAdminOrgId` to `InvitePropertyManagerForm.tsx`.
+*   **Social Sign-On for Accept Invitation Page (2025-05-24):**
+    *   Enhanced `src/pages/AcceptInvitationPage.tsx` to include "Sign up with Google" and "Sign up with Microsoft" buttons.
+    *   Implemented logic to use `signInWithPopup` for social authentication.
+    *   The `processSocialSignUp` helper function in `AcceptInvitationPage.tsx` now calls the `signUpWithInvitation` Cloud Function, passing the `uid`, `email`, and `displayName` from the social provider.
+    *   Modified `functions/src/callable/signUpWithInvitation.ts` to:
+        *   Accept an optional `uid` (for pre-authenticated social sign-on users) and make `password` optional.
+        *   If `uid` is provided, skip Firebase Auth user creation (`admin.auth().createUser()`) and use the existing `uid`.
+        *   Perform server-side validation to ensure the email from the social provider matches the email on the invitation document.
+        *   Use the display name from the social provider for the Firestore user profile.
 
 ## 3. Next Steps
 
@@ -125,9 +134,10 @@ With the "Admin Property Manager Management Panel Overhaul" (Step 4 from `docs/0
 *   **Resolved TypeScript Error:** The TypeScript error `Property 'auth' does not exist on type 'typeof import("d:/repos/property-manager-pro/functions/node_modules/firebase-functions/lib/v2/index")'` for the `functions.auth.user().onCreate` trigger was previously resolved by explicitly importing `auth` from `firebase-functions`. This is now handled within the refactored `functions/src/auth/processSignUp.ts`.
 *   **User Sign-Up and Multi-Tenancy Association:**
     *   Direct sign-ups (not via invitation) result in a user with `roles: ['pending_association']` and a temporary profile in the root `users` collection (handled by `processSignUp`).
-    *   Sign-ups via invitation are handled by the `signUpWithInvitation` callable function, which immediately associates the user with an organization and assigns appropriate roles and profile location.
-    *   This two-pronged approach addresses different onboarding scenarios while aligning with the multi-tenancy model.
+    *   Sign-ups via invitation are handled by the `signUpWithInvitation` callable function, which immediately associates the user with an organization and assigns appropriate roles and profile location. This function now also supports pre-authenticated users from social sign-on.
+    *   This approach addresses different onboarding scenarios (email/password, social sign-on via invitation) while aligning with the multi-tenancy model.
 *   **Firebase Functions Structure:** Adopted a modular structure for Firebase Functions, with each function in its own file, categorized into `auth` and `callable` subdirectories. Shared utilities are in `helpers` and `firebaseAdmin` files. The main `index.ts` re-exports all functions. Relative imports within `functions/src` use `.js` extensions.
+*   **Social Sign-On Email Matching:** For invitation-based social sign-on, the email provided by the social identity provider *must* match the email address on the invitation. This is validated client-side (for UX) and server-side (for security) in `signUpWithInvitation.ts`.
 
 ## 5. Important Patterns & Preferences
 
@@ -145,5 +155,6 @@ With the "Admin Property Manager Management Panel Overhaul" (Step 4 from `docs/0
 *   **Auth Provider State Management (Race Condition Fix):** The refactor of `AuthProvider.tsx` using two `useEffect` hooks (one for raw Firebase user state, one for processing that state and managing loading/claims) proved effective in resolving a subtle race condition. This highlights the importance of carefully managing loading states when dealing with asynchronous authentication events and React context propagation to route guards. The key was ensuring that `loading` is `true` during the entire period when user data (including claims) is being fetched and set, preventing `ProtectedRoute` from acting on incomplete or stale data.
 *   **Multi-Tenant User Onboarding Strategy (New Insight 2025-05-23):** Adopted a two-part strategy for user creation to support multi-tenancy:
     1.  The `processSignUp` (`auth.onCreate`) trigger handles initial state for direct sign-ups (assigning `pending_association` role) and admin user setup.
-    2.  A new `signUpWithInvitation` callable Cloud Function manages invited user sign-ups, ensuring immediate association with an organization, correct roles, and profile creation in the designated multi-tenant Firestore path. This separation allows `processSignUp` to remain lean while the callable function handles the more complex, context-rich invitation flow.
+    2.  The `signUpWithInvitation` callable Cloud Function manages invited user sign-ups (both email/password and social sign-on), ensuring immediate association with an organization, correct roles, and profile creation in the designated multi-tenant Firestore path.
 *   **TypeScript Configuration for Firebase Functions (New Insight 2025-05-24):** Confirmed that the TypeScript setup for Firebase Functions (likely using `moduleResolution: "nodenext"` or similar) requires explicit `.js` extensions for relative imports within the `functions/src` directory. Type-only imports (`import type { ... } from ...`) are also enforced for type imports when `verbatimModuleSyntax` is enabled.
+*   **Social Sign-On for Invitations (New Insight 2025-05-24):** The `AcceptInvitationPage.tsx` now supports Google and Microsoft sign-on. The `signUpWithInvitation` Cloud Function was updated to handle these pre-authenticated users by skipping Auth user creation if a `uid` is passed from the client, and validating the social email against the invitation.

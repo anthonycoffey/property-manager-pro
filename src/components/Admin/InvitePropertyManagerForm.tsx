@@ -15,7 +15,9 @@ interface InvitePropertyManagerFormProps {
   selectedOrganizationId: string | null;
 }
 
-const InvitePropertyManagerForm: React.FC<InvitePropertyManagerFormProps> = ({ selectedOrganizationId }) => {
+const InvitePropertyManagerForm: React.FC<InvitePropertyManagerFormProps> = ({
+  selectedOrganizationId,
+}) => {
   const [inviteeEmail, setInviteeEmail] = useState('');
   // const [organizationId, setOrganizationId] = useState(''); // Admin needs to specify this - REMOVED
   const [loading, setLoading] = useState(false);
@@ -27,8 +29,8 @@ const InvitePropertyManagerForm: React.FC<InvitePropertyManagerFormProps> = ({ s
     // Clear email if the organization context changes, to avoid sending to wrong org if admin changes selection
     // and had an email typed.
     if (selectedOrganizationId) {
-        // Optionally, one might clear inviteeEmail here if desired when org changes
-        // setInviteeEmail(''); 
+      // Optionally, one might clear inviteeEmail here if desired when org changes
+      // setInviteeEmail('');
     }
   }, [selectedOrganizationId]);
 
@@ -46,7 +48,9 @@ const InvitePropertyManagerForm: React.FC<InvitePropertyManagerFormProps> = ({ s
     }
 
     if (!selectedOrganizationId) {
-      setError('An Organization must be selected before sending an invitation.');
+      setError(
+        'An Organization must be selected before sending an invitation.'
+      );
       return;
     }
 
@@ -69,7 +73,7 @@ const InvitePropertyManagerForm: React.FC<InvitePropertyManagerFormProps> = ({ s
       const responseData = result.data as CreateInvitationResponse;
 
       if (responseData?.success) {
-        setSuccess(`Invitation sent successfully to ${inviteeEmail} for Organization ID: ${selectedOrganizationId}. Invitation ID: ${responseData?.invitationId}`);
+        setSuccess(`Invitation sent successfully to ${inviteeEmail}`);
         setInviteeEmail('');
         // setOrganizationId(''); // No longer needed as it's a prop
       } else {
@@ -87,23 +91,39 @@ const InvitePropertyManagerForm: React.FC<InvitePropertyManagerFormProps> = ({ s
   // This component should only be rendered if the user is an admin.
   // The parent component or route guard should handle this.
   if (!currentUser || !roles.includes('admin')) {
-    return <Alert severity="error">You do not have permission to access this feature.</Alert>;
+    return (
+      <Alert severity='error'>
+        You do not have permission to access this feature.
+      </Alert>
+    );
   }
 
   return (
-    <Box component="form" onSubmit={handleSubmit} sx={{ mt: 3, maxWidth: '500px' }}>
-      <Typography variant="h6" gutterBottom>
+    <Box
+      component='form'
+      onSubmit={handleSubmit}
+      sx={{ mt: 3, maxWidth: '500px' }}
+    >
+      <Typography variant='h6' gutterBottom>
         Invite New Property Manager
       </Typography>
-      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-      {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
+      {error && (
+        <Alert severity='error' sx={{ mb: 2 }}>
+          {error}
+        </Alert>
+      )}
+      {success && (
+        <Alert severity='success' sx={{ mb: 2 }}>
+          {success}
+        </Alert>
+      )}
       <TextField
-        label="Invitee Email"
-        type="email"
+        label='Invitee Email'
+        type='email'
         fullWidth
         value={inviteeEmail}
         onChange={(e) => setInviteeEmail(e.target.value)}
-        margin="normal"
+        margin='normal'
         required
         disabled={loading}
       />
@@ -120,9 +140,9 @@ const InvitePropertyManagerForm: React.FC<InvitePropertyManagerFormProps> = ({ s
         helperText={selectedOrganizationId ? "Organization selected via dropdown." : "Select an organization from the dropdown above."}
       /> */}
       <Button
-        type="submit"
-        variant="contained"
-        color="primary"
+        type='submit'
+        variant='contained'
+        color='primary'
         disabled={loading}
         sx={{ mt: 2 }}
       >

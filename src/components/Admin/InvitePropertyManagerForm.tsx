@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react'; // Added useEffect
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { useAuth } from '../../hooks/useAuth'; // Assuming useAuth provides access to the current user
 import type { CreateInvitationResponse, AppError } from '../../types';
@@ -11,13 +11,26 @@ import Typography from '@mui/material/Typography';
 import CircularProgress from '@mui/material/CircularProgress';
 import Alert from '@mui/material/Alert';
 
-const InvitePropertyManagerForm: React.FC = () => {
+interface InvitePropertyManagerFormProps {
+  selectedOrganizationId: string | null;
+}
+
+const InvitePropertyManagerForm: React.FC<InvitePropertyManagerFormProps> = ({ selectedOrganizationId }) => {
   const [inviteeEmail, setInviteeEmail] = useState('');
-  const [organizationId, setOrganizationId] = useState(''); // Admin needs to specify this
+  // const [organizationId, setOrganizationId] = useState(''); // Admin needs to specify this - REMOVED
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const { currentUser, roles } = useAuth(); // To ensure only admins can see/use this
+
+  useEffect(() => {
+    // Clear email if the organization context changes, to avoid sending to wrong org if admin changes selection
+    // and had an email typed.
+    if (selectedOrganizationId) {
+        // Optionally, one might clear inviteeEmail here if desired when org changes
+        // setInviteeEmail(''); 
+    }
+  }, [selectedOrganizationId]);
 
   const functions = getFunctions();
   const createInvitationFn = httpsCallable(functions, 'createInvitation');
@@ -32,8 +45,13 @@ const InvitePropertyManagerForm: React.FC = () => {
       return;
     }
 
-    if (!inviteeEmail || !organizationId) {
-      setError('Email and Organization ID are required.');
+    if (!selectedOrganizationId) {
+      setError('An Organization must be selected before sending an invitation.');
+      return;
+    }
+
+    if (!inviteeEmail) {
+      setError('Email is required.');
       return;
     }
 
@@ -42,7 +60,7 @@ const InvitePropertyManagerForm: React.FC = () => {
     try {
       const result = await createInvitationFn({
         inviteeEmail,
-        organizationId,
+        organizationId: selectedOrganizationId, // Use prop here
         rolesToAssign: ['property_manager'],
         invitedByRole: 'admin',
       });
@@ -51,9 +69,9 @@ const InvitePropertyManagerForm: React.FC = () => {
       const responseData = result.data as CreateInvitationResponse;
 
       if (responseData?.success) {
-        setSuccess(`Invitation sent successfully to ${inviteeEmail}. Invitation ID: ${responseData?.invitationId}`);
+        setSuccess(`Invitation sent successfully to ${inviteeEmail} for Organization ID: ${selectedOrganizationId}. Invitation ID: ${responseData?.invitationId}`);
         setInviteeEmail('');
-        setOrganizationId('');
+        // setOrganizationId(''); // No longer needed as it's a prop
       } else {
         setError(responseData?.message || 'Failed to send invitation.');
       }
@@ -89,17 +107,18 @@ const InvitePropertyManagerForm: React.FC = () => {
         required
         disabled={loading}
       />
-      <TextField
+      {/* <TextField
         label="Organization ID"
         type="text"
         fullWidth
-        value={organizationId}
-        onChange={(e) => setOrganizationId(e.target.value)}
+        value={selectedOrganizationId || ''}
+        // onChange={(e) => setOrganizationId(e.target.value)} // No longer editable
         margin="normal"
         required
-        disabled={loading}
-        helperText="Enter the ID of the organization this manager will belong to."
-      />
+        hidden
+        disabled // Always disabled as it's pre-filled
+        helperText={selectedOrganizationId ? "Organization selected via dropdown." : "Select an organization from the dropdown above."}
+      /> */}
       <Button
         type="submit"
         variant="contained"

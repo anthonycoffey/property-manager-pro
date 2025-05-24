@@ -103,6 +103,10 @@ With the "Admin Property Manager Management Panel Overhaul" (Step 4 from `docs/0
         *   `functions/src/callable/updateOrganization.ts`: For updating organization details.
         *   `functions/src/callable/deactivateOrganization.ts`: For soft-deleting (deactivating) organizations.
     *   Ensured all relative imports in the `functions/src` directory use the `.js` extension as required by the TypeScript configuration.
+*   **Admin Invite Property Manager Form Enhancement (2025-05-24):**
+    *   Modified `src/components/Admin/InvitePropertyManagerForm.tsx` to accept `selectedOrganizationId` as a prop.
+    *   The Organization ID field in this form is now pre-filled and disabled, based on the organization selected in `OrganizationSelector.tsx` on the `Dashboard`.
+    *   Updated `src/components/Dashboard.tsx` to pass the `selectedAdminOrgId` to `InvitePropertyManagerForm.tsx`.
 
 ## 3. Next Steps
 

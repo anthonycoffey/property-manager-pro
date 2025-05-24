@@ -8,7 +8,8 @@
     "prebuild": "tsc -b",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "seed:templates": "$env:FIRESTORE_EMULATOR_HOST=\"localhost:8080\" || node scripts/seedTemplates.js"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",

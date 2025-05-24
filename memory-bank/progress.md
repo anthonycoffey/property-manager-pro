@@ -98,6 +98,10 @@ The project has recently completed the implementation of the Admin Organization 
         *   `updateOrganization` (in `functions/src/callable/updateOrganization.ts`)
         *   `deactivateOrganization` (in `functions/src/callable/deactivateOrganization.ts`)
     *   Ensured all relative imports within the `functions/src` directory use the `.js` extension.
+*   **Admin Invite Property Manager Form Enhancement (2025-05-24):**
+    *   Modified `src/components/Admin/InvitePropertyManagerForm.tsx` to accept `selectedOrganizationId` as a prop.
+    *   The Organization ID field in this form is now pre-filled and disabled, based on the organization selected in `OrganizationSelector.tsx` on the `Dashboard`.
+    *   Updated `src/components/Dashboard.tsx` to pass the `selectedAdminOrgId` to `InvitePropertyManagerForm.tsx`.
 
 ## 3. What's Left to Build (High-Level from `projectRoadmap.md`)
 

@@ -1,7 +1,14 @@
 import React, { useState } from 'react';
 import { Link as RouterLink } from 'react-router-dom'; // Added
-import { Box, Typography, Paper, Divider, Tabs, Tab, Button } from '@mui/material'; // Added Button
-import LogoutButton from './LogoutButton';
+import {
+  Box,
+  Typography,
+  Paper,
+  Divider,
+  Tabs,
+  Tab,
+  Button,
+} from '@mui/material'; // Added Button
 import { useAuth } from '../hooks/useAuth';
 
 // Admin Components
@@ -24,17 +31,13 @@ function TabPanel(props: TabPanelProps) {
 
   return (
     <div
-      role="tabpanel"
+      role='tabpanel'
       hidden={value !== index}
       id={`simple-tabpanel-${index}`}
       aria-labelledby={`simple-tab-${index}`}
       {...other}
     >
-      {value === index && (
-        <Box sx={{ p: 3 }}>
-          {children}
-        </Box>
-      )}
+      {value === index && <Box sx={{ p: 3 }}>{children}</Box>}
     </div>
   );
 }
@@ -46,18 +49,22 @@ function a11yProps(index: number) {
   };
 }
 
-
 const Dashboard: React.FC = () => {
   const { currentUser, roles, organizationId, propertyId } = useAuth();
   const [adminTabValue, setAdminTabValue] = useState(0);
   // const [pmTabValue, setPmTabValue] = useState(0); // Removed pmTabValue
-  const [selectedAdminOrgId, setSelectedAdminOrgId] = useState<string | null>(null);
+  const [selectedAdminOrgId, setSelectedAdminOrgId] = useState<string | null>(
+    null
+  );
 
   const handleAdminOrgChange = (orgId: string | null) => {
     setSelectedAdminOrgId(orgId);
   };
 
-  const handleAdminTabChange = (_event: React.SyntheticEvent, newValue: number) => {
+  const handleAdminTabChange = (
+    _event: React.SyntheticEvent,
+    newValue: number
+  ) => {
     setAdminTabValue(newValue);
   };
 
@@ -74,7 +81,7 @@ const Dashboard: React.FC = () => {
       </Typography>
       {currentUser && (
         <Typography variant='body1' sx={{ mb: 2 }}>
-          Logged in as: {currentUser.email} <LogoutButton />
+          Logged in as: {currentUser.email}
         </Typography>
       )}
 
@@ -90,10 +97,14 @@ const Dashboard: React.FC = () => {
           />
           <Divider sx={{ my: 2 }} />
           <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-            <Tabs value={adminTabValue} onChange={handleAdminTabChange} aria-label="admin actions tabs">
-              <Tab label="Manage Organizations" {...a11yProps(0)} />
-              <Tab label="Manage Property Managers" {...a11yProps(1)} />
-              <Tab label="Invite Property Manager" {...a11yProps(2)} />
+            <Tabs
+              value={adminTabValue}
+              onChange={handleAdminTabChange}
+              aria-label='admin actions tabs'
+            >
+              <Tab label='Manage Organizations' {...a11yProps(0)} />
+              <Tab label='Manage Property Managers' {...a11yProps(1)} />
+              <Tab label='Invite Property Manager' {...a11yProps(2)} />
             </Tabs>
           </Box>
           <TabPanel value={adminTabValue} index={0}>
@@ -103,7 +114,9 @@ const Dashboard: React.FC = () => {
             <PropertyManagerManagement organizationId={selectedAdminOrgId} />
           </TabPanel>
           <TabPanel value={adminTabValue} index={2}>
-            <InvitePropertyManagerForm />
+            <InvitePropertyManagerForm
+              selectedOrganizationId={selectedAdminOrgId}
+            />
           </TabPanel>
         </Paper>
       )}
@@ -114,18 +127,18 @@ const Dashboard: React.FC = () => {
           <Typography variant='h5' color='secondary' sx={{ mb: 2 }}>
             Property Manager Panel (Org ID: {organizationId || 'N/A'})
           </Typography>
-          <Button 
-            variant="contained" 
-            component={RouterLink} 
-            to="/pm/properties" 
+          <Button
+            variant='contained'
+            component={RouterLink}
+            to='/pm/properties'
             sx={{ mr: 2 }}
           >
             View & Manage My Properties
           </Button>
-          <Button 
-            variant="outlined" 
+          <Button
+            variant='outlined'
             component={RouterLink}
-            to="/pm/create-property" // This route points to Dashboard, which will show CreatePropertyForm via its own logic if needed
+            to='/pm/create-property' // This route points to Dashboard, which will show CreatePropertyForm via its own logic if needed
           >
             Create New Property
           </Button>
@@ -140,24 +153,27 @@ const Dashboard: React.FC = () => {
 
       {/* Resident Section */}
       {roles.includes('resident') && (
-         <Paper elevation={3} sx={{ mb: 4, p: 2 }}>
-            <Typography variant='h5' color='info' sx={{ mb: 2 }}>
+        <Paper elevation={3} sx={{ mb: 4, p: 2 }}>
+          <Typography variant='h5' color='info' sx={{ mb: 2 }}>
             Resident Portal
-            </Typography>
-            <Typography variant='body1'>
+          </Typography>
+          <Typography variant='body1'>
             Welcome, Resident! Your Organization ID: {organizationId || 'N/A'},
             Property ID: {propertyId || 'N/A'}.
-            </Typography>
-            {/* Resident specific components would go here */}
+          </Typography>
+          {/* Resident specific components would go here */}
         </Paper>
       )}
-      
-      {!roles.includes('admin') && !roles.includes('property_manager') && !roles.includes('resident') && (
-        <Typography variant='body1' sx={{ mt: 2 }}>
-          Your role is currently: {roles.join(', ') || 'Undefined'}. Specific dashboard content will appear once your role is fully provisioned or associated.
-        </Typography>
-      )}
 
+      {!roles.includes('admin') &&
+        !roles.includes('property_manager') &&
+        !roles.includes('resident') && (
+          <Typography variant='body1' sx={{ mt: 2 }}>
+            Your role is currently: {roles.join(', ') || 'Undefined'}. Specific
+            dashboard content will appear once your role is fully provisioned or
+            associated.
+          </Typography>
+        )}
     </Box>
   );
 };

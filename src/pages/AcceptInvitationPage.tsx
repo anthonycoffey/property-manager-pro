@@ -179,7 +179,9 @@ const AcceptInvitationPage: React.FC = () => {
       return;
     }
 
+    console.log("Invited Email:", invitedEmail, "Social Email:", socialUser.email);
     if (socialUser.email.toLowerCase() !== invitedEmail.toLowerCase()) {
+      console.error("EMAIL MISMATCH DETECTED. Error set. Attempting to return from processSocialSignUp.");
       setError(
         `The email from ${providerName} (${socialUser.email}) does not match the invited email (${invitedEmail}). Please use the account associated with the invited email.`
       );
@@ -187,6 +189,7 @@ const AcceptInvitationPage: React.FC = () => {
       return;
     }
 
+    console.log("Proceeding to call backend (signUpWithInvitationFn) in processSocialSignUp.");
     setLoading(true);
     setSocialLoading(null);
 

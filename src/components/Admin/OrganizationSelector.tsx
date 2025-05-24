@@ -110,9 +110,6 @@ const OrganizationSelector: React.FC<OrganizationSelectorProps> = ({
           label='Select Organization'
           onChange={handleChange}
         >
-          <MenuItem value=''>
-            <em>None (Select an Organization)</em>
-          </MenuItem>
           {organizations.map((org) => (
             <MenuItem key={org.id} value={org.id}>
               {org.name}

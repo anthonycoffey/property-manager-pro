@@ -7,9 +7,9 @@ import type { CreateInvitationResponse, AppError } from '../../types';
 import TextField from '@mui/material/TextField';
 import Button from '@mui/material/Button';
 import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
 import CircularProgress from '@mui/material/CircularProgress';
 import Alert from '@mui/material/Alert';
+import { Stack, Typography } from '@mui/material';
 
 interface InvitePropertyManagerFormProps {
   selectedOrganizationId: string | null;
@@ -75,21 +75,18 @@ const InvitePropertyManagerForm: React.FC<InvitePropertyManagerFormProps> = ({
       if (responseData?.success) {
         setSuccess(`Invitation sent successfully to ${inviteeEmail}`);
         setInviteeEmail('');
-        // setOrganizationId(''); // No longer needed as it's a prop
       } else {
         setError(responseData?.message || 'Failed to send invitation.');
       }
     } catch (err) {
       console.error('Error sending invitation:', err);
-      const appError = err as AppError; // Or use a type guard if err can be other types
+      const appError = err as AppError;
       setError(appError.message || 'An unexpected error occurred.');
     } finally {
       setLoading(false);
     }
   };
 
-  // This component should only be rendered if the user is an admin.
-  // The parent component or route guard should handle this.
   if (!currentUser || !roles.includes('admin')) {
     return (
       <Alert severity='error'>
@@ -99,14 +96,11 @@ const InvitePropertyManagerForm: React.FC<InvitePropertyManagerFormProps> = ({
   }
 
   return (
-    <Box
-      component='form'
-      onSubmit={handleSubmit}
-      sx={{ mt: 3, maxWidth: '500px' }}
-    >
+    <Box component='form' onSubmit={handleSubmit}>
       <Typography variant='h6' gutterBottom>
-        Invite New Property Manager
+        Send Invite Email
       </Typography>
+
       {error && (
         <Alert severity='error' sx={{ mb: 2 }}>
           {error}
@@ -117,37 +111,36 @@ const InvitePropertyManagerForm: React.FC<InvitePropertyManagerFormProps> = ({
           {success}
         </Alert>
       )}
-      <TextField
-        label='Invitee Email'
-        type='email'
-        fullWidth
-        value={inviteeEmail}
-        onChange={(e) => setInviteeEmail(e.target.value)}
-        margin='normal'
-        required
-        disabled={loading}
-      />
-      {/* <TextField
-        label="Organization ID"
-        type="text"
-        fullWidth
-        value={selectedOrganizationId || ''}
-        // onChange={(e) => setOrganizationId(e.target.value)} // No longer editable
-        margin="normal"
-        required
-        hidden
-        disabled // Always disabled as it's pre-filled
-        helperText={selectedOrganizationId ? "Organization selected via dropdown." : "Select an organization from the dropdown above."}
-      /> */}
-      <Button
-        type='submit'
-        variant='contained'
-        color='primary'
-        disabled={loading}
-        sx={{ mt: 2 }}
+      <Stack
+        direction='row'
+        spacing={2}
+        sx={{
+          justifyContent: 'flex-end',
+          alignItems: 'center',
+        }}
       >
-        {loading ? <CircularProgress size={24} /> : 'Send Invitation'}
-      </Button>
+        <TextField
+          label='Property Manager Email'
+          type='email'
+          fullWidth
+          value={inviteeEmail}
+          onChange={(e) => setInviteeEmail(e.target.value)}
+          margin='normal'
+          required
+          disabled={loading}
+        />
+
+        <Button
+          size='large'
+          type='submit'
+          variant='contained'
+          color='primary'
+          disabled={loading}
+          sx={{ my: 1, minWidth: 250 }}
+        >
+          {loading ? <CircularProgress size={24} /> : 'Invite User'}
+        </Button>
+      </Stack>
     </Box>
   );
 };

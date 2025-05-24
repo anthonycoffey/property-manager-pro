@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react'; // Added useRef
 import { Link as RouterLink } from 'react-router-dom'; // Added
 import {
   Box,
@@ -9,13 +9,14 @@ import {
   Tab,
   Button,
 } from '@mui/material'; // Added Button
+import AddIcon from '@mui/icons-material/Add'; // Added AddIcon
 import { useAuth } from '../hooks/useAuth';
 
 // Admin Components
 import OrganizationSelector from './Admin/OrganizationSelector';
 import PropertyManagerManagement from './Admin/PropertyManagerManagement';
-import InvitePropertyManagerForm from './Admin/InvitePropertyManagerForm';
-import OrganizationManagementPanel from './Admin/OrganizationManagementPanel'; // Added import
+// InvitePropertyManagerForm is no longer directly imported here as it's inside PropertyManagerManagement
+import OrganizationManagementPanel, { type OrganizationManagementPanelRef } from './Admin/OrganizationManagementPanel'; // Added import and type
 
 // Property Manager Components
 // InviteResidentForm is no longer directly used here
@@ -52,13 +53,15 @@ function a11yProps(index: number) {
 const Dashboard: React.FC = () => {
   const { currentUser, roles, organizationId, propertyId } = useAuth();
   const [adminTabValue, setAdminTabValue] = useState(0);
-  // const [pmTabValue, setPmTabValue] = useState(0); // Removed pmTabValue
-  const [selectedAdminOrgId, setSelectedAdminOrgId] = useState<string | null>(
-    null
-  );
+  const [selectedAdminOrgId, setSelectedAdminOrgId] = useState<string | null>(null);
+  const organizationPanelRef = useRef<OrganizationManagementPanelRef>(null); // Added ref
 
   const handleAdminOrgChange = (orgId: string | null) => {
     setSelectedAdminOrgId(orgId);
+  };
+
+  const handleOpenAddOrgModal = () => {
+    organizationPanelRef.current?.openAddModal();
   };
 
   const handleAdminTabChange = (
@@ -88,36 +91,44 @@ const Dashboard: React.FC = () => {
       {/* Admin Section */}
       {roles.includes('admin') && (
         <Paper elevation={3} sx={{ mb: 4, p: 2 }}>
-          <Typography variant='h5' color='primary' sx={{ mb: 2 }}>
-            Administrator Panel
-          </Typography>
-          <OrganizationSelector
-            selectedOrganizationId={selectedAdminOrgId}
-            onOrganizationChange={handleAdminOrgChange}
-          />
-          <Divider sx={{ my: 2 }} />
+          {/* "Administrator Panel" Typography removed */}
+          {/* OrganizationSelector moved into TabPanels */}
+          {/* Divider related to old OrganizationSelector position removed */}
           <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
             <Tabs
               value={adminTabValue}
               onChange={handleAdminTabChange}
               aria-label='admin actions tabs'
             >
-              <Tab label='Manage Organizations' {...a11yProps(0)} />
-              <Tab label='Manage Property Managers' {...a11yProps(1)} />
-              <Tab label='Invite Property Manager' {...a11yProps(2)} />
+              <Tab label='Organizations' {...a11yProps(0)} />
+              <Tab label='Property Managers' {...a11yProps(1)} />
             </Tabs>
           </Box>
           <TabPanel value={adminTabValue} index={0}>
-            <OrganizationManagementPanel />
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', mb: 1 }}>
+              {/* OrganizationSelector and its wrapper Box removed from this tab */}
+              <Button
+                variant="contained"
+                startIcon={<AddIcon />}
+                onClick={handleOpenAddOrgModal}
+                // sx={{ ml: 2 }} // ml:2 removed as it's the only item aligned to end
+              >
+                Add Organization
+              </Button>
+            </Box>
+            <Divider sx={{ my: 2 }} />
+            <OrganizationManagementPanel ref={organizationPanelRef} />
           </TabPanel>
           <TabPanel value={adminTabValue} index={1}>
+            {/* OrganizationSelector remains in the Property Managers tab, placed directly as before */}
+            <OrganizationSelector
+              selectedOrganizationId={selectedAdminOrgId}
+              onOrganizationChange={handleAdminOrgChange}
+            />
+            <Divider sx={{ my: 2 }} />
             <PropertyManagerManagement organizationId={selectedAdminOrgId} />
           </TabPanel>
-          <TabPanel value={adminTabValue} index={2}>
-            <InvitePropertyManagerForm
-              selectedOrganizationId={selectedAdminOrgId}
-            />
-          </TabPanel>
+          {/* TabPanel for InvitePropertyManagerForm removed */}
         </Paper>
       )}
 

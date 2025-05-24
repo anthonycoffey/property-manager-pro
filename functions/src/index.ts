@@ -12,8 +12,8 @@ export const createOrganization = createOrganizationFunction;
 import { updateOrganization as updateOrganizationFunction } from './callable/updateOrganization.js';
 export const updateOrganization = updateOrganizationFunction;
 
-import { deactivateOrganization as deactivateOrganizationFunction } from './callable/deactivateOrganization.js';
-export const deactivateOrganization = deactivateOrganizationFunction;
+import { deleteOrganization as deleteOrganizationFunction } from './callable/deactivateOrganization.js'; // Updated import
+export const deleteOrganization = deleteOrganizationFunction; // Updated export
 
 import { signUpWithInvitation as signUpWithInvitationFunction } from './callable/signUpWithInvitation.js';
 export const signUpWithInvitation = signUpWithInvitationFunction;

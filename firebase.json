@@ -21,25 +21,11 @@
       ]
     }
   ],
-  "apphosting": [
-    {
-      "backendId": "phoenix-property-manager-pro",
-      "rootDir": "/",
-      "ignore": [
-        "node_modules",
-        ".git",
-        "firebase-debug.log",
-        "firebase-debug.*.log",
-        "functions"
-      ],
-      "alwaysDeployFromSource": false
-    }
-  ],
   "storage": {
     "rules": "storage.rules"
   },
   "emulators": {
-    "apphosting": {
+    "hosting": {
       "port": 5173
     },
     "auth": {
@@ -60,5 +46,16 @@
     },
     "singleProjectMode": true
   },
-  "extensions": {}
+  "extensions": {},
+  "hosting": {
+    "source": "dist",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "frameworksBackend": {
+      "region": "us-central1"
+    }
+  }
 }

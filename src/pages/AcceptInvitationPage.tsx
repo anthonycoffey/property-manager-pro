@@ -26,15 +26,18 @@ import type { SignUpWithInvitationResponse, AppError } from '../types';
 import { auth } from '../firebaseConfig';
 
 const AcceptInvitationPage: React.FC = () => {
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(''); // This will be set by invitedEmail
   const [password, setPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(false); // For form submission
   const [socialLoading, setSocialLoading] = useState<
     'google' | 'microsoft' | null
   >(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+
+  const [invitedEmail, setInvitedEmail] = useState<string>(''); // Store the authoritative email from invite
+  const [isFetchingInvite, setIsFetchingInvite] = useState<boolean>(true); // Loading state for invite details
 
   const location = useLocation();
   const navigate = useNavigate();
@@ -42,9 +45,6 @@ const AcceptInvitationPage: React.FC = () => {
 
   const [invitationToken, setInvitationToken] = useState<string | null>(null);
   const [organizationId, setOrganizationId] = useState<string | null>(null);
-  // To store the email from the invitation, which we'll need to compare against.
-  // For now, this will be validated server-side by signUpWithInvitation.
-  // const [invitedEmail, setInvitedEmail] = useState<string | null>(null);
 
   useEffect(() => {
     if (currentUser) {
@@ -57,14 +57,48 @@ const AcceptInvitationPage: React.FC = () => {
     const token = queryParams.get('token');
     const orgId = queryParams.get('orgId');
 
+    const functionsInstance = getFunctions();
+    const getInvitationDetailsFn = httpsCallable(functionsInstance, 'getInvitationDetails');
+
     if (token && orgId) {
       setInvitationToken(token);
       setOrganizationId(orgId);
-      // TODO (Future): Fetch invitation details here to get invitedEmail for client-side pre-check
-      // and prefill display name if available.
-      // For now, server-side validation of email match is primary.
+
+      const fetchInviteDetails = async () => {
+        setIsFetchingInvite(true);
+        setError(null); 
+        try {
+          const result = await getInvitationDetailsFn({ invitationId: token, organizationId: orgId });
+          const details = result.data as { email: string; displayName?: string };
+          
+          if (details.email) {
+            setInvitedEmail(details.email);
+            setEmail(details.email); 
+            // if (details.displayName) setDisplayName(details.displayName); // Optional: prefill display name
+          } else {
+            setError('Could not retrieve invitation details. The link may be invalid or expired.');
+          }
+        } catch (err: any) {
+          console.error('Error fetching invitation details:', err);
+          let specificError = 'Failed to load invitation. The link may be invalid, expired, or already used.';
+          if (err.message) {
+             specificError = `Failed to load invitation: ${err.message}`;
+          }
+          if (err.code === 'functions/not-found' || err.details?.code === 'not-found') {
+            specificError = 'Invitation not found. Please check the link.';
+          } else if (err.code === 'functions/failed-precondition' || err.details?.code === 'failed-precondition') {
+            specificError = err.message || 'Invitation is not valid (it may have been accepted, revoked, or expired).';
+          }
+          setError(specificError);
+        } finally {
+          setIsFetchingInvite(false);
+        }
+      };
+
+      fetchInviteDetails();
     } else {
       setError('Invitation token or organization ID is missing from the URL.');
+      setIsFetchingInvite(false);
     }
   }, [location.search]);
 
@@ -77,7 +111,7 @@ const AcceptInvitationPage: React.FC = () => {
   const handleAuthSuccess = (message: string) => {
     setSuccess(message);
     setTimeout(() => {
-      navigate('/login'); // Or /dashboard if auto-login occurs
+      navigate('/login'); 
     }, 3000);
   };
 
@@ -96,6 +130,10 @@ const AcceptInvitationPage: React.FC = () => {
     socialUser: UserCredential['user'],
     providerName: 'google' | 'microsoft'
   ) => {
+    if (isFetchingInvite || !invitedEmail) {
+        setError('Please wait for invitation details to load.');
+        return;
+    }
     if (!invitationToken || !organizationId) {
       setError('Invitation details are missing. Cannot proceed.');
       setSocialLoading(null);
@@ -109,27 +147,25 @@ const AcceptInvitationPage: React.FC = () => {
       return;
     }
 
-    // Client-side check (optional, server will enforce this too)
-    // if (invitedEmail && socialUser.email.toLowerCase() !== invitedEmail.toLowerCase()) {
-    //   setError(`The email from ${providerName} (${socialUser.email}) does not match the invited email (${invitedEmail}).`);
-    //   setSocialLoading(null);
-    //   return;
-    // }
+    if (socialUser.email.toLowerCase() !== invitedEmail.toLowerCase()) {
+      setError(`The email from ${providerName} (${socialUser.email}) does not match the invited email (${invitedEmail}). Please use the account associated with the invited email.`);
+      setSocialLoading(null);
+      return;
+    }
 
-    setLoading(true); // General loading for the function call
-    setSocialLoading(null); // Clear specific social loading
+    setLoading(true); 
+    setSocialLoading(null); 
 
     try {
       const result = await signUpWithInvitationFn({
-        uid: socialUser.uid, // Pass UID for social sign-on
-        email: socialUser.email, // Pass email from social provider
+        uid: socialUser.uid, 
+        email: invitedEmail, // Use the authoritative invitedEmail
         displayName:
           socialUser.displayName ||
-          socialUser.email?.split('@')[0] ||
-          'New User', // Use social display name
+          invitedEmail.split('@')[0] ||
+          'New User', 
         organizationId,
         invitationId: invitationToken,
-        // No password for social sign-on
       });
 
       const responseData = result.data as SignUpWithInvitationResponse;
@@ -158,6 +194,7 @@ const AcceptInvitationPage: React.FC = () => {
   };
 
   const handleGoogleSignUp = async () => {
+    if (isFetchingInvite) return;
     setError(null);
     setSuccess(null);
     setSocialLoading('google');
@@ -167,28 +204,33 @@ const AcceptInvitationPage: React.FC = () => {
       await processSocialSignUp(result.user, 'google');
     } catch (err) {
       handleAuthError(err, 'Google');
+    } finally {
       setSocialLoading(null);
     }
   };
 
   const handleMicrosoftSignUp = async () => {
+    if (isFetchingInvite) return;
     setError(null);
     setSuccess(null);
     setSocialLoading('microsoft');
     const provider = new OAuthProvider('microsoft.com');
-    // Optional: Add custom parameters if needed, e.g., for specific tenants
-    // provider.setCustomParameters({ tenant: 'YOUR_TENANT_ID' });
     try {
       const result = await signInWithPopup(auth, provider);
       await processSocialSignUp(result.user, 'microsoft');
     } catch (err) {
       handleAuthError(err, 'Microsoft');
+    } finally {
       setSocialLoading(null);
     }
   };
 
   const handleEmailPasswordSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
+    if (isFetchingInvite || !invitedEmail) {
+        setError('Please wait for invitation details to load or ensure the invitation is valid.');
+        return;
+    }
     setError(null);
     setSuccess(null);
 
@@ -196,15 +238,16 @@ const AcceptInvitationPage: React.FC = () => {
       setError('Invitation details are missing. Cannot proceed.');
       return;
     }
-    if (!email || !password || !displayName) {
-      setError('Please fill in all fields: Email, Password, and Display Name.');
+    // Email is now pre-filled and readonly, so we use `invitedEmail`
+    if (!password || !displayName) {
+      setError('Please fill in all fields: Full Name and Password.');
       return;
     }
 
     setLoading(true);
     try {
       const result = await signUpWithInvitationFn({
-        email,
+        email: invitedEmail, // Use the authoritative invitedEmail
         password,
         displayName,
         organizationId,
@@ -231,9 +274,21 @@ const AcceptInvitationPage: React.FC = () => {
       setLoading(false);
     }
   };
-
-  if (!invitationToken || (!organizationId && !success)) {
-    // Check success to prevent flicker if error was due to missing token
+  
+  // Initial loading state or critical error display
+  if (isFetchingInvite && !error && !success) {
+    return (
+      <Container component="main" maxWidth="xs">
+        <Paper elevation={3} sx={{ marginTop: 8, padding: 4, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+          <CircularProgress />
+          <Typography sx={{ mt: 2 }}>Loading invitation details...</Typography>
+        </Paper>
+      </Container>
+    );
+  }
+  
+  // If critical error during fetch or missing token (and not yet successful)
+  if ((!invitationToken || !organizationId || (error && !invitedEmail)) && !success) {
     return (
       <Container component='main' maxWidth='xs'>
         <Paper
@@ -247,11 +302,11 @@ const AcceptInvitationPage: React.FC = () => {
           }}
         >
           <Typography component='h1' variant='h5' color='error'>
-            Invalid Invitation Link
+            Invalid or Expired Invitation
           </Typography>
           <Alert severity='error' sx={{ mt: 2, width: '100%' }}>
             {error ||
-              'The invitation link is missing necessary information. Please check the link or contact support.'}
+              'The invitation link is missing necessary information, is invalid, or has expired. Please check the link or contact support.'}
           </Alert>
         </Paper>
       </Container>
@@ -259,7 +314,6 @@ const AcceptInvitationPage: React.FC = () => {
   }
 
   if (success && !error) {
-    // Ensure error doesn't also show if success is set then an error occurs
     return (
       <Container component='main' maxWidth='xs'>
         <Paper
@@ -299,7 +353,7 @@ const AcceptInvitationPage: React.FC = () => {
           Accept Invitation & Create Account
         </Typography>
 
-        {error && (
+        {error && ( // General error display, might be redundant if specific error UI is shown above
           <Alert severity='error' sx={{ mb: 2, width: '100%' }}>
             {error}
           </Alert>
@@ -311,7 +365,7 @@ const AcceptInvitationPage: React.FC = () => {
           color='primary'
           startIcon={<GoogleIcon />}
           onClick={handleGoogleSignUp}
-          disabled={loading || !!socialLoading}
+          disabled={loading || !!socialLoading || isFetchingInvite || !invitedEmail}
           sx={{ mt: 1, mb: 1 }}
         >
           {socialLoading === 'google' ? (
@@ -324,9 +378,9 @@ const AcceptInvitationPage: React.FC = () => {
           fullWidth
           variant='outlined'
           color='primary'
-          startIcon={<AccountCircleIcon />} // Using placeholder, replace with actual Microsoft icon if available
+          startIcon={<AccountCircleIcon />} 
           onClick={handleMicrosoftSignUp}
-          disabled={loading || !!socialLoading}
+          disabled={loading || !!socialLoading || isFetchingInvite || !invitedEmail}
           sx={{ mt: 1, mb: 2 }}
         >
           {socialLoading === 'microsoft' ? (
@@ -347,6 +401,20 @@ const AcceptInvitationPage: React.FC = () => {
             margin='normal'
             required
             fullWidth
+            id='email'
+            label='Invited Email Address'
+            name='email'
+            value={email} // Will be pre-filled by `invitedEmail` from state
+            InputProps={{
+              readOnly: true,
+            }}
+            disabled={isFetchingInvite || loading || !!socialLoading} // Also disable if fetching invite
+            sx={{ backgroundColor: '#f0f0f0' }} // Visual cue for readonly
+          />
+          <TextField
+            margin='normal'
+            required
+            fullWidth
             id='displayName'
             label='Full Name'
             name='displayName'
@@ -354,40 +422,27 @@ const AcceptInvitationPage: React.FC = () => {
             autoFocus
             value={displayName}
             onChange={(e) => setDisplayName(e.target.value)}
-            disabled={loading || !!socialLoading}
-          />
-          <TextField
-            margin='normal'
-            required
-            fullWidth
-            id='email'
-            label='Email Address (for manual sign up)'
-            name='email'
-            autoComplete='email'
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            disabled={loading || !!socialLoading}
-            helperText='If signing up manually, use the email address where you received the invitation.'
+            disabled={isFetchingInvite || loading || !!socialLoading || !invitedEmail}
           />
           <TextField
             margin='normal'
             required
             fullWidth
             name='password'
-            label='Password (for manual sign up)'
+            label='Password'
             type='password'
             id='password'
             autoComplete='new-password'
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            disabled={loading || !!socialLoading}
+            disabled={isFetchingInvite || loading || !!socialLoading || !invitedEmail}
           />
           <Button
             type='submit'
             fullWidth
             variant='contained'
             sx={{ mt: 3, mb: 2 }}
-            disabled={loading || !!socialLoading}
+            disabled={isFetchingInvite || loading || !!socialLoading || !invitedEmail}
           >
             {loading && !socialLoading ? (
               <CircularProgress size={24} />

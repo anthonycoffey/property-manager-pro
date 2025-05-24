@@ -109,6 +109,15 @@ The project has recently completed the implementation of the Admin Organization 
         *   Skip Firebase Auth user creation if `uid` is provided.
         *   Validate that the email from the social provider matches the email on the invitation.
         *   Use the display name from the social provider for the Firestore user profile.
+    *   Resolved `UserCredential` import error in `AcceptInvitationPage.tsx`.
+*   **Accept Invitation Page Enhancements (Readonly Email & Pre-fill) (2025-05-24):**
+    *   Added a new callable Cloud Function `getInvitationDetails` (`functions/src/callable/getInvitationDetails.ts`) to securely fetch the invited email address using the invitation token and organization ID.
+    *   Updated `functions/src/index.ts` to export `getInvitationDetails`.
+    *   Modified `src/pages/AcceptInvitationPage.tsx` to:
+        *   Call `getInvitationDetails` upon loading with valid URL parameters.
+        *   Pre-fill the email input field with the email address fetched from the invitation.
+        *   Make the email input field readonly to prevent modification.
+        *   Implement loading states and error handling for the invitation detail fetching process, disabling form interactions until details are loaded or if an error occurs.
 
 ## 3. What's Left to Build (High-Level from `projectRoadmap.md`)
 
@@ -163,7 +172,12 @@ The remaining application functionality includes:
     2.  The `signUpWithInvitation` callable Cloud Function was updated to manage invited user sign-ups (both email/password and social sign-on), ensuring immediate and correct association with an organization, roles, and multi-tenant profile creation.
 *   **2025-05-24 (Admin PM Management Overhaul):** Implemented the Admin Property Manager Management panel overhaul as per `docs/04-admin-pm-management-plan.md`. This included adding an organization selector, a new `revokeInvitation` Cloud Function, and refactoring the `PropertyManagerManagement.tsx` component to remove manual PM creation and introduce a unified, organization-scoped list for managing active PMs and pending invitations with appropriate actions (Update, Delete, Revoke).
 *   **2025-05-24 (Organization Management & Functions Refactor):** Implemented CRUD operations for Organizations in the Admin panel. Refactored all Firebase Functions into a modular, per-file structure. Added `updateOrganization` and `deactivateOrganization` Cloud Functions. Corrected TypeScript import issues and interface definitions.
-*   **2025-05-24 (Social Sign-On for Invitation Acceptance):** Added Google and Microsoft social sign-on options to the `AcceptInvitationPage.tsx`. Updated the `signUpWithInvitation` Cloud Function to support this flow by handling pre-authenticated users and ensuring email consistency with the invitation.
+*   **2025-05-24 (Social Sign-On & Email Pre-fill for Invitation Acceptance):**
+    *   Added Google and Microsoft social sign-on options to the `AcceptInvitationPage.tsx`.
+    *   Updated the `signUpWithInvitation` Cloud Function to support this flow by handling pre-authenticated users and ensuring email consistency with the invitation.
+    *   Implemented a new `getInvitationDetails` Cloud Function to fetch the invited email.
+    *   The `AcceptInvitationPage.tsx` now calls `getInvitationDetails` to pre-fill and make the email field readonly, enhancing UX and data integrity.
+    *   Resolved the `UserCredential` import error.
 
 ## 6. Immediate Next Steps
 

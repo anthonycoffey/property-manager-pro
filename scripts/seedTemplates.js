@@ -4,30 +4,43 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
+import readline from 'readline';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 // --- Configuration ---
-// Ensure FIRESTORE_EMULATOR_HOST is set in your environment (e.g., export FIRESTORE_EMULATOR_HOST="localhost:8080")
-// before running this script.
 const projectId = 'phoenix-property-manager-pro';
 
-try {
-    admin.initializeApp({
-        projectId: projectId,
-    });
-} catch (e) {
-    // It's common for the SDK to be already initialized if running in an environment
-    // where other Firebase tools might have done so (like tests or other scripts).
-    if (e.code !== 'app/duplicate-app') {
-        console.warn(`Firebase Admin SDK initialization failed: ${e.message}.`);
-        // If it's not a duplicate app error, it might be more serious.
-        // For a seeding script against the emulator, this might still be okay if FIRESTORE_EMULATOR_HOST is set.
+// Helper function to parse command line arguments
+function getArg(argName) {
+    const arg = process.argv.find(a => a.startsWith(`--${argName}=`));
+    if (arg) {
+        return arg.split('=')[1];
     }
+    return null;
 }
 
-const db = admin.firestore();
+const targetEnv = getArg('env') || 'emulator'; // Default to emulator
+
+async function askConfirmation(promptMessage) {
+    const rl = readline.createInterface({
+        input: process.stdin,
+        output: process.stdout
+    });
+
+    return new Promise((resolve) => {
+        rl.question(promptMessage, (answer) => {
+            rl.close();
+            resolve(answer.trim().toLowerCase());
+        });
+    });
+}
+
+// REMOVE Global Firebase Admin SDK initialization from here.
+// It will be initialized within the seedTemplates function.
+
+let db; // Declare db here, initialize later
 
 const templatesToSeed = [
     {
@@ -41,16 +54,61 @@ const templatesToSeed = [
 ];
 
 async function seedTemplates() {
-    console.log(`Attempting to connect to Firestore (Project: ${projectId}).`);
-    if (process.env.FIRESTORE_EMULATOR_HOST) {
-        console.log(`FIRESTORE_EMULATOR_HOST is set to: ${process.env.FIRESTORE_EMULATOR_HOST}. Connecting to emulator.`);
+    console.log(`Targeting environment: ${targetEnv.toUpperCase()}`);
+
+    if (targetEnv === 'emulator') {
+        if (!process.env.FIRESTORE_EMULATOR_HOST) {
+            console.log('FIRESTORE_EMULATOR_HOST is not set externally. Defaulting to "localhost:8080" for emulator.');
+            process.env.FIRESTORE_EMULATOR_HOST = "localhost:8080";
+        } else {
+            console.log(`FIRESTORE_EMULATOR_HOST is already set to: ${process.env.FIRESTORE_EMULATOR_HOST}. Using this for emulator.`);
+        }
+        console.log(`Connecting to Firestore Emulator at ${process.env.FIRESTORE_EMULATOR_HOST} for project ${projectId}.`);
+    } else if (targetEnv === 'production') {
+        // For production, ensure FIRESTORE_EMULATOR_HOST is not set, so it connects to live.
+        if (process.env.FIRESTORE_EMULATOR_HOST) {
+            console.warn(`Warning: FIRESTORE_EMULATOR_HOST is set to "${process.env.FIRESTORE_EMULATOR_HOST}", but --env=production was specified.`);
+            console.warn('Unsetting FIRESTORE_EMULATOR_HOST and targeting PRODUCTION.');
+            delete process.env.FIRESTORE_EMULATOR_HOST; // Ensure it's not used for production
+        }
+        console.log(`\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!`);
+        console.log(`!!! WARNING: Preparing to seed data to PRODUCTION Firestore for project '${projectId}' !!!`);
+        console.log(`!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n`);
+        const confirmation = await askConfirmation("This action is potentially destructive and irreversible. Are you absolutely sure you want to continue? (Type 'Y' or 'yes' to proceed): ");
+        if (confirmation !== 'y' && confirmation !== 'yes') {
+            console.log('Production seed operation cancelled by user. Exiting.');
+            process.exit(0);
+        }
+        console.log('Confirmation received. Proceeding with PRODUCTION seed...');
     } else {
-        console.warn('FIRESTORE_EMULATOR_HOST is NOT set. This script will attempt to connect to LIVE Firestore.');
-        console.warn('If you intend to seed the emulator, please set FIRESTORE_EMULATOR_HOST="localhost:8080" and re-run.');
-        // Add a small delay and a confirmation step if proceeding to live, or exit.
-        // For this script, we'll assume emulator is intended.
-        // You might want to add a readline prompt here for safety in a real-world script.
+        console.error(`Invalid --env value: "${targetEnv}". Must be 'emulator' or 'production'. Exiting.`);
+        process.exit(1);
     }
+
+    // Initialize SDK and Firestore client HERE, after env vars are set
+    try {
+        // Check if app is already initialized to avoid re-initialization error if this function were called multiple times
+        // though in this script structure, it's called once.
+        if (!admin.apps.length) {
+            admin.initializeApp({
+                projectId: projectId,
+                // For emulator, if FIRESTORE_EMULATOR_HOST is set, credentials are not strictly needed for Firestore.
+                // For production, it will use Application Default Credentials.
+            });
+        } else {
+            // If called again, use the existing default app
+            admin.app();
+        }
+    } catch (e) {
+        // This catch is more for the case where initializeApp might be called in a context where it's already initialized by another part
+        // For this script, the top-level try/catch for initializeApp is the primary one.
+        if (e.code !== 'app/duplicate-app') {
+            console.error(`Firebase Admin SDK re-initialization check failed: ${e.message}. Exiting.`);
+            process.exit(1);
+        }
+    }
+    
+    db = admin.firestore(); // Initialize db after SDK is confirmed to be initialized
 
     console.log('\nStarting to seed templates...');
 

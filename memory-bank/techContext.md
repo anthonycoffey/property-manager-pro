@@ -29,6 +29,7 @@
 
 *   **Node.js & npm/yarn:** Required for React development and Firebase CLI.
 *   **Firebase CLI:** Essential for deploying functions, hosting, Firestore rules, and local emulation.
+    *   The `seedTemplates.js` script (located in `scripts/`) can be used to seed email templates to Firestore. It accepts an `--env` flag (`emulator` or `production`) and defaults to the emulator with a confirmation step for production.
 *   **IDE:** Visual Studio Code recommended, or any editor with good JavaScript/TypeScript support.
 *   **Version Control:** Git (repository to be set up on a platform like GitHub, GitLab, or Bitbucket).
 *   **Local Emulation:** Firebase Local Emulator Suite will be crucial for testing Authentication, Firestore, and Cloud Functions locally before deployment.

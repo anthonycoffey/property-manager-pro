@@ -191,13 +191,18 @@ The remaining application functionality includes:
     *   Integrated this selection into the `InviteResidentForm` on the `Dashboard.tsx`, making the `propertyId` dynamic for resident invitations.
     *   Updated `Dashboard.tsx` with new tabs and state management for this feature.
     *   Created `PropertyManagerPropertiesList.tsx` component.
+*   **Seed Script Enhancement (`scripts/seedTemplates.js`) (2025-05-24):**
+    *   Modified the script to accept an `--env` command-line flag (`emulator` or `production`).
+    *   Defaults to `emulator` if no flag is provided, automatically setting `FIRESTORE_EMULATOR_HOST="localhost:8080"` if not already set.
+    *   If `--env=production` is used, it prompts the user for explicit confirmation ("Y" or "yes") before attempting to connect to the live Firestore database, as a safety measure.
+    *   Updated logging to clearly indicate the target environment.
 
 ## 6. Immediate Next Steps
 
 1.  **Invitation System (Phase 3 - Refinement & Testing):**
     *   Thoroughly test all invitation flows, including the new dynamic property selection for resident invites.
     *   Verify email content and links.
-    *   Manually add email templates from `docs/` to Firestore `templates` collection if not already done.
+    *   Seed email templates from `docs/` to Firestore `templates` collection using the enhanced `seedTemplates.js` script.
 2.  **Admin Dashboard - Properties Management:**
     *   Begin implementation of property CRUD operations for Admins.
 3.  **Continue with Project Roadmap:** Proceed with other features as prioritized.

@@ -128,6 +128,20 @@ With the "Admin Property Manager Management Panel Overhaul" (Step 4 from `docs/0
 - **Property Manager Dashboard - Dynamic Property Selection for Resident Invitations (2025-05-24):**
   - Created `src/components/PropertyManager/PropertyManagerPropertiesList.tsx` to allow PMs to view and select their managed properties.
   - Integrated `PropertyManagerPropertiesList` into `src/components/Dashboard.tsx` for the Property Manager role.
+- **Seed Script Enhancement (`scripts/seedTemplates.js`) (2025-05-24):**
+  - Modified the script to accept an `--env` command-line flag (`emulator` or `production`).
+  - Defaults to `emulator` if no flag is provided, automatically setting `FIRESTORE_EMULATOR_HOST="localhost:8080"` if not already set.
+  - If `--env=production` is used, it prompts the user for explicit confirmation ("Y" or "yes") before attempting to connect to the live Firestore database, as a safety measure.
+  - Updated logging to clearly indicate the target environment.
+## 3. Next Steps
+
+- **Invitation System (Phase 3 - Refinement & Testing):**
+  - Thoroughly test all invitation flows: Admin invites PM, PM creates Property, PM invites Resident (including the new dynamic property selection), invitee accepts and signs up (email/password and social).
+  - Verify email content and links.
+  - Manually add email templates from `docs/` to Firestore `templates` collection if not already done (can use the enhanced `seedTemplates.js` script for this).
+- **Admin Dashboard - Properties Management:**
+  - Begin implementation of property CRUD operations for Admins as per project roadmap.
+- **Continue with Project Roadmap:** Proceed with other features outlined in `projectRoadmap.md`.
   - Updated `Dashboard.tsx` to manage `selectedPropertyIdForPM` state.
   - Modified the Property Manager section in `Dashboard.tsx` to include tabs for "My Properties" and "Invite Resident".
   - The `InviteResidentForm` in `Dashboard.tsx` now receives the dynamic `selectedPropertyIdForPM` and `organizationId`, and conditionally renders an `Alert` if no property is selected.
@@ -157,6 +171,7 @@ With the "Admin Property Manager Management Panel Overhaul" (Step 4 from `docs/0
 - **Firebase Functions Structure:** Adopted a modular structure for Firebase Functions, with each function in its own file, categorized into `auth` and `callable` subdirectories. Shared utilities are in `helpers` and `firebaseAdmin` files. The main `index.ts` re-exports all functions. Relative imports within `functions/src` use `.js` extensions.
 - **Social Sign-On Email Matching:** For invitation-based social sign-on, the email provided by the social identity provider _must_ match the email address on the invitation. This is validated client-side (for UX) and server-side (for security) in `signUpWithInvitation.ts`.
 - **Invitation Email Pre-fill:** The email field on the `AcceptInvitationPage.tsx` is now pre-filled and made readonly using data fetched via the `getInvitationDetails` Cloud Function, ensuring the user signs up with the intended invited email address.
+- **Seed Script Safety:** The `seedTemplates.js` script now defaults to the emulator and requires explicit confirmation for production operations, enhancing safety.
 
 ## 5. Important Patterns & Preferences
 
@@ -178,3 +193,4 @@ With the "Admin Property Manager Management Panel Overhaul" (Step 4 from `docs/0
 - **TypeScript Configuration for Firebase Functions (New Insight 2025-05-24):** Confirmed that the TypeScript setup for Firebase Functions (likely using `moduleResolution: "nodenext"` or similar) requires explicit `.js` extensions for relative imports within the `functions/src` directory. Type-only imports (`import type { ... } from ...`) are also enforced for type imports when `verbatimModuleSyntax` is enabled.
 - **Social Sign-On for Invitations (New Insight 2025-05-24):** The `AcceptInvitationPage.tsx` now supports Google and Microsoft sign-on. The `signUpWithInvitation` Cloud Function was updated to handle these pre-authenticated users by skipping Auth user creation if a `uid` is passed from the client, and validating the social email against the invitation.
 - **Invitation Detail Fetching (New Insight 2025-05-24):** A new `getInvitationDetails` Cloud Function was added to securely provide the invited email to the `AcceptInvitationPage.tsx`, allowing the email field to be pre-filled and made readonly. This enhances user experience and data integrity for the invitation acceptance process.
+- **Seed Script Command-Line Arguments (New Insight 2025-05-24):** The `seedTemplates.js` script was enhanced to use an `--env` flag for specifying target environments (emulator/production), with a default to emulator and a confirmation step for production. This improves usability and safety for seeding operations.

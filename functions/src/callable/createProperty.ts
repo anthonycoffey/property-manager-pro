@@ -17,11 +17,18 @@ export const createProperty = onCall(async (request) => {
 
   const { propertyName, address, propertyType } = request.data;
 
-  if (!propertyName || !address || !propertyType) {
-    throw new HttpsError('invalid-argument', 'Missing required fields: propertyName, address, propertyType.');
+  // Address is now expected to be an object like { street: "123 Main St", city: "Anytown", state: "CA", zip: "90210" }
+  if (
+    !propertyName || 
+    !propertyType || 
+    !address || 
+    typeof address.street !== 'string' || !address.street ||
+    typeof address.city !== 'string' || !address.city ||
+    typeof address.state !== 'string' || !address.state ||
+    typeof address.zip !== 'string' || !address.zip
+  ) {
+    throw new HttpsError('invalid-argument', 'Missing required fields: propertyName, propertyType, and a valid address object with street, city, state, and zip.');
   }
-  // Add more specific validation for address object if needed:
-  // e.g., if (!address.street || !address.city || !address.state || !address.zip) { ... }
 
 
   try {
@@ -31,7 +38,12 @@ export const createProperty = onCall(async (request) => {
     const propertyData = {
       id: newPropertyRef.id,
       name: propertyName,
-      address: address, // e.g., { street, city, state, zip }
+      address: { // Storing the full address
+        street: address.street,
+        city: address.city,
+        state: address.state,
+        zip: address.zip,
+      },
       type: propertyType,
       organizationId: callerOrgId,
       managedBy: callerUid, 

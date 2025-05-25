@@ -79,7 +79,7 @@ The application employs a modern web architecture with a React-based frontend an
                 *   Document ID: `{propertyId}` (e.g., auto-generated unique ID)
                 *   Fields:
                     *   `name: string` (e.g., "The Grand Plaza")
-                    *   `address: object` (street, city, state, zip)
+                    *   `address: object` (street: string, city: string, state: string, zip: string) <!-- Updated 2025-05-25: Full address object now stored -->
                     *   `type: string` (e.g., "residential", "commercial")
                     *   `managedBy: string` (Auth UID of an org user from `organizations/{organizationId}/users`)
                     *   `createdAt: timestamp`

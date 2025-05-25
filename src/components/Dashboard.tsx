@@ -264,7 +264,7 @@ const Dashboard: React.FC = () => {
             }}
           >
             <Typography variant='h4' color='secondary'>
-              {organizationName || organizationId}
+              {organizationName}
             </Typography>
             <Button
               variant='contained'
@@ -274,6 +274,9 @@ const Dashboard: React.FC = () => {
               Add Property
             </Button>
           </Box>
+          {/* Property Manager Tabs: The "Add Property" button above is intentionally outside the tabs,
+              so it remains accessible and functional regardless of the selected tab.
+              The modal it triggers (isCreatePropertyModalOpen) is also managed independently. */}
           <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
             <Tabs
               value={pmTabValue}

@@ -1,5 +1,5 @@
-import React, { useState, useRef, useCallback, useEffect } from 'react'; // Added useEffect, useRef, useCallback
-import { Link as RouterLink } from 'react-router-dom'; // Added
+import React, { useState, useCallback, useEffect } from 'react'; // Removed useRef
+// import { Link as RouterLink } from 'react-router-dom'; // Unused
 import {
   Box,
   Typography,
@@ -8,16 +8,17 @@ import {
   Tabs,
   Tab,
   Button,
-  Alert, // Added Alert
-  Dialog, // Added Dialog
-  DialogTitle, // Added DialogTitle
-  DialogContent, // Added DialogContent
-  DialogActions, // Added DialogActions
+  Alert,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  // DialogActions, // Unused
   IconButton,
-  Stack, // Added IconButton
-} from '@mui/material'; // Added Button
-import AddIcon from '@mui/icons-material/Add'; // Added AddIcon
-import CloseIcon from '@mui/icons-material/Close'; // Added CloseIcon for Dialog
+  Stack,
+  Snackbar, // Added Snackbar for Add Org feedback
+} from '@mui/material';
+import AddIcon from '@mui/icons-material/Add';
+import CloseIcon from '@mui/icons-material/Close';
 import { useAuth } from '../hooks/useAuth';
 import { doc, getDoc } from 'firebase/firestore'; // Added for fetching org name
 import { db } from '../firebaseConfig'; // Added for fetching org name
@@ -25,10 +26,8 @@ import { db } from '../firebaseConfig'; // Added for fetching org name
 // Admin Components
 import OrganizationSelector from './Admin/OrganizationSelector';
 import PropertyManagerManagement from './Admin/PropertyManagerManagement';
-// InvitePropertyManagerForm is no longer directly imported here as it's inside PropertyManagerManagement
-import OrganizationManagementPanel, {
-  type OrganizationManagementPanelRef,
-} from './Admin/OrganizationManagementPanel'; // Added import and type
+import OrganizationManagementPanel from './Admin/OrganizationManagementPanel'; // Removed OrganizationManagementPanelRef
+import AddOrganizationModal from './Admin/AddOrganizationModal'; // Added AddOrganizationModal import
 
 // Property Manager Components
 import PropertyManagerPropertiesList from './PropertyManager/PropertyManagerPropertiesList';
@@ -85,7 +84,13 @@ const Dashboard: React.FC = () => {
   const [isCreatePropertyModalOpen, setIsCreatePropertyModalOpen] =
     useState(false);
   const [organizationName, setOrganizationName] = useState<string | null>(null);
-  const organizationPanelRef = useRef<OrganizationManagementPanelRef>(null);
+  // const organizationPanelRef = useRef<OrganizationManagementPanelRef>(null); // Removed ref
+  const [isAddOrgModalOpen, setIsAddOrgModalOpen] = useState(false); // State for Add Org Modal
+  const [refreshOrgListKey, setRefreshOrgListKey] = useState(0); // Key to refresh org list
+  const [snackbarOpen, setSnackbarOpen] = useState(false); // Snackbar state
+  const [snackbarMessage, setSnackbarMessage] = useState(''); // Snackbar message
+  const [snackbarSeverity, setSnackbarSeverity] = useState< 'success' | 'error' | 'info' | 'warning'>('success'); // Snackbar severity
+
   const [isEditPropertyModalOpen, setIsEditPropertyModalOpen] = useState(false);
   const [propertyToEdit, setPropertyToEdit] = useState<PropertyType | null>(
     null
@@ -121,7 +126,20 @@ const Dashboard: React.FC = () => {
   };
 
   const handleOpenAddOrgModal = () => {
-    organizationPanelRef.current?.openAddModal();
+    console.log('Opening Add Organization Modal directly from Dashboard');
+    setIsAddOrgModalOpen(true);
+  };
+
+  const handleCloseAddOrgModal = () => {
+    setIsAddOrgModalOpen(false);
+  };
+
+  const handleOrganizationCreatedInDashboard = (orgId: string) => {
+    setSnackbarMessage(`Organization created successfully with ID: ${orgId}`);
+    setSnackbarSeverity('success');
+    setSnackbarOpen(true);
+    setIsAddOrgModalOpen(false);
+    setRefreshOrgListKey(prev => prev + 1); // Trigger refresh of OrganizationManagementPanel
   };
 
   const handleAdminTabChange = (
@@ -215,24 +233,16 @@ const Dashboard: React.FC = () => {
               onChange={handleAdminTabChange}
               aria-label='admin actions tabs'
             >
-              <Tab label='Organizations' {...a11yProps(0)} />
-              <Tab label='Property Managers' {...a11yProps(1)} />
-            </Tabs>
-          </Box>
-          <TabPanel value={adminTabValue} index={0}>
-            <Box
-              sx={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'flex-end',
-              }}
-            >
-              {/* OrganizationSelector and its wrapper Box removed from this tab */}
-            </Box>
-            <OrganizationManagementPanel ref={organizationPanelRef} />
-          </TabPanel>
-          <TabPanel value={adminTabValue} index={1}>
-            <OrganizationSelector
+            <Tab label='Organizations' {...a11yProps(0)} />
+            <Tab label='Property Managers' {...a11yProps(1)} />
+          </Tabs>
+        </Box>
+        <TabPanel value={adminTabValue} index={0}>
+          {/* Removed Box wrapper that was empty */}
+          <OrganizationManagementPanel key={refreshOrgListKey} /> {/* Pass key to trigger re-render/re-fetch */}
+        </TabPanel>
+        <TabPanel value={adminTabValue} index={1}>
+          <OrganizationSelector
               selectedOrganizationId={selectedAdminOrgId}
               onOrganizationChange={handleAdminOrgChange}
             />
@@ -361,6 +371,29 @@ const Dashboard: React.FC = () => {
             associated.
           </Typography>
         )}
+
+      {/* Add Organization Modal - now managed by Dashboard */}
+      <AddOrganizationModal
+        open={isAddOrgModalOpen}
+        onClose={handleCloseAddOrgModal}
+        onOrganizationCreated={handleOrganizationCreatedInDashboard}
+      />
+
+      {/* Snackbar for feedback */}
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={6000}
+        onClose={() => setSnackbarOpen(false)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert
+          onClose={() => setSnackbarOpen(false)}
+          severity={snackbarSeverity}
+          sx={{ width: '100%' }}
+        >
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };

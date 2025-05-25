@@ -7,10 +7,10 @@ import {
   Button,
   CircularProgress,
   Alert,
-  Grid,
+  // Grid, // Unused
   Snackbar,
 } from '@mui/material';
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { doc, getDoc } from 'firebase/firestore'; // updateDoc removed
 import { db } from '../../firebaseConfig';
 import { useAuth } from '../../hooks/useAuth';
 import type { Resident } from '../../types';
@@ -114,9 +114,13 @@ const ResidentProfileManagement: React.FC = () => {
       
       // Optimistically update local state or refetch, for now just show success
       setSuccessMessage('Profile updated successfully!');
-    } catch (err: any) {
+    } catch (err: unknown) { // Changed from any to unknown
       console.error('Error updating profile:', err);
-      setError(err.message || 'Failed to update profile. Please try again.');
+      if (err instanceof Error) {
+        setError(err.message || 'Failed to update profile. Please try again.');
+      } else {
+        setError('An unexpected error occurred while updating profile. Please try again.');
+      }
     } finally {
       setSaving(false);
     }

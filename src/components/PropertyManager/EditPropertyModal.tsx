@@ -170,7 +170,7 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
       // For simplicity, if `open` is false, the component part rendering this won't be active.
       // The current logic in the main `if (open && ...)` handles re-initialization if needed.
     };
-  }, [open, window.google, street]); // `propertyData` removed from here, handled by first useEffect. `street` added for pre-fill sync.
+  }, [open, street]); // `window.google` removed, `street` kept for pre-fill sync.
 
   const handleSnackbarClose = () => {
     setSnackbarOpen(false);
@@ -227,10 +227,15 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
       setSnackbarSeverity('success');
       setSnackbarOpen(true);
       onSuccess(); // Call onSuccess to refresh list and close modal
-    } catch (err: any) {
+    } catch (err: unknown) { // Changed from any to unknown
       console.error('Error updating property:', err);
-      setError(err.message || 'Failed to update property.');
-      setSnackbarMessage(err.message || 'Failed to update property.');
+      if (err instanceof Error) {
+        setError(err.message || 'Failed to update property.');
+        setSnackbarMessage(err.message || 'Failed to update property.');
+      } else {
+        setError('An unexpected error occurred while updating property.');
+        setSnackbarMessage('An unexpected error occurred while updating property.');
+      }
       setSnackbarSeverity('error');
       setSnackbarOpen(true);
     } finally {

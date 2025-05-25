@@ -2,8 +2,8 @@ import React, {
   useState,
   useEffect,
   useCallback,
-  useImperativeHandle,
-  forwardRef,
+  // useImperativeHandle, // No longer needed for Add Modal
+  // forwardRef, // No longer needed for Add Modal
 } from 'react';
 import {
   Box,
@@ -20,7 +20,7 @@ import {
   Paper,
   IconButton,
 } from '@mui/material';
-import AddOrganizationModal from './AddOrganizationModal';
+// AddOrganizationModal will be handled by the parent (Dashboard)
 import EditOrganizationModal from './EditOrganizationModal';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -48,15 +48,15 @@ const deleteOrganizationCallable = httpsCallable(
   'deleteOrganization'
 );
 
-export interface OrganizationManagementPanelRef {
-  openAddModal: () => void;
-}
+// Ref for opening Add Modal is no longer needed from here
+// export interface OrganizationManagementPanelRef {
+// openAddModal: () => void;
+// }
 
-const OrganizationManagementPanel = forwardRef<
-  OrganizationManagementPanelRef
->((_props, ref) => {
+// forwardRef is no longer needed for Add Modal logic
+const OrganizationManagementPanel: React.FC = () => {
   const { currentUser } = useAuth();
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  // const [isAddModalOpen, setIsAddModalOpen] = useState(false); // Will be managed by Dashboard
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingOrganization, setEditingOrganization] =
     useState<Organization | null>(null);
@@ -128,17 +128,19 @@ const OrganizationManagementPanel = forwardRef<
     fetchOrganizations();
   }, [fetchOrganizations]);
 
-  const handleOpenAddModal = () => {
-    setIsAddModalOpen(true);
-  };
+  // Add Modal open/close handlers are removed as it's managed by Dashboard
+  // const handleOpenAddModal = () => {
+  // setIsAddModalOpen(true);
+  // };
 
-  const handleCloseAddModal = () => {
-    setIsAddModalOpen(false);
-  };
+  // const handleCloseAddModal = () => {
+  // setIsAddModalOpen(false);
+  // };
 
-  useImperativeHandle(ref, () => ({
-    openAddModal: handleOpenAddModal,
-  }));
+  // useImperativeHandle for openAddModal is removed
+  // useImperativeHandle(ref, () => ({
+  // openAddModal: handleOpenAddModal,
+  // }));
 
   const handleOpenEditModal = (org: Organization) => {
     setEditingOrganization(org);
@@ -150,12 +152,12 @@ const OrganizationManagementPanel = forwardRef<
     setEditingOrganization(null);
   };
 
-  const handleOrganizationCreated = (orgId: string) => {
-    setSnackbarMessage(`Organization created successfully with ID: ${orgId}`);
-    setSnackbarSeverity('success');
-    setSnackbarOpen(true);
-    fetchOrganizations();
-  };
+  // const handleOrganizationCreated = (orgId: string) => {
+  //   setSnackbarMessage(`Organization created successfully with ID: ${orgId}`);
+  //   setSnackbarSeverity('success');
+  //   setSnackbarOpen(true);
+  //   fetchOrganizations();
+  // };
 
   const handleOrganizationUpdated = (updatedOrgData: Partial<Organization>) => {
     setSnackbarMessage(
@@ -169,11 +171,15 @@ const OrganizationManagementPanel = forwardRef<
     handleCloseEditModal();
   };
 
+  // Public method to allow parent to trigger refresh
+  // This might be needed if Dashboard handles creation and needs to tell this panel to update.
+  // For now, we assume a key prop change on this component from Dashboard will handle refresh.
+  // If a more direct refresh is needed, useImperativeHandle could be re-added for this.
 
   const handleDeleteOrganization = async (orgId: string, orgName: string) => {
     if (
       window.confirm(
-        `Are you sure you want to DELETE organization "${orgName}"? This action is permanent and cannot be undone.` // Updated confirmation
+        `Are you sure you want to DELETE organization "${orgName}"? This action is permanent and cannot be undone.`
       )
     ) {
       setActionLoading((prev) => ({ ...prev, [orgId]: true }));
@@ -299,11 +305,12 @@ const OrganizationManagementPanel = forwardRef<
         </TableContainer>
       )}
 
-      <AddOrganizationModal
+      {/* AddOrganizationModal is now rendered in Dashboard.tsx */}
+      {/* <AddOrganizationModal
         open={isAddModalOpen}
         onClose={handleCloseAddModal}
         onOrganizationCreated={handleOrganizationCreated}
-      />
+      /> */}
 
       {editingOrganization && (
         <EditOrganizationModal
@@ -330,6 +337,6 @@ const OrganizationManagementPanel = forwardRef<
       </Snackbar>
     </Box>
   );
-});
+}; // Changed from forwardRef
 
 export default OrganizationManagementPanel;

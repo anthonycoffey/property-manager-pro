@@ -25,6 +25,12 @@ interface CreateServiceRequestFormProps {
   onServiceRequestSubmitted: () => void;
 }
 
+interface CreateServiceRequestCallableResponse {
+  success: boolean;
+  message?: string;
+  serviceRequestId?: string;
+}
+
 // User-updated service types for roadside assistance
 const roadsideServiceTypes = [
   'Flat Tire Change',
@@ -103,10 +109,10 @@ const CreateServiceRequestForm: React.FC<CreateServiceRequestFormProps> = ({
         'createServiceRequest'
       );
       const result = await createServiceRequest(dataToSubmit);
+      const responseData = result.data as CreateServiceRequestCallableResponse;
 
-      // @ts-ignore
-      if (result.data.success) {
-        setSuccessMessage('Service request submitted successfully!');
+      if (responseData.success) {
+        setSuccessMessage(responseData.message || 'Service request submitted successfully!');
         setRequestType('');
         setServiceLocation('');
         setServiceDateTime(new Date());
@@ -114,14 +120,15 @@ const CreateServiceRequestForm: React.FC<CreateServiceRequestFormProps> = ({
         setPhone('');
         onServiceRequestSubmitted();
       } else {
-        // @ts-ignore
-        setError(result.data.message || 'Failed to submit service request.');
+        setError(responseData.message || 'Failed to submit service request.');
       }
-    } catch (err: any) {
+    } catch (err: unknown) { // Changed from any to unknown
       console.error('Error submitting service request:', err);
-      setError(
-        err.message || 'An unexpected error occurred. Please try again.'
-      );
+      if (err instanceof Error) {
+        setError(err.message || 'An unexpected error occurred. Please try again.');
+      } else {
+        setError('An unexpected error occurred. Please try again.');
+      }
     } finally {
       setSubmitting(false);
     }

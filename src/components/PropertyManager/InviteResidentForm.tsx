@@ -73,7 +73,7 @@ const InviteResidentForm: React.FC<InviteResidentFormProps> = ({
 
       if (responseData?.success) {
         setSuccess(
-          `Invitation sent successfully to ${inviteeEmail} for property ${propertyName}.`
+          `Invitation sent successfully to ${inviteeEmail} for ${propertyName}.`
         );
         setInviteeEmail('');
       } else {

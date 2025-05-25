@@ -13,6 +13,7 @@
     *   **React Hooks:** Local component state.
 *   **Data Fetching (Client-Side):** Standard Fetch API, but server-side data fetching will be done via Server Components and is always preferred over client-side fetching.
 *   **Charting/Visualization:** Highcharts for displaying analytics and reports.
+*   **Address Autocompletion:** Google Places API using the `google.maps.places.PlaceAutocompleteElement` (Web Component). Script loading managed by `@react-google-maps/api`'s `LoadScript`.
 *   **Build Tool:** (Implicit) Likely Vite or Create React App, to be confirmed. Standard Node.js/npm/yarn ecosystem.
 
 ### Backend
@@ -33,6 +34,8 @@
 *   **IDE:** Visual Studio Code recommended, or any editor with good JavaScript/TypeScript support.
 *   **Version Control:** Git (repository to be set up on a platform like GitHub, GitLab, or Bitbucket).
 *   **Local Emulation:** Firebase Local Emulator Suite will be crucial for testing Authentication, Firestore, and Cloud Functions locally before deployment.
+*   **API Keys:**
+    *   `VITE_GOOGLE_MAPS_API_KEY`: Environment variable for Google Maps API key, used for Places Autocomplete. Stored in `.env` (gitignored).
 
 ## 3. Technical Constraints & Considerations
 
@@ -51,6 +54,7 @@
     *   `react`, `react-dom`
     *   `@mui/material`, `@emotion/react`, `@emotion/styled` (for MUI)
     *   `@mui/icons-material`
+    *   `@react-google-maps/api` (used for `LoadScript` to load Google Maps API)
     *   Routing library (e.g., `react-router-dom`) - *Not explicitly mentioned but essential for a multi-page app.*
 *   **Backend (Cloud Functions - Node.js example):**
     *   `firebase-admin` (for server-side Firebase access)

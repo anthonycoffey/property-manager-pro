@@ -2,9 +2,9 @@
 
 ## 1. Current Status: RBAC & Firestore Implementation (As of 2025-05-23)
 
-The project has recently completed the implementation of the Admin Organization Management Panel and a significant refactoring of all Firebase Cloud Functions.
+The project has recently completed the implementation of the Admin Organization Management Panel, a significant refactoring of all Firebase Cloud Functions, and the integration of Google Places API for address autocompletion.
 
-*   **Date of this update:** 2025-05-24 (Updated)
+*   **Date of this update:** 2025-05-25
 
 ## 2. What Works / Completed
 
@@ -17,43 +17,48 @@ The project has recently completed the implementation of the Admin Organization 
 *   **Phase 1: Firebase Project Setup & Initial Firestore Structure:**
     *   Confirmed Firebase project initialization and Firestore enablement.
 *   **Phase 2: Firebase Authentication & Custom Claims:**
-    *   **Updated `processSignUp` Cloud Function (`functions/src/index.ts`):** Migrated from a blocking `beforeUserCreated` trigger to a non-blocking `functions.auth.user().onCreate` (1st gen) trigger. Implemented custom claims logic to assign `admin: true` and `accessLevel: 9` for users with `@admin.example.com` emails, and default `resident` roles for others. Resolved TypeScript errors related to `functions.auth` and implicit `any` types by correctly importing `functions` and explicitly typing `user` as `admin.auth.UserRecord`.
-    *   **Replaced `firebase-functions/logger` with `console.log`:** All `logger.info` and `logger.error` calls in `functions/src/index.ts` have been replaced with `console.log` and `console.error` respectively, as per user instruction.
-    *   Resolved TypeScript module resolution errors for Firebase Functions v2 `identity` module. (Note: This specific resolution is now superseded by the change to `onCreate` but kept for historical context of previous issues).
+    *   **Updated `processSignUp` Cloud Function (`functions/src/auth/processSignUp.ts`):**
+        *   Migrated from a blocking `beforeUserCreated` trigger to a non-blocking `functions.auth.user().onCreate` (1st gen) trigger.
+        *   Implemented custom claims logic:
+            *   For admin users (`*@24hrcarunlocking.com`): sets `roles: ['admin']` and creates a profile in `admins/{uid}`.
+            *   For other direct sign-ups: sets `roles: ['pending_association']`. **No Firestore document is created by `processSignUp` for these users.** The temporary profile creation in the root `users/{uid}` and the check for `organizationId` claim were removed.
+        *   (Previous TypeScript error resolutions and logger changes remain relevant to the function's history but are now within its modularized file).
     *   Updated `src/hooks/useAuth.ts` and `src/providers/AuthProvider.tsx` to fetch and expose custom claims.
 *   **Phase 3: Firestore Security Rules:**
     *   Implemented comprehensive multi-tenant and RBAC security rules in `firestore.rules`.
+    *   **Removed rules for the root `/users` collection** as it's no longer used for `pending_association` profiles (2025-05-24).
 *   **Phase 4: Frontend Integration & UI Adaptation:**
     *   Updated `src/components/ProtectedRoute.tsx` to enforce route protection based on roles and IDs.
     *   Modified `src/components/Dashboard.tsx` for conditional UI rendering based on user roles.
 *   **Phase 5 (Partial): Initial Feature Development (Admin Dashboard - Property Manager CRUD):**
     *   Created `src/components/Admin` directory and `src/components/Admin/PropertyManagerManagement.tsx` component.
-    *   Implemented `createPropertyManager`, `updatePropertyManager`, and `deletePropertyManager` Cloud Functions in `functions/src/index.ts`.
+    *   Implemented `createPropertyManager`, `updatePropertyManager`, and `deletePropertyManager` Cloud Functions (now in `functions/src/callable/`).
     *   Integrated the "Add New Property Manager" form in `src/components/Admin/PropertyManagerManagement.tsx` to interact with the `createPropertyManager` Cloud Function.
     *   Added `/admin/property-managers` route to `src/routes.tsx` protected by `ProtectedRoute`.
-*   **Resolved Firebase Admin SDK Initialization Error:** Changed `import * as admin from 'firebase-admin';` to `import admin from 'firebase-admin';` in `functions/src/index.ts` to resolve `TypeError: admin.initializeApp is not a function` during Firebase Functions deployment in an ES module environment.
+*   **Resolved Firebase Admin SDK Initialization Error:** Changed `import * as admin from 'firebase-admin';` to `import admin from 'firebase-admin';` in `functions/src/firebaseAdmin.ts` (previously `functions/src/index.ts`) to resolve `TypeError: admin.initializeApp is not a function` during Firebase Functions deployment in an ES module environment.
 *   **Removed Token Refresh Mechanism from `processSignUp` (2025-05-23):**
-    *   Modified `functions/src/index.ts` in the `processSignUp` function to completely remove any explicit server-side mechanism for signaling client-side token refresh (this included removing the previously implemented Firestore `userTokenRefreshFlags` and the original Realtime Database calls).
+    *   The `processSignUp` function no longer contains any explicit server-side mechanism for signaling client-side token refresh.
     *   Removed the security rules for the `userTokenRefreshFlags` collection from `firestore.rules`.
-    *   This simplifies the `processSignUp` function and ensures the "Can't determine Firebase Database URL" error (related to the initial Realtime Database attempt) remains resolved. The client will now be solely responsible for its token refresh strategy.
+    *   This simplifies the `processSignUp` function. The client is solely responsible for its token refresh strategy.
 *   **Resolved Authentication Race Condition (2025-05-23):**
-    *   Successfully investigated and fixed a race condition in `src/providers/AuthProvider.tsx` that caused users to be incorrectly redirected from protected routes on initial login.
-    *   The fix involved refactoring `AuthProvider.tsx` to use a two-stage `useEffect` approach for more robust management of loading and user authentication states. This ensures that `ProtectedRoute.tsx` evaluates access based on complete and current authentication context.
-    *   `ProtectedRoute.tsx` was restored to its full functionality (role and ID checks) after the fix.
-    *   Console logs used for debugging were cleaned up from `AuthProvider.tsx` and `ProtectedRoute.tsx`.
-*   **Multi-Tenancy Sign-Up Logic Implemented (2025-05-23):**
-    *   **Modified `processSignUp` Cloud Function (`functions/src/index.ts`):**
-        *   Admin users (`*@24hrcarunlocking.com`) now have their profiles created in the `admins/{uid}` Firestore collection.
-        *   Direct non-admin sign-ups are assigned a `{ roles: ['pending_association'] }` custom claim and a temporary profile in the root `users/{uid}` collection with `status: 'pending_association'`.
-        *   `processSignUp` now checks for existing `organizationId` claims to avoid conflicts with invited user processing.
-    *   **Added `signUpWithInvitation` HTTPS Callable Cloud Function (`functions/src/index.ts`):**
-        *   Handles user sign-ups via an invitation, ensuring immediate association with an organization, correct roles, proper profile creation in multi-tenant Firestore paths, and updates invitation status.
+    *   Successfully investigated and fixed a race condition in `src/providers/AuthProvider.tsx`.
+    *   The fix involved refactoring `AuthProvider.tsx` to use a two-stage `useEffect` approach for robust management of loading and user authentication states.
+    *   `ProtectedRoute.tsx` was restored to its full functionality.
+*   **Multi-Tenancy Sign-Up Logic Refined (2025-05-24):**
+    *   **`processSignUp` Cloud Function (`functions/src/auth/processSignUp.ts`):**
+        *   Admin users (`*@24hrcarunlocking.com`) get `admin` roles and profiles in `admins/{uid}`.
+        *   Other direct sign-ups get `pending_association` roles; **no Firestore profile is created by this function.**
+    *   **`signUpWithInvitation` HTTPS Callable Cloud Function (`functions/src/callable/signUpWithInvitation.ts`):**
+        *   Remains the authority for invited user sign-ups.
+        *   Sets final custom claims (overwriting any defaults from `processSignUp`).
+        *   Creates user profiles directly in the correct multi-tenant Firestore paths (e.g., `organizations/{orgId}/users/{uid}` or `organizations/{orgId}/properties/{propId}/residents/{uid}`).
+    *   **Resolved Custom Claim Overwrite (2025-05-24):** Modified `functions/src/auth/processSignUp.ts` to check for an existing `organizationId` claim before setting default `pending_association` claims. This prevents overwriting claims set by the invitation flow, ensuring roles like "resident" are correctly persisted.
 *   **Invitation System Implementation (Phase 1 - Backend & Core UI) (2025-05-23):**
     *   **Documented Plan:** Created `docs/03-invitation-system-plan.md`.
-    *   **Cloud Functions (`functions/src/index.ts`):**
-        *   Added `createInvitation` callable function.
-        *   Added `createProperty` callable function.
-        *   Added `crypto` import.
+    *   **Documented Plan:** Created `docs/03-invitation-system-plan.md`.
+    *   **Cloud Functions (now in `functions/src/callable/`):**
+        *   `createInvitation.ts`
+        *   `createProperty.ts`
     *   **Firestore Security Rules (`firestore.rules`):** Updated rules for `organizations/{orgId}/invitations` subcollection.
     *   **Email Templates (JSON in `docs/`):**
         *   Created `docs/propertyManagerInvitation.json`.
@@ -62,69 +67,71 @@ The project has recently completed the implementation of the Admin Organization 
         *   Created `src/components/Admin/InvitePropertyManagerForm.tsx`.
         *   Created `src/components/PropertyManager/CreatePropertyForm.tsx`.
         *   Created `src/components/PropertyManager/InviteResidentForm.tsx`.
-    *   **TypeScript Fixes:** Resolved issues with `currentUser` property access in new forms by using destructured values from `useAuth()`. Addressed MUI `Grid` `item` prop usage.
+    *   **TypeScript Fixes:** Resolved issues with `currentUser` property access in new forms. Addressed MUI `Grid` `item` prop usage.
 *   **Invitation System (Phase 2 - Dynamic Templates & UI Integration) (2025-05-23):**
     *   **Dynamic Email Templates:**
-        *   Updated `createInvitation` Cloud Function in `functions/src/index.ts` to use dynamic `appDomain` (from Firebase project ID), `appName` (placeholder), and `inviterName` (from auth token or Firestore profile) in email template data.
-        *   Updated `docs/propertyManagerInvitation.json` and `docs/residentInvitation.json` to include `{{ appName }}` and `{{ inviterName }}` placeholders.
+        *   Updated `createInvitation.ts` Cloud Function to use dynamic `appDomain`, `appName`, and `inviterName`.
+        *   Updated email template JSON files with placeholders.
     *   **Dashboard Integration (`src/components/Dashboard.tsx`):**
-        *   Integrated `InvitePropertyManagerForm.tsx` and `PropertyManagerManagement.tsx` into Admin section using MUI Tabs.
-        *   Integrated `CreatePropertyForm.tsx` and `InviteResidentForm.tsx` (with a placeholder `propertyId`) into Property Manager section using MUI Tabs.
+        *   Integrated invitation forms into Admin and Property Manager sections using MUI Tabs.
     *   **Accept Invitation Page (`src/pages/AcceptInvitationPage.tsx`):**
-        *   Created page to handle invitation tokens from URL, display a sign-up form, and call `signUpWithInvitation` Cloud Function.
+        *   Created page to handle invitation tokens, display sign-up form, and call `signUpWithInvitation`.
     *   **Routing (`src/routes.tsx`):**
-        *   Added a public route `/accept-invitation` for `AcceptInvitationPage.tsx`.
+        *   Added `/accept-invitation` route.
     *   **TypeScript Refinements (Cloud Functions):**
-        *   Replaced `any` types in `functions/src/index.ts` with specific interfaces (`UserProfileData`, `InvitationData`, `EmailTemplateData`) for improved type safety in `signUpWithInvitation` and `createInvitation` functions.
+        *   Added specific interfaces for data types in Cloud Functions.
 *   **Admin Property Manager Management Panel Overhaul (Step 4 from `docs/04-admin-pm-management-plan.md`) (2025-05-24):**
     *   **Phase 0: Organization Context Switcher:**
-        *   Created and integrated `src/components/Admin/OrganizationSelector.tsx` into `Dashboard.tsx`.
+        *   Created and integrated `src/components/Admin/OrganizationSelector.tsx`.
     *   **Phase 1: Backend Adjustments:**
-        *   Implemented `revokeInvitation` Cloud Function in `functions/src/index.ts`.
+        *   Implemented `revokeInvitation` Cloud Function (in `functions/src/callable/revokeInvitation.ts`).
     *   **Phase 2 & 3: Frontend UI/UX Overhaul (`src/components/Admin/PropertyManagerManagement.tsx`):**
-        *   Removed manual PM creation form.
-        *   Implemented organization-scoped, unified list (MUI Table) for active PMs and pending PM invitations.
-        *   Implemented actions (Update PM, Delete PM, Revoke Invitation) with dialogs and feedback.
-        *   Addressed core visual design and UX requirements.
+        *   Implemented organization-scoped list for active PMs and pending invitations with actions.
 *   **Admin Dashboard - Organization Management Panel Implemented (2025-05-24):**
-    *   Enhanced `src/components/Admin/OrganizationManagementPanel.tsx` to list, add (via `AddOrganizationModal.tsx`), edit (via `EditOrganizationModal.tsx`), and deactivate organizations.
-    *   The `Organization` interface was updated to use `createdBy` instead of `ownerId`.
-    *   Relevant TypeScript import issues were resolved (type-only imports, `.js` extensions for Firebase Functions).
+    *   Enhanced `src/components/Admin/OrganizationManagementPanel.tsx` for organization CRUD.
 *   **Firebase Functions Refactoring (2025-05-24):**
-    *   All Cloud Functions from `functions/src/index.ts` were refactored into individual files under `functions/src/auth/` (for auth triggers like `processSignUp`) and `functions/src/callable/` (for HTTPS callable functions).
-    *   Created `functions/src/firebaseAdmin.ts` for shared Firebase Admin SDK initialization and `functions/src/helpers/handleHttpsError.ts` for a common error handling utility.
-    *   The main `functions/src/index.ts` now re-exports all individual functions.
-    *   Added new callable Cloud Functions for organization management:
-        *   `updateOrganization` (in `functions/src/callable/updateOrganization.ts`)
-        *   `deactivateOrganization` (in `functions/src/callable/deactivateOrganization.ts`)
-    *   Ensured all relative imports within the `functions/src` directory use the `.js` extension.
+    *   All Cloud Functions refactored into individual files under `functions/src/auth/` and `functions/src/callable/`.
+    *   Shared utilities in `functions/src/firebaseAdmin.ts` and `functions/src/helpers/handleHttpsError.ts`.
+    *   Main `functions/src/index.ts` re-exports functions.
+    *   Added `updateOrganization.ts` and `deactivateOrganization.ts` callables.
 *   **Admin Invite Property Manager Form Enhancement (2025-05-24):**
-    *   Modified `src/components/Admin/InvitePropertyManagerForm.tsx` to accept `selectedOrganizationId` as a prop.
-    *   The Organization ID field in this form is now pre-filled and disabled, based on the organization selected in `OrganizationSelector.tsx` on the `Dashboard`.
-    *   Updated `src/components/Dashboard.tsx` to pass the `selectedAdminOrgId` to `InvitePropertyManagerForm.tsx`.
+    *   Modified `src/components/Admin/InvitePropertyManagerForm.tsx` to use `selectedOrganizationId` prop.
 *   **Social Sign-On for Accept Invitation Page (2025-05-24):**
-    *   Enhanced `src/pages/AcceptInvitationPage.tsx` to include UI and logic for Google and Microsoft social sign-on options.
-    *   Modified the `functions/src/callable/signUpWithInvitation.ts` Cloud Function to:
-        *   Handle pre-authenticated users (from social sign-on) by accepting an optional `uid` and making `password` optional.
-        *   Skip Firebase Auth user creation if `uid` is provided.
-        *   Validate that the email from the social provider matches the email on the invitation.
-        *   Use the display name from the social provider for the Firestore user profile.
-    *   Resolved `UserCredential` import error in `AcceptInvitationPage.tsx`.
+    *   Enhanced `src/pages/AcceptInvitationPage.tsx` with social sign-on.
+    *   Modified `functions/src/callable/signUpWithInvitation.ts` to handle pre-authenticated users.
 *   **Accept Invitation Page Enhancements (Readonly Email & Pre-fill) (2025-05-24):**
-    *   Added a new callable Cloud Function `getInvitationDetails` (`functions/src/callable/getInvitationDetails.ts`) to securely fetch the invited email address using the invitation token and organization ID.
-    *   Updated `functions/src/index.ts` to export `getInvitationDetails`.
-    *   Modified `src/pages/AcceptInvitationPage.tsx` to:
-        *   Call `getInvitationDetails` upon loading with valid URL parameters.
-        *   Pre-fill the email input field with the email address fetched from the invitation.
-        *   Make the email input field readonly to prevent modification.
-        *   Implement loading states and error handling for the invitation detail fetching process, disabling form interactions until details are loaded or if an error occurs.
+    *   Added `getInvitationDetails.ts` Cloud Function.
+    *   Updated `src/pages/AcceptInvitationPage.tsx` to pre-fill and disable email field.
 *   **Property Manager Dashboard - Dynamic Property Selection for Resident Invitations (2025-05-24):**
-    *   Created `src/components/PropertyManager/PropertyManagerPropertiesList.tsx` for PMs to view and select their managed properties.
-    *   Integrated `PropertyManagerPropertiesList` into `src/components/Dashboard.tsx` for the Property Manager role, including state management for `selectedPropertyIdForPM`.
-    *   Updated the Property Manager section in `Dashboard.tsx` with tabs for "My Properties" and "Invite Resident".
-    *   The `InviteResidentForm` in `Dashboard.tsx` now uses the dynamic `selectedPropertyIdForPM` and `organizationId`, and shows an `Alert` if no property is selected.
-    *   Corrected TypeScript errors in `PropertyManagerPropertiesList.tsx`.
-    *   Confirmed `InviteResidentForm.tsx` correctly uses its props.
+    *   Implemented `src/components/PropertyManager/PropertyManagerPropertiesList.tsx`.
+    *   Integrated into `src/components/Dashboard.tsx` for dynamic property selection in resident invites.
+*   **Property Manager Panel UI/UX Refactor (2025-05-24):**
+    *   Refactored the Property Manager section in `src/components/Dashboard.tsx`:
+        *   Panel title now displays the fetched Organization Name.
+        *   Removed the "Create Property" tab; property creation is now handled via a "Create Property" button opening a modal containing `CreatePropertyForm.tsx`.
+        *   `CreatePropertyForm.tsx` updated with an `onSuccess` callback for modal closure.
+        *   The "Invite Resident" tab now embeds `PropertyManagerPropertiesList` for clear property selection before inviting.
+        *   The "My Properties" tab continues to list properties.
+    *   This aligns with Admin panel patterns and improves UX for property creation and resident invitation.
+*   **Property Manager Panel Enhancements (Table Display & Dropdown Selector - 2025-05-24):**
+    *   **`PropertyManagerPropertiesList.tsx`:** Refactored to display properties in an MUI `Table` with "Property Name" and formatted "Address" columns.
+    *   **New `PropertySelectorDropdown.tsx`:** Created to provide a dedicated MUI `Select` dropdown for choosing a property (displays Name and Address); its callback now provides both property ID and name.
+    *   **`Dashboard.tsx` (Property Manager Panel):**
+        *   "My Properties" tab now uses the table-based `PropertyManagerPropertiesList.tsx`.
+        *   "Invite Resident" tab now uses the new `PropertySelectorDropdown.tsx` for property selection. The `Divider` between the dropdown and the form was removed for a unified look. State variables for selected property ID/name were renamed for clarity (e.g., `selectedPropertyId`).
+    *   **`InviteResidentForm.tsx`:**
+        *   Title now displays the selected property's name instead of ID.
+        *   Layout updated to place the email input and "Send Invitation" button on the same row.
+    *   These changes further refine the UI/UX based on feedback, improving clarity and consistency.
+*   **Google Places API Autocomplete Refactor for Property Address (2025-05-25):**
+    *   Refactored address autocompletion in property creation and editing forms to use the recommended `google.maps.places.PlaceAutocompleteElement` (Web Component) due to deprecation notices for the legacy `Autocomplete` for new customers.
+    *   The `@react-google-maps/api` library's `LoadScript` component is still used to load the Google Maps JavaScript API.
+    *   Modified `src/components/PropertyManager/CreatePropertyForm.tsx` and `src/components/PropertyManager/EditPropertyModal.tsx`.
+    *   Implemented `useEffect` hooks to dynamically create, append, style, and manage the `PlaceAutocompleteElement` within a `div` container.
+    *   The `PlaceAutocompleteElement` now provides the street address input and suggestions.
+    *   On selecting an address via the `gmp-select` event, the form's state for street, city, state (short code), and zip code is populated.
+    *   Ensured state selection dropdowns remain consistent with short codes.
+    *   Maintained documentation for the `VITE_GOOGLE_MAPS_API_KEY` environment variable.
 
 ## 3. What's Left to Build (High-Level from `projectRoadmap.md`)
 
@@ -137,11 +144,14 @@ The remaining application functionality includes:
     *   Properties Management (CRUD).
     *   Residents Management (View, Edit, Delete for support).
 *   **C. Property Manager Dashboard:**
-    *   View assigned properties (Implemented via `PropertyManagerPropertiesList`).
-    *   Allow selection of property to make `propertyId` dynamic for `InviteResidentForm` (Implemented).
-    *   Manage residents for their properties.
-    *   Manage invitations (beyond the initial invite form, e.g., view status, revoke).
-    *   Track service requests.
+    *   **Property Creation:** (Implemented via "Create Property" button and modal with `CreatePropertyForm.tsx`).
+    *   **View Assigned Properties:** (Implemented in "My Properties" tab via table-based `PropertyManagerPropertiesList`, showing Name and Address).
+    *   **Invite Residents:**
+        *   Select property for invitation (Implemented in "Invite Resident" tab via new `PropertySelectorDropdown.tsx`, showing Name and Address).
+        *   Use `InviteResidentForm` with selected property (Implemented).
+    *   Manage residents for their properties (e.g., view list, edit details - Pending).
+    *   Manage invitations (beyond the initial invite form, e.g., view status, revoke - Pending).
+    *   Track service requests (Pending).
 *   **D. Resident Dashboard:**
     *   View property details.
     *   Manage profile (vehicle info).
@@ -165,32 +175,33 @@ The remaining application functionality includes:
 
 ## 5. Evolution of Project Decisions
 
-*   **Initial Decision (from `projectRoadmap.md`):** Adopt React 19 with Server Components and Firebase as the core stack.
-*   **Initial Decision (from `.clinerules`):** Implement and maintain a "Memory Bank" documentation system.
-*   **2025-05-22:** Decided to use Highcharts for analytics and reporting features.
-*   **2025-05-23:** Finalized the detailed multi-tenant database architecture for Firestore and the Firebase Auth custom claims strategy. This adopts a hierarchical model based on organizations and array-based roles. The canonical documentation for this is in `memory-bank/systemPatterns.md`, with `memory-bank/projectRoadmap.md` updated to reflect this and refer to `systemPatterns.md`.
-*   **2025-05-23:** Resolved Firebase Functions v2 `identity` module import issue by identifying `beforeUserCreated` as the correct function for user creation triggers and updating `tsconfig.json` for `nodenext` compatibility. (Note: This specific resolution is now superseded by the change to `onCreate` but kept for historical context of previous issues).
-*   **2025-05-23:** Updated `apphosting.yaml` to include `build` and `release` configurations for Firebase App Hosting, ensuring correct deployment of the Vite application.
-*   **2025-05-23:** Resolved `TypeError: admin.initializeApp is not a function` by changing `firebase-admin` import in `functions/src/index.ts` from `import * as admin from 'firebase-admin';` to `import admin from 'firebase-admin';`.
-*   **2025-05-23:** Switched Firebase user creation trigger from blocking `beforeUserCreated` to non-blocking `functions.auth.user().onCreate` (1st gen) in `functions/src/index.ts`. Implemented custom claims for admin users. **The explicit server-side token refresh signaling mechanism in `processSignUp` was removed entirely.** Replaced `firebase-functions/logger` with `console.log` and `console.error`.
-*   **2025-05-23:** Resolved TypeScript error `Property 'auth' does not exist` in `functions/src/index.ts` by explicitly importing `auth` from `firebase-functions` for v1 function compatibility.
-    *   **2025-05-23 (Auth Race Condition):** Identified and resolved a race condition in the client-side authentication flow. Refactored `src/providers/AuthProvider.tsx` to use a two-stage `useEffect` pattern. The first `useEffect` subscribes to `onAuthStateChanged` and updates a raw `firebaseUser` state. The second `useEffect` reacts to `firebaseUser` changes, manages a `loading` state explicitly during asynchronous claim fetching and context updates, ensuring that `ProtectedRoute` components receive a consistent and complete auth state. This fixed issues with premature redirects.
-*   **2025-05-23 (Multi-Tenant Sign-Up Strategy):** Implemented a two-part strategy for user creation to enhance multi-tenancy support:
-    1.  The `processSignUp` (`auth.onCreate`) trigger was modified to handle initial states for direct sign-ups (assigning `pending_association` role) and admin user setup (correcting profile path to `admins/{uid}`).
-    2.  The `signUpWithInvitation` callable Cloud Function was updated to manage invited user sign-ups (both email/password and social sign-on), ensuring immediate and correct association with an organization, roles, and multi-tenant profile creation.
-*   **2025-05-24 (Admin PM Management Overhaul):** Implemented the Admin Property Manager Management panel overhaul as per `docs/04-admin-pm-management-plan.md`. This included adding an organization selector, a new `revokeInvitation` Cloud Function, and refactoring the `PropertyManagerManagement.tsx` component to remove manual PM creation and introduce a unified, organization-scoped list for managing active PMs and pending invitations with appropriate actions (Update, Delete, Revoke).
-*   **2025-05-24 (Organization Management & Functions Refactor):** Implemented CRUD operations for Organizations in the Admin panel. Refactored all Firebase Functions into a modular, per-file structure. Added `updateOrganization` and `deactivateOrganization` Cloud Functions. Corrected TypeScript import issues and interface definitions.
-*   **2025-05-24 (Social Sign-On & Email Pre-fill for Invitation Acceptance):**
-    *   Added Google and Microsoft social sign-on options to the `AcceptInvitationPage.tsx`.
-    *   Updated the `signUpWithInvitation` Cloud Function to support this flow by handling pre-authenticated users and ensuring email consistency with the invitation.
-    *   Implemented a new `getInvitationDetails` Cloud Function to fetch the invited email.
-    *   The `AcceptInvitationPage.tsx` now calls `getInvitationDetails` to pre-fill and make the email field readonly, enhancing UX and data integrity.
-    *   Resolved the `UserCredential` import error.
-*   **2025-05-24 (Property Manager Dashboard - Dynamic Property for Invites):**
-    *   Implemented functionality for Property Managers to select one of their managed properties.
-    *   Integrated this selection into the `InviteResidentForm` on the `Dashboard.tsx`, making the `propertyId` dynamic for resident invitations.
-    *   Updated `Dashboard.tsx` with new tabs and state management for this feature.
-    *   Created `PropertyManagerPropertiesList.tsx` component.
+*   **Initial Decision (from `projectRoadmap.md` & `.clinerules`):** Core stack (React 19, Firebase), Memory Bank.
+*   **2025-05-22:** Highcharts for analytics.
+*   **2025-05-23:** Detailed multi-tenant DB architecture and custom claims strategy (`memory-bank/systemPatterns.md`).
+*   **2025-05-23:** Resolved various Firebase Functions v2 import/config issues (now historical context).
+*   **2025-05-23:** Updated `apphosting.yaml`.
+*   **2025-05-23:** Resolved `firebase-admin` import issue.
+*   **2025-05-23:** Switched `processSignUp` to non-blocking `onCreate`, removed token refresh, replaced logger.
+*   **2025-05-23 (Auth Race Condition):** Fixed in `AuthProvider.tsx`.
+*   **2025-05-24 (User Onboarding Logic Refinement):**
+    *   **`processSignUp.ts` (`auth.onCreate` trigger):**
+        *   Handles admin user creation (`*@24hrcarunlocking.com`): sets `admin` role, creates profile in `admins/{uid}`.
+        *   Handles other direct sign-ups: sets `pending_association` role. **No Firestore document is created by this function for these users.**
+        *   The check for `organizationId` claim was removed as it was ineffective due to execution order.
+    *   **`signUpWithInvitation.ts` (callable function):**
+        *   Manages all invited user sign-ups (email/password and social).
+        *   Sets final custom claims (e.g., `property_manager`, `resident`, `organizationId`, `propertyId`), overwriting any defaults from `processSignUp`.
+        *   Creates user profiles directly in the correct multi-tenant Firestore paths.
+    *   **Firestore Rules (`firestore.rules`):**
+        *   Removed rules for the root `/users` collection as it's no longer used.
+    *   This addresses the issue where invited Property Managers were incorrectly getting `pending_association` roles due to the execution order of the `onCreate` trigger and the callable invitation function.
+*   **2025-05-24 (Custom Claim Overwrite Prevention):**
+    *   Modified `processSignUp.ts` to check for an existing `organizationId` custom claim on a user before applying its default `pending_association` claim.
+    *   If `organizationId` is present, `processSignUp.ts` will not modify the user's claims, preserving claims set by `signUpWithInvitation.ts`. This resolves the issue where invitation-specific claims (e.g., for residents) were being overwritten.
+*   **2025-05-24 (Admin PM Management Overhaul):** Implemented as per `docs/04-admin-pm-management-plan.md`.
+*   **2025-05-24 (Organization Management & Functions Refactor):** Implemented.
+*   **2025-05-24 (Social Sign-On & Email Pre-fill for Invitation Acceptance):** Implemented.
+*   **2025-05-24 (Property Manager Dashboard - Dynamic Property for Invites):** Implemented.
 *   **Seed Script Enhancement (`scripts/seedTemplates.js`) (2025-05-24):**
     *   Modified the script to accept an `--env` command-line flag (`emulator` or `production`).
     *   Defaults to `emulator` if no flag is provided, automatically setting `FIRESTORE_EMULATOR_HOST="localhost:8080"` if not already set.

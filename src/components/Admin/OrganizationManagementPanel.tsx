@@ -10,7 +10,7 @@ import {
   Typography,
   Snackbar,
   Alert,
-  CircularProgress, // Button and AddIcon removed
+  CircularProgress,
   Table,
   TableBody,
   TableCell,
@@ -21,8 +21,7 @@ import {
   IconButton,
 } from '@mui/material';
 import AddOrganizationModal from './AddOrganizationModal';
-import EditOrganizationModal from './EditOrganizationModal'; // Import EditOrganizationModal
-// AddIcon removed as button is moved
+import EditOrganizationModal from './EditOrganizationModal';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import {
@@ -32,31 +31,27 @@ import {
   query,
   orderBy,
 } from 'firebase/firestore';
-import { db, functions } from '../../firebaseConfig'; // Assuming db is exported from firebaseConfig
+import { db, functions } from '../../firebaseConfig';
 import { useAuth } from '../../hooks/useAuth';
 import { httpsCallable } from 'firebase/functions';
 
-// Define an interface for the organization data
 export interface Organization {
   id: string;
   name: string;
-  createdBy?: string; // Changed from ownerId
-  status: string; // e.g., "active", "inactive"
-  createdAt: Date | null; // Consistently Date or null
-  // Add other fields as necessary
+  createdBy?: string;
+  status: string;
+  createdAt: Date | null;
 }
 
-// Define callable functions
-const deleteOrganizationCallable = httpsCallable( // Renamed
+const deleteOrganizationCallable = httpsCallable(
   functions,
-  'deleteOrganization' // Updated function name
+  'deleteOrganization'
 );
 
 export interface OrganizationManagementPanelRef {
   openAddModal: () => void;
 }
 
-// Changed Record<string, unknown> to {} for props as _props is unused.
 const OrganizationManagementPanel = forwardRef<
   OrganizationManagementPanelRef
 >((_props, ref) => {
@@ -69,7 +64,8 @@ const OrganizationManagementPanel = forwardRef<
   const [loading, setLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState<Record<string, boolean>>(
     {}
-  ); // For row-specific actions
+  );
+
   const [error, setError] = useState<string | null>(null);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
@@ -86,7 +82,7 @@ const OrganizationManagementPanel = forwardRef<
     setError(null);
     try {
       const orgsCollectionRef = collection(db, 'organizations');
-      const q = query(orgsCollectionRef, orderBy('createdAt', 'desc')); // Order by creation date
+      const q = query(orgsCollectionRef, orderBy('createdAt', 'desc'));
       const querySnapshot = await getDocs(q);
       const orgsData = querySnapshot.docs.map((docSnapshot) => {
         const data = docSnapshot.data();
@@ -104,7 +100,7 @@ const OrganizationManagementPanel = forwardRef<
         return {
           id: docSnapshot.id,
           name: data.name || 'N/A',
-          createdBy: data.createdBy, // Changed from ownerId
+          createdBy: data.createdBy,
           status: data.status || 'N/A',
           createdAt: displayCreatedAt,
         } as Organization;
@@ -158,7 +154,7 @@ const OrganizationManagementPanel = forwardRef<
     setSnackbarMessage(`Organization created successfully with ID: ${orgId}`);
     setSnackbarSeverity('success');
     setSnackbarOpen(true);
-    fetchOrganizations(); // Refresh the list
+    fetchOrganizations();
   };
 
   const handleOrganizationUpdated = (updatedOrgData: Partial<Organization>) => {
@@ -169,14 +165,12 @@ const OrganizationManagementPanel = forwardRef<
     );
     setSnackbarSeverity('success');
     setSnackbarOpen(true);
-    fetchOrganizations(); // Refresh the list
+    fetchOrganizations();
     handleCloseEditModal();
   };
 
-  // handleEditOrganization is now handleOpenEditModal
 
   const handleDeleteOrganization = async (orgId: string, orgName: string) => {
-    // Confirmation for deleting organization
     if (
       window.confirm(
         `Are you sure you want to DELETE organization "${orgName}"? This action is permanent and cannot be undone.` // Updated confirmation
@@ -185,30 +179,29 @@ const OrganizationManagementPanel = forwardRef<
       setActionLoading((prev) => ({ ...prev, [orgId]: true }));
       setError(null);
       try {
-        const result = await deleteOrganizationCallable({ // Use deleteOrganizationCallable
+        const result = await deleteOrganizationCallable({
           organizationId: orgId,
         });
-        // Assuming result.data has { success: boolean, message: string }
         const data = result.data as { success: boolean; message: string };
         if (data.success) {
           setSnackbarMessage(
-            data.message || `Organization ${orgName} deleted successfully.` // Updated message
+            data.message || `Organization ${orgName} deleted successfully.`
           );
           setSnackbarSeverity('success');
-          fetchOrganizations(); // Refresh list
+          fetchOrganizations();
         } else {
           setSnackbarMessage(
-            data.message || `Failed to delete ${orgName}.` // Updated message
+            data.message || `Failed to delete ${orgName}.`
           );
           setSnackbarSeverity('error');
         }
       } catch (err: unknown) {
-        console.error('Error deleting organization:', err); // Updated log
+        console.error('Error deleting organization:', err);
         if (err instanceof Error) {
-          setSnackbarMessage(err.message || `Failed to delete ${orgName}.`); // Updated message
+          setSnackbarMessage(err.message || `Failed to delete ${orgName}.`);
         } else {
           setSnackbarMessage(
-            `An unexpected error occurred while deleting ${orgName}.` // Updated message
+            `An unexpected error occurred while deleting ${orgName}.`
           );
         }
         setSnackbarSeverity('error');
@@ -230,8 +223,7 @@ const OrganizationManagementPanel = forwardRef<
   };
 
   return (
-    <Box sx={{ p: 2 }}>
-      {/* Button and its wrapping Box removed from here */}
+    <Box>
 
       {loading && (
         <Box sx={{ display: 'flex', justifyContent: 'center', my: 3 }}>
@@ -283,7 +275,7 @@ const OrganizationManagementPanel = forwardRef<
                   </TableCell>
                   <TableCell align='right'>
                     <IconButton
-                      onClick={() => handleOpenEditModal(org)} // Changed to handleOpenEditModal
+                      onClick={() => handleOpenEditModal(org)}
                       color='primary'
                       disabled={actionLoading[org.id]}
                     >
@@ -308,8 +300,8 @@ const OrganizationManagementPanel = forwardRef<
       )}
 
       <AddOrganizationModal
-        open={isAddModalOpen} // Changed to isAddModalOpen
-        onClose={handleCloseAddModal} // Changed to handleCloseAddModal
+        open={isAddModalOpen}
+        onClose={handleCloseAddModal}
         onOrganizationCreated={handleOrganizationCreated}
       />
 

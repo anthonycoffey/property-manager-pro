@@ -1,6 +1,7 @@
-import { AppBar, Toolbar, Typography, Button, Box, IconButton } from '@mui/material';
+import { AppBar, Toolbar, Typography, Button, Box, IconButton, Avatar } from '@mui/material'; // Added Avatar
 import Brightness4Icon from '@mui/icons-material/Brightness4';
 import Brightness7Icon from '@mui/icons-material/Brightness7';
+import PMPLogoLight from '/property-manager-pro-light.svg'; // Import the light logo
 import AppRoutes from './routes';
 import { useThemeMode } from './hooks/useThemeMode';
 import { useAuth } from './hooks/useAuth';
@@ -15,6 +16,11 @@ function App() {
     <Box sx={{ flexGrow: 1 }}>
       <AppBar position="static">
         <Toolbar>
+          <Avatar
+            src={PMPLogoLight}
+            alt="Property Manager Pro Logo"
+            sx={{ width: 32, height: 32, mr: 1 }} // Adjusted size for AppBar
+          />
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
             Property Manager Pro
           </Typography>

@@ -10,6 +10,7 @@ import Box from '@mui/material/Box';
 import CircularProgress from '@mui/material/CircularProgress';
 import Alert from '@mui/material/Alert';
 import { Stack, Typography } from '@mui/material';
+import { PersonAdd } from '@mui/icons-material';
 
 interface InvitePropertyManagerFormProps {
   selectedOrganizationId: string | null;
@@ -137,6 +138,7 @@ const InvitePropertyManagerForm: React.FC<InvitePropertyManagerFormProps> = ({
           color='primary'
           disabled={loading}
           sx={{ my: 1, minWidth: 250 }}
+          startIcon={<PersonAdd />}
         >
           {loading ? <CircularProgress size={24} /> : 'Invite User'}
         </Button>

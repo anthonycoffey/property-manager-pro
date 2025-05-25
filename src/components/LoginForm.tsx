@@ -8,9 +8,11 @@ import {
   InputAdornment,
   Container,
   Paper,
+  Avatar, // Added for the logo
 } from '@mui/material';
-import { Visibility, VisibilityOff } from '@mui/icons-material';
+import { Visibility, VisibilityOff, Google as GoogleIcon, Microsoft as MicrosoftIcon } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
+import PMPLogo from '/property-manager-pro.svg'; // Import the logo
 import {
   signInWithEmailAndPassword,
   GoogleAuthProvider,
@@ -96,6 +98,11 @@ const LoginForm: React.FC = () => {
   return (
     <Container component="main" maxWidth="xs">
       <Paper elevation={6} sx={{ mt: 8, p: 4, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        <Avatar
+          src={PMPLogo}
+          alt="Property Manager Pro Logo"
+          sx={{ width: 80, height: 80, mb: 2 }}
+        />
         <Typography component="h1" variant="h5">
           Login
         </Typography>
@@ -157,17 +164,20 @@ const LoginForm: React.FC = () => {
           <Button
             fullWidth
             variant="outlined"
-            sx={{ mb: 1 }}
+            sx={{ mb: 1, borderColor: '#db4437', color: '#db4437', '&:hover': { borderColor: '#db4437', backgroundColor: 'rgba(219, 68, 55, 0.04)' } }}
             onClick={handleGoogleLogin}
             disabled={loading}
+            startIcon={<GoogleIcon />}
           >
             Login with Google
           </Button>
           <Button
             fullWidth
             variant="outlined"
+            sx={{ borderColor: '#0078D4', color: '#0078D4', '&:hover': { borderColor: '#0078D4', backgroundColor: 'rgba(0, 120, 212, 0.04)' } }}
             onClick={handleMicrosoftLogin}
             disabled={loading}
+            startIcon={<MicrosoftIcon />}
           >
             Login with Microsoft
           </Button>

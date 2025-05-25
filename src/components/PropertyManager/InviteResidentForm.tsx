@@ -10,13 +10,21 @@ import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import CircularProgress from '@mui/material/CircularProgress';
 import Alert from '@mui/material/Alert';
+import { PersonAdd } from '@mui/icons-material';
 
-export interface InviteResidentFormProps { // Exporting for potential use elsewhere
+export interface InviteResidentFormProps {
+  // Exporting for potential use elsewhere
   propertyId: string;
+  propertyName?: string; // Added propertyName
   organizationId: string; // Added organizationId
 }
 
-const InviteResidentForm: React.FC<InviteResidentFormProps> = ({ propertyId, organizationId }) => { // Destructure organizationId
+const InviteResidentForm: React.FC<InviteResidentFormProps> = ({
+  propertyId,
+  propertyName,
+  organizationId,
+}) => {
+  // Destructure organizationId
   const [inviteeEmail, setInviteeEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -31,7 +39,12 @@ const InviteResidentForm: React.FC<InviteResidentFormProps> = ({ propertyId, org
     setError(null);
     setSuccess(null);
 
-    if (!currentUser || !userRoles.includes('property_manager') || !organizationId) { // Use prop organizationId
+    if (
+      !currentUser ||
+      !userRoles.includes('property_manager') ||
+      !organizationId
+    ) {
+      // Use prop organizationId
       setError('Permission denied or organization context missing.');
       return;
     }
@@ -41,8 +54,8 @@ const InviteResidentForm: React.FC<InviteResidentFormProps> = ({ propertyId, org
       return;
     }
     if (!propertyId) {
-        setError('Property ID is missing. Cannot send invitation.');
-        return;
+      setError('Property ID is missing. Cannot send invitation.');
+      return;
     }
 
     setLoading(true);
@@ -59,7 +72,9 @@ const InviteResidentForm: React.FC<InviteResidentFormProps> = ({ propertyId, org
       const responseData = result.data as CreateInvitationResponse;
 
       if (responseData?.success) {
-        setSuccess(`Invitation sent successfully to ${inviteeEmail} for property ${propertyId}. Invitation ID: ${responseData?.invitationId}`);
+        setSuccess(
+          `Invitation sent successfully to ${inviteeEmail} for property ${propertyId}. Invitation ID: ${responseData?.invitationId}`
+        );
         setInviteeEmail('');
       } else {
         setError(responseData?.message || 'Failed to send invitation.');
@@ -74,38 +89,60 @@ const InviteResidentForm: React.FC<InviteResidentFormProps> = ({ propertyId, org
   };
 
   if (!currentUser || !userRoles.includes('property_manager')) {
-    return <Alert severity="error">You do not have permission to access this feature.</Alert>;
+    return (
+      <Alert severity='error'>
+        You do not have permission to access this feature.
+      </Alert>
+    );
   }
   if (!propertyId) {
-    return <Alert severity="warning">Property context is missing. Cannot invite resident.</Alert>;
+    return (
+      <Alert severity='warning'>
+        Property context is missing. Cannot invite resident.
+      </Alert>
+    );
   }
 
   return (
-    <Box component="form" onSubmit={handleSubmit} sx={{ mt: 3, maxWidth: '500px' }}>
-      <Typography variant="h6" gutterBottom>
-        Invite New Resident to Property: {propertyId}
+    <Box component='form' onSubmit={handleSubmit} sx={{ mt: 1 }}>
+      {/* Adjusted maxWidth for potentially wider row */}
+      <Typography variant='subtitle1' gutterBottom sx={{ mt: 2 }}>
+        {/* Changed variant, adjusted margin */}
+        Inviting Resident to: {propertyName || `Property ID: ${propertyId}`}
       </Typography>
-      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-      {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
-      <TextField
-        label="Invitee Email"
-        type="email"
-        fullWidth
-        value={inviteeEmail}
-        onChange={(e) => setInviteeEmail(e.target.value)}
-        margin="normal"
-        required
-        disabled={loading}
-      />
-      <Button
-        type="submit"
-        variant="contained"
-        color="primary"
-        disabled={loading}
-        sx={{ mt: 2 }}
-      >
-        {loading ? <CircularProgress size={24} /> : 'Send Invitation'}
-      </Button>
+      {error && (
+        <Alert severity='error' sx={{ mb: 2 }}>
+          {error}
+        </Alert>
+      )}
+      {success && (
+        <Alert severity='success' sx={{ mb: 2 }}>
+          {success}
+        </Alert>
+      )}
+      <Box sx={{ display: 'flex', gap: 2 }}>
+        <TextField
+          label='Enter Resident Email'
+          type='email'
+          value={inviteeEmail}
+          onChange={(e) => setInviteeEmail(e.target.value)}
+          margin='none' // Changed margin to none as Box handles spacing
+          required
+          disabled={loading}
+          sx={{ flexGrow: 1, minWidth: '75%' }} // Allow TextField to grow in the row
+        />
+        <Button
+          type='submit'
+          size='large'
+          variant='contained'
+          color='primary'
+          disabled={loading}
+          startIcon={<PersonAdd />}
+          sx={{ flexGrow: 1 }} // Allow TextField to grow in the row
+        >
+          {loading ? <CircularProgress size={24} /> : 'Invite Resident'}
+        </Button>
+      </Box>
     </Box>
   );
 };

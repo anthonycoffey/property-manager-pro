@@ -148,6 +148,15 @@ The project has recently completed the implementation of the Admin Organization 
 *   **Admin Dashboard - Organization Management Panel UI Enhancement (2025-05-25):**
     *   Updated `src/components/Admin/OrganizationManagementPanel.tsx` to display organization status using MUI `Chip` components. The chip label is now correctly Capitalized (Title Case, e.g., "Active"). This provides better visual feedback (e.g., "active" as green, "inactive" as red).
     *   The `createdAt` column in the same panel was updated to show both date and time (`toLocaleString()`) and is now center-aligned for improved readability.
+*   **Dashboard Component Refactor (2025-05-25):**
+    *   Refactored `src/components/Dashboard.tsx` to improve maintainability and readability.
+    *   Extracted Admin-specific UI and logic into `src/components/Dashboard/AdminDashboardPanel.tsx`.
+    *   Extracted Property Manager-specific UI and logic into `src/components/Dashboard/PropertyManagerDashboardPanel.tsx`.
+    *   The main `Dashboard.tsx` now conditionally renders these panels or `ResidentDashboard` based on user roles.
+    *   All code comments were removed from `Dashboard.tsx`, `AdminDashboardPanel.tsx`, and `PropertyManagerDashboardPanel.tsx` as per user request.
+    *   Resolved a TypeScript error related to the `organizationId` prop in `Dashboard.tsx`.
+*   **Firestore Rules Update (2025-05-25):**
+    *   Modified `firestore.rules` to allow residents to read the specific property document (`/organizations/{orgId}/properties/{propId}`) they are associated with, based on their custom claims.
 
 ## 3. What's Left to Build (High-Level from `projectRoadmap.md`)
 

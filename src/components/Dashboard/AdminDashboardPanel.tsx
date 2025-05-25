@@ -1,0 +1,161 @@
+import React, { useState } from 'react';
+import {
+  Box,
+  Typography,
+  Paper,
+  Divider,
+  Tabs,
+  Tab,
+  Button,
+  Stack,
+  Snackbar,
+  Alert,
+} from '@mui/material';
+import AddIcon from '@mui/icons-material/Add';
+import { AdminPanelSettings } from '@mui/icons-material';
+
+import OrganizationSelector from '../Admin/OrganizationSelector';
+import PropertyManagerManagement from '../Admin/PropertyManagerManagement';
+import OrganizationManagementPanel from '../Admin/OrganizationManagementPanel';
+import AddOrganizationModal from '../Admin/AddOrganizationModal';
+
+interface TabPanelProps {
+  children?: React.ReactNode;
+  index: number;
+  value: number;
+}
+
+function TabPanel(props: TabPanelProps) {
+  const { children, value, index, ...other } = props;
+
+  return (
+    <div
+      role='tabpanel'
+      hidden={value !== index}
+      id={`simple-tabpanel-${index}`}
+      aria-labelledby={`simple-tab-${index}`}
+      {...other}
+    >
+      {value === index && <Box sx={{ p: 3 }}>{children}</Box>}
+    </div>
+  );
+}
+
+function a11yProps(index: number) {
+  return {
+    id: `simple-tab-${index}`,
+    'aria-controls': `simple-tabpanel-${index}`,
+  };
+}
+
+const AdminDashboardPanel: React.FC = () => {
+  const [adminTabValue, setAdminTabValue] = useState(0);
+  const [selectedAdminOrgId, setSelectedAdminOrgId] = useState<string | null>(
+    null
+  );
+  const [isAddOrgModalOpen, setIsAddOrgModalOpen] = useState(false);
+  const [refreshOrgListKey, setRefreshOrgListKey] = useState(0);
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
+  const [snackbarSeverity, setSnackbarSeverity] = useState< 'success' | 'error' | 'info' | 'warning'>('success');
+
+  const handleAdminOrgChange = (orgId: string | null) => {
+    setSelectedAdminOrgId(orgId);
+  };
+
+  const handleOpenAddOrgModal = () => {
+    setIsAddOrgModalOpen(true);
+  };
+
+  const handleCloseAddOrgModal = () => {
+    setIsAddOrgModalOpen(false);
+  };
+
+  const handleOrganizationCreated = (orgId: string) => {
+    setSnackbarMessage(`Organization created successfully with ID: ${orgId}`);
+    setSnackbarSeverity('success');
+    setSnackbarOpen(true);
+    setIsAddOrgModalOpen(false);
+    setRefreshOrgListKey(prev => prev + 1);
+  };
+
+  const handleAdminTabChange = (
+    _event: React.SyntheticEvent,
+    newValue: number
+  ) => {
+    setAdminTabValue(newValue);
+  };
+
+  return (
+    <Paper elevation={3} sx={{ mb: 4, p: 2 }}>
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          mb: 2,
+        }}
+      >
+        <Stack direction='row' alignItems='center'>
+          <AdminPanelSettings fontSize='large' color="primary" sx={{ mr: 1 }} />
+          <Typography variant='h4' color='secondary'>
+            Admin Dashboard
+          </Typography>
+        </Stack>
+        <Button
+          variant='contained'
+          startIcon={<AddIcon />}
+          onClick={handleOpenAddOrgModal}
+          sx={{ float: 'right' }}
+        >
+          Add Organization
+        </Button>
+      </Box>
+
+      <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+        <Tabs
+          value={adminTabValue}
+          onChange={handleAdminTabChange}
+          aria-label='admin actions tabs'
+        >
+        <Tab label='Organizations' {...a11yProps(0)} />
+        <Tab label='Property Managers' {...a11yProps(1)} />
+      </Tabs>
+    </Box>
+    <TabPanel value={adminTabValue} index={0}>
+      <OrganizationManagementPanel key={refreshOrgListKey} />
+    </TabPanel>
+    <TabPanel value={adminTabValue} index={1}>
+      <OrganizationSelector
+          selectedOrganizationId={selectedAdminOrgId}
+          onOrganizationChange={handleAdminOrgChange}
+        />
+        <Divider sx={{ my: 2 }} />
+        <PropertyManagerManagement organizationId={selectedAdminOrgId} />
+      </TabPanel>
+
+      <AddOrganizationModal
+        open={isAddOrgModalOpen}
+        onClose={handleCloseAddOrgModal}
+        onOrganizationCreated={handleOrganizationCreated}
+      />
+
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={6000}
+        onClose={() => setSnackbarOpen(false)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert
+          onClose={() => setSnackbarOpen(false)}
+          severity={snackbarSeverity}
+          sx={{ width: '100%' }}
+        >
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
+    </Paper>
+  );
+};
+
+export default AdminDashboardPanel;

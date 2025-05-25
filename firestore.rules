@@ -80,10 +80,12 @@ service cloud.firestore {
         allow read, write: if isAdmin();
         // Property Managers can manage properties within their organization
         allow read, write: if isPropertyManager() && isOrgUser(organizationId);
-        // Property Staff can read properties within their organization
-        allow read: if isPropertyStaff() && isOrgUser(organizationId);
+      // Property Staff can read properties within their organization
+      allow read: if isPropertyStaff() && isOrgUser(organizationId);
+      // Residents can read the specific property they belong to
+      allow read: if isResident() && isPropertyResident(organizationId, propertyId);
 
-        // Subcollection: residents
+      // Subcollection: residents
         match /residents/{residentId} {
           // Admins can manage all residents
           allow read, write: if isAdmin();

@@ -112,6 +112,16 @@ The project has recently completed the implementation of the Admin Organization 
         *   The "Invite Resident" tab now embeds `PropertyManagerPropertiesList` for clear property selection before inviting.
         *   The "My Properties" tab continues to list properties.
     *   This aligns with Admin panel patterns and improves UX for property creation and resident invitation.
+*   **Property Manager Panel Enhancements (Table Display & Dropdown Selector - 2025-05-24):**
+    *   **`PropertyManagerPropertiesList.tsx`:** Refactored to display properties in an MUI `Table` with "Property Name" and formatted "Address" columns.
+    *   **New `PropertySelectorDropdown.tsx`:** Created to provide a dedicated MUI `Select` dropdown for choosing a property (displays Name and Address); its callback now provides both property ID and name.
+    *   **`Dashboard.tsx` (Property Manager Panel):**
+        *   "My Properties" tab now uses the table-based `PropertyManagerPropertiesList.tsx`.
+        *   "Invite Resident" tab now uses the new `PropertySelectorDropdown.tsx` for property selection. The `Divider` between the dropdown and the form was removed for a unified look. State variables for selected property ID/name were renamed for clarity (e.g., `selectedPropertyId`).
+    *   **`InviteResidentForm.tsx`:**
+        *   Title now displays the selected property's name instead of ID.
+        *   Layout updated to place the email input and "Send Invitation" button on the same row.
+    *   These changes further refine the UI/UX based on feedback, improving clarity and consistency.
 
 ## 3. What's Left to Build (High-Level from `projectRoadmap.md`)
 
@@ -125,9 +135,9 @@ The remaining application functionality includes:
     *   Residents Management (View, Edit, Delete for support).
 *   **C. Property Manager Dashboard:**
     *   **Property Creation:** (Implemented via "Create Property" button and modal with `CreatePropertyForm.tsx`).
-    *   **View Assigned Properties:** (Implemented in "My Properties" tab via `PropertyManagerPropertiesList`).
+    *   **View Assigned Properties:** (Implemented in "My Properties" tab via table-based `PropertyManagerPropertiesList`, showing Name and Address).
     *   **Invite Residents:**
-        *   Select property for invitation (Implemented in "Invite Resident" tab via embedded `PropertyManagerPropertiesList`).
+        *   Select property for invitation (Implemented in "Invite Resident" tab via new `PropertySelectorDropdown.tsx`, showing Name and Address).
         *   Use `InviteResidentForm` with selected property (Implemented).
     *   Manage residents for their properties (e.g., view list, edit details - Pending).
     *   Manage invitations (beyond the initial invite form, e.g., view status, revoke - Pending).

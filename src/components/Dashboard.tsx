@@ -31,6 +31,7 @@ import OrganizationManagementPanel, { type OrganizationManagementPanelRef } from
 import PropertyManagerPropertiesList from './PropertyManager/PropertyManagerPropertiesList'; // Added
 import InviteResidentForm from './PropertyManager/InviteResidentForm'; // Added
 import CreatePropertyForm from './PropertyManager/CreatePropertyForm'; // Added
+import PropertySelectorDropdown from './PropertyManager/PropertySelectorDropdown'; // Added
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -66,7 +67,8 @@ const Dashboard: React.FC = () => {
   const [adminTabValue, setAdminTabValue] = useState(0);
   const [pmTabValue, setPmTabValue] = useState(0); // Added state for PM tabs
   const [selectedAdminOrgId, setSelectedAdminOrgId] = useState<string | null>(null);
-  const [selectedPropertyIdForPM, setSelectedPropertyIdForPM] = useState<string | null>(null); // Added state for selected property for PM
+  const [selectedPropertyId, setSelectedPropertyId] = useState<string | null>(null); // Renamed
+  const [selectedPropertyName, setSelectedPropertyName] = useState<string | null>(null); // Renamed
   const [isCreatePropertyModalOpen, setIsCreatePropertyModalOpen] = useState(false); // Added state for modal
   const [organizationName, setOrganizationName] = useState<string | null>(null); // Added state for org name
   const organizationPanelRef = useRef<OrganizationManagementPanelRef>(null); // Added ref
@@ -114,10 +116,12 @@ const Dashboard: React.FC = () => {
     setPmTabValue(newValue);
   }, []);
 
-  const handlePropertySelectForPM = useCallback((propertyId: string) => {
-    setSelectedPropertyIdForPM(propertyId);
+  // Renamed and updated to handle calls with or without propertyName
+  const handlePropertySelect = useCallback((propertyId: string | null, propertyName?: string | null) => {
+    setSelectedPropertyId(propertyId);
+    setSelectedPropertyName(propertyName ?? null); // Ensure it's null if undefined
     // Optionally, switch to the "Invite Resident" tab automatically
-    // setPmTabValue(1);
+    // if (propertyId) setPmTabValue(1); // Example: switch if a property is selected
   }, []);
 
   const handleOpenCreatePropertyModal = () => {
@@ -221,25 +225,27 @@ const Dashboard: React.FC = () => {
             </Tabs>
           </Box>
           <TabPanel value={pmTabValue} index={0}> {/* My Properties */}
+            <Typography variant="h6" gutterBottom sx={{ mb: 2 }}>Your Managed Properties</Typography>
             <PropertyManagerPropertiesList
-              selectedPropertyId={selectedPropertyIdForPM} // This prop might be less relevant if selection is primarily for inviting
-              onPropertySelect={handlePropertySelectForPM} // Still useful if clicking a property shows details in the future
+              selectedPropertyId={selectedPropertyId}
+              onPropertySelect={(id: string) => handlePropertySelect(id)}
             />
           </TabPanel>
           <TabPanel value={pmTabValue} index={1}> {/* Invite Resident */}
-            <Typography variant="h6" gutterBottom>Select a Property to Invite Residents</Typography>
-            <PropertyManagerPropertiesList
-              selectedPropertyId={selectedPropertyIdForPM}
-              onPropertySelect={handlePropertySelectForPM} // This instance drives the selection for inviting
+            <Typography variant="h6" gutterBottom sx={{ mb: 2 }}>Invite New Resident</Typography>
+            <PropertySelectorDropdown
+              selectedPropertyId={selectedPropertyId}
+              onPropertyChange={handlePropertySelect} // Use renamed handler
             />
-            <Divider sx={{ my: 2 }} />
-            {selectedPropertyIdForPM ? (
+            {/* Divider sx={{ my: 2 }} removed as per feedback */}
+            {selectedPropertyId ? (
               <InviteResidentForm
                 organizationId={organizationId || ''}
-                propertyId={selectedPropertyIdForPM}
+                propertyId={selectedPropertyId}
+                propertyName={selectedPropertyName || undefined} // Pass renamed property name
               />
             ) : (
-              <Alert severity="info">Please select a property from the list above to invite a resident.</Alert>
+              <Alert severity="info" sx={{ mt: 2 }}>Please select a property from the dropdown above to invite a resident.</Alert>
             )}
           </TabPanel>
           {/* TabPanel for Create Property removed */}

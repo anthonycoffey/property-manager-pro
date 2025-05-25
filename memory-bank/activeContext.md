@@ -143,6 +143,28 @@ With the "Admin Property Manager Management Panel Overhaul" (Step 4 from `docs/0
     - The "Invite Resident" tab now includes its own instance of `PropertyManagerPropertiesList` to act as a property selector, directly driving the `InviteResidentForm`.
     - The "My Properties" tab continues to list properties using `PropertyManagerPropertiesList`.
   - This aligns the Property Manager property creation flow with the modal-based pattern used in the Admin panel (e.g., "Add Organization") and clarifies the property selection process for inviting residents.
+- **Property Manager Panel Enhancements (Further Refactor - 2025-05-24):**
+  - **`PropertyManagerPropertiesList.tsx`:**
+    - Refactored to display properties in an MUI `Table` instead of a `List`.
+    - Table columns now show "Property Name" and formatted "Address" (instead of Property ID).
+    - Table rows remain clickable for selection.
+  - **New `PropertySelectorDropdown.tsx` Component:**
+    - Created to provide a dedicated dropdown for selecting a property.
+    - Fetches properties managed by the PM and displays them (Name and Address) in an MUI `Select` component.
+  - **`Dashboard.tsx` (Property Manager Panel):**
+    - The "My Properties" tab now uses the table-based `PropertyManagerPropertiesList.tsx`.
+    - The "Invite Resident" tab now uses the new `PropertySelectorDropdown.tsx` for property selection, followed by a `Divider` and then the `InviteResidentForm.tsx`. This layout mimics the Admin panel's invitation forms.
+- **Property Manager Panel Refinements (Feedback-based - 2025-05-24):**
+  - **`InviteResidentForm.tsx`:**
+    - Title now displays the selected property's name (e.g., "Invite New Resident to: {PropertyName}") instead of its ID.
+    - Email input field and "Send Invitation" button are now on the same row for a more compact layout.
+  - **`PropertySelectorDropdown.tsx`:**
+    - Callback `onPropertyChange` now correctly provides both `propertyId` and `propertyName` to the parent.
+  - **`Dashboard.tsx` (Property Manager Panel):**
+    - State variables `selectedPropertyIdForPM` and `selectedPropertyNameForPM` renamed to `selectedPropertyId` and `selectedPropertyName` respectively. Handler `handlePropertySelectForPM` renamed to `handlePropertySelect`.
+    - `selectedPropertyName` is now passed to `InviteResidentForm.tsx`.
+    - The `Divider` between the property selector dropdown and the invitation form in the "Invite Resident" tab has been removed for a more unified section.
+    - Resolved TypeScript errors related to prop type mismatches for selection handlers.
 
 ## 3. Next Steps
 
@@ -191,8 +213,17 @@ With the "Admin Property Manager Management Panel Overhaul" (Step 4 from `docs/0
 - **Seed Script Safety:** The `seedTemplates.js` script now defaults to the emulator and requires explicit confirmation for production operations, enhancing safety.
 - **Property Manager Panel Structure (New Decision 2025-05-24):**
   - Property creation for Property Managers is now handled via a modal triggered by a button, removing the dedicated "Create Property" tab. This follows the pattern of the Admin "Add Organization" functionality.
-  - The "Invite Resident" tab now embeds the property selection list (`PropertyManagerPropertiesList`) directly, making the selection context clear for inviting residents.
+  - The "Invite Resident" tab now embeds the property selection list (`PropertyManagerPropertiesList`) directly, making the selection context clear for inviting residents. (Superseded by dropdown)
   - The panel title now displays the fetched Organization Name for better user context.
+- **Property Manager Panel Display and Selection (New Decision 2025-05-24, iteration 2):**
+  - Properties in the "My Properties" tab are displayed in an MUI `Table` showing Name and Address.
+  - Property selection for inviting residents in the "Invite Resident" tab is handled by a new dedicated `PropertySelectorDropdown.tsx` component, displaying Name and Address. This replaces the embedded list selector.
+  - This further aligns the PM panel with Admin panel UI patterns (tables for lists, dedicated selectors for forms).
+- **Property Manager Invite Flow Refinements (Feedback-based - 2025-05-24):**
+  - `InviteResidentForm.tsx` title now uses property name.
+  - Layout of `InviteResidentForm.tsx` places email field and send button on the same row.
+  - `Dashboard.tsx` state variables for property selection renamed for clarity (e.g., `selectedPropertyId`).
+  - Divider removed in "Invite Resident" tab for a more unified look between selector and form.
 
 ## 5. ImportantPatterns & Preferences
 

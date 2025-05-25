@@ -13,10 +13,11 @@ import Alert from '@mui/material/Alert';
 
 export interface InviteResidentFormProps { // Exporting for potential use elsewhere
   propertyId: string;
+  propertyName?: string; // Added propertyName
   organizationId: string; // Added organizationId
 }
 
-const InviteResidentForm: React.FC<InviteResidentFormProps> = ({ propertyId, organizationId }) => { // Destructure organizationId
+const InviteResidentForm: React.FC<InviteResidentFormProps> = ({ propertyId, propertyName, organizationId }) => { // Destructure organizationId
   const [inviteeEmail, setInviteeEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -81,31 +82,35 @@ const InviteResidentForm: React.FC<InviteResidentFormProps> = ({ propertyId, org
   }
 
   return (
-    <Box component="form" onSubmit={handleSubmit} sx={{ mt: 3, maxWidth: '500px' }}>
-      <Typography variant="h6" gutterBottom>
-        Invite New Resident to Property: {propertyId}
+    <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1, maxWidth: '600px' }}> {/* Adjusted maxWidth for potentially wider row */}
+      <Typography variant="subtitle1" gutterBottom sx={{ mb: 2 }}> {/* Changed variant, adjusted margin */}
+        Invite New Resident to: {propertyName || `Property ID: ${propertyId}`}
       </Typography>
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
       {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
-      <TextField
-        label="Invitee Email"
-        type="email"
-        fullWidth
-        value={inviteeEmail}
-        onChange={(e) => setInviteeEmail(e.target.value)}
-        margin="normal"
-        required
-        disabled={loading}
-      />
-      <Button
-        type="submit"
-        variant="contained"
-        color="primary"
-        disabled={loading}
-        sx={{ mt: 2 }}
-      >
-        {loading ? <CircularProgress size={24} /> : 'Send Invitation'}
-      </Button>
+      
+      <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}> {/* Use flex to align items in a row */}
+        <TextField
+          label="Invitee Email"
+          type="email"
+          fullWidth // TextField will take available space
+          value={inviteeEmail}
+          onChange={(e) => setInviteeEmail(e.target.value)}
+          margin="none" // Changed margin to none as Box handles spacing
+          required
+          disabled={loading}
+          sx={{ flexGrow: 1 }} // Allow TextField to grow
+        />
+        <Button
+          type="submit"
+          variant="contained"
+          color="primary"
+          disabled={loading}
+          sx={{ mt: 0, height: '56px' }} // Adjust height to match TextField (approx)
+        >
+          {loading ? <CircularProgress size={24} /> : 'Send Invitation'}
+        </Button>
+      </Box>
     </Box>
   );
 };

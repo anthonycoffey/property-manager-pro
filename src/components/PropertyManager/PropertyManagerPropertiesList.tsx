@@ -13,8 +13,21 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  Link // Added Link for potential future use, not strictly needed now
+  IconButton, // Added IconButton
+  Dialog as MuiDialog, // Aliased to avoid conflict if Dialog is used elsewhere
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
+  Button, // Added Button
+  Snackbar, // Added Snackbar
+  Alert, // Added Alert
 } from '@mui/material';
+import EditIcon from '@mui/icons-material/Edit'; // Added EditIcon
+import DeleteIcon from '@mui/icons-material/Delete'; // Added DeleteIcon
+import { httpsCallable } from 'firebase/functions'; // Added for calling deleteProperty
+import { functions } from '../../firebaseConfig'; // Assuming functions is exported
+import type { Property as PropertyType } from '../../types'; // Import full Property type
 
 interface PropertyAddress {
   street: string;
@@ -23,16 +36,19 @@ interface PropertyAddress {
   zip: string;
 }
 
-interface Property extends DocumentData {
-  id: string;
-  name: string;
-  address: PropertyAddress; // Ensure address is part of the property type
-  // Add other relevant property fields if needed for display
-}
+// Use PropertyType from ../../types
+// interface Property extends DocumentData {
+//   id: string;
+//   name: string;
+//   address: PropertyAddress; 
+//   // Add other relevant property fields if needed for display
+// }
 
 interface PropertyManagerPropertiesListProps {
   selectedPropertyId: string | null;
   onPropertySelect: (propertyId: string) => void;
+  onEditProperty: (property: PropertyType) => void; // New prop for edit
+  onPropertiesUpdate: () => void; // New prop to trigger refresh
 }
 
 const formatAddress = (address: PropertyAddress | undefined): string => {
@@ -40,16 +56,27 @@ const formatAddress = (address: PropertyAddress | undefined): string => {
   return `${address.street}, ${address.city}, ${address.state} ${address.zip}`;
 };
 
-const PropertyManagerPropertiesList: React.FC<PropertyManagerPropertiesListProps> = ({ selectedPropertyId, onPropertySelect }) => {
+const PropertyManagerPropertiesList: React.FC<PropertyManagerPropertiesListProps> = ({ 
+  selectedPropertyId, 
+  onPropertySelect,
+  onEditProperty,
+  onPropertiesUpdate,
+}) => {
   const { currentUser, organizationId: authOrganizationId } = useAuth();
-  const [properties, setProperties] = useState<Property[]>([]);
+  const [properties, setProperties] = useState<PropertyType[]>([]); // Use PropertyType
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [propertyToDelete, setPropertyToDelete] = useState<PropertyType | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
+  const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error'>('success');
 
-  useEffect(() => {
-    const fetchProperties = async () => {
-      if (!currentUser || !authOrganizationId || !currentUser.uid) {
-        setError('User organization or ID not found.');
+
+  const fetchProperties = async () => { // Made fetchProperties a standalone function
+    if (!currentUser || !authOrganizationId || !currentUser.uid) {
+      setError('User organization or ID not found.');
         setLoading(false);
         return;
       }
@@ -62,22 +89,19 @@ const PropertyManagerPropertiesList: React.FC<PropertyManagerPropertiesListProps
         const q = query(propertiesRef, where('managedBy', '==', currentUser.uid));
         const querySnapshot = await getDocs(q);
         
-        const fetchedProperties: Property[] = [];
+        const fetchedProperties: PropertyType[] = [];
         querySnapshot.forEach((doc) => {
-          // Ensure address field exists and is structured as expected
           const data = doc.data();
-          const addressData = data.address || {}; // Default to empty object if address is missing
           fetchedProperties.push({ 
-            id: doc.id, 
+            id: doc.id,
             name: data.name || 'Unnamed Property',
-            address: {
-              street: addressData.street || '',
-              city: addressData.city || '',
-              state: addressData.state || '',
-              zip: addressData.zip || '',
-            },
-            ...data 
-          } as Property);
+            address: data.address || { street: '', city: '', state: '', zip: '' },
+            type: data.type || '',
+            organizationId: authOrganizationId, // Ensure organizationId is included
+            managedBy: data.managedBy,
+            createdAt: data.createdAt, // Keep other fields from PropertyType
+            // ... any other fields from PropertyType
+          } as PropertyType);
         });
         setProperties(fetchedProperties);
 
@@ -87,10 +111,56 @@ const PropertyManagerPropertiesList: React.FC<PropertyManagerPropertiesListProps
       } finally {
         setLoading(false);
       }
-    };
+  };
 
+  useEffect(() => {
     fetchProperties();
-  }, [currentUser, authOrganizationId]);
+  }, [currentUser, authOrganizationId]); // Removed fetchProperties from dependency array as it's stable
+
+  const handleOpenDeleteDialog = (property: PropertyType) => {
+    setPropertyToDelete(property);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleCloseDeleteDialog = () => {
+    setPropertyToDelete(null);
+    setDeleteDialogOpen(false);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!propertyToDelete || !authOrganizationId) {
+      setSnackbarMessage('Property or organization information is missing for delete.');
+      setSnackbarSeverity('error');
+      setSnackbarOpen(true);
+      return;
+    }
+    setDeleteLoading(true);
+    const deletePropertyFunction = httpsCallable(functions, 'deleteProperty');
+    try {
+      await deletePropertyFunction({
+        organizationId: authOrganizationId,
+        propertyId: propertyToDelete.id,
+      });
+      setSnackbarMessage('Property deleted successfully!');
+      setSnackbarSeverity('success');
+      setSnackbarOpen(true);
+      handleCloseDeleteDialog();
+      onPropertiesUpdate(); // Call to refresh properties list in parent
+      // fetchProperties(); // Or refetch directly here
+    } catch (err: any) {
+      console.error('Error deleting property:', err);
+      setSnackbarMessage(err.message || 'Failed to delete property.');
+      setSnackbarSeverity('error');
+      setSnackbarOpen(true);
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
+
+  const handleSnackbarClose = () => {
+    setSnackbarOpen(false);
+  };
+
 
   if (loading) {
     return (
@@ -120,34 +190,95 @@ const PropertyManagerPropertiesList: React.FC<PropertyManagerPropertiesListProps
             <TableRow>
               <TableCell>Property Name</TableCell>
               <TableCell>Address</TableCell>
+              <TableCell align="right">Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {properties.map((property) => (
               <TableRow
                 hover
-                onClick={() => onPropertySelect(property.id)}
-                selected={selectedPropertyId === property.id}
+                // onClick={() => onPropertySelect(property.id)} // Keep row clickable for selection if needed, or remove if actions are primary
+                selected={selectedPropertyId === property.id} // Still show selection
                 key={property.id}
-                sx={{ 
-                  cursor: 'pointer',
-                  '&.Mui-selected': {
-                    backgroundColor: 'action.selected',
-                    '&:hover': {
-                      backgroundColor: 'action.hover',
-                    }
-                  },
-                }}
+                // sx={{ 
+                //   cursor: 'pointer', // Remove cursor pointer if row click is not primary action
+                //   '&.Mui-selected': {
+                //     backgroundColor: 'action.selected',
+                //     '&:hover': {
+                //       backgroundColor: 'action.hover',
+                //     }
+                //   },
+                // }}
               >
-                <TableCell component="th" scope="row">
+                <TableCell 
+                  component="th" 
+                  scope="row"
+                  onClick={() => onPropertySelect(property.id)} // Make name/address cells clickable for selection
+                  sx={{ cursor: 'pointer' }}
+                >
                   {property.name}
                 </TableCell>
-                <TableCell>{formatAddress(property.address)}</TableCell>
+                <TableCell 
+                  onClick={() => onPropertySelect(property.id)} // Make name/address cells clickable for selection
+                  sx={{ cursor: 'pointer' }}
+                >
+                  {formatAddress(property.address)}
+                </TableCell>
+                <TableCell align="right">
+                  <IconButton 
+                    aria-label="edit property" 
+                    size="small"
+                    onClick={() => onEditProperty(property)}
+                  >
+                    <EditIcon fontSize="small" />
+                  </IconButton>
+                  <IconButton 
+                    aria-label="delete property" 
+                    size="small"
+                    onClick={() => handleOpenDeleteDialog(property)}
+                  >
+                    <DeleteIcon fontSize="small" />
+                  </IconButton>
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
       </TableContainer>
+      <MuiDialog
+        open={deleteDialogOpen}
+        onClose={handleCloseDeleteDialog}
+        aria-labelledby="alert-dialog-title"
+        aria-describedby="alert-dialog-description"
+      >
+        <DialogTitle id="alert-dialog-title">
+          {"Confirm Delete Property"}
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText id="alert-dialog-description">
+            Are you sure you want to delete the property "{propertyToDelete?.name || ''}"? 
+            This action will also delete all associated residents and cannot be undone.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseDeleteDialog} color="inherit">
+            Cancel
+          </Button>
+          <Button onClick={handleConfirmDelete} color="error" autoFocus disabled={deleteLoading}>
+            {deleteLoading ? <CircularProgress size={20} color="inherit" /> : "Delete"}
+          </Button>
+        </DialogActions>
+      </MuiDialog>
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={6000}
+        onClose={handleSnackbarClose}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert onClose={handleSnackbarClose} severity={snackbarSeverity} sx={{ width: '100%' }}>
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
     </Paper>
   );
 };

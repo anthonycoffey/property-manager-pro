@@ -28,10 +28,12 @@ import PropertyManagerManagement from './Admin/PropertyManagerManagement';
 import OrganizationManagementPanel, { type OrganizationManagementPanelRef } from './Admin/OrganizationManagementPanel'; // Added import and type
 
 // Property Manager Components
-import PropertyManagerPropertiesList from './PropertyManager/PropertyManagerPropertiesList'; // Added
-import InviteResidentForm from './PropertyManager/InviteResidentForm'; // Added
-import CreatePropertyForm from './PropertyManager/CreatePropertyForm'; // Added
-import PropertySelectorDropdown from './PropertyManager/PropertySelectorDropdown'; // Added
+import PropertyManagerPropertiesList from './PropertyManager/PropertyManagerPropertiesList';
+import InviteResidentForm from './PropertyManager/InviteResidentForm';
+import CreatePropertyForm from './PropertyManager/CreatePropertyForm';
+import PropertySelectorDropdown from './PropertyManager/PropertySelectorDropdown';
+import EditPropertyModal from './PropertyManager/EditPropertyModal'; // Added EditPropertyModal
+import type { Property as PropertyType } from '../types'; // Added PropertyType import
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -67,11 +69,14 @@ const Dashboard: React.FC = () => {
   const [adminTabValue, setAdminTabValue] = useState(0);
   const [pmTabValue, setPmTabValue] = useState(0); // Added state for PM tabs
   const [selectedAdminOrgId, setSelectedAdminOrgId] = useState<string | null>(null);
-  const [selectedPropertyId, setSelectedPropertyId] = useState<string | null>(null); // Renamed
-  const [selectedPropertyName, setSelectedPropertyName] = useState<string | null>(null); // Renamed
-  const [isCreatePropertyModalOpen, setIsCreatePropertyModalOpen] = useState(false); // Added state for modal
-  const [organizationName, setOrganizationName] = useState<string | null>(null); // Added state for org name
-  const organizationPanelRef = useRef<OrganizationManagementPanelRef>(null); // Added ref
+  const [selectedPropertyId, setSelectedPropertyId] = useState<string | null>(null);
+  const [selectedPropertyName, setSelectedPropertyName] = useState<string | null>(null);
+  const [isCreatePropertyModalOpen, setIsCreatePropertyModalOpen] = useState(false);
+  const [organizationName, setOrganizationName] = useState<string | null>(null);
+  const organizationPanelRef = useRef<OrganizationManagementPanelRef>(null);
+  const [isEditPropertyModalOpen, setIsEditPropertyModalOpen] = useState(false); // State for Edit Modal
+  const [propertyToEdit, setPropertyToEdit] = useState<PropertyType | null>(null); // State for property data to edit
+  const [refreshPropertiesKey, setRefreshPropertiesKey] = useState(0); // State to trigger property list refresh
 
   // Fetch organization name
   useEffect(() => {
@@ -139,9 +144,23 @@ const Dashboard: React.FC = () => {
     // This might involve passing a refresh callback down to PropertyManagerPropertiesList
     // or using a global state/context for properties.
     // For now, manual refresh or re-navigation might be needed to see the new property immediately.
+    setRefreshPropertiesKey(prev => prev + 1); // Trigger refresh
   };
 
-  // examplePropertyIdForResidentInvite is no longer needed here
+  const handleOpenEditPropertyModal = (property: PropertyType) => {
+    setPropertyToEdit(property);
+    setIsEditPropertyModalOpen(true);
+  };
+
+  const handleCloseEditPropertyModal = () => {
+    setPropertyToEdit(null);
+    setIsEditPropertyModalOpen(false);
+  };
+
+  const handlePropertyUpdated = () => {
+    handleCloseEditPropertyModal();
+    setRefreshPropertiesKey(prev => prev + 1); // Trigger refresh
+  };
 
   return (
     <Box sx={{ p: 3 }}>
@@ -227,8 +246,11 @@ const Dashboard: React.FC = () => {
           <TabPanel value={pmTabValue} index={0}> {/* My Properties */}
             <Typography variant="h6" gutterBottom sx={{ mb: 2 }}>Your Managed Properties</Typography>
             <PropertyManagerPropertiesList
+              key={refreshPropertiesKey} // Add key to force re-render on refresh
               selectedPropertyId={selectedPropertyId}
               onPropertySelect={(id: string) => handlePropertySelect(id)}
+              onEditProperty={handleOpenEditPropertyModal}
+              onPropertiesUpdate={() => setRefreshPropertiesKey(prev => prev + 1)}
             />
           </TabPanel>
           <TabPanel value={pmTabValue} index={1}> {/* Invite Resident */}
@@ -274,6 +296,16 @@ const Dashboard: React.FC = () => {
         </DialogContent>
         {/* DialogActions can be added here if needed, e.g., for a manual close button if the form doesn't have one */}
       </Dialog>
+
+      {/* Edit Property Modal */}
+      {propertyToEdit && ( // Conditionally render only if there's a property to edit
+        <EditPropertyModal
+          open={isEditPropertyModalOpen}
+          onClose={handleCloseEditPropertyModal}
+          propertyData={propertyToEdit}
+          onSuccess={handlePropertyUpdated}
+        />
+      )}
 
       {/* Resident Section */}
       {roles.includes('resident') && (

@@ -39,5 +39,11 @@ export const revokeInvitation = revokeInvitationFunction;
 import { getInvitationDetails as getInvitationDetailsFunction } from './callable/getInvitationDetails.js';
 export const getInvitationDetails = getInvitationDetailsFunction;
 
+import { updateProperty as updatePropertyFunction } from './callable/updateProperty.js';
+export const updateProperty = updatePropertyFunction;
+
+import { deleteProperty as deletePropertyFunction } from './callable/deleteProperty.js';
+export const deleteProperty = deletePropertyFunction;
+
 // Note: The firebaseAdmin.ts and handleHttpsError.ts are not directly exported
 // as they are internal modules used by the functions themselves.

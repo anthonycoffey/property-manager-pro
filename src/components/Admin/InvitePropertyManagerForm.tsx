@@ -9,7 +9,7 @@ import Button from '@mui/material/Button';
 import Box from '@mui/material/Box';
 import CircularProgress from '@mui/material/CircularProgress';
 import Alert from '@mui/material/Alert';
-import { Stack, Typography } from '@mui/material';
+import { Typography } from '@mui/material';
 import { PersonAdd } from '@mui/icons-material';
 
 interface InvitePropertyManagerFormProps {

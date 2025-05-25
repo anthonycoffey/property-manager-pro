@@ -10,6 +10,11 @@ import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import CircularProgress from '@mui/material/CircularProgress';
 import Alert from '@mui/material/Alert';
+import Stack from '@mui/material/Stack';
+import Select from '@mui/material/Select';
+import MenuItem from '@mui/material/MenuItem';
+import FormControl from '@mui/material/FormControl';
+import InputLabel from '@mui/material/InputLabel';
 
 export interface CreatePropertyFormProps { // Exporting for potential use elsewhere
   onSuccess?: () => void; // Optional callback for when property creation is successful
@@ -36,13 +41,26 @@ const CreatePropertyForm: React.FC<CreatePropertyFormProps> = ({ onSuccess }) =>
   const [success, setSuccess] = useState<string | null>(null);
   const { currentUser, roles: userRoles, organizationId: userOrgId } = useAuth();
 
+  const usStates: string[] = [
+    'Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California', 'Colorado',
+    'Connecticut', 'Delaware', 'Florida', 'Georgia', 'Hawaii', 'Idaho',
+    'Illinois', 'Indiana', 'Iowa', 'Kansas', 'Kentucky', 'Louisiana',
+    'Maine', 'Maryland', 'Massachusetts', 'Michigan', 'Minnesota',
+    'Mississippi', 'Missouri', 'Montana', 'Nebraska', 'Nevada',
+    'New Hampshire', 'New Jersey', 'New Mexico', 'New York',
+    'North Carolina', 'North Dakota', 'Ohio', 'Oklahoma', 'Oregon',
+    'Pennsylvania', 'Rhode Island', 'South Carolina', 'South Dakota',
+    'Tennessee', 'Texas', 'Utah', 'Vermont', 'Virginia', 'Washington',
+    'West Virginia', 'Wisconsin', 'Wyoming'
+  ];
+
   const functions = getFunctions();
   const createPropertyFn = httpsCallable(functions, 'createProperty');
 
-  const handleAddressChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAddressChange = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement> | { target: { name: string; value: unknown } }) => {
     setAddress({
       ...address,
-      [event.target.name]: event.target.value,
+      [event.target.name]: event.target.value as string,
     });
   };
 
@@ -137,47 +155,53 @@ const CreatePropertyForm: React.FC<CreatePropertyFormProps> = ({ onSuccess }) =>
         />
       </Box>
       {/* Row for City, State, Zip */}
-      <Box display="flex" sx={{ flexDirection: { xs: 'column', sm: 'row' }, gap: 2, mb: 2 }}>
-        {/* City Field: xs=12, sm=6 */}
-        <Box sx={{ width: { xs: '100%', sm: '50%' } }}>
-          <TextField
-            label="City"
-            name="city"
-            fullWidth
-            value={address.city}
+      <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
+        <TextField
+          label="City"
+          name="city"
+          fullWidth
+          value={address.city}
+          onChange={handleAddressChange}
+          required
+          disabled={loading}
+          sx={{ flexGrow: 1 }}
+        />
+        <FormControl fullWidth required sx={{ flexGrow: 1 }}>
+          <InputLabel id="state-select-label">State</InputLabel>
+          <Select
+            labelId="state-select-label"
+            id="state-select"
+            name="state"
+            value={address.state}
+            label="State"
             onChange={handleAddressChange}
-            required
             disabled={loading}
-          />
-        </Box>
-        {/* Container for State and Zip: xs=12, sm=6 */}
-        <Box display="flex" sx={{ width: { xs: '100%', sm: '50%' }, gap: 2 }}>
-          {/* State Field: xs=6 (of 12), sm=3 (of 12) -> 50% of its container */}
-          <Box sx={{ width: { xs: '50%', sm: '50%' } }}>
-            <TextField
-              label="State"
-              name="state"
-              fullWidth
-              value={address.state}
-              onChange={handleAddressChange}
-              required
-              disabled={loading}
-            />
-          </Box>
-          {/* Zip Field: xs=6 (of 12), sm=3 (of 12) -> 50% of its container */}
-          <Box sx={{ width: { xs: '50%', sm: '50%' } }}>
-            <TextField
-              label="ZIP Code"
-              name="zip"
-              fullWidth
-              value={address.zip}
-              onChange={handleAddressChange}
-              required
-              disabled={loading}
-            />
-          </Box>
-        </Box>
-      </Box>
+            MenuProps={{
+              PaperProps: {
+                style: {
+                  maxHeight: 224, 
+                },
+              },
+            }}
+          >
+            {usStates.map((stateName) => (
+              <MenuItem key={stateName} value={stateName}>
+                {stateName}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+        <TextField
+          label="ZIP Code"
+          name="zip"
+          fullWidth
+          value={address.zip}
+          onChange={handleAddressChange}
+          required
+          disabled={loading}
+          sx={{ flexGrow: 1 }}
+        />
+      </Stack>
       <Button
         type="submit"
         variant="contained"

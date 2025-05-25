@@ -40,3 +40,57 @@ export interface Property {
   createdAt?: Timestamp | Date; // Optional, depending on how it's handled client-side
   // Add any other relevant property fields
 }
+
+export interface Resident {
+  id: string; // Firestore document ID (matches Firebase Auth UID)
+  displayName: string;
+  email: string; // Should match Firebase Auth email
+  organizationId: string;
+  propertyId: string;
+  unitNumber?: string;
+  roles: string[]; // Should include "resident"
+  leaseStartDate?: Timestamp | Date;
+  leaseEndDate?: Timestamp | Date;
+  invitedBy?: string; // UID of the user who invited them
+  createdAt: Timestamp | Date;
+  // Vehicle Information
+  vehicleMake?: string;
+  vehicleModel?: string;
+  vehicleColor?: string;
+  licensePlate?: string;
+  // Add other resident-specific fields as needed
+}
+
+export type ServiceRequestStatus = 
+  | 'submitted' 
+  | 'in_progress' 
+  | 'completed' 
+  | 'cancelled' 
+  | 'on_hold';
+
+export interface ServiceRequest {
+  id: string; // Firestore document ID
+  organizationId: string;
+  propertyId: string;
+  residentId: string; // UID of the resident making the request
+  residentName?: string; // Denormalized for easier display
+  unitNumber?: string; // Denormalized for easier display
+  requestType: string; // e.g., "maintenance", "amenity_booking", "general_inquiry"
+  description: string;
+  status: ServiceRequestStatus;
+  submittedAt: Timestamp | Date;
+  serviceDateTime?: Timestamp | Date; // Desired date and time of service
+  phone?: string; // Contact phone for the service
+  serviceLocation?: string; // Location where service is needed
+  residentNotes?: string; // Initial notes from the resident
+  assignedTo?: string; // UID of an org user (PM or staff)
+  assignedToName?: string; // Denormalized
+  completedAt?: Timestamp | Date;
+  notes?: Array<{ // This is more for a log of updates by staff/system
+    userId: string;
+    userName: string;
+    note: string;
+    timestamp: Timestamp | Date;
+  }>;
+  // Add other relevant fields like priority, images, etc.
+}

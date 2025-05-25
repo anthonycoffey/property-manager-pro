@@ -141,17 +141,27 @@ The application employs a modern web architecture with a React-based frontend an
     *   The architecture is open to future integration of libraries like React Query if client-side caching and data synchronization needs become more complex.
 *   **Analytics & Reporting:**
     *   Highcharts will be integrated for visualizing data, such as usage statistics and reports. This will involve preparing data (potentially via Cloud Functions or Server Components) and configuring Highcharts components within the React frontend.
-*   **Address Autocompletion (Google Places API):**
-    *   **Library:** Implemented using `@react-google-maps/api`.
-    *   **Functionality:** Integrated into property creation and editing forms (`CreatePropertyForm.tsx`, `EditPropertyModal.tsx`).
+*   **Address Autocompletion (Google Places API - New):**
+    *   **Element:** Implemented using the `google.maps.places.PlaceAutocompleteElement` Web Component, as recommended by Google for new integrations.
+    *   **Script Loading:** The Google Maps JavaScript API (with the `places` library) is loaded using the `LoadScript` component from `@react-google-maps/api`.
+    *   **Functionality:** Integrated into property creation (`CreatePropertyForm.tsx`) and editing (`EditPropertyModal.tsx`) forms.
     *   **Process:**
-        1.  The form is wrapped with the `LoadScript` component from `@react-google-maps/api`, providing the Google Maps API key (stored in `VITE_GOOGLE_MAPS_API_KEY`) and specifying the `places` library.
-        2.  The "Street Address" input field is enhanced with the `Autocomplete` component.
-        3.  As the user types, Google Places API provides address suggestions.
-        4.  Upon selection of a suggestion, the `onPlaceChanged` event handler retrieves the detailed `PlaceResult`.
-        5.  Address components (street number, route, locality, administrative_area_level_1, postal_code) are parsed.
-        6.  The form's state for street, city, state (using short code, e.g., "CA"), and zip code is updated, populating the respective form fields.
-    *   **State Management:** The `Select` component for states uses a mapping of full state names to short codes (e.g., "California" to "CA") to ensure consistency between manual selection and autocompleted values.
+        1.  A container `div` (using `useRef`) is designated in the React component.
+        2.  In a `useEffect` hook (once the Google Maps API is loaded and the modal/form is open/active):
+            a.  An instance of `new google.maps.places.PlaceAutocompleteElement()` is created.
+            b.  Configuration options (e.g., `componentRestrictions: { country: "us" }`) are applied.
+            c.  The element's internal input is styled to visually match MUI TextFields.
+            d.  For edit forms, the initial street value is set on the element's input.
+            e.  The `PlaceAutocompleteElement` is appended to the ref container.
+            f.  An event listener is attached to the element for the `gmp-select` event.
+        3.  When a user selects an address from the suggestions provided by `PlaceAutocompleteElement`:
+            a.  The `gmp-select` event fires.
+            b.  The event detail contains the selected `place` object.
+            c.  `place.fetchFields({ fields: ['addressComponents', 'formattedAddress'] })` is called to get necessary details.
+            d.  `place.addressComponents` are parsed to extract street number, route, city, state (short code, e.g., "CA"), and zip code.
+            e.  The React component's state for the address (street, city, state, zip) is updated, which in turn populates the corresponding MUI input fields in the form.
+    *   **State Management for Dropdowns:** The MUI `Select` component for states uses a mapping of full state names to short codes (e.g., "California" to "CA") to ensure consistency between manual selection and the short codes provided by the Places API.
+    *   **Cleanup:** The `useEffect` hook includes a cleanup function to remove the `PlaceAutocompleteElement` from the DOM when the component unmounts or is no longer active, preventing memory leaks.
 
 ## 3. Component Relationships & Data Flow (Illustrative)
 

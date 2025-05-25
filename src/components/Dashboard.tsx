@@ -34,6 +34,7 @@ import CreatePropertyForm from './PropertyManager/CreatePropertyForm';
 import PropertySelectorDropdown from './PropertyManager/PropertySelectorDropdown';
 import EditPropertyModal from './PropertyManager/EditPropertyModal'; // Added EditPropertyModal
 import type { Property as PropertyType } from '../types'; // Added PropertyType import
+import ResidentDashboard from './Resident/ResidentDashboard'; // Added ResidentDashboard
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -309,16 +310,7 @@ const Dashboard: React.FC = () => {
 
       {/* Resident Section */}
       {roles.includes('resident') && (
-        <Paper elevation={3} sx={{ mb: 4, p: 2 }}>
-          <Typography variant='h5' color='info' sx={{ mb: 2 }}>
-            Resident Portal
-          </Typography>
-          <Typography variant='body1'>
-            Welcome, Resident! Your Organization ID: {organizationId || 'N/A'},
-            Property ID: {propertyId || 'N/A'}.
-          </Typography>
-          {/* Resident specific components would go here */}
-        </Paper>
+        <ResidentDashboard />
       )}
 
       {!roles.includes('admin') &&

@@ -169,14 +169,16 @@ With the "Admin Property Manager Management Panel Overhaul" (Step 4 from `docs/0
   - Modified `functions/src/auth/processSignUp.ts` (the `auth.onCreate` trigger) to check for existing `organizationId` custom claims on a new user before attempting to set default `pending_association` claims.
   - If an `organizationId` claim is present (indicating the user was likely processed by `signUpWithInvitation.ts`), `processSignUp.ts` now skips setting its default claims, preventing the overwrite of roles (e.g., "resident") and other claims (`organizationId`, `propertyId`) set by the invitation flow.
   - This ensures that custom claims set during the invitation acceptance process (e.g., for residents) are correctly persisted.
-- **Google Places API Autocomplete for Property Address (2025-05-25):**
-  - Integrated Google Places API for address autocompletion in property forms.
-  - Used `@react-google-maps/api` library.
-  - Modified `src/components/PropertyManager/CreatePropertyForm.tsx` and `src/components/PropertyManager/EditPropertyModal.tsx`.
-  - The "Street Address" field now provides autocomplete suggestions.
-  - Selecting an address populates the street, city, state (using short code), and zip code fields.
-  - Updated state `Select` components to use a mapping of US state names to short codes for consistency.
-  - Added `VITE_GOOGLE_MAPS_API_KEY` to `.env` (assumed to be gitignored) and documented its use.
+- **Google Places API Autocomplete Refactor (2025-05-25):**
+  - Refactored address autocompletion in property forms to use the recommended `google.maps.places.PlaceAutocompleteElement` (Web Component) instead of the legacy `google.maps.places.Autocomplete`.
+  - The `@react-google-maps/api` library is still used for `LoadScript` to load the Google Maps API.
+  - Modified `src/components/PropertyManager/CreatePropertyForm.tsx` and `src/components/PropertyManager/EditPropertyModal.tsx`:
+    - Implemented `useEffect` hooks to dynamically create, append, and manage the `PlaceAutocompleteElement`.
+    - Styled the web component's input field to better match MUI's `TextField` appearance.
+    - Attached `gmp-select` event listeners to the `PlaceAutocompleteElement` to retrieve selected place details.
+    - Parsed `place.addressComponents` to populate form state for street, city, state (short code), and zip.
+  - Ensured the `VITE_GOOGLE_MAPS_API_KEY` environment variable is used and its importance documented.
+  - Addressed TypeScript errors related to the new API and potential null values.
 
 ## 3. Next Steps
 

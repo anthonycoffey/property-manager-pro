@@ -123,14 +123,15 @@ The project has recently completed the implementation of the Admin Organization 
         *   Title now displays the selected property's name instead of ID.
         *   Layout updated to place the email input and "Send Invitation" button on the same row.
     *   These changes further refine the UI/UX based on feedback, improving clarity and consistency.
-*   **Google Places API Autocomplete for Property Address (2025-05-25):**
-    *   Integrated Google Places API for address autocompletion in property creation and editing forms.
-    *   Utilized the `@react-google-maps/api` library.
+*   **Google Places API Autocomplete Refactor for Property Address (2025-05-25):**
+    *   Refactored address autocompletion in property creation and editing forms to use the recommended `google.maps.places.PlaceAutocompleteElement` (Web Component) due to deprecation notices for the legacy `Autocomplete` for new customers.
+    *   The `@react-google-maps/api` library's `LoadScript` component is still used to load the Google Maps JavaScript API.
     *   Modified `src/components/PropertyManager/CreatePropertyForm.tsx` and `src/components/PropertyManager/EditPropertyModal.tsx`.
-    *   The "Street Address" field in these forms now offers autocomplete suggestions.
-    *   Selecting a suggested address automatically populates the street, city, state (using short codes like "CA"), and zip code fields in the form.
-    *   The state selection dropdowns in these forms were updated to use a consistent mapping of US state names to their short codes, aligning with the data provided by the Places API.
-    *   Documented the use of the `VITE_GOOGLE_MAPS_API_KEY` environment variable.
+    *   Implemented `useEffect` hooks to dynamically create, append, style, and manage the `PlaceAutocompleteElement` within a `div` container.
+    *   The `PlaceAutocompleteElement` now provides the street address input and suggestions.
+    *   On selecting an address via the `gmp-select` event, the form's state for street, city, state (short code), and zip code is populated.
+    *   Ensured state selection dropdowns remain consistent with short codes.
+    *   Maintained documentation for the `VITE_GOOGLE_MAPS_API_KEY` environment variable.
 
 ## 3. What's Left to Build (High-Level from `projectRoadmap.md`)
 

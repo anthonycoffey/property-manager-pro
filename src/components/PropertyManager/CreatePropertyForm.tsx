@@ -1,7 +1,7 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { useAuth } from '../../hooks/useAuth';
-import { LoadScript, Autocomplete } from '@react-google-maps/api';
+import { LoadScript } from '@react-google-maps/api'; // Autocomplete component will be removed
 import type { CreatePropertyResponse, AppError } from '../../types';
 
 // MUI Components
@@ -41,7 +41,9 @@ const CreatePropertyForm: React.FC<CreatePropertyFormProps> = ({ onSuccess }) =>
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const { currentUser, roles: userRoles, organizationId: userOrgId } = useAuth();
-  const [autocomplete, setAutocomplete] = useState<google.maps.places.Autocomplete | null>(null);
+  // const [autocomplete, setAutocomplete] = useState<google.maps.places.Autocomplete | null>(null); // Old state
+  const placeAutocompleteRef = useRef<HTMLDivElement>(null); // Ref for the container of the new element
+  const autocompleteInputRef = useRef<HTMLInputElement | null>(null); // Ref for a hidden input if needed, or the element itself
 
   // US States with abbreviations for consistency with Google Places API
   const usStatesAndAbbrevs = [
@@ -68,56 +70,92 @@ const CreatePropertyForm: React.FC<CreatePropertyFormProps> = ({ onSuccess }) =>
   const functions = getFunctions();
   const createPropertyFn = httpsCallable(functions, 'createProperty');
 
-  const onLoad = (autocompleteInstance: google.maps.places.Autocomplete) => {
-    setAutocomplete(autocompleteInstance);
-  };
+  // Define libraries const outside component to prevent re-creation
+  const LIBRARIES: ("places")[] = ["places"];
 
-  const onPlaceChanged = () => {
-    if (autocomplete !== null) {
-      const place = autocomplete.getPlace();
-      if (place.address_components) {
-        let streetNumber = '';
-        let route = '';
-        let city = '';
-        let state = '';
-        let postalCode = '';
-
-        place.address_components.forEach(component => {
-          const types = component.types;
-          if (types.includes('street_number')) {
-            streetNumber = component.long_name;
-          }
-          if (types.includes('route')) {
-            route = component.long_name;
-          }
-          if (types.includes('locality')) {
-            city = component.long_name;
-          }
-          if (types.includes('administrative_area_level_1')) {
-            state = component.short_name; // Using short_name for state (e.g., "CA")
-          }
-          if (types.includes('postal_code')) {
-            postalCode = component.long_name;
-          }
-        });
-        
-        const fullStreet = streetNumber ? `${streetNumber} ${route}` : route;
-
-        setAddress({
-          street: fullStreet,
-          city: city,
-          state: state, // This will be the short code, e.g., "CA"
-          zip: postalCode,
-        });
-      } else {
-        console.warn("Autocomplete place result does not have address_components");
-        // Potentially clear fields or keep existing street input if user typed something not autocompleted
-        // For now, we'll rely on the user typing into the street field directly if autocomplete fails.
+  useEffect(() => {
+    if (window.google && window.google.maps && window.google.maps.places && placeAutocompleteRef.current && !placeAutocompleteRef.current.querySelector('gmp-place-autocomplete')) {
+      const placeAutocompleteElement = new google.maps.places.PlaceAutocompleteElement({
+        componentRestrictions: { country: "us" },
+        // types: ['address'], // This might not be an option for PlaceAutocompleteElement, check docs if needed
+      });
+      
+      // placeAutocompleteElement.id = 'place-autocomplete-create-form'; // Optional ID
+      
+      // Style the web component to look like a TextField
+      // This is a basic attempt, might need more sophisticated styling
+      const gmpInputElement = placeAutocompleteElement.querySelector('input');
+      if (gmpInputElement) {
+        // These styles are illustrative. MUI TextFields are complex.
+        // It might be better to wrap this in a FormControl and use an InputLabel.
+        gmpInputElement.style.width = '100%';
+        gmpInputElement.style.padding = '16.5px 14px'; // From MUI TextField
+        gmpInputElement.style.border = '1px solid rgba(0, 0, 0, 0.23)';
+        gmpInputElement.style.borderRadius = '4px';
+        gmpInputElement.placeholder = "Street Address (Type to search)";
+        // Consider focus/hover styles if going this route
       }
-    } else {
-      console.log('Autocomplete is not loaded yet!');
+
+
+      placeAutocompleteRef.current.appendChild(placeAutocompleteElement);
+
+      const listener = placeAutocompleteElement.addEventListener('gmp-select', async (event) => {
+        const place = (event as CustomEvent).detail.place; // New API structure for event
+        
+        if (!place) {
+          console.warn("PlaceAutocompleteElement gmp-select event did not return a place.");
+          return;
+        }
+
+        await place.fetchFields({ fields: ['addressComponents', 'formattedAddress'] });
+
+        if (place.addressComponents) {
+          let streetNumber = '';
+          let route = '';
+          let city = '';
+          let state = '';
+          let postalCode = '';
+
+          place.addressComponents.forEach((component: google.maps.places.AddressComponent) => {
+            const types = component.types;
+            if (types.includes('street_number')) streetNumber = component.longText ?? '';
+            if (types.includes('route')) route = component.longText ?? '';
+            if (types.includes('locality')) city = component.longText ?? '';
+            if (types.includes('administrative_area_level_1')) state = component.shortText ?? '';
+            if (types.includes('postal_code')) postalCode = component.longText ?? '';
+          });
+
+          const fullStreet = streetNumber ? `${streetNumber} ${route}`.trim() : route.trim() || place.formattedAddress || '';
+          
+          setAddress({
+            street: fullStreet,
+            city: city,
+            state: state,
+            zip: postalCode,
+          });
+          // Manually update the value of the input inside the web component if needed,
+          // though it should update itself. If not, we might need to set its `value` attribute.
+          // Or, if we use a separate hidden input for the street to keep MUI TextField for display, update that.
+          // For now, assuming the web component's input reflects the selection.
+          // If we want the MUI TextField to show the selected street, we need to update `address.street`
+          // and ensure the MUI TextField for street is now primarily for display or fallback.
+        }
+      });
+      
+      return () => {
+        // Clean up: remove the element and listener if the component unmounts
+        // This might be too aggressive if LoadScript keeps the API loaded.
+        // However, the element itself should be cleaned.
+        if (placeAutocompleteRef.current) {
+          placeAutocompleteRef.current.innerHTML = ''; // Clear the container
+        }
+        // No explicit removeEventListener for the web component in this example,
+        // but if `placeAutocompleteElement` instance was stored, it would be good.
+      };
     }
-  };
+  }, [window.google]); // Rerun if google object becomes available
+
+  // const onPlaceChanged = () => { ... }; // This old function is removed.
 
   const handleAddressChange = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement> | { target: { name: string; value: unknown } }) => {
     setAddress({
@@ -185,7 +223,7 @@ const CreatePropertyForm: React.FC<CreatePropertyFormProps> = ({ onSuccess }) =>
   }
 
   return (
-    <LoadScript googleMapsApiKey={apiKey} libraries={["places"]}>
+    <LoadScript googleMapsApiKey={apiKey} libraries={LIBRARIES}>
       <Box component="form" onSubmit={handleSubmit} sx={{ mt: 3, maxWidth: '600px' }}>
         <Typography variant="h6" gutterBottom>
           Create New Property
@@ -212,29 +250,43 @@ const CreatePropertyForm: React.FC<CreatePropertyFormProps> = ({ onSuccess }) =>
         helperText="e.g., Residential, Commercial"
       />
       <Typography variant="subtitle1" sx={{ mt: 2, mb: 1 }}>Property Address</Typography>
-      {/* Street Address Field - Full width with Autocomplete */}
-      <Box sx={{ mb: 2 }}>
-        <Autocomplete
-          onLoad={onLoad}
-          onPlaceChanged={onPlaceChanged}
-          options={{
-            types: ["address"], // Restrict to address types
-            componentRestrictions: { country: "us" }, // Optional: restrict to US
-          }}
-        >
-          <TextField
-            label="Street Address (Type to search)"
-            name="street"
-            fullWidth
-            value={address.street}
-            onChange={handleAddressChange} // Allows manual input if needed, or if autocomplete fails
-            required
-            disabled={loading}
-            placeholder="Start typing your address..."
-          />
-        </Autocomplete>
+      
+      {/* Container for the Google Place Autocomplete Element */}
+      <Typography variant="body2" sx={{mt: 1, mb: 0.5, color: 'text.secondary'}}>Street Address</Typography>
+      <Box 
+        sx={{ 
+          mb: 2, 
+          '& gmp-place-autocomplete input': { // Targeting the input inside the web component
+            width: '100% !important', // Important to override default inline styles if any
+            boxSizing: 'border-box', // Ensure padding and border don't add to width
+            padding: '16.5px 14px',
+            border: `1px solid rgba(0, 0, 0, 0.23)`,
+            borderRadius: '4px',
+            fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif', // Match MUI
+            fontSize: '1rem',
+            color: 'inherit',
+            backgroundColor: 'transparent',
+            '&:hover': {
+              borderColor: 'rgba(0, 0, 0, 0.87)',
+            },
+            '&:focus': {
+              borderColor: 'primary.main', // Needs theme access or hardcode MUI blue
+              outline: '1px solid primary.main', // Example focus outline
+            }
+          }
+        }} 
+        ref={placeAutocompleteRef}
+      >
+        {/* The PlaceAutocompleteElement will be appended here by useEffect.
+            The address.street state will be updated on 'gmp-select'.
+            Manual typing directly into this Google input won't update address.street until selection.
+            If address.street needs to be pre-filled (e.g. edit form), the web component's `value` attribute would need setting.
+            For create form, it starts empty.
+        */}
       </Box>
-      {/* Row for City, State, Zip - these will be populated by Autocomplete */}
+      {/* MUI TextField for street is removed, relying on the web component above */}
+
+      {/* Row for City, State, Zip - these will be populated by Autocomplete and can be manually edited */}
       <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
         <TextField
           label="City"

@@ -45,5 +45,11 @@ export const updateProperty = updatePropertyFunction;
 import { deleteProperty as deletePropertyFunction } from './callable/deleteProperty.js';
 export const deleteProperty = deletePropertyFunction;
 
+import { updateResidentProfile as updateResidentProfileFunction } from './callable/updateResidentProfile.js';
+export const updateResidentProfile = updateResidentProfileFunction;
+
+import { createServiceRequest as createServiceRequestFunction } from './callable/createServiceRequest.js';
+export const createServiceRequest = createServiceRequestFunction;
+
 // Note: The firebaseAdmin.ts and handleHttpsError.ts are not directly exported
 // as they are internal modules used by the functions themselves.

@@ -88,9 +88,30 @@ service cloud.firestore {
           // Admins can manage all residents
           allow read, write: if isAdmin();
           // Property Managers can manage residents within their organization and property
-          allow read, write: if isPropertyManager() && isOrgUser(organizationId) && request.auth.token.propertyId == propertyId;
-          // Residents can only read/update their own profile
-          allow read, update: if isResident() && request.auth.uid == residentId && isPropertyResident(organizationId, propertyId);
+          // Note: PMs should typically invite/create residents, and perhaps deactivate. Full write might be too broad.
+          // For now, let's assume PMs can manage (read/write) residents of properties they are associated with.
+          // This might need refinement based on specific PM permissions for properties.
+          allow read, write: if isPropertyManager() && isOrgUser(organizationId); // Simplified for now, assumes PM has org-level access to residents
+
+          // Residents can read their own profile
+          allow read: if isResident() && request.auth.uid == residentId && isPropertyResident(organizationId, propertyId);
+          // Residents can update specific fields of their own profile
+          allow update: if isResident() && request.auth.uid == residentId && isPropertyResident(organizationId, propertyId) &&
+                           request.resource.data.keys().hasOnly(['displayName', 'vehicleMake', 'vehicleModel', 'vehicleColor', 'licensePlate'
+                           // Add other resident-updatable fields here, e.g. 'contactPreferences'
+                           // Critical fields like email, roles, organizationId, propertyId should NOT be updatable by resident directly here.
+                           // Ensure that fields not listed here cannot be changed by comparing request.resource.data to resource.data for unchanged fields.
+                           ]) &&
+                           // Ensure non-updatable fields remain unchanged
+                           request.resource.data.email == resource.data.email &&
+                           request.resource.data.organizationId == resource.data.organizationId &&
+                           request.resource.data.propertyId == resource.data.propertyId &&
+                           request.resource.data.roles == resource.data.roles &&
+                           request.resource.data.invitedBy == resource.data.invitedBy &&
+                           request.resource.data.createdAt == resource.data.createdAt &&
+                           (request.resource.data.unitNumber == resource.data.unitNumber || resource.data.unitNumber == null) && // unitNumber might be set by PM
+                           (request.resource.data.leaseStartDate == resource.data.leaseStartDate || resource.data.leaseStartDate == null) &&
+                           (request.resource.data.leaseEndDate == resource.data.leaseEndDate || resource.data.leaseEndDate == null);
         }
       }
 

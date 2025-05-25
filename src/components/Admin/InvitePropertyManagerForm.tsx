@@ -9,7 +9,7 @@ import Button from '@mui/material/Button';
 import Box from '@mui/material/Box';
 import CircularProgress from '@mui/material/CircularProgress';
 import Alert from '@mui/material/Alert';
-import { Stack, Typography } from '@mui/material';
+import { Typography } from '@mui/material';
 import { PersonAdd } from '@mui/icons-material';
 
 interface InvitePropertyManagerFormProps {
@@ -112,37 +112,29 @@ const InvitePropertyManagerForm: React.FC<InvitePropertyManagerFormProps> = ({
           {success}
         </Alert>
       )}
-      <Stack
-        direction='row'
-        spacing={2}
-        sx={{
-          justifyContent: 'flex-end',
-          alignItems: 'center',
-        }}
-      >
+      <Box sx={{ display: 'flex', gap: 2 }}>
         <TextField
           label='Property Manager Email'
           type='email'
-          fullWidth
           value={inviteeEmail}
           onChange={(e) => setInviteeEmail(e.target.value)}
-          margin='normal'
+          margin='none'
           required
           disabled={loading}
+          sx={{ flexGrow: 1, minWidth: '75%' }}
         />
-
         <Button
           size='large'
           type='submit'
           variant='contained'
           color='primary'
           disabled={loading}
-          sx={{ my: 1, minWidth: 250 }}
+          sx={{ flexGrow: 1 }}
           startIcon={<PersonAdd />}
         >
-          {loading ? <CircularProgress size={24} /> : 'Invite User'}
+          {loading ? <CircularProgress size={24} /> : 'Invite Property Manager'}
         </Button>
-      </Stack>
+      </Box>
     </Box>
   );
 };

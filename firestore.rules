@@ -80,10 +80,12 @@ service cloud.firestore {
         allow read, write: if isAdmin();
         // Property Managers can manage properties within their organization
         allow read, write: if isPropertyManager() && isOrgUser(organizationId);
-        // Property Staff can read properties within their organization
-        allow read: if isPropertyStaff() && isOrgUser(organizationId);
+      // Property Staff can read properties within their organization
+      allow read: if isPropertyStaff() && isOrgUser(organizationId);
+      // Residents can read the specific property they belong to
+      allow read: if isResident() && isPropertyResident(organizationId, propertyId);
 
-        // Subcollection: residents
+      // Subcollection: residents
         match /residents/{residentId} {
           // Admins can manage all residents
           allow read, write: if isAdmin();
@@ -139,13 +141,57 @@ service cloud.firestore {
 
       // Subcollection: services
       match /services/{serviceId} {
-        // Admins can manage all services
-        allow read, write: if isAdmin();
-        // Property Managers/Staff can manage services within their organization and property
-        allow read, write: if (isPropertyManager() || isPropertyStaff()) && isOrgUser(organizationId) && request.resource.data.propertyId == request.auth.token.propertyId;
-        // Residents can create/read/update their own service requests
-        allow create: if isResident() && request.resource.data.residentId == request.auth.uid && isPropertyResident(organizationId, request.resource.data.propertyId);
-        allow read, update: if isResident() && request.resource.data.residentId == request.auth.uid && isPropertyResident(organizationId, request.resource.data.propertyId);
+        allow read, write: if isAdmin(); // Admin full access
+
+        // --- Property Manager/Staff Rules ---
+        // GET, UPDATE, DELETE single service document
+        allow get, update, delete: if (isPropertyManager() || isPropertyStaff()) &&
+                                      isOrgUser(organizationId) &&
+                                      resource.data.organizationId == organizationId && 
+                                      resource.data.propertyId == request.auth.token.propertyId;
+
+        // LIST services (client query must filter by propertyId for effective scoping by this rule)
+        allow list: if (isPropertyManager() || isPropertyStaff()) &&
+                       isOrgUser(organizationId) &&
+                       request.auth.token.propertyId != null; // Must be associated with a property
+
+        // CREATE service
+        allow create: if (isPropertyManager() || isPropertyStaff()) &&
+                         isOrgUser(organizationId) &&
+                         request.auth.token.propertyId != null &&
+                         request.resource.data.organizationId == organizationId &&
+                         request.resource.data.propertyId == request.auth.token.propertyId;
+
+        // --- Resident Rules ---
+        // CREATE service request
+        allow create: if isResident() &&
+                         isOrgUser(organizationId) && 
+                         request.auth.token.propertyId != null &&
+                         request.resource.data.residentId == request.auth.uid &&
+                         request.resource.data.organizationId == organizationId &&
+                         request.resource.data.propertyId == request.auth.token.propertyId;
+
+        // GET single service request
+        allow get: if isResident() &&
+                      isOrgUser(organizationId) &&
+                      request.auth.token.propertyId != null && // Ensure resident has a property for context
+                      resource.data.residentId == request.auth.uid &&
+                      resource.data.organizationId == organizationId && 
+                      resource.data.propertyId == request.auth.token.propertyId;
+
+        // LIST service requests (client query must filter by residentId)
+        allow list: if isResident() &&
+                       isOrgUser(organizationId) &&
+                       request.auth.token.propertyId != null; // Ensure resident has a property for context
+
+        // UPDATE own service request
+        allow update: if isResident() &&
+                         isOrgUser(organizationId) &&
+                         request.auth.token.propertyId != null && // Ensure resident has a property for context
+                         resource.data.residentId == request.auth.uid &&
+                         resource.data.organizationId == organizationId && 
+                         resource.data.propertyId == request.auth.token.propertyId;
+                         // && (add field validation here for what can be updated)
       }
     }
   }

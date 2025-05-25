@@ -73,7 +73,7 @@ const InviteResidentForm: React.FC<InviteResidentFormProps> = ({
 
       if (responseData?.success) {
         setSuccess(
-          `Invitation sent successfully to ${inviteeEmail} for property ${propertyId}. Invitation ID: ${responseData?.invitationId}`
+          `Invitation sent successfully to ${inviteeEmail} for ${propertyName}.`
         );
         setInviteeEmail('');
       } else {
@@ -132,13 +132,13 @@ const InviteResidentForm: React.FC<InviteResidentFormProps> = ({
           sx={{ flexGrow: 1, minWidth: '75%' }} // Allow TextField to grow in the row
         />
         <Button
-          type='submit'
           size='large'
+          type='submit'
           variant='contained'
           color='primary'
           disabled={loading}
-          startIcon={<PersonAdd />}
           sx={{ flexGrow: 1 }} // Allow TextField to grow in the row
+          startIcon={<PersonAdd />}
         >
           {loading ? <CircularProgress size={24} /> : 'Invite Resident'}
         </Button>

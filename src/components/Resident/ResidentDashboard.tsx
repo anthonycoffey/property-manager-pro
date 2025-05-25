@@ -43,7 +43,7 @@ function a11yProps(index: number) {
 }
 
 const ResidentDashboard: React.FC = () => {
-  const { currentUser, organizationId, propertyId } = useAuth();
+  const { currentUser } = useAuth();
   const [tabValue, setTabValue] = React.useState(0);
 
   const handleChangeTab = (_event: React.SyntheticEvent, newValue: number) => {
@@ -60,13 +60,6 @@ const ResidentDashboard: React.FC = () => {
         <Typography variant="h4" gutterBottom component="div" sx={{ mb: 2 }}>
           Welcome, {currentUser.displayName || 'Resident'}!
         </Typography>
-        <Typography variant="subtitle1" gutterBottom component="div" sx={{ mb: 2 }}>
-          Organization ID: {organizationId || 'N/A'}
-        </Typography>
-        <Typography variant="subtitle1" gutterBottom component="div" sx={{ mb: 4 }}>
-          Property ID: {propertyId || 'N/A'}
-        </Typography>
-
         <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
           <Tabs value={tabValue} onChange={handleChangeTab} aria-label="resident dashboard tabs">
             <Tab icon={<ApartmentIcon />} label="My Property" {...a11yProps(0)} />

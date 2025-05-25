@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Typography, Paper, Grid, Container, Tabs, Tab, Divider } from '@mui/material'; // Added Divider
+import { Box, Typography, Paper, Container, Tabs, Tab, Divider } from '@mui/material'; // Added Divider, Removed Grid
 import { useAuth } from '../../hooks/useAuth';
 import ApartmentIcon from '@mui/icons-material/Apartment';
 import PersonIcon from '@mui/icons-material/Person';
@@ -46,7 +46,7 @@ const ResidentDashboard: React.FC = () => {
   const { currentUser, organizationId, propertyId } = useAuth();
   const [tabValue, setTabValue] = React.useState(0);
 
-  const handleChangeTab = (event: React.SyntheticEvent, newValue: number) => {
+  const handleChangeTab = (_event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
   };
 

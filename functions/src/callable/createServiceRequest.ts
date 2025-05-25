@@ -1,5 +1,5 @@
 import { https } from 'firebase-functions/v1'; // Correct import for https namespace
-import { CallableContext, HttpsError } from 'firebase-functions/v1/https'; // Correct import for types
+import { CallableContext } from 'firebase-functions/v1/https'; // Correct import for types
 import { db } from '../firebaseAdmin.js'; // Import db
 import { FieldValue as FirebaseAdminFieldValue } from 'firebase-admin/firestore'; // Import FieldValue directly and alias
 import { handleHttpsError } from '../helpers/handleHttpsError.js';

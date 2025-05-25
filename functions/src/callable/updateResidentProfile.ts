@@ -12,8 +12,8 @@ interface UpdateResidentProfileData {
 }
 
 export const updateResidentProfile = https.onCall(
-  async (data: any, context: CallableContext) => {
-    const validatedData = data as UpdateResidentProfileData;
+  async (data: UpdateResidentProfileData, context: CallableContext) => {
+    // const validatedData = data as UpdateResidentProfileData; // No longer needed
 
     if (!context.auth) {
       throw handleHttpsError('unauthenticated', 'User must be authenticated.');
@@ -47,10 +47,10 @@ export const updateResidentProfile = https.onCall(
       }
 
       const updatePayload: Partial<UpdateResidentProfileData> = {};
-      if (validatedData.vehicleMake !== undefined) updatePayload.vehicleMake = validatedData.vehicleMake;
-      if (validatedData.vehicleModel !== undefined) updatePayload.vehicleModel = validatedData.vehicleModel;
-      if (validatedData.vehicleColor !== undefined) updatePayload.vehicleColor = validatedData.vehicleColor;
-      if (validatedData.licensePlate !== undefined) updatePayload.licensePlate = validatedData.licensePlate;
+      if (data.vehicleMake !== undefined) updatePayload.vehicleMake = data.vehicleMake;
+      if (data.vehicleModel !== undefined) updatePayload.vehicleModel = data.vehicleModel;
+      if (data.vehicleColor !== undefined) updatePayload.vehicleColor = data.vehicleColor;
+      if (data.licensePlate !== undefined) updatePayload.licensePlate = data.licensePlate;
       
       if (Object.keys(updatePayload).length === 0) {
         return { success: true, message: 'No changes provided.' };
@@ -59,11 +59,13 @@ export const updateResidentProfile = https.onCall(
       await residentDocRef.update(updatePayload);
 
       return { success: true, message: 'Profile updated successfully.' };
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (error instanceof HttpsError) {
         throw error;
       }
       console.error('Error updating resident profile:', error);
+      // It's good practice to ensure error is an instance of Error before accessing .message
+      // For now, the generic message is fine, or we can add more specific handling.
       throw handleHttpsError(
         'internal',
         'An internal error occurred while updating the profile.'

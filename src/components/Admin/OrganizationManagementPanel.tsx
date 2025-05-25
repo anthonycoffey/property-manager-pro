@@ -152,12 +152,12 @@ const OrganizationManagementPanel: React.FC = () => {
     setEditingOrganization(null);
   };
 
-  const handleOrganizationCreated = (orgId: string) => {
-    setSnackbarMessage(`Organization created successfully with ID: ${orgId}`);
-    setSnackbarSeverity('success');
-    setSnackbarOpen(true);
-    fetchOrganizations();
-  };
+  // const handleOrganizationCreated = (orgId: string) => {
+  //   setSnackbarMessage(`Organization created successfully with ID: ${orgId}`);
+  //   setSnackbarSeverity('success');
+  //   setSnackbarOpen(true);
+  //   fetchOrganizations();
+  // };
 
   const handleOrganizationUpdated = (updatedOrgData: Partial<Organization>) => {
     setSnackbarMessage(

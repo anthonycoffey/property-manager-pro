@@ -43,7 +43,7 @@ const CreatePropertyForm: React.FC<CreatePropertyFormProps> = ({ onSuccess }) =>
   const { currentUser, roles: userRoles, organizationId: userOrgId } = useAuth();
   // const [autocomplete, setAutocomplete] = useState<google.maps.places.Autocomplete | null>(null); // Old state
   const placeAutocompleteRef = useRef<HTMLDivElement>(null); // Ref for the container of the new element
-  const autocompleteInputRef = useRef<HTMLInputElement | null>(null); // Ref for a hidden input if needed, or the element itself
+  // const autocompleteInputRef = useRef<HTMLInputElement | null>(null); // Unused
 
   // US States with abbreviations for consistency with Google Places API
   const usStatesAndAbbrevs = [
@@ -74,7 +74,9 @@ const CreatePropertyForm: React.FC<CreatePropertyFormProps> = ({ onSuccess }) =>
   const LIBRARIES: ("places")[] = ["places"];
 
   useEffect(() => {
-    if (window.google && window.google.maps && window.google.maps.places && placeAutocompleteRef.current && !placeAutocompleteRef.current.querySelector('gmp-place-autocomplete')) {
+    const currentPlaceRef = placeAutocompleteRef.current; // Capture ref for cleanup
+
+    if (window.google && window.google.maps && window.google.maps.places && currentPlaceRef && !currentPlaceRef.querySelector('gmp-place-autocomplete')) {
       const placeAutocompleteElement = new google.maps.places.PlaceAutocompleteElement({
         componentRestrictions: { country: "us" },
         // types: ['address'], // This might not be an option for PlaceAutocompleteElement, check docs if needed
@@ -83,24 +85,19 @@ const CreatePropertyForm: React.FC<CreatePropertyFormProps> = ({ onSuccess }) =>
       // placeAutocompleteElement.id = 'place-autocomplete-create-form'; // Optional ID
       
       // Style the web component to look like a TextField
-      // This is a basic attempt, might need more sophisticated styling
       const gmpInputElement = placeAutocompleteElement.querySelector('input');
       if (gmpInputElement) {
-        // These styles are illustrative. MUI TextFields are complex.
-        // It might be better to wrap this in a FormControl and use an InputLabel.
         gmpInputElement.style.width = '100%';
-        gmpInputElement.style.padding = '16.5px 14px'; // From MUI TextField
+        gmpInputElement.style.padding = '16.5px 14px';
         gmpInputElement.style.border = '1px solid rgba(0, 0, 0, 0.23)';
         gmpInputElement.style.borderRadius = '4px';
         gmpInputElement.placeholder = "Street Address (Type to search)";
-        // Consider focus/hover styles if going this route
       }
 
+      currentPlaceRef.appendChild(placeAutocompleteElement);
 
-      placeAutocompleteRef.current.appendChild(placeAutocompleteElement);
-
-      const listener = placeAutocompleteElement.addEventListener('gmp-select', async (event) => {
-        const place = (event as CustomEvent).detail.place; // New API structure for event
+      placeAutocompleteElement.addEventListener('gmp-select', async (event) => { // Removed 'listener' assignment
+        const place = (event as CustomEvent).detail.place;
         
         if (!place) {
           console.warn("PlaceAutocompleteElement gmp-select event did not return a place.");
@@ -133,27 +130,16 @@ const CreatePropertyForm: React.FC<CreatePropertyFormProps> = ({ onSuccess }) =>
             state: state,
             zip: postalCode,
           });
-          // Manually update the value of the input inside the web component if needed,
-          // though it should update itself. If not, we might need to set its `value` attribute.
-          // Or, if we use a separate hidden input for the street to keep MUI TextField for display, update that.
-          // For now, assuming the web component's input reflects the selection.
-          // If we want the MUI TextField to show the selected street, we need to update `address.street`
-          // and ensure the MUI TextField for street is now primarily for display or fallback.
         }
       });
       
       return () => {
-        // Clean up: remove the element and listener if the component unmounts
-        // This might be too aggressive if LoadScript keeps the API loaded.
-        // However, the element itself should be cleaned.
-        if (placeAutocompleteRef.current) {
-          placeAutocompleteRef.current.innerHTML = ''; // Clear the container
+        if (currentPlaceRef) { // Use captured ref in cleanup
+          currentPlaceRef.innerHTML = ''; 
         }
-        // No explicit removeEventListener for the web component in this example,
-        // but if `placeAutocompleteElement` instance was stored, it would be good.
       };
     }
-  }, [window.google]); // Rerun if google object becomes available
+  }, []); // Run once on mount, assuming LoadScript handles API readiness.
 
   // const onPlaceChanged = () => { ... }; // This old function is removed.
 

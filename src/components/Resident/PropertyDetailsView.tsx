@@ -44,7 +44,7 @@ const PropertyDetailsView: React.FC = () => {
     };
 
     fetchPropertyDetails();
-  }, [currentUser]);
+  }, [currentUser, organizationId, propertyId]);
 
   if (loading) {
     return (

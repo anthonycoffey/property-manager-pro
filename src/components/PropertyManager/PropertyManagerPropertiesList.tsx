@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { collection, query, where, getDocs, type DocumentData } from 'firebase/firestore';
+import React, { useEffect, useState, useCallback } from 'react'; // Added useCallback
+import { collection, query, where, getDocs } from 'firebase/firestore'; // Removed DocumentData
 import { db } from '../../firebaseConfig';
 import { useAuth } from '../../hooks/useAuth';
 import { 
@@ -74,7 +74,7 @@ const PropertyManagerPropertiesList: React.FC<PropertyManagerPropertiesListProps
   const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error'>('success');
 
 
-  const fetchProperties = async () => { // Made fetchProperties a standalone function
+  const fetchProperties = useCallback(async () => {
     if (!currentUser || !authOrganizationId || !currentUser.uid) {
       setError('User organization or ID not found.');
         setLoading(false);
@@ -85,7 +85,6 @@ const PropertyManagerPropertiesList: React.FC<PropertyManagerPropertiesListProps
       setError(null);
       try {
         const propertiesRef = collection(db, `organizations/${authOrganizationId}/properties`);
-        // Query for properties managed by the current user
         const q = query(propertiesRef, where('managedBy', '==', currentUser.uid));
         const querySnapshot = await getDocs(q);
         
@@ -97,10 +96,9 @@ const PropertyManagerPropertiesList: React.FC<PropertyManagerPropertiesListProps
             name: data.name || 'Unnamed Property',
             address: data.address || { street: '', city: '', state: '', zip: '' },
             type: data.type || '',
-            organizationId: authOrganizationId, // Ensure organizationId is included
+            organizationId: authOrganizationId, 
             managedBy: data.managedBy,
-            createdAt: data.createdAt, // Keep other fields from PropertyType
-            // ... any other fields from PropertyType
+            createdAt: data.createdAt,
           } as PropertyType);
         });
         setProperties(fetchedProperties);
@@ -111,11 +109,11 @@ const PropertyManagerPropertiesList: React.FC<PropertyManagerPropertiesListProps
       } finally {
         setLoading(false);
       }
-  };
+  }, [currentUser, authOrganizationId]);
 
   useEffect(() => {
     fetchProperties();
-  }, [currentUser, authOrganizationId]); // Removed fetchProperties from dependency array as it's stable
+  }, [fetchProperties]);
 
   const handleOpenDeleteDialog = (property: PropertyType) => {
     setPropertyToDelete(property);
@@ -146,10 +144,13 @@ const PropertyManagerPropertiesList: React.FC<PropertyManagerPropertiesListProps
       setSnackbarOpen(true);
       handleCloseDeleteDialog();
       onPropertiesUpdate(); // Call to refresh properties list in parent
-      // fetchProperties(); // Or refetch directly here
-    } catch (err: any) {
+    } catch (err: unknown) { // Changed from any to unknown
       console.error('Error deleting property:', err);
-      setSnackbarMessage(err.message || 'Failed to delete property.');
+      if (err instanceof Error) {
+        setSnackbarMessage(err.message || 'Failed to delete property.');
+      } else {
+        setSnackbarMessage('An unexpected error occurred while deleting property.');
+      }
       setSnackbarSeverity('error');
       setSnackbarOpen(true);
     } finally {

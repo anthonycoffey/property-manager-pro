@@ -52,6 +52,7 @@ The project has recently completed the implementation of the Admin Organization 
         *   Remains the authority for invited user sign-ups.
         *   Sets final custom claims (overwriting any defaults from `processSignUp`).
         *   Creates user profiles directly in the correct multi-tenant Firestore paths (e.g., `organizations/{orgId}/users/{uid}` or `organizations/{orgId}/properties/{propId}/residents/{uid}`).
+    *   **Resolved Custom Claim Overwrite (2025-05-24):** Modified `functions/src/auth/processSignUp.ts` to check for an existing `organizationId` claim before setting default `pending_association` claims. This prevents overwriting claims set by the invitation flow, ensuring roles like "resident" are correctly persisted.
 *   **Invitation System Implementation (Phase 1 - Backend & Core UI) (2025-05-23):**
     *   **Documented Plan:** Created `docs/03-invitation-system-plan.md`.
     *   **Documented Plan:** Created `docs/03-invitation-system-plan.md`.
@@ -185,6 +186,9 @@ The remaining application functionality includes:
     *   **Firestore Rules (`firestore.rules`):**
         *   Removed rules for the root `/users` collection as it's no longer used.
     *   This addresses the issue where invited Property Managers were incorrectly getting `pending_association` roles due to the execution order of the `onCreate` trigger and the callable invitation function.
+*   **2025-05-24 (Custom Claim Overwrite Prevention):**
+    *   Modified `processSignUp.ts` to check for an existing `organizationId` custom claim on a user before applying its default `pending_association` claim.
+    *   If `organizationId` is present, `processSignUp.ts` will not modify the user's claims, preserving claims set by `signUpWithInvitation.ts`. This resolves the issue where invitation-specific claims (e.g., for residents) were being overwritten.
 *   **2025-05-24 (Admin PM Management Overhaul):** Implemented as per `docs/04-admin-pm-management-plan.md`.
 *   **2025-05-24 (Organization Management & Functions Refactor):** Implemented.
 *   **2025-05-24 (Social Sign-On & Email Pre-fill for Invitation Acceptance):** Implemented.

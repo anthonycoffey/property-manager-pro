@@ -20,7 +20,9 @@ export const processSignUp = functionsAuth
         // Set custom user claims on this newly created user.
         await adminAuth.setCustomUserClaims(uid, customClaims);
         console.log(
-          `Custom claims set for admin user ${uid}: ${JSON.stringify(customClaims)}`
+          `Custom claims set for admin user ${uid}: ${JSON.stringify(
+            customClaims
+          )}`
         );
 
         // Create a user profile in the 'admins' collection for admin users
@@ -35,7 +37,9 @@ export const processSignUp = functionsAuth
             createdAt: FieldValue.serverTimestamp(),
             status: 'active',
           });
-        console.log(`Admin user profile created in 'admins' collection for ${uid}`);
+        console.log(
+          `Admin user profile created in 'admins' collection for ${uid}`
+        );
       } catch (error) {
         console.error(
           `Error setting custom claims or creating admin profile for ${uid}:`,
@@ -43,23 +47,32 @@ export const processSignUp = functionsAuth
         );
       }
     } else {
-    // For non-admin users (direct sign-ups)
-    // Set 'pending_association' claim. No Firestore document is created here for these users.
-    try {
-      const customClaims = {
-        roles: ['pending_association'],
-      };
-      await adminAuth.setCustomUserClaims(uid, customClaims);
-      console.log(
-        `Default 'pending_association' claims set for user ${uid}: ${JSON.stringify(
-          customClaims
-        )}`
-      );
-    } catch (error) {
-      console.error(
-        `Error setting 'pending_association' claims for ${uid}:`,
-        error
-      );
-    }
+      // For non-admin users, check existing claims before setting defaults
+      try {
+        const existingUserRecord = await adminAuth.getUser(uid);
+        const currentClaims = existingUserRecord.customClaims;
+
+        // If user already has an organizationId, they were likely processed by invitation.
+        if (currentClaims && currentClaims.organizationId) {
+          console.log(
+            `User ${uid} (${email}) already has organizationId: '${currentClaims.organizationId}'. Skipping default claim setting in processSignUp.`
+          );
+          return; // Do nothing, claims are presumed to be correctly set by invitation flow.
+        }
+
+        // If no such claims, proceed to set 'pending_association'
+        const defaultClaims = { roles: ['pending_association'] };
+        await adminAuth.setCustomUserClaims(uid, defaultClaims);
+        console.log(
+          `Default 'pending_association' claims set for user ${uid} (${email}) by processSignUp.`
+        );
+        // No Firestore document is created here for pending_association users.
+      } catch (error) {
+        console.error(
+          `Error in processSignUp for user ${uid} (${email}) while checking/setting claims:`,
+          error
+        );
+        // Potentially re-throw or handle as critical if claim setting fails
+      }
     }
   });

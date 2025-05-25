@@ -165,6 +165,10 @@ With the "Admin Property Manager Management Panel Overhaul" (Step 4 from `docs/0
     - `selectedPropertyName` is now passed to `InviteResidentForm.tsx`.
     - The `Divider` between the property selector dropdown and the invitation form in the "Invite Resident" tab has been removed for a more unified section.
     - Resolved TypeScript errors related to prop type mismatches for selection handlers.
+- **Resolved Custom Claim Overwrite for Invited Users (2025-05-24):**
+  - Modified `functions/src/auth/processSignUp.ts` (the `auth.onCreate` trigger) to check for existing `organizationId` custom claims on a new user before attempting to set default `pending_association` claims.
+  - If an `organizationId` claim is present (indicating the user was likely processed by `signUpWithInvitation.ts`), `processSignUp.ts` now skips setting its default claims, preventing the overwrite of roles (e.g., "resident") and other claims (`organizationId`, `propertyId`) set by the invitation flow.
+  - This ensures that custom claims set during the invitation acceptance process (e.g., for residents) are correctly persisted.
 
 ## 3. Next Steps
 
@@ -207,6 +211,9 @@ With the "Admin Property Manager Management Panel Overhaul" (Step 4 from `docs/0
     - Creates user profiles directly in the correct multi-tenant Firestore paths (e.g., `organizations/{orgId}/users/{uid}` or `organizations/{orgId}/properties/{propId}/residents/{uid}`).
   - The root `/users` collection is no longer used for temporary profiles.
   - This revised approach clarifies the responsibilities of each function and ensures correct claim/profile handling based on the identified execution order of `onCreate` triggers and callable functions.
+- **Custom Claim Overwrite Prevention (New Decision 2025-05-24):**
+  - The `processSignUp.ts` (`auth.onCreate`) trigger has been modified to check for an existing `organizationId` custom claim on a user before applying its default `pending_association` claim.
+  - If `organizationId` is present, `processSignUp.ts` will not modify the user's claims, thus preserving claims set by the `signUpWithInvitation.ts` function (e.g., for residents or property managers). This resolves the issue where invitation-specific claims were being overwritten.
 - **Firebase Functions Structure:** Adopted a modular structure for Firebase Functions, with each function in its own file, categorized into `auth` and `callable` subdirectories. Shared utilities are in `helpers` and `firebaseAdmin` files. The main `index.ts` re-exports all functions. Relative imports within `functions/src` use `.js` extensions.
 - **Social Sign-On Email Matching:** For invitation-based social sign-on, the email provided by the social identity provider _must_ match the email address on the invitation. This is validated client-side (for UX) and server-side (for security) in `signUpWithInvitation.ts`.
 - **Invitation Email Pre-fill:** The email field on the `AcceptInvitationPage.tsx` is now pre-filled and made readonly using data fetched via the `getInvitationDetails` Cloud Function, ensuring the user signs up with the intended invited email address.
@@ -242,6 +249,9 @@ With the "Admin Property Manager Management Panel Overhaul" (Step 4 from `docs/0
 - **Multi-Tenant User Onboarding Strategy (New Insight 2025-05-23):** Adopted a two-part strategy for user creation to support multi-tenancy:
   1.  The `processSignUp` (`auth.onCreate`) trigger (`functions/src/auth/processSignUp.ts`) handles initial state for direct sign-ups (assigning `pending_association` role, or `admin` role and profile for admin emails). It no longer creates Firestore documents for `pending_association` users.
   2.  The `signUpWithInvitation` callable Cloud Function (`functions/src/callable/signUpWithInvitation.ts`) manages invited user sign-ups (both email/password and social sign-on), ensuring immediate association with an organization, correct final roles (overwriting any defaults), and profile creation in the designated multi-tenant Firestore path.
+- **Custom Claim Overwrite Resolution (New Insight 2025-05-24):**
+  - Identified and resolved an issue where custom claims set by `signUpWithInvitation.ts` (e.g., for residents) were being overwritten by the `processSignUp.ts` (`auth.onCreate`) trigger.
+  - The fix involved modifying `processSignUp.ts` to check for an existing `organizationId` claim before applying its default `pending_association` claim. If `organizationId` is present, `processSignUp.ts` now refrains from altering the claims, ensuring the invitation-specific claims persist.
 - **Firestore Rules Update (New Insight 2025-05-24):**
   - Removed security rules for the root `/users` collection in `firestore.rules` as this collection is no longer used for storing `pending_association` user profiles.
 - **TypeScript Configuration for Firebase Functions (New Insight 2025-05-24):** Confirmed that the TypeScript setup for Firebase Functions (likely using `moduleResolution: "nodenext"` or similar) requires explicit `.js` extensions for relative imports within the `functions/src` directory. Type-only imports (`import type { ... } from ...`) are also enforced for type imports when `verbatimModuleSyntax` is enabled.

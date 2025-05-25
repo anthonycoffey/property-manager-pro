@@ -19,6 +19,7 @@ import {
   TableRow,
   Paper,
   IconButton,
+  Chip,
 } from '@mui/material';
 // AddOrganizationModal will be handled by the parent (Dashboard)
 import EditOrganizationModal from './EditOrganizationModal';
@@ -265,7 +266,7 @@ const OrganizationManagementPanel: React.FC = () => {
               <TableRow>
                 <TableCell>Name</TableCell>
                 <TableCell>Status</TableCell>
-                <TableCell>Created At</TableCell>
+                <TableCell align='center'>Created At</TableCell>
                 <TableCell align='right'>Actions</TableCell>
               </TableRow>
             </TableHead>
@@ -275,9 +276,28 @@ const OrganizationManagementPanel: React.FC = () => {
                   <TableCell component='th' scope='row'>
                     {org.name}
                   </TableCell>
-                  <TableCell>{org.status || 'N/A'}</TableCell>
                   <TableCell>
-                    {org.createdAt ? org.createdAt.toLocaleDateString() : 'N/A'}
+                    <Chip
+                      label={
+                        org.status
+                          ? org.status.charAt(0).toUpperCase() +
+                            org.status.slice(1).toLowerCase()
+                          : 'N/A'
+                      }
+                      color={
+                        org.status === 'active'
+                          ? 'success'
+                          : org.status === 'inactive'
+                          ? 'error'
+                          : org.status === 'suspended'
+                          ? 'warning'
+                          : 'default'
+                      }
+                      size='small'
+                    />
+                  </TableCell>
+                  <TableCell align='center'>
+                    {org.createdAt ? org.createdAt.toLocaleString() : 'N/A'}
                   </TableCell>
                   <TableCell align='right'>
                     <IconButton

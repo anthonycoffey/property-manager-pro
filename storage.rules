@@ -2,10 +2,21 @@ rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
+    // Default rule: deny all read and write access
     match /{allPaths=**} {
-      // Default deny all access.
-      // Specific paths can be opened up as needed for features.
       allow read, write: if false;
+    }
+
+    // Allow public read access for the light logo
+    match /property-manager-pro-light.png {
+      allow read: if true;
+      allow write: if false; // Explicitly deny write
+    }
+
+    // Allow public read access for the dark logo
+    match /property-manager-pro.png {
+      allow read: if true;
+      allow write: if false; // Explicitly deny write
     }
   }
 }

@@ -145,6 +145,9 @@ The project has recently completed the implementation of the Admin Organization 
     *   Improved input field styling for `PlaceAutocompleteElement` in `CreatePropertyForm.tsx` and `EditPropertyModal.tsx` to align with MUI `TextField` appearance using theme variables.
     *   Changed "Street Address" label to "Address" in `EditPropertyModal.tsx` for consistency.
     *   Added global CSS in `src/index.css` to set a higher `z-index` for the `.pac-container` (autocomplete suggestions list) to ensure it displays correctly over MUI modals.
+*   **Admin Dashboard - Organization Management Panel UI Enhancement (2025-05-25):**
+    *   Updated `src/components/Admin/OrganizationManagementPanel.tsx` to display organization status using MUI `Chip` components. The chip label is now correctly Capitalized (Title Case, e.g., "Active"). This provides better visual feedback (e.g., "active" as green, "inactive" as red).
+    *   The `createdAt` column in the same panel was updated to show both date and time (`toLocaleString()`) and is now center-aligned for improved readability.
 
 ## 3. What's Left to Build (High-Level from `projectRoadmap.md`)
 
@@ -220,6 +223,7 @@ The remaining application functionality includes:
 *   **2025-05-25 (Google Places Autocomplete Styling/UX):**
     *   Enhanced input styling for `PlaceAutocompleteElement` in property forms.
     *   Set global `z-index` for `.pac-container` to ensure visibility over modals.
+*   **2025-05-25 (Organization Status Chips & CreatedAt Formatting):** Implemented MUI Chips for status display (with Title Case labels) and updated `createdAt` formatting/alignment in `OrganizationManagementPanel.tsx`.
 *   **2025-05-24 (Organization Management & Functions Refactor):** Implemented.
 *   **2025-05-24 (Social Sign-On & Email Pre-fill for Invitation Acceptance):** Implemented.
 *   **2025-05-24 (Property Manager Dashboard - Dynamic Property for Invites):** Implemented.

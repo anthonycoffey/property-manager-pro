@@ -283,8 +283,8 @@ const Dashboard: React.FC = () => {
               onChange={handlePmTabChange}
               aria-label='property manager actions tabs'
             >
-              <Tab label='My Properties' {...a11yProps(0)} />
-              <Tab label='Invite Resident' {...a11yProps(1)} />
+              <Tab label='Properties' {...a11yProps(0)} />
+              <Tab label='Residents' {...a11yProps(1)} />
             </Tabs>
           </Box>
           <TabPanel value={pmTabValue} index={0}>
@@ -368,11 +368,14 @@ const Dashboard: React.FC = () => {
       {!roles.includes('admin') &&
         !roles.includes('property_manager') &&
         !roles.includes('resident') && (
-          <Typography variant='body1' sx={{ mt: 2 }}>
-            Your role is currently: {roles.join(', ') || 'Undefined'}. Specific
-            dashboard content will appear once your role is fully provisioned or
-            associated.
-          </Typography>
+          <Typography
+            variant='body1'
+            sx={{ mt: 2 }}
+            dangerouslySetInnerHTML={{
+              __html:
+                "Welcome! We're just finishing setting up your account. Your personalized dashboard will be ready shortly. If it doesn't appear automatically, please <a href=\"javascript:window.location.reload(true)\" style=\"color: inherit; text-decoration: underline;\">refresh this page</a>.",
+            }}
+          />
         )}
 
       {/* Add Organization Modal - now managed by Dashboard */}

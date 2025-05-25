@@ -193,6 +193,9 @@ With the "Admin Property Manager Management Panel Overhaul" (Step 4 from `docs/0
 - **Google Places Autocomplete Styling and UX (2025-05-25):**
   - Improved the input styling of the `PlaceAutocompleteElement` in `src/components/PropertyManager/CreatePropertyForm.tsx` and `src/components/PropertyManager/EditPropertyModal.tsx` to more closely match standard MUI `TextField` components, using `theme` variables for consistency.
   - Addressed the z-index issue of the autocomplete suggestions dropdown (`.pac-container`) by adding a global style in `src/index.css` to ensure it appears above MUI modals.
+- **Organization Management Panel UI Enhancement (2025-05-25):**
+  - Updated `src/components/Admin/OrganizationManagementPanel.tsx` to display the organization status using MUI `Chip` components for better visual distinction. Chip colors vary based on status (e.g., active, inactive, suspended). The chip label is now correctly Capitalized (Title Case, e.g., "Active").
+  - Further updated `src/components/Admin/OrganizationManagementPanel.tsx` to display the `createdAt` field with both date and time (`toLocaleString()`) and center-aligned the "Created At" column header and cell content for improved readability.
 
 ## 3. Next Steps
 
@@ -262,6 +265,7 @@ With the "Admin Property Manager Management Panel Overhaul" (Step 4 from `docs/0
 - **Google Places Autocomplete Styling (New Decision 2025-05-25):**
   - The input field for the `PlaceAutocompleteElement` in property forms will be styled using `theme` variables to align its appearance (font, padding, colors, borders) with standard MUI `TextFields`.
   - The suggestions dropdown (`.pac-container`) will have its `z-index` globally increased via `src/index.css` to ensure it displays correctly over modal dialogs.
+- **UI Consistency (New Decision 2025-05-25):** Status indicators in tables (like in `OrganizationManagementPanel.tsx`) should use MUI `Chip` components for better visual feedback and consistency across different management panels.
 
 ## 5. ImportantPatterns & Preferences
 

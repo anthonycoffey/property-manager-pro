@@ -5,7 +5,7 @@ import { adminAuth, db, FieldValue } from '../firebaseAdmin.js'; // Added .js ex
 export const processSignUp = functionsAuth
   .user()
   .onCreate(async (user: functionsAuth.UserRecord) => {
-    const { uid, email, emailVerified, displayName } = user; // Added displayName
+    const { uid, email, displayName } = user; // Added displayName
 
     console.log(`New user signed up: ${email} (UID: ${uid})`);
 

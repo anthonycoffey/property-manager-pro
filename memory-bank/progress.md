@@ -132,6 +132,19 @@ The project has recently completed the implementation of the Admin Organization 
     *   On selecting an address via the `gmp-select` event, the form's state for street, city, state (short code), and zip code is populated.
     *   Ensured state selection dropdowns remain consistent with short codes.
     *   Maintained documentation for the `VITE_GOOGLE_MAPS_API_KEY` environment variable.
+*   **Create Property Form Simplification & Backend Alignment (2025-05-25):**
+    *   Modified `src/components/PropertyManager/CreatePropertyForm.tsx`:
+        *   Removed City, State, and Zip Code fields from the form UI.
+        *   Renamed the "Street Address" label to "Address".
+        *   The form now only captures and sends the full street address.
+    *   Updated `functions/src/callable/createProperty.ts`:
+        *   The Cloud Function now expects an `address` object containing only `{ street: string }`.
+        *   The property document in Firestore will store `address: { street: "..." }` for new properties.
+    *   Updated `memory-bank/systemPatterns.md` to reflect this change in the property's `address` data model.
+*   **Google Places Autocomplete Styling and UX Enhancements (2025-05-25):**
+    *   Improved input field styling for `PlaceAutocompleteElement` in `CreatePropertyForm.tsx` and `EditPropertyModal.tsx` to align with MUI `TextField` appearance using theme variables.
+    *   Changed "Street Address" label to "Address" in `EditPropertyModal.tsx` for consistency.
+    *   Added global CSS in `src/index.css` to set a higher `z-index` for the `.pac-container` (autocomplete suggestions list) to ensure it displays correctly over MUI modals.
 
 ## 3. What's Left to Build (High-Level from `projectRoadmap.md`)
 
@@ -199,6 +212,14 @@ The remaining application functionality includes:
     *   Modified `processSignUp.ts` to check for an existing `organizationId` custom claim on a user before applying its default `pending_association` claim.
     *   If `organizationId` is present, `processSignUp.ts` will not modify the user's claims, preserving claims set by `signUpWithInvitation.ts`. This resolves the issue where invitation-specific claims (e.g., for residents) were being overwritten.
 *   **2025-05-24 (Admin PM Management Overhaul):** Implemented as per `docs/04-admin-pm-management-plan.md`.
+*   **2025-05-25 (Create Property Form Simplification):**
+    *   Removed City, State, Zip from `CreatePropertyForm.tsx`.
+    *   Renamed "Street Address" to "Address" in the form.
+    *   Updated `createProperty.ts` Cloud Function to expect and store only `address: { street: "..." }`.
+    *   Updated `systemPatterns.md` to reflect the simplified address data model for properties.
+*   **2025-05-25 (Google Places Autocomplete Styling/UX):**
+    *   Enhanced input styling for `PlaceAutocompleteElement` in property forms.
+    *   Set global `z-index` for `.pac-container` to ensure visibility over modals.
 *   **2025-05-24 (Organization Management & Functions Refactor):** Implemented.
 *   **2025-05-24 (Social Sign-On & Email Pre-fill for Invitation Acceptance):** Implemented.
 *   **2025-05-24 (Property Manager Dashboard - Dynamic Property for Invites):** Implemented.

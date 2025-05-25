@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
   Dialog,
   DialogActions,
@@ -14,14 +14,24 @@ import {
   FormControl,
   InputLabel,
   Typography,
+  Box,
+  Autocomplete,
+  Divider,
+  IconButton,
 } from '@mui/material';
+import CloseIcon from '@mui/icons-material/Close';
 import { httpsCallable } from 'firebase/functions';
-import { functions } from '../../firebaseConfig'; // Assuming this is your FirebaseApp instance
-import { LoadScript } from '@react-google-maps/api'; 
-import type { Property, PropertyAddress } from '../../types'; // Type-only imports
+import { functions } from '../../firebaseConfig';
+import { useJsApiLoader } from '@react-google-maps/api';
+import type {
+  Property,
+  PropertyAddress as FullPropertyAddress,
+  AppError,
+} from '../../types';
 import { useAuth } from '../../hooks/useAuth';
-import { Box, Stack } from '@mui/material'; 
-import { useRef } from 'react'; 
+import parse from 'autosuggest-highlight/parse';
+import LocationOnIcon from '@mui/icons-material/LocationOn';
+import { debounce } from '@mui/material/utils';
 
 interface EditPropertyModalProps {
   open: boolean;
@@ -30,157 +40,241 @@ interface EditPropertyModalProps {
   onSuccess: () => void;
 }
 
+interface PlaceType {
+  description: string;
+  structured_formatting: {
+    main_text: string;
+    secondary_text: string;
+    main_text_matched_substrings?: readonly {
+      offset: number;
+      length: number;
+    }[];
+  };
+  place_id?: string;
+}
+
+const LIBRARIES_PLACES: 'places'[] = ['places'];
+
 const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
   open,
   onClose,
   propertyData,
   onSuccess,
 }) => {
-  const { currentUser, organizationId: userOrganizationId } = useAuth(); // Destructure organizationId
+  const { currentUser, organizationId: userOrganizationId } = useAuth();
   const [name, setName] = useState('');
-  const [street, setStreet] = useState('');
-  const [city, setCity] = useState('');
-  const [state, setState] = useState(''); 
-  const [zip, setZip] = useState('');
-  const [type, setType] = useState('');
-  const placeAutocompleteRef = useRef<HTMLDivElement>(null); 
-
-  // US States with abbreviations for consistency with Google Places API
-  const usStatesAndAbbrevs = [
-    { name: 'Alabama', code: 'AL' }, { name: 'Alaska', code: 'AK' }, { name: 'Arizona', code: 'AZ' },
-    { name: 'Arkansas', code: 'AR' }, { name: 'California', code: 'CA' }, { name: 'Colorado', code: 'CO' },
-    { name: 'Connecticut', code: 'CT' }, { name: 'Delaware', code: 'DE' }, { name: 'Florida', code: 'FL' },
-    { name: 'Georgia', code: 'GA' }, { name: 'Hawaii', code: 'HI' }, { name: 'Idaho', code: 'ID' },
-    { name: 'Illinois', code: 'IL' }, { name: 'Indiana', code: 'IN' }, { name: 'Iowa', code: 'IA' },
-    { name: 'Kansas', code: 'KS' }, { name: 'Kentucky', code: 'KY' }, { name: 'Louisiana', code: 'LA' },
-    { name: 'Maine', code: 'ME' }, { name: 'Maryland', code: 'MD' }, { name: 'Massachusetts', code: 'MA' },
-    { name: 'Michigan', code: 'MI' }, { name: 'Minnesota', code: 'MN' }, { name: 'Mississippi', code: 'MS' },
-    { name: 'Missouri', code: 'MO' }, { name: 'Montana', code: 'MT' }, { name: 'Nebraska', code: 'NE' },
-    { name: 'Nevada', code: 'NV' }, { name: 'New Hampshire', code: 'NH' }, { name: 'New Jersey', code: 'NJ' },
-    { name: 'New Mexico', code: 'NM' }, { name: 'New York', code: 'NY' }, { name: 'North Carolina', code: 'NC' },
-    { name: 'North Dakota', code: 'ND' }, { name: 'Ohio', code: 'OH' }, { name: 'Oklahoma', code: 'OK' },
-    { name: 'Oregon', code: 'OR' }, { name: 'Pennsylvania', code: 'PA' }, { name: 'Rhode Island', code: 'RI' },
-    { name: 'South Carolina', code: 'SC' }, { name: 'South Dakota', code: 'SD' }, { name: 'Tennessee', code: 'TN' },
-    { name: 'Texas', code: 'TX' }, { name: 'Utah', code: 'UT' }, { name: 'Vermont', code: 'VT' },
-    { name: 'Virginia', code: 'VA' }, { name: 'Washington', code: 'WA' }, { name: 'West Virginia', code: 'WV' },
-    { name: 'Wisconsin', code: 'WI' }, { name: 'Wyoming', code: 'WY' }
-  ];
-
+  const [propertyType, setPropertyType] = useState('');
+  const [address, setAddress] = useState<FullPropertyAddress>({
+    street: '',
+    city: '',
+    state: '',
+    zip: '',
+  });
+  const [autocompleteValue, setAutocompleteValue] = useState<PlaceType | null>(
+    null
+  );
+  const [autocompleteInputValue, setAutocompleteInputValue] = useState('');
+  const [autocompleteOptions, setAutocompleteOptions] = useState<
+    readonly PlaceType[]
+  >([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
-  const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error'>('success');
+  const [snackbarSeverity, setSnackbarSeverity] = useState<
+    'success' | 'error' | 'info'
+  >('success');
 
-  const LIBRARIES: ("places")[] = ["places"]; // Define libraries const
+  const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+  const { isLoaded, loadError } = useJsApiLoader({
+    googleMapsApiKey: apiKey || '',
+    libraries: LIBRARIES_PLACES,
+  });
+
+  const autocompleteService =
+    useRef<google.maps.places.AutocompleteService | null>(null);
+  const geocoderService = useRef<google.maps.Geocoder | null>(null);
 
   useEffect(() => {
-    if (propertyData) {
+    if (propertyData && open) {
       setName(propertyData.name);
-      setStreet(propertyData.address.street);
-      setCity(propertyData.address.city);
-      setState(propertyData.address.state);
-      setZip(propertyData.address.zip);
-      setType(propertyData.type);
-    } else {
-      // Reset form if no propertyData or if modal is closed then reopened for a new creation (though this is an edit modal)
+      setPropertyType(propertyData.type);
+      setAddress({
+        street: propertyData.address.street || '',
+        city: propertyData.address.city || '',
+        state: propertyData.address.state || '',
+        zip: propertyData.address.zip || '',
+      });
+      setAutocompleteInputValue(propertyData.address.street || '');
+      setAutocompleteValue(null);
+    } else if (!open) {
       setName('');
-      setStreet('');
-      setCity('');
-      setState('');
-      setZip('');
-      setType('');
+      setPropertyType('');
+      setAddress({ street: '', city: '', state: '', zip: '' });
+      setAutocompleteInputValue('');
+      setAutocompleteValue(null);
+      setError(null);
     }
   }, [propertyData, open]);
 
   useEffect(() => {
-    let placeAutocompleteElementInstance: google.maps.places.PlaceAutocompleteElement | null = null;
-    let selectListener: ((event: Event) => Promise<void>) | null = null;
+    if (
+      isLoaded &&
+      window.google &&
+      window.google.maps &&
+      window.google.maps.places
+    ) {
+      if (!autocompleteService.current) {
+        autocompleteService.current =
+          new window.google.maps.places.AutocompleteService();
+      }
+      if (!geocoderService.current) {
+        geocoderService.current = new window.google.maps.Geocoder();
+      }
+    }
+  }, [isLoaded]);
 
-    if (open && window.google && window.google.maps && window.google.maps.places && placeAutocompleteRef.current) {
-      if (!placeAutocompleteRef.current.querySelector('gmp-place-autocomplete')) {
-        placeAutocompleteElementInstance = new google.maps.places.PlaceAutocompleteElement({
-          componentRestrictions: { country: "us" },
-        });
-
-        const gmpInputElement = placeAutocompleteElementInstance.querySelector('input');
-        if (gmpInputElement) {
-          gmpInputElement.style.width = '100%';
-          gmpInputElement.style.padding = '8.5px 14px'; // MUI dense TextField padding
-          gmpInputElement.style.border = '1px solid rgba(0, 0, 0, 0.23)';
-          gmpInputElement.style.borderRadius = '4px';
-          gmpInputElement.placeholder = "Street Address (Type to search)";
-          // Set initial value for the input field from the `street` state
-          gmpInputElement.value = street; 
-        }
-        
-        placeAutocompleteRef.current.innerHTML = ''; // Clear previous instance
-        placeAutocompleteRef.current.appendChild(placeAutocompleteElementInstance);
-
-        selectListener = async (event: Event) => {
-          const place = (event as CustomEvent).detail.place;
-          if (!place) {
-            console.warn("PlaceAutocompleteElement gmp-select event did not return a place.");
-            return;
+  const fetchPlacePredictions = useMemo(
+    () =>
+      debounce(
+        (
+          request: google.maps.places.AutocompletionRequest,
+          callback: (
+            results: google.maps.places.AutocompletePrediction[] | null,
+            status: google.maps.places.PlacesServiceStatus
+          ) => void
+        ) => {
+          if (autocompleteService.current && request.input) {
+            autocompleteService.current.getPlacePredictions(request, callback);
+          } else {
+            callback([], google.maps.places.PlacesServiceStatus.OK);
           }
-          await place.fetchFields({ fields: ['addressComponents', 'formattedAddress'] });
+        },
+        400
+      ),
+    []
+  );
 
-          if (place.addressComponents) {
+  useEffect(() => {
+    let active = true;
+    if (
+      !autocompleteService.current ||
+      autocompleteInputValue === '' ||
+      (autocompleteValue &&
+        autocompleteInputValue === autocompleteValue.description)
+    ) {
+      setAutocompleteOptions(autocompleteValue ? [autocompleteValue] : []);
+      return undefined;
+    }
+
+    fetchPlacePredictions(
+      {
+        input: autocompleteInputValue,
+        componentRestrictions: { country: 'us' },
+      },
+      (results, status) => {
+        if (active && status === google.maps.places.PlacesServiceStatus.OK) {
+          let newOptions: readonly PlaceType[] = [];
+          if (autocompleteValue) {
+            newOptions = [autocompleteValue];
+          }
+          if (results) {
+            const mappedResults: PlaceType[] = results.map((p) => ({
+              description: p.description,
+              structured_formatting: p.structured_formatting,
+              place_id: p.place_id,
+            }));
+            newOptions = [...newOptions, ...mappedResults];
+          }
+          setAutocompleteOptions(newOptions);
+        } else if (
+          active &&
+          status !== google.maps.places.PlacesServiceStatus.ZERO_RESULTS
+        ) {
+          setAutocompleteOptions(autocompleteValue ? [autocompleteValue] : []);
+        }
+      }
+    );
+    return () => {
+      active = false;
+    };
+  }, [autocompleteValue, autocompleteInputValue, fetchPlacePredictions]);
+
+  const handleAutocompleteChange = (
+    _event: React.SyntheticEvent,
+    newValue: PlaceType | null
+  ) => {
+    setAutocompleteOptions(
+      newValue ? [newValue, ...autocompleteOptions] : autocompleteOptions
+    );
+    setAutocompleteValue(newValue);
+
+    if (newValue && newValue.place_id && geocoderService.current) {
+      geocoderService.current.geocode(
+        { placeId: newValue.place_id },
+        (results, geocodeStatus) => {
+          if (
+            geocodeStatus === google.maps.GeocoderStatus.OK &&
+            results &&
+            results[0]
+          ) {
+            const place = results[0];
             let streetNumber = '';
             let route = '';
             let currentCity = '';
             let currentState = '';
             let currentPostalCode = '';
 
-            place.addressComponents.forEach((component: google.maps.places.AddressComponent) => {
+            place.address_components?.forEach((component) => {
               const types = component.types;
-              if (types.includes('street_number')) streetNumber = component.longText ?? '';
-              if (types.includes('route')) route = component.longText ?? '';
-              if (types.includes('locality')) currentCity = component.longText ?? '';
-              if (types.includes('administrative_area_level_1')) currentState = component.shortText ?? '';
-              if (types.includes('postal_code')) currentPostalCode = component.longText ?? '';
+              if (types.includes('street_number'))
+                streetNumber = component.long_name;
+              if (types.includes('route')) route = component.long_name;
+              if (types.includes('locality')) currentCity = component.long_name;
+              if (types.includes('administrative_area_level_1'))
+                currentState = component.short_name;
+              if (types.includes('postal_code'))
+                currentPostalCode = component.long_name;
             });
-
-            const fullStreet = streetNumber ? `${streetNumber} ${route}`.trim() : route.trim() || place.formattedAddress || '';
-            setStreet(fullStreet);
-            setCity(currentCity);
-            setState(currentState);
-            setZip(currentPostalCode);
+            const fullStreet = streetNumber
+              ? `${streetNumber} ${route}`.trim()
+              : route.trim() || place.formatted_address || '';
+            setAddress({
+              street: fullStreet,
+              city: currentCity,
+              state: currentState,
+              zip: currentPostalCode,
+            });
+            setAutocompleteInputValue(fullStreet);
+          } else {
+            setError('Failed to fetch address details.');
+            setAddress({
+              street: autocompleteInputValue,
+              city: '',
+              state: '',
+              zip: '',
+            });
           }
-        };
-        
-        placeAutocompleteElementInstance.addEventListener('gmp-select', selectListener);
-      } else {
-        // If element already exists, ensure its input value is up-to-date with the `street` state
-        // This handles cases where `propertyData` changes while the modal is already open (though less common)
-        const existingGmpInput = placeAutocompleteRef.current.querySelector('gmp-place-autocomplete input') as HTMLInputElement | null;
-        if (existingGmpInput && existingGmpInput.value !== street) {
-          existingGmpInput.value = street;
         }
-      }
+      );
+    } else if (!newValue) {
+      setAddress((prev) => ({
+        ...prev,
+        street: autocompleteInputValue,
+        city: '',
+        state: '',
+        zip: '',
+      }));
     }
-    
-    return () => {
-      if (placeAutocompleteElementInstance && selectListener) {
-        placeAutocompleteElementInstance.removeEventListener('gmp-select', selectListener);
-      }
-      // Do not clear innerHTML here if `open` is in dependency array,
-      // as it might clear too early when dependencies like `street` change.
-      // Clearing should ideally happen when `open` becomes false or component unmounts.
-      // For simplicity, if `open` is false, the component part rendering this won't be active.
-      // The current logic in the main `if (open && ...)` handles re-initialization if needed.
-    };
-  }, [open, street]); // `window.google` removed, `street` kept for pre-fill sync.
-
-  const handleSnackbarClose = () => {
-    setSnackbarOpen(false);
   };
+
+  const handleSnackbarClose = () => setSnackbarOpen(false);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError(null);
 
-    if (!propertyData || !currentUser || !userOrganizationId) { // Use userOrganizationId
+    if (!propertyData || !currentUser || !userOrganizationId) {
       setError('Property data or user information is missing.');
       setSnackbarMessage('Property data or user information is missing.');
       setSnackbarSeverity('error');
@@ -188,54 +282,69 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
       return;
     }
 
-    setLoading(true);
-
-    const updatedPropertyDetails: Partial<Property> & { address?: Partial<PropertyAddress> } = {};
-    if (name !== propertyData.name) updatedPropertyDetails.name = name;
-    if (type !== propertyData.type) updatedPropertyDetails.type = type;
-
-    const updatedAddressDetails: Partial<PropertyAddress> = {};
-    if (street !== propertyData.address.street) updatedAddressDetails.street = street;
-    if (city !== propertyData.address.city) updatedAddressDetails.city = city;
-    if (state !== propertyData.address.state) updatedAddressDetails.state = state;
-    if (zip !== propertyData.address.zip) updatedAddressDetails.zip = zip;
-
-    if (Object.keys(updatedAddressDetails).length > 0) {
-      updatedPropertyDetails.address = { ...propertyData.address, ...updatedAddressDetails };
-    }
-    
-    // If managedBy is editable:
-    // if (managedBy !== propertyData.managedBy) updatedPropertyDetails.managedBy = managedBy;
-
-    if (Object.keys(updatedPropertyDetails).length === 0 && Object.keys(updatedAddressDetails).length === 0) {
-      setSnackbarMessage('No changes detected.');
-      setSnackbarSeverity('info' as 'success' | 'error'); // MUI might not have 'info' as a direct type for severity
+    if (
+      !name ||
+      !propertyType ||
+      !address.street ||
+      !address.city ||
+      !address.state ||
+      !address.zip
+    ) {
+      setSnackbarMessage('All fields including full address are required.');
+      setSnackbarSeverity('error');
       setSnackbarOpen(true);
-      setLoading(false);
-      onClose(); // Close modal if no changes
       return;
     }
-    
+
+    setLoading(true);
+
+    const updatedPropertyDetails: Partial<Property> & {
+      address?: Partial<FullPropertyAddress>;
+    } = {};
+    if (name !== propertyData.name) updatedPropertyDetails.name = name;
+    if (propertyType !== propertyData.type)
+      updatedPropertyDetails.type = propertyType;
+
+    const currentFullAddress: FullPropertyAddress = {
+      street: address.street.trim(),
+      city: address.city.trim(),
+      state: address.state.trim(),
+      zip: address.zip.trim(),
+    };
+
+    if (
+      currentFullAddress.street !== (propertyData.address.street || '') ||
+      currentFullAddress.city !== (propertyData.address.city || '') ||
+      currentFullAddress.state !== (propertyData.address.state || '') ||
+      currentFullAddress.zip !== (propertyData.address.zip || '')
+    ) {
+      updatedPropertyDetails.address = currentFullAddress;
+    }
+
+    if (Object.keys(updatedPropertyDetails).length === 0) {
+      setSnackbarMessage('No changes detected.');
+      setSnackbarSeverity('info');
+      setSnackbarOpen(true);
+      setLoading(false);
+      onClose();
+      return;
+    }
+
     const updatePropertyFunction = httpsCallable(functions, 'updateProperty');
     try {
       await updatePropertyFunction({
-        organizationId: userOrganizationId, // Use userOrganizationId
+        organizationId: userOrganizationId,
         propertyId: propertyData.id,
         updatedData: updatedPropertyDetails,
       });
       setSnackbarMessage('Property updated successfully!');
       setSnackbarSeverity('success');
       setSnackbarOpen(true);
-      onSuccess(); // Call onSuccess to refresh list and close modal
-    } catch (err: unknown) { // Changed from any to unknown
-      console.error('Error updating property:', err);
-      if (err instanceof Error) {
-        setError(err.message || 'Failed to update property.');
-        setSnackbarMessage(err.message || 'Failed to update property.');
-      } else {
-        setError('An unexpected error occurred while updating property.');
-        setSnackbarMessage('An unexpected error occurred while updating property.');
-      }
+      onSuccess();
+    } catch (err: unknown) {
+      const castError = err as AppError;
+      setError(castError.message || 'Failed to update property.');
+      setSnackbarMessage(castError.message || 'Failed to update property.');
       setSnackbarSeverity('error');
       setSnackbarOpen(true);
     } finally {
@@ -243,134 +352,234 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
     }
   };
 
-  const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
-
-  if (!apiKey && open) { // Check only if modal is open to avoid console spam
-    console.error("Google Maps API key is missing for EditPropertyModal. Set VITE_GOOGLE_MAPS_API_KEY in your .env file.");
-    // Optionally, render an error in the modal, but for now, it will just not have autocomplete.
-  }
-  
   return (
     <>
-      <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-        <DialogTitle>Edit Property: {propertyData?.name || ''}</DialogTitle>
-        <LoadScript googleMapsApiKey={apiKey!} libraries={LIBRARIES} loadingElement={<CircularProgress />}>
-          <form onSubmit={handleSubmit}>
-            <DialogContent>
-              {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-              {!apiKey && <Alert severity="warning" sx={{ mb: 2 }}>Google Maps API key missing. Address autocompletion is disabled.</Alert>}
-              <Stack spacing={2}>
-                <TextField
-                  label="Property Name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  fullWidth
-                  required
-                  margin="dense"
-                />
-                <Typography variant="caption" display="block" color="text.secondary" sx={{ pl: '2px', mb: -0.5, mt: 1 }}>Street Address</Typography>
-                <Box 
-                  ref={placeAutocompleteRef}
-                  sx={{
-                    // Styles for the input within gmp-place-autocomplete
-                    '& gmp-place-autocomplete input': {
-                      width: '100% !important',
-                      boxSizing: 'border-box',
-                      padding: '8.5px 14px', // Corresponds to MUI dense TextField
-                      border: `1px solid rgba(0, 0, 0, 0.23)`,
-                      borderRadius: '4px',
-                      fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
-                      fontSize: '1rem',
-                      lineHeight: '1.4375em', // From MUI
-                      color: 'inherit',
-                      backgroundColor: 'transparent',
-                      '&:hover': {
-                        borderColor: 'rgba(0, 0, 0, 0.87)',
+      <Dialog open={open} onClose={onClose} maxWidth='sm' fullWidth>
+        <DialogTitle>
+          Edit Property: {propertyData?.name || ''}
+          <IconButton
+            aria-label='close'
+            onClick={onClose}
+            sx={{
+              position: 'absolute',
+              right: 8,
+              top: 8,
+              color: (theme) => theme.palette.grey[500],
+            }}
+          >
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        <form onSubmit={handleSubmit}>
+          <DialogContent sx={{ pt: 1 }} dividers> {/* Added dividers to match create modal style */}
+            {error && (
+              <Alert severity='error' sx={{ mb: 2 }}>
+                {error}
+              </Alert>
+            )}
+            {!isLoaded && !loadError && !apiKey && (
+              <Alert severity='warning' sx={{ mb: 2 }}>
+                Address search is unavailable or API key is missing.
+              </Alert>
+            )}
+            {!isLoaded && !loadError && apiKey && (
+              <Box sx={{ display: 'flex', justifyContent: 'center', my: 2 }}>
+                <CircularProgress size={24} />{' '}
+                <Typography sx={{ ml: 1 }}>
+                  Loading address search...
+                </Typography>
+              </Box>
+            )}
+
+            <Typography variant='subtitle1' sx={{ mt: 2 }}>
+              Property Details
+            </Typography>
+
+            <TextField
+              label='Property Name'
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              fullWidth
+              required
+              margin='dense'
+              disabled={loading || !isLoaded}
+            />
+            <FormControl
+              fullWidth
+              margin='dense'
+              required
+              disabled={loading || !isLoaded}
+            >
+              <InputLabel id='edit-property-type-label'>
+                Property Type
+              </InputLabel>
+              <Select
+                labelId='edit-property-type-label'
+                value={propertyType}
+                label='Property Type'
+                onChange={(e) => setPropertyType(e.target.value)}
+              >
+                <MenuItem value='Residential'>Residential</MenuItem>
+                <MenuItem value='Commercial'>Commercial</MenuItem>
+              </Select>
+            </FormControl>
+
+            <Divider sx={{ my: 2 }} />
+
+            <Typography variant='subtitle1' sx={{ mt: 2 }}>
+              Property Address
+            </Typography>
+            {isLoaded && apiKey && (
+              <Autocomplete
+                id='edit-google-maps-autocomplete'
+                sx={{ width: '100%', mb: 1 }}
+                getOptionLabel={(option) =>
+                  typeof option === 'string' ? option : option.description
+                }
+                filterOptions={(x) => x}
+                options={autocompleteOptions}
+                autoComplete
+                includeInputInList
+                filterSelectedOptions
+                value={autocompleteValue}
+                inputValue={autocompleteInputValue}
+                noOptionsText='No locations found'
+                onChange={handleAutocompleteChange}
+                onInputChange={(_event, newInputValue) => {
+                  setAutocompleteInputValue(newInputValue);
+                }}
+                slotProps={{
+                  popper: {
+                    placement: 'bottom-start',
+                    modifiers: [
+                      { name: 'flip', enabled: false },
+                      {
+                        name: 'preventOverflow',
+                        enabled: true,
+                        options: { boundary: 'clippingParents' },
                       },
-                      '&.gm-err-autocomplete': { // Class added by Google on error
-                        borderColor: 'error.main', // Needs theme or hardcode
-                      },
-                      // Note: Focus styles are typically handled by the web component itself.
-                      // Overriding them might be complex or inconsistent.
-                    }
-                  }}
-                >
-                  {/* gmp-place-autocomplete is appended here by useEffect */}
-                </Box>
-                
-                <Stack direction="row" spacing={2}>
+                    ],
+                  },
+                }}
+                renderInput={(params) => (
                   <TextField
-                    label="City"
-                  value={city}
-                  onChange={(e) => setCity(e.target.value)}
-                  fullWidth
-                  required
-                  margin="dense"
-                  sx={{ flexGrow: 1 }}
-                />
-                <FormControl fullWidth margin="dense" required sx={{ flexGrow: 1 }}>
-                  <InputLabel id="state-select-label">State</InputLabel>
-                  <Select
-                    labelId="state-select-label"
-                    id="state-select"
-                    value={state}
-                    label="State"
-                    onChange={(e) => setState(e.target.value)} // Manual change still possible
-                    MenuProps={{
-                      PaperProps: {
-                        style: {
-                          maxHeight: 224,
-                        },
-                      },
-                    }}
-                  >
-                    {usStatesAndAbbrevs.map((stateObj) => (
-                      <MenuItem key={stateObj.code} value={stateObj.code}>
-                        {stateObj.name}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-                <TextField
-                  label="Zip Code"
-                  value={zip}
-                  onChange={(e) => setZip(e.target.value)}
-                  fullWidth
-                  required
-                  margin="dense"
-                  sx={{ flexGrow: 1 }}
-                />
-              </Stack>
-              <TextField
-                label="Property Type"
-                value={type}
-                onChange={(e) => setType(e.target.value)}
-                fullWidth
-                required
-                margin="dense"
-                helperText="e.g., Residential, Commercial, Mixed-Use"
+                    {...params}
+                    label='Search Full Address'
+                    fullWidth
+                    required
+                    margin='dense'
+                    disabled={loading}
+                  />
+                )}
+                renderOption={(props, option) => {
+                  const matches =
+                    option.structured_formatting.main_text_matched_substrings ||
+                    [];
+                  const parts = parse(
+                    option.structured_formatting.main_text,
+                    matches.map((match) => [
+                      match.offset,
+                      match.offset + match.length,
+                    ])
+                  );
+                  return (
+                    <li {...props} key={option.place_id || option.description}>
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          width: '100%',
+                        }}
+                      >
+                        <Box
+                          sx={{
+                            display: 'flex',
+                            width: 44,
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                          }}
+                        >
+                          <LocationOnIcon sx={{ color: 'text.secondary' }} />
+                        </Box>
+                        <Box sx={{ flexGrow: 1, wordWrap: 'break-word' }}>
+                          {parts.map((part, index) => (
+                            <Box
+                              key={index}
+                              component='span'
+                              sx={{ fontWeight: part.highlight ? 700 : 400 }}
+                            >
+                              {part.text}
+                            </Box>
+                          ))}
+                          <Typography variant='body2' color='text.secondary'>
+                            {option.structured_formatting.secondary_text}
+                          </Typography>
+                        </Box>
+                      </Box>
+                    </li>
+                  );
+                }}
               />
-              {/* Optional: Managed By field if editable by PM */}
-              {/* <Box sx={{ width: '100%' }}>
-                <TextField
-                  label="Managed By (User ID)"
-                  value={managedBy}
-                  onChange={(e) => setManagedBy(e.target.value)}
-                  fullWidth
-                  margin="dense"
-                  // Consider making this a dropdown of available managers if applicable
-                />
-              </Box> */}
-            </Stack>
+            )}
+
+            <TextField
+              label='Street'
+              value={address.street}
+              onChange={(e) =>
+                setAddress((a) => ({ ...a, street: e.target.value }))
+              }
+              fullWidth
+              margin='dense'
+              required
+              disabled={loading || !isLoaded}
+            />
+            <TextField
+              label='City'
+              value={address.city}
+              onChange={(e) =>
+                setAddress((a) => ({ ...a, city: e.target.value }))
+              }
+              fullWidth
+              margin='dense'
+              required
+              disabled={loading || !isLoaded}
+            />
+            <TextField
+              label='State'
+              value={address.state}
+              onChange={(e) =>
+                setAddress((a) => ({ ...a, state: e.target.value }))
+              }
+              fullWidth
+              margin='dense'
+              required
+              disabled={loading || !isLoaded}
+            />
+            <TextField
+              label='Zip Code'
+              value={address.zip}
+              onChange={(e) =>
+                setAddress((a) => ({ ...a, zip: e.target.value }))
+              }
+              fullWidth
+              margin='dense'
+              required
+              disabled={loading || !isLoaded}
+            />
           </DialogContent>
           <DialogActions sx={{ p: '16px 24px' }}>
-            <Button onClick={onClose} color="inherit">Cancel</Button>
-            <Button type="submit" variant="contained" disabled={loading}>
+            <Button onClick={onClose} color='inherit'>
+              Cancel
+            </Button>
+            <Button
+              type='submit'
+              variant='contained'
+              disabled={loading || !isLoaded}
+            >
               {loading ? <CircularProgress size={24} /> : 'Save Changes'}
             </Button>
           </DialogActions>
-          </form>
-        </LoadScript>
+        </form>
       </Dialog>
       <Snackbar
         open={snackbarOpen}
@@ -378,7 +587,11 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
         onClose={handleSnackbarClose}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       >
-        <Alert onClose={handleSnackbarClose} severity={snackbarSeverity} sx={{ width: '100%' }}>
+        <Alert
+          onClose={handleSnackbarClose}
+          severity={snackbarSeverity}
+          sx={{ width: '100%' }}
+        >
           {snackbarMessage}
         </Alert>
       </Snackbar>

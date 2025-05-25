@@ -8,9 +8,13 @@ import {
   InputAdornment,
   Container,
   Paper,
+  Avatar, // Added Avatar
 } from '@mui/material';
-import { Visibility, VisibilityOff } from '@mui/icons-material';
-import { useNavigate } from 'react-router-dom';
+import { Visibility, VisibilityOff, Google as GoogleIcon, Microsoft as MicrosoftIcon } from '@mui/icons-material'; // Added GoogleIcon, MicrosoftIcon
+import { useNavigate, Link as RouterLink } from 'react-router-dom'; // Added RouterLink
+import PMPLogo from '/property-manager-pro.svg'; // Import the logo
+import PMPLogoLight from '/property-manager-pro-light.svg'; // Import the light logo
+import { useThemeMode } from '../hooks/useThemeMode'; // Import the theme mode hook
 import {
   createUserWithEmailAndPassword,
   GoogleAuthProvider,
@@ -27,6 +31,7 @@ const SignupForm: React.FC = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { mode } = useThemeMode(); // Get current theme mode
 
   const handleClickShowPassword = () => setShowPassword((show) => !show);
   const handleMouseDownPassword = (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -96,6 +101,11 @@ const SignupForm: React.FC = () => {
   return (
     <Container component="main" maxWidth="xs">
       <Paper elevation={6} sx={{ mt: 8, p: 4, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        <Avatar
+          src={mode === 'dark' ? PMPLogoLight : PMPLogo}
+          alt="Property Manager Pro Logo"
+          sx={{ width: 160, height: 160 }} // Doubled the size and added margin
+        />
         <Typography component="h1" variant="h5">
           Sign Up
         </Typography>
@@ -157,21 +167,47 @@ const SignupForm: React.FC = () => {
           <Button
             fullWidth
             variant="outlined"
-            sx={{ mb: 1 }}
+            sx={{
+              mb: 1,
+              borderColor: '#db4437',
+              color: '#db4437',
+              '&:hover': {
+                borderColor: '#db4437',
+                backgroundColor: 'rgba(219, 68, 55, 0.04)',
+              },
+            }}
             onClick={handleGoogleSignup}
             disabled={loading}
+            startIcon={<GoogleIcon />}
           >
             Sign Up with Google
           </Button>
           <Button
             fullWidth
             variant="outlined"
+            sx={{
+              borderColor: '#0078D4',
+              color: '#0078D4',
+              '&:hover': {
+                borderColor: '#0078D4',
+                backgroundColor: 'rgba(0, 120, 212, 0.04)',
+              },
+            }}
             onClick={handleMicrosoftSignup}
             disabled={loading}
+            startIcon={<MicrosoftIcon />}
           >
             Sign Up with Microsoft
           </Button>
         </Box>
+        <Typography variant="body2" sx={{ mt: 2 }}>
+          Already have an account?{' '}
+          <RouterLink to="/login" style={{ textDecoration: 'none' }}>
+            <Typography component="span" color="primary">
+              Sign In
+            </Typography>
+          </RouterLink>
+        </Typography>
       </Paper>
     </Container>
   );

@@ -8,11 +8,18 @@ import {
   InputAdornment,
   Container,
   Paper,
-  Avatar, // Added for the logo
+  Avatar,
 } from '@mui/material';
-import { Visibility, VisibilityOff, Google as GoogleIcon, Microsoft as MicrosoftIcon } from '@mui/icons-material';
-import { useNavigate } from 'react-router-dom';
+import {
+  Visibility,
+  VisibilityOff,
+  Google as GoogleIcon,
+  Microsoft as MicrosoftIcon,
+} from '@mui/icons-material';
+import { useNavigate, Link as RouterLink } from 'react-router-dom'; // Added RouterLink
 import PMPLogo from '/property-manager-pro.svg'; // Import the logo
+import PMPLogoLight from '/property-manager-pro-light.svg'; // Import the light logo
+import { useThemeMode } from '../hooks/useThemeMode'; // Import the theme mode hook
 import {
   signInWithEmailAndPassword,
   GoogleAuthProvider,
@@ -29,9 +36,12 @@ const LoginForm: React.FC = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { mode } = useThemeMode(); // Get current theme mode
 
   const handleClickShowPassword = () => setShowPassword((show) => !show);
-  const handleMouseDownPassword = (event: React.MouseEvent<HTMLButtonElement>) => {
+  const handleMouseDownPassword = (
+    event: React.MouseEvent<HTMLButtonElement>
+  ) => {
     event.preventDefault();
   };
 
@@ -96,48 +106,62 @@ const LoginForm: React.FC = () => {
   };
 
   return (
-    <Container component="main" maxWidth="xs">
-      <Paper elevation={6} sx={{ mt: 8, p: 4, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+    <Container component='main' maxWidth='xs'>
+      <Paper
+        elevation={6}
+        sx={{
+          mt: 8,
+          p: 4,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+        }}
+      >
         <Avatar
-          src={PMPLogo}
-          alt="Property Manager Pro Logo"
-          sx={{ width: 80, height: 80, mb: 2 }}
+          src={mode === 'dark' ? PMPLogoLight : PMPLogo}
+          alt='Property Manager Pro Logo'
+          sx={{ width: 160, height: 160 }} // Doubled the size
         />
-        <Typography component="h1" variant="h5">
-          Login
+        <Typography component='h1' variant='h5'>
+          Sign In
         </Typography>
-        <Box component="form" onSubmit={handleEmailLogin} noValidate sx={{ mt: 1 }}>
+        <Box
+          component='form'
+          onSubmit={handleEmailLogin}
+          noValidate
+          sx={{ mt: 1 }}
+        >
           <TextField
-            margin="normal"
+            margin='normal'
             required
             fullWidth
-            id="email"
-            label="Email Address"
-            name="email"
-            autoComplete="email"
+            id='email'
+            label='Email Address'
+            name='email'
+            autoComplete='email'
             autoFocus
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
           <TextField
-            margin="normal"
+            margin='normal'
             required
             fullWidth
-            name="password"
-            label="Password"
+            name='password'
+            label='Password'
             type={showPassword ? 'text' : 'password'}
-            id="password"
-            autoComplete="current-password"
+            id='password'
+            autoComplete='current-password'
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             InputProps={{
               endAdornment: (
-                <InputAdornment position="end">
+                <InputAdornment position='end'>
                   <IconButton
-                    aria-label="toggle password visibility"
+                    aria-label='toggle password visibility'
                     onClick={handleClickShowPassword}
                     onMouseDown={handleMouseDownPassword}
-                    edge="end"
+                    edge='end'
                   >
                     {showPassword ? <VisibilityOff /> : <Visibility />}
                   </IconButton>
@@ -146,16 +170,16 @@ const LoginForm: React.FC = () => {
             }}
           />
           <Button
-            type="submit"
+            type='submit'
             fullWidth
-            variant="contained"
+            variant='contained'
             sx={{ mt: 3, mb: 2 }}
             disabled={loading}
           >
-            Login with Email
+            Sign In with Email
           </Button>
           {error && (
-            <Typography color="error" variant="body2" sx={{ mt: 1 }}>
+            <Typography color='error' variant='body2' sx={{ mt: 1 }}>
               {error}
             </Typography>
           )}
@@ -163,25 +187,48 @@ const LoginForm: React.FC = () => {
         <Box sx={{ mt: 2, width: '100%' }}>
           <Button
             fullWidth
-            variant="outlined"
-            sx={{ mb: 1, borderColor: '#db4437', color: '#db4437', '&:hover': { borderColor: '#db4437', backgroundColor: 'rgba(219, 68, 55, 0.04)' } }}
+            variant='outlined'
+            sx={{
+              mb: 1,
+              borderColor: '#db4437',
+              color: '#db4437',
+              '&:hover': {
+                borderColor: '#db4437',
+                backgroundColor: 'rgba(219, 68, 55, 0.04)',
+              },
+            }}
             onClick={handleGoogleLogin}
             disabled={loading}
             startIcon={<GoogleIcon />}
           >
-            Login with Google
+            Sign In with Google
           </Button>
           <Button
             fullWidth
-            variant="outlined"
-            sx={{ borderColor: '#0078D4', color: '#0078D4', '&:hover': { borderColor: '#0078D4', backgroundColor: 'rgba(0, 120, 212, 0.04)' } }}
+            variant='outlined'
+            sx={{
+              borderColor: '#0078D4',
+              color: '#0078D4',
+              '&:hover': {
+                borderColor: '#0078D4',
+                backgroundColor: 'rgba(0, 120, 212, 0.04)',
+              },
+            }}
             onClick={handleMicrosoftLogin}
             disabled={loading}
             startIcon={<MicrosoftIcon />}
           >
-            Login with Microsoft
+            Sign In with Microsoft
           </Button>
         </Box>
+        <Typography variant='body2' sx={{ mt: 2 }}>
+          Don't have an account?{' '}
+          <RouterLink to='/signup' style={{ textDecoration: 'none' }}>
+            <Typography component='span' color='primary'>
+              Sign Up
+            </Typography>
+          </RouterLink>
+        </Typography>
       </Paper>
     </Container>
   );

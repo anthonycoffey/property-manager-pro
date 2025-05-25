@@ -27,9 +27,5 @@ ignore:
   - '**/node_modules/**'
   - ./functions
 
-# Pre-deploy steps
-hooks:
-  # prebuild: npm run prebuild
-
 # Region configuration
 region: us-central1

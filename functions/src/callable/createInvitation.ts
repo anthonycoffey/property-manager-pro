@@ -29,7 +29,10 @@ interface EmailTemplateData {
 
 export const createInvitation = onCall(async (request) => {
   if (!request.auth) {
-    throw new HttpsError('unauthenticated', 'The function must be called while authenticated.');
+    throw new HttpsError(
+      'unauthenticated',
+      'The function must be called while authenticated.'
+    );
   }
 
   const {
@@ -40,8 +43,18 @@ export const createInvitation = onCall(async (request) => {
     targetPropertyId, // Optional, only for resident invitations
   } = request.data;
 
-  if (!inviteeEmail || !organizationId || !rolesToAssign || !Array.isArray(rolesToAssign) || rolesToAssign.length === 0 || !invitedByRole) {
-    throw new HttpsError('invalid-argument', 'Missing or invalid required fields for invitation.');
+  if (
+    !inviteeEmail ||
+    !organizationId ||
+    !rolesToAssign ||
+    !Array.isArray(rolesToAssign) ||
+    rolesToAssign.length === 0 ||
+    !invitedByRole
+  ) {
+    throw new HttpsError(
+      'invalid-argument',
+      'Missing or invalid required fields for invitation.'
+    );
   }
 
   const callerUid = request.auth.uid;
@@ -51,24 +64,44 @@ export const createInvitation = onCall(async (request) => {
   try {
     if (invitedByRole === 'admin') {
       if (!callerRoles.includes('admin')) {
-        throw new HttpsError('permission-denied', 'Only administrators can create admin-level invitations.');
+        throw new HttpsError(
+          'permission-denied',
+          'Only administrators can create admin-level invitations.'
+        );
       }
     } else if (invitedByRole === 'property_manager') {
-      if (!callerRoles.includes('property_manager') || callerOrgId !== organizationId) {
-        throw new HttpsError('permission-denied', 'Property managers can only invite within their own organization.');
+      if (
+        !callerRoles.includes('property_manager') ||
+        callerOrgId !== organizationId
+      ) {
+        throw new HttpsError(
+          'permission-denied',
+          'Property managers can only invite within their own organization.'
+        );
       }
       if (rolesToAssign.includes('resident') && !targetPropertyId) {
-        throw new HttpsError('invalid-argument', 'targetPropertyId is required for resident invitations.');
+        throw new HttpsError(
+          'invalid-argument',
+          'targetPropertyId is required for resident invitations.'
+        );
       }
       if (targetPropertyId) {
-        const propertyRef = db.doc(`organizations/${organizationId}/properties/${targetPropertyId}`);
+        const propertyRef = db.doc(
+          `organizations/${organizationId}/properties/${targetPropertyId}`
+        );
         const propertyDoc = await propertyRef.get();
         if (!propertyDoc.exists) {
-          throw new HttpsError('not-found', `Property ${targetPropertyId} not found in organization ${organizationId}.`);
+          throw new HttpsError(
+            'not-found',
+            `Property ${targetPropertyId} not found in organization ${organizationId}.`
+          );
         }
       }
     } else {
-      throw new HttpsError('invalid-argument', 'Invalid invitedByRole specified.');
+      throw new HttpsError(
+        'invalid-argument',
+        'Invalid invitedByRole specified.'
+      );
     }
 
     const invitationToken = crypto.randomUUID();
@@ -82,8 +115,12 @@ export const createInvitation = onCall(async (request) => {
       createdBy: callerUid,
       invitedByRole: invitedByRole as 'admin' | 'property_manager',
       createdAt: FieldValue.serverTimestamp(),
-      expiresAt: FieldValue.serverTimestamp(), 
-      invitationType: rolesToAssign.includes('resident') ? 'resident' : (rolesToAssign.includes('property_manager') ? 'property_manager' : 'general'),
+      expiresAt: FieldValue.serverTimestamp(),
+      invitationType: rolesToAssign.includes('resident')
+        ? 'resident'
+        : rolesToAssign.includes('property_manager')
+        ? 'property_manager'
+        : 'general',
     };
 
     if (targetPropertyId && rolesToAssign.includes('resident')) {
@@ -97,38 +134,62 @@ export const createInvitation = onCall(async (request) => {
     console.log(`Invitation created at ${invitationPath} for ${inviteeEmail}`);
 
     const projectId = process.env.GCLOUD_PROJECT || 'your-project-id-fallback';
-    const appDomain = `${projectId}.firebaseapp.com`;
-    const appName = "Property Manager Pro";
+    let appDomain = `${projectId}.firebaseapp.com`; // Default production domain
+    let protocol = 'https'; // Default production protocol
+
+    console.log('PROCESS.ENV: ', process.env);
+
+    // Check if running in Firebase Emulator
+    if (process.env.FUNCTIONS_EMULATOR === 'true') {
+      appDomain = 'localhost:5173'; // Emulator domain and port
+      protocol = 'http'; // Emulator protocol
+    }
+
+    const appName = 'Property Manager Pro';
 
     let emailTemplateName = '';
     const emailData: EmailTemplateData = {
       inviteeName: inviteeEmail,
-      invitationLink: `https://${appDomain}/accept-invitation?token=${invitationToken}&orgId=${organizationId}`,
+      invitationLink: `${protocol}://${appDomain}/accept-invitation?token=${invitationToken}&orgId=${organizationId}`,
       appName: appName,
-      inviterName: 'The Team',
+      inviterName: 'The Team', // This will be updated by subsequent logic for inviterDisplayName
     };
-    
+
     let inviterDisplayName = request.auth.token.name || 'The Team';
     if (!request.auth.token.name) {
-        const inviterProfilePath = callerRoles.includes('admin') ? `admins/${callerUid}` : `organizations/${callerOrgId}/users/${callerUid}`;
-        const inviterProfile = await db.doc(inviterProfilePath).get();
-        if (inviterProfile.exists && inviterProfile.data()?.displayName) {
-            inviterDisplayName = inviterProfile.data()?.displayName;
-        }
+      const inviterProfilePath = callerRoles.includes('admin')
+        ? `admins/${callerUid}`
+        : `organizations/${callerOrgId}/users/${callerUid}`;
+      const inviterProfile = await db.doc(inviterProfilePath).get();
+      if (inviterProfile.exists && inviterProfile.data()?.displayName) {
+        inviterDisplayName = inviterProfile.data()?.displayName;
+      }
     }
     emailData.inviterName = inviterDisplayName;
 
     if (rolesToAssign.includes('property_manager')) {
       emailTemplateName = 'propertyManagerInvitation';
       const orgDoc = await db.doc(`organizations/${organizationId}`).get();
-      emailData.organizationName = orgDoc.exists ? orgDoc.data()?.name || organizationId : organizationId;
+      emailData.organizationName = orgDoc.exists
+        ? orgDoc.data()?.name || organizationId
+        : organizationId;
     } else if (rolesToAssign.includes('resident') && targetPropertyId) {
       emailTemplateName = 'residentInvitation';
-      const propDoc = await db.doc(`organizations/${organizationId}/properties/${targetPropertyId}`).get();
-      emailData.propertyName = propDoc.exists ? propDoc.data()?.name || targetPropertyId : targetPropertyId;
+      const propDoc = await db
+        .doc(`organizations/${organizationId}/properties/${targetPropertyId}`)
+        .get();
+      emailData.propertyName = propDoc.exists
+        ? propDoc.data()?.name || targetPropertyId
+        : targetPropertyId;
     } else {
-      console.error("Could not determine email template for roles:", rolesToAssign);
-      throw new HttpsError('internal', 'Could not determine email template for the invitation.');
+      console.error(
+        'Could not determine email template for roles:',
+        rolesToAssign
+      );
+      throw new HttpsError(
+        'internal',
+        'Could not determine email template for the invitation.'
+      );
     }
 
     await db.collection('mail').add({
@@ -138,7 +199,9 @@ export const createInvitation = onCall(async (request) => {
         data: emailData,
       },
     });
-    console.log(`Email trigger created for invitation ${invitationToken} to ${inviteeEmail}`);
+    console.log(
+      `Email trigger created for invitation ${invitationToken} to ${inviteeEmail}`
+    );
 
     return {
       success: true,

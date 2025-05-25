@@ -20,16 +20,17 @@ With the "Admin Property Manager Management Panel Overhaul" (Step 4 from `docs/0
   - Updated `src/components/ProtectedRoute.tsx` to enforce route protection based on `allowedRoles`, `requiredOrgId`, and `requiredPropertyId`.
   - Modified `src/components/Dashboard.tsx` to conditionally render content based on the logged-in user's roles and assigned IDs.
 - **Multi-Tenancy Sign-Up Logic Implemented (2025-05-23):**
-  - **Modified `processSignUp` Cloud Function (`functions/src/index.ts`):**
-    - Admin users (`*@24hrcarunlocking.com`) now have their profiles created in the `admins/{uid}` Firestore collection (previously `users/{uid}`).
-    - Direct non-admin sign-ups are now assigned a `{ roles: ['pending_association'] }` custom claim (previously `['resident']`). Their temporary profiles are created in the root `users/{uid}` collection with `status: 'pending_association'`.
-    - Added a check to `processSignUp` to skip default logic if an `organizationId` claim already exists on the user (indicating processing by `signUpWithInvitation`).
-  - **Added `signUpWithInvitation` HTTPS Callable Cloud Function (`functions/src/index.ts`):**
-    - This new function handles user sign-ups initiated via an invitation.
-    - It validates the invitation, creates the Firebase Auth user, sets custom claims (`roles`, `organizationId`, `propertyId` as applicable from the invitation), creates the user profile in the correct multi-tenant Firestore path (e.g., `organizations/{orgId}/users/{uid}` or `organizations/{orgId}/properties/{propId}/residents/{uid}`), and updates the invitation status.
+  - **Modified `processSignUp` Cloud Function (`functions/src/auth/processSignUp.ts`):**
+    - Admin users (`*@24hrcarunlocking.com`) now have their profiles created in the `admins/{uid}` Firestore collection.
+    - Direct non-admin sign-ups are assigned a `{ roles: ['pending_association'] }` custom claim. **No Firestore document is created for these users by `processSignUp` anymore.** The temporary profile creation in the root `users/{uid}` collection has been removed.
+    - The check in `processSignUp` to skip logic if an `organizationId` claim already exists was removed as it was ineffective due to execution order.
+  - **`signUpWithInvitation` HTTPS Callable Cloud Function (`functions/src/callable/signUpWithInvitation.ts`):**
+    - This function remains the authority for invited user sign-ups. It sets all necessary custom claims (overwriting any defaults from `processSignUp`) and creates user profiles directly in the correct multi-tenant Firestore paths.
+- **Firestore Security Rules (`firestore.rules`):**
+  - Rules for the root `/users` collection have been removed, as this collection is no longer used for `pending_association` profiles.
 - **Initial Feature Development (Admin Dashboard - Property Manager CRUD) (Phase 5 Started/Partially Completed):**
   - Created the `src/components/Admin` directory and the `src/components/Admin/PropertyManagerManagement.tsx` component as a starting point for the Admin Dashboard.
-  - Implemented `createPropertyManager`, `updatePropertyManager`, and `deletePropertyManager` Cloud Functions in `functions/src/index.ts`.
+  - Implemented `createPropertyManager`, `updatePropertyManager`, and `deletePropertyManager` Cloud Functions (now in `functions/src/callable/`).
   - Integrated the "Add New Property Manager" form in `src/components/Admin/PropertyManagerManagement.tsx` to interact with the `createPropertyManager` Cloud Function.
 - **Deployment Configuration Updated:** Modified `apphosting.yaml` to include `build` and `release` configurations for Firebase App Hosting, ensuring correct deployment of the Vite application.
 - **Resolved Firebase Admin SDK Initialization Error:** Changed `import * as admin from 'firebase-admin';` to `import admin from 'firebase-admin';` in `functions/src/index.ts` to resolve `TypeError: admin.initializeApp is not a function` during Firebase Functions deployment in an ES module environment.
@@ -164,10 +165,16 @@ With the "Admin Property Manager Management Panel Overhaul" (Step 4 from `docs/0
 - **Firebase Functions User Creation Trigger & Token Refresh:** Switched from `beforeUserCreated` (blocking) to `functions.auth.user().onCreate` (non-blocking, 1st gen) for `processSignUp`. Custom claims are set _after_ user creation. **The explicit server-side mechanism to prompt client-side token refresh has been removed from `processSignUp`.**
 - **Logging in Firebase Functions:** Replaced `firebase-functions/logger` with standard `console.log` and `console.error` as per user instruction.
 - **Resolved TypeScript Error:** The TypeScript error `Property 'auth' does not exist on type 'typeof import("d:/repos/property-manager-pro/functions/node_modules/firebase-functions/lib/v2/index")'` for the `functions.auth.user().onCreate` trigger was previously resolved by explicitly importing `auth` from `firebase-functions`. This is now handled within the refactored `functions/src/auth/processSignUp.ts`.
-- **User Sign-Up and Multi-Tenancy Association:**
-  - Direct sign-ups (not via invitation) result in a user with `roles: ['pending_association']` and a temporary profile in the root `users` collection (handled by `processSignUp`).
-  - Sign-ups via invitation are handled by the `signUpWithInvitation` callable function, which immediately associates the user with an organization and assigns appropriate roles and profile location. This function now also supports pre-authenticated users from social sign-on.
-  - This approach addresses different onboarding scenarios (email/password, social sign-on via invitation) while aligning with the multi-tenancy model.
+- **User Sign-Up and Multi-Tenancy Association (Revised 2025-05-24):**
+  - **`processSignUp` (`functions/src/auth/processSignUp.ts`):**
+    - Handles admin user creation (`*@24hrcarunlocking.com`): sets `admin` role, creates profile in `admins/{uid}`.
+    - Handles other direct sign-ups: sets `pending_association` role. **No Firestore document is created by this function for these users.**
+  - **`signUpWithInvitation` (`functions/src/callable/signUpWithInvitation.ts`):**
+    - Manages all invited user sign-ups (email/password and social).
+    - Sets final custom claims (e.g., `property_manager`, `resident`, `organizationId`, `propertyId`), overwriting any defaults.
+    - Creates user profiles directly in the correct multi-tenant Firestore paths (e.g., `organizations/{orgId}/users/{uid}` or `organizations/{orgId}/properties/{propId}/residents/{uid}`).
+  - The root `/users` collection is no longer used for temporary profiles.
+  - This revised approach clarifies the responsibilities of each function and ensures correct claim/profile handling based on the identified execution order of `onCreate` triggers and callable functions.
 - **Firebase Functions Structure:** Adopted a modular structure for Firebase Functions, with each function in its own file, categorized into `auth` and `callable` subdirectories. Shared utilities are in `helpers` and `firebaseAdmin` files. The main `index.ts` re-exports all functions. Relative imports within `functions/src` use `.js` extensions.
 - **Social Sign-On Email Matching:** For invitation-based social sign-on, the email provided by the social identity provider _must_ match the email address on the invitation. This is validated client-side (for UX) and server-side (for security) in `signUpWithInvitation.ts`.
 - **Invitation Email Pre-fill:** The email field on the `AcceptInvitationPage.tsx` is now pre-filled and made readonly using data fetched via the `getInvitationDetails` Cloud Function, ensuring the user signs up with the intended invited email address.
@@ -188,8 +195,10 @@ With the "Admin Property Manager Management Panel Overhaul" (Step 4 from `docs/0
   - **Token Refresh Mechanism:** The explicit server-side token refresh signaling mechanism in `processSignUp` (previously using Realtime Database, then Firestore flags) has been removed to simplify the function, per user request.
 - **Auth Provider State Management (Race Condition Fix):** The refactor of `AuthProvider.tsx` using two `useEffect` hooks (one for raw Firebase user state, one for processing that state and managing loading/claims) proved effective in resolving a subtle race condition. This highlights the importance of carefully managing loading states when dealing with asynchronous authentication events and React context propagation to route guards. The key was ensuring that `loading` is `true` during the entire period when user data (including claims) is being fetched and set, preventing `ProtectedRoute` from acting on incomplete or stale data.
 - **Multi-Tenant User Onboarding Strategy (New Insight 2025-05-23):** Adopted a two-part strategy for user creation to support multi-tenancy:
-  1.  The `processSignUp` (`auth.onCreate`) trigger handles initial state for direct sign-ups (assigning `pending_association` role) and admin user setup.
-  2.  The `signUpWithInvitation` callable Cloud Function manages invited user sign-ups (both email/password and social sign-on), ensuring immediate association with an organization, correct roles, and profile creation in the designated multi-tenant Firestore path.
+  1.  The `processSignUp` (`auth.onCreate`) trigger (`functions/src/auth/processSignUp.ts`) handles initial state for direct sign-ups (assigning `pending_association` role, or `admin` role and profile for admin emails). It no longer creates Firestore documents for `pending_association` users.
+  2.  The `signUpWithInvitation` callable Cloud Function (`functions/src/callable/signUpWithInvitation.ts`) manages invited user sign-ups (both email/password and social sign-on), ensuring immediate association with an organization, correct final roles (overwriting any defaults), and profile creation in the designated multi-tenant Firestore path.
+- **Firestore Rules Update (New Insight 2025-05-24):**
+  - Removed security rules for the root `/users` collection in `firestore.rules` as this collection is no longer used for storing `pending_association` user profiles.
 - **TypeScript Configuration for Firebase Functions (New Insight 2025-05-24):** Confirmed that the TypeScript setup for Firebase Functions (likely using `moduleResolution: "nodenext"` or similar) requires explicit `.js` extensions for relative imports within the `functions/src` directory. Type-only imports (`import type { ... } from ...`) are also enforced for type imports when `verbatimModuleSyntax` is enabled.
 - **Social Sign-On for Invitations (New Insight 2025-05-24):** The `AcceptInvitationPage.tsx` now supports Google and Microsoft sign-on. The `signUpWithInvitation` Cloud Function was updated to handle these pre-authenticated users by skipping Auth user creation if a `uid` is passed from the client, and validating the social email against the invitation.
 - **Invitation Detail Fetching (New Insight 2025-05-24):** A new `getInvitationDetails` Cloud Function was added to securely provide the invited email to the `AcceptInvitationPage.tsx`, allowing the email field to be pre-filled and made readonly. This enhances user experience and data integrity for the invitation acceptance process.

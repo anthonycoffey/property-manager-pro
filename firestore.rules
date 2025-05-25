@@ -49,13 +49,8 @@ service cloud.firestore {
       allow read, write: if isAdmin();
     }
 
-    match /users/{userId} {
-      // This is the temporary root 'users' collection for pending assignments
-      // Only allow authenticated users to read their own profile
-      // Admins can read/write all
-      allow read: if isAuthenticated() && request.auth.uid == userId;
-      allow write: if isAdmin() || (isAuthenticated() && request.auth.uid == userId && request.resource.data.status == 'pending_assignment');
-    }
+    // The root /users collection is no longer used for storing user profiles.
+    // Profiles are stored in /admins/{adminId} or /organizations/{orgId}/users/{userId} or /organizations/{orgId}/properties/{propId}/residents/{residentId}
 
     match /admins/{adminId} {
       // Only allow admin role to read/write admin profiles

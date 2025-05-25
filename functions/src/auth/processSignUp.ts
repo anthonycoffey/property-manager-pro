@@ -43,46 +43,23 @@ export const processSignUp = functionsAuth
         );
       }
     } else {
-      // For non-admin users (direct sign-ups)
-      // Check if the user already has an organizationId claim (e.g., processed by signUpWithInvitation)
-      if (user.customClaims?.organizationId) {
-        console.log(
-          `User ${uid} (${email}) already has an organizationId claim. Skipping default 'pending_association' setup in processSignUp.`
-        );
-        return;
-      }
-
-      try {
-        const customClaims = {
-          roles: ['pending_association'],
-        };
-        await adminAuth.setCustomUserClaims(uid, customClaims);
-        console.log(
-          `Default 'pending_association' claims set for user ${uid}: ${JSON.stringify(
-            customClaims
-          )}`
-        );
-
-        // Create a temporary profile in the root 'users' collection
-        await db
-          .collection('users')
-          .doc(uid)
-          .set({
-            uid: uid,
-            email: email,
-            displayName: displayName || 'New User',
-            roles: ['pending_association'],
-            createdAt: FieldValue.serverTimestamp(),
-            status: 'pending_association',
-          });
-        console.log(
-          `Temporary user profile created in 'users' collection for ${uid} with 'pending_association' status.`
-        );
-      } catch (error) {
-        console.error(
-          `Error setting 'pending_association' claims or creating temporary user profile for ${uid}:`,
-          error
-        );
-      }
+    // For non-admin users (direct sign-ups)
+    // Set 'pending_association' claim. No Firestore document is created here for these users.
+    try {
+      const customClaims = {
+        roles: ['pending_association'],
+      };
+      await adminAuth.setCustomUserClaims(uid, customClaims);
+      console.log(
+        `Default 'pending_association' claims set for user ${uid}: ${JSON.stringify(
+          customClaims
+        )}`
+      );
+    } catch (error) {
+      console.error(
+        `Error setting 'pending_association' claims for ${uid}:`,
+        error
+      );
+    }
     }
   });

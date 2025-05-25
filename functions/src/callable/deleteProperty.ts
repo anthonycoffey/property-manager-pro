@@ -19,7 +19,7 @@ async function deleteCollection(collectionPath: string, batchSize: number) {
 async function deleteQueryBatch(
   query: FirebaseFirestore.Query,
   resolve: () => void,
-  reject: (error: Error) => void
+  reject: (_error: Error) => void
 ) {
   const snapshot = await query.get();
 

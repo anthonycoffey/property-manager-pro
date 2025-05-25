@@ -1,11 +1,11 @@
-import React, { useEffect, useState, useCallback } from 'react'; // Added useCallback
-import { collection, query, where, getDocs } from 'firebase/firestore'; // Removed DocumentData
+import React, { useEffect, useState, useCallback } from 'react';
+import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../../firebaseConfig';
 import { useAuth } from '../../hooks/useAuth';
-import { 
-  Typography, 
-  CircularProgress, 
-  Paper, 
+import {
+  Typography,
+  CircularProgress,
+  Paper,
   Box,
   Table,
   TableBody,
@@ -13,21 +13,21 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  IconButton, // Added IconButton
-  Dialog as MuiDialog, // Aliased to avoid conflict if Dialog is used elsewhere
+  IconButton,
+  Dialog as MuiDialog,
   DialogActions,
   DialogContent,
   DialogContentText,
   DialogTitle,
-  Button, // Added Button
-  Snackbar, // Added Snackbar
-  Alert, // Added Alert
+  Button,
+  Snackbar,
+  Alert,
 } from '@mui/material';
-import EditIcon from '@mui/icons-material/Edit'; // Added EditIcon
-import DeleteIcon from '@mui/icons-material/Delete'; // Added DeleteIcon
-import { httpsCallable } from 'firebase/functions'; // Added for calling deleteProperty
-import { functions } from '../../firebaseConfig'; // Assuming functions is exported
-import type { Property as PropertyType } from '../../types'; // Import full Property type
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
+import { httpsCallable } from 'firebase/functions';
+import { functions } from '../../firebaseConfig';
+import type { Property as PropertyType } from '../../types';
 
 interface PropertyAddress {
   street: string;
@@ -36,19 +36,11 @@ interface PropertyAddress {
   zip: string;
 }
 
-// Use PropertyType from ../../types
-// interface Property extends DocumentData {
-//   id: string;
-//   name: string;
-//   address: PropertyAddress; 
-//   // Add other relevant property fields if needed for display
-// }
-
 interface PropertyManagerPropertiesListProps {
   selectedPropertyId: string | null;
   onPropertySelect: (propertyId: string) => void;
-  onEditProperty: (property: PropertyType) => void; // New prop for edit
-  onPropertiesUpdate: () => void; // New prop to trigger refresh
+  onEditProperty: (property: PropertyType) => void;
+  onPropertiesUpdate: () => void;
 }
 
 const formatAddress = (address: PropertyAddress | undefined): string => {
@@ -63,7 +55,7 @@ const PropertyManagerPropertiesList: React.FC<PropertyManagerPropertiesListProps
   onPropertiesUpdate,
 }) => {
   const { currentUser, organizationId: authOrganizationId } = useAuth();
-  const [properties, setProperties] = useState<PropertyType[]>([]); // Use PropertyType
+  const [properties, setProperties] = useState<PropertyType[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -143,8 +135,8 @@ const PropertyManagerPropertiesList: React.FC<PropertyManagerPropertiesListProps
       setSnackbarSeverity('success');
       setSnackbarOpen(true);
       handleCloseDeleteDialog();
-      onPropertiesUpdate(); // Call to refresh properties list in parent
-    } catch (err: unknown) { // Changed from any to unknown
+      onPropertiesUpdate();
+    } catch (err: unknown) {
       console.error('Error deleting property:', err);
       if (err instanceof Error) {
         setSnackbarMessage(err.message || 'Failed to delete property.');
@@ -180,12 +172,8 @@ const PropertyManagerPropertiesList: React.FC<PropertyManagerPropertiesListProps
   }
 
   return (
-    <Paper elevation={1} sx={{ /* p: 2 removed to allow TableContainer to manage padding if needed */ }}>
-      {/* Typography for title can be handled by the parent component (Dashboard) if this list is part of a larger section */}
-      {/* <Typography variant="h6" gutterBottom sx={{ p: 2 }}> 
-        Your Managed Properties
-      </Typography> */}
-      <TableContainer sx={{ maxHeight: 440 }}> {/* Adjust maxHeight as needed */}
+    <Paper elevation={1}>
+      <TableContainer sx={{ maxHeight: 440 }}>
         <Table stickyHeader aria-label="sticky table">
           <TableHead>
             <TableRow>
@@ -198,29 +186,19 @@ const PropertyManagerPropertiesList: React.FC<PropertyManagerPropertiesListProps
             {properties.map((property) => (
               <TableRow
                 hover
-                // onClick={() => onPropertySelect(property.id)} // Keep row clickable for selection if needed, or remove if actions are primary
-                selected={selectedPropertyId === property.id} // Still show selection
+                selected={selectedPropertyId === property.id}
                 key={property.id}
-                // sx={{ 
-                //   cursor: 'pointer', // Remove cursor pointer if row click is not primary action
-                //   '&.Mui-selected': {
-                //     backgroundColor: 'action.selected',
-                //     '&:hover': {
-                //       backgroundColor: 'action.hover',
-                //     }
-                //   },
-                // }}
               >
                 <TableCell 
                   component="th" 
                   scope="row"
-                  onClick={() => onPropertySelect(property.id)} // Make name/address cells clickable for selection
+                  onClick={() => onPropertySelect(property.id)}
                   sx={{ cursor: 'pointer' }}
                 >
                   {property.name}
                 </TableCell>
                 <TableCell 
-                  onClick={() => onPropertySelect(property.id)} // Make name/address cells clickable for selection
+                  onClick={() => onPropertySelect(property.id)}
                   sx={{ cursor: 'pointer' }}
                 >
                   {formatAddress(property.address)}

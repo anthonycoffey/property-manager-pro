@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react'; // Added useRef, useCallback
+import React, { useState, useRef, useCallback, useEffect } from 'react'; // Added useEffect, useRef, useCallback
 import { Link as RouterLink } from 'react-router-dom'; // Added
 import {
   Box,
@@ -9,9 +9,17 @@ import {
   Tab,
   Button,
   Alert, // Added Alert
+  Dialog, // Added Dialog
+  DialogTitle, // Added DialogTitle
+  DialogContent, // Added DialogContent
+  DialogActions, // Added DialogActions
+  IconButton, // Added IconButton
 } from '@mui/material'; // Added Button
 import AddIcon from '@mui/icons-material/Add'; // Added AddIcon
+import CloseIcon from '@mui/icons-material/Close'; // Added CloseIcon for Dialog
 import { useAuth } from '../hooks/useAuth';
+import { doc, getDoc } from 'firebase/firestore'; // Added for fetching org name
+import { db } from '../firebaseConfig'; // Added for fetching org name
 
 // Admin Components
 import OrganizationSelector from './Admin/OrganizationSelector';
@@ -22,6 +30,7 @@ import OrganizationManagementPanel, { type OrganizationManagementPanelRef } from
 // Property Manager Components
 import PropertyManagerPropertiesList from './PropertyManager/PropertyManagerPropertiesList'; // Added
 import InviteResidentForm from './PropertyManager/InviteResidentForm'; // Added
+import CreatePropertyForm from './PropertyManager/CreatePropertyForm'; // Added
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -58,7 +67,33 @@ const Dashboard: React.FC = () => {
   const [pmTabValue, setPmTabValue] = useState(0); // Added state for PM tabs
   const [selectedAdminOrgId, setSelectedAdminOrgId] = useState<string | null>(null);
   const [selectedPropertyIdForPM, setSelectedPropertyIdForPM] = useState<string | null>(null); // Added state for selected property for PM
+  const [isCreatePropertyModalOpen, setIsCreatePropertyModalOpen] = useState(false); // Added state for modal
+  const [organizationName, setOrganizationName] = useState<string | null>(null); // Added state for org name
   const organizationPanelRef = useRef<OrganizationManagementPanelRef>(null); // Added ref
+
+  // Fetch organization name
+  useEffect(() => {
+    const fetchOrgName = async () => {
+      if (organizationId) {
+        try {
+          const orgDocRef = doc(db, 'organizations', organizationId);
+          const orgDocSnap = await getDoc(orgDocRef);
+          if (orgDocSnap.exists()) {
+            setOrganizationName(orgDocSnap.data()?.name || 'N/A');
+          } else {
+            setOrganizationName('N/A');
+          }
+        } catch (error) {
+          console.error("Error fetching organization name:", error);
+          setOrganizationName('Error');
+        }
+      }
+    };
+
+    if (roles.includes('property_manager')) {
+      fetchOrgName();
+    }
+  }, [organizationId, roles]);
 
   const handleAdminOrgChange = (orgId: string | null) => {
     setSelectedAdminOrgId(orgId);
@@ -82,8 +117,25 @@ const Dashboard: React.FC = () => {
   const handlePropertySelectForPM = useCallback((propertyId: string) => {
     setSelectedPropertyIdForPM(propertyId);
     // Optionally, switch to the "Invite Resident" tab automatically
-    // setPmTabValue(1); 
+    // setPmTabValue(1);
   }, []);
+
+  const handleOpenCreatePropertyModal = () => {
+    setIsCreatePropertyModalOpen(true);
+  };
+
+  const handleCloseCreatePropertyModal = () => {
+    setIsCreatePropertyModalOpen(false);
+  };
+
+  const handlePropertyCreated = () => {
+    handleCloseCreatePropertyModal();
+    // TODO: Optionally refresh the properties list here if needed
+    // For example, by refetching or updating state in PropertyManagerPropertiesList
+    // This might involve passing a refresh callback down to PropertyManagerPropertiesList
+    // or using a global state/context for properties.
+    // For now, manual refresh or re-navigation might be needed to see the new property immediately.
+  };
 
   // examplePropertyIdForResidentInvite is no longer needed here
 
@@ -145,9 +197,18 @@ const Dashboard: React.FC = () => {
       {/* Property Manager Section */}
       {roles.includes('property_manager') && (
         <Paper elevation={3} sx={{ mb: 4, p: 2 }}>
-          <Typography variant='h5' color='secondary' sx={{ mb: 2 }}>
-            Property Manager Panel (Org ID: {organizationId || 'N/A'})
-          </Typography>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+            <Typography variant='h5' color='secondary'>
+              Property Manager Panel ({organizationName || (organizationId ? 'Loading Org...' : 'N/A')})
+            </Typography>
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={handleOpenCreatePropertyModal}
+            >
+              Create Property
+            </Button>
+          </Box>
           <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
             <Tabs
               value={pmTabValue}
@@ -156,40 +217,57 @@ const Dashboard: React.FC = () => {
             >
               <Tab label='My Properties' {...a11yProps(0)} />
               <Tab label='Invite Resident' {...a11yProps(1)} />
-              <Tab label='Create Property' {...a11yProps(2)} />
+              {/* Create Property Tab removed */}
             </Tabs>
           </Box>
-          <TabPanel value={pmTabValue} index={0}>
+          <TabPanel value={pmTabValue} index={0}> {/* My Properties */}
             <PropertyManagerPropertiesList
-              selectedPropertyId={selectedPropertyIdForPM}
-              onPropertySelect={handlePropertySelectForPM}
+              selectedPropertyId={selectedPropertyIdForPM} // This prop might be less relevant if selection is primarily for inviting
+              onPropertySelect={handlePropertySelectForPM} // Still useful if clicking a property shows details in the future
             />
           </TabPanel>
-          <TabPanel value={pmTabValue} index={1}>
+          <TabPanel value={pmTabValue} index={1}> {/* Invite Resident */}
+            <Typography variant="h6" gutterBottom>Select a Property to Invite Residents</Typography>
+            <PropertyManagerPropertiesList
+              selectedPropertyId={selectedPropertyIdForPM}
+              onPropertySelect={handlePropertySelectForPM} // This instance drives the selection for inviting
+            />
+            <Divider sx={{ my: 2 }} />
             {selectedPropertyIdForPM ? (
               <InviteResidentForm
-                organizationId={organizationId || ''} // Pass organizationId
+                organizationId={organizationId || ''}
                 propertyId={selectedPropertyIdForPM}
               />
             ) : (
-              <Alert severity="info">Please select a property from the "My Properties" tab to invite a resident.</Alert>
+              <Alert severity="info">Please select a property from the list above to invite a resident.</Alert>
             )}
           </TabPanel>
-          <TabPanel value={pmTabValue} index={2}>
-            {/* Placeholder for CreatePropertyForm if you want it in a tab */}
-            {/* For now, linking to the page as before, or you can embed CreatePropertyForm here */}
-            <Typography variant="h6" gutterBottom>Create New Property</Typography>
-            <Button
-              variant='outlined'
-              component={RouterLink}
-              to='/pm/create-property'
-            >
-              Go to Create Property Page
-            </Button>
-            {/* Or embed directly: <CreatePropertyForm /> */}
-          </TabPanel>
+          {/* TabPanel for Create Property removed */}
         </Paper>
       )}
+
+      {/* Create Property Modal */}
+      <Dialog open={isCreatePropertyModalOpen} onClose={handleCloseCreatePropertyModal} fullWidth maxWidth="sm">
+        <DialogTitle>
+          Create New Property
+          <IconButton
+            aria-label="close"
+            onClick={handleCloseCreatePropertyModal}
+            sx={{
+              position: 'absolute',
+              right: 8,
+              top: 8,
+              color: (theme) => theme.palette.grey[500],
+            }}
+          >
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent dividers>
+          <CreatePropertyForm onSuccess={handlePropertyCreated} />
+        </DialogContent>
+        {/* DialogActions can be added here if needed, e.g., for a manual close button if the form doesn't have one */}
+      </Dialog>
 
       {/* Resident Section */}
       {roles.includes('resident') && (

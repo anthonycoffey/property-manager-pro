@@ -104,6 +104,14 @@ The project has recently completed the implementation of the Admin Organization 
 *   **Property Manager Dashboard - Dynamic Property Selection for Resident Invitations (2025-05-24):**
     *   Implemented `src/components/PropertyManager/PropertyManagerPropertiesList.tsx`.
     *   Integrated into `src/components/Dashboard.tsx` for dynamic property selection in resident invites.
+*   **Property Manager Panel UI/UX Refactor (2025-05-24):**
+    *   Refactored the Property Manager section in `src/components/Dashboard.tsx`:
+        *   Panel title now displays the fetched Organization Name.
+        *   Removed the "Create Property" tab; property creation is now handled via a "Create Property" button opening a modal containing `CreatePropertyForm.tsx`.
+        *   `CreatePropertyForm.tsx` updated with an `onSuccess` callback for modal closure.
+        *   The "Invite Resident" tab now embeds `PropertyManagerPropertiesList` for clear property selection before inviting.
+        *   The "My Properties" tab continues to list properties.
+    *   This aligns with Admin panel patterns and improves UX for property creation and resident invitation.
 
 ## 3. What's Left to Build (High-Level from `projectRoadmap.md`)
 
@@ -116,11 +124,14 @@ The remaining application functionality includes:
     *   Properties Management (CRUD).
     *   Residents Management (View, Edit, Delete for support).
 *   **C. Property Manager Dashboard:**
-    *   View assigned properties (Implemented via `PropertyManagerPropertiesList`).
-    *   Allow selection of property to make `propertyId` dynamic for `InviteResidentForm` (Implemented).
-    *   Manage residents for their properties.
-    *   Manage invitations (beyond the initial invite form, e.g., view status, revoke).
-    *   Track service requests.
+    *   **Property Creation:** (Implemented via "Create Property" button and modal with `CreatePropertyForm.tsx`).
+    *   **View Assigned Properties:** (Implemented in "My Properties" tab via `PropertyManagerPropertiesList`).
+    *   **Invite Residents:**
+        *   Select property for invitation (Implemented in "Invite Resident" tab via embedded `PropertyManagerPropertiesList`).
+        *   Use `InviteResidentForm` with selected property (Implemented).
+    *   Manage residents for their properties (e.g., view list, edit details - Pending).
+    *   Manage invitations (beyond the initial invite form, e.g., view status, revoke - Pending).
+    *   Track service requests (Pending).
 *   **D. Resident Dashboard:**
     *   View property details.
     *   Manage profile (vehicle info).

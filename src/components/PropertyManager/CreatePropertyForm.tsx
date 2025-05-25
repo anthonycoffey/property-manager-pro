@@ -11,6 +11,10 @@ import Typography from '@mui/material/Typography';
 import CircularProgress from '@mui/material/CircularProgress';
 import Alert from '@mui/material/Alert';
 
+export interface CreatePropertyFormProps { // Exporting for potential use elsewhere
+  onSuccess?: () => void; // Optional callback for when property creation is successful
+}
+
 interface PropertyAddress {
   street: string;
   city: string;
@@ -18,7 +22,7 @@ interface PropertyAddress {
   zip: string;
 }
 
-const CreatePropertyForm: React.FC = () => {
+const CreatePropertyForm: React.FC<CreatePropertyFormProps> = ({ onSuccess }) => {
   const [propertyName, setPropertyName] = useState('');
   const [propertyType, setPropertyType] = useState('');
   const [address, setAddress] = useState<PropertyAddress>({
@@ -74,6 +78,9 @@ const CreatePropertyForm: React.FC = () => {
         setPropertyName('');
         setPropertyType('');
         setAddress({ street: '', city: '', state: '', zip: '' });
+        if (onSuccess) {
+          onSuccess(); // Call the success callback
+        }
       } else {
         setError(responseData?.message || 'Failed to create property.');
       }

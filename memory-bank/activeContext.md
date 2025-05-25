@@ -134,6 +134,16 @@ With the "Admin Property Manager Management Panel Overhaul" (Step 4 from `docs/0
   - Defaults to `emulator` if no flag is provided, automatically setting `FIRESTORE_EMULATOR_HOST="localhost:8080"` if not already set.
   - If `--env=production` is used, it prompts the user for explicit confirmation ("Y" or "yes") before attempting to connect to the live Firestore database, as a safety measure.
   - Updated logging to clearly indicate the target environment.
+- **Property Manager Panel UI/UX Refactor (2025-05-24):**
+  - Modified `src/components/Dashboard.tsx` for the Property Manager role:
+    - The panel title now fetches and displays the Organization Name instead of just the ID.
+    - Removed the "Create Property" tab.
+    - Added a "Create Property" button that opens an MUI Dialog modal containing the `CreatePropertyForm.tsx`.
+    - `CreatePropertyForm.tsx` was updated to accept an `onSuccess` callback to close the modal.
+    - The "Invite Resident" tab now includes its own instance of `PropertyManagerPropertiesList` to act as a property selector, directly driving the `InviteResidentForm`.
+    - The "My Properties" tab continues to list properties using `PropertyManagerPropertiesList`.
+  - This aligns the Property Manager property creation flow with the modal-based pattern used in the Admin panel (e.g., "Add Organization") and clarifies the property selection process for inviting residents.
+
 ## 3. Next Steps
 
 - **Invitation System (Phase 3 - Refinement & Testing):**
@@ -179,8 +189,12 @@ With the "Admin Property Manager Management Panel Overhaul" (Step 4 from `docs/0
 - **Social Sign-On Email Matching:** For invitation-based social sign-on, the email provided by the social identity provider _must_ match the email address on the invitation. This is validated client-side (for UX) and server-side (for security) in `signUpWithInvitation.ts`.
 - **Invitation Email Pre-fill:** The email field on the `AcceptInvitationPage.tsx` is now pre-filled and made readonly using data fetched via the `getInvitationDetails` Cloud Function, ensuring the user signs up with the intended invited email address.
 - **Seed Script Safety:** The `seedTemplates.js` script now defaults to the emulator and requires explicit confirmation for production operations, enhancing safety.
+- **Property Manager Panel Structure (New Decision 2025-05-24):**
+  - Property creation for Property Managers is now handled via a modal triggered by a button, removing the dedicated "Create Property" tab. This follows the pattern of the Admin "Add Organization" functionality.
+  - The "Invite Resident" tab now embeds the property selection list (`PropertyManagerPropertiesList`) directly, making the selection context clear for inviting residents.
+  - The panel title now displays the fetched Organization Name for better user context.
 
-## 5. Important Patterns & Preferences
+## 5. ImportantPatterns & Preferences
 
 - (No new patterns or preferences to add at this time, existing ones from `projectRoadmap.md` and `systemPatterns.md` still apply).
 

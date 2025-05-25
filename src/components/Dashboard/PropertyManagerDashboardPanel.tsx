@@ -16,13 +16,15 @@ import AddIcon from '@mui/icons-material/Add';
 import CloseIcon from '@mui/icons-material/Close';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../../firebaseConfig';
-import type { Property as PropertyType } from '../../types';
+import type { Property as PropertyType, Resident } from '../../types'; // Added Resident
 
 import PropertyManagerPropertiesList from '../PropertyManager/PropertyManagerPropertiesList';
 import InviteResidentForm from '../PropertyManager/InviteResidentForm';
 import CreatePropertyForm from '../PropertyManager/CreatePropertyForm';
 import PropertySelectorDropdown from '../PropertyManager/PropertySelectorDropdown';
 import EditPropertyModal from '../PropertyManager/EditPropertyModal';
+import EditResidentModal from '../PropertyManager/EditResidentModal'; // Import EditResidentModal
+import PropertyResidentsTable from '../PropertyManager/PropertyResidentsTable';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -66,6 +68,10 @@ const PropertyManagerDashboardPanel: React.FC<PropertyManagerDashboardPanelProps
   const [isEditPropertyModalOpen, setIsEditPropertyModalOpen] = useState(false);
   const [propertyToEdit, setPropertyToEdit] = useState<PropertyType | null>(null);
   const [refreshPropertiesKey, setRefreshPropertiesKey] = useState(0);
+  const [isEditResidentModalOpen, setIsEditResidentModalOpen] = useState(false);
+  const [residentToEdit, setResidentToEdit] = useState<Resident | null>(null);
+  const [refreshResidentsKey, setRefreshResidentsKey] = useState(0);
+
 
   useEffect(() => {
     const fetchOrgName = async () => {
@@ -132,6 +138,21 @@ const PropertyManagerDashboardPanel: React.FC<PropertyManagerDashboardPanelProps
     setRefreshPropertiesKey((prev) => prev + 1);
   };
 
+  const handleOpenEditResidentModal = (resident: Resident) => {
+    setResidentToEdit(resident);
+    setIsEditResidentModalOpen(true);
+  };
+
+  const handleCloseEditResidentModal = () => {
+    setResidentToEdit(null);
+    setIsEditResidentModalOpen(false);
+  };
+
+  const handleResidentUpdated = () => {
+    handleCloseEditResidentModal();
+    setRefreshResidentsKey((prev) => prev + 1);
+  };
+
   return (
     <Paper elevation={3} sx={{ mb: 4, p: 2 }}>
       <Box
@@ -185,16 +206,29 @@ const PropertyManagerDashboardPanel: React.FC<PropertyManagerDashboardPanelProps
           selectedPropertyId={selectedPropertyId}
           onPropertyChange={handlePropertySelect}
         />
-        {selectedPropertyId ? (
-          <InviteResidentForm
-            organizationId={organizationId || ''}
-            propertyId={selectedPropertyId}
-            propertyName={selectedPropertyName || undefined}
-          />
+        {selectedPropertyId && organizationId ? (
+          <>
+            <InviteResidentForm
+              organizationId={organizationId}
+              propertyId={selectedPropertyId}
+              propertyName={selectedPropertyName || undefined}
+            />
+            <Box sx={{ mt: 4 }}>
+              <Typography variant='h6' gutterBottom sx={{ mb: 2 }}>
+                Current Residents for {selectedPropertyName || 'Selected Property'}
+              </Typography>
+              <PropertyResidentsTable
+                organizationId={organizationId}
+                propertyId={selectedPropertyId}
+                onEditResident={handleOpenEditResidentModal}
+                refreshKey={refreshResidentsKey}
+              />
+            </Box>
+          </>
         ) : (
           <Alert severity='info' sx={{ mt: 2 }}>
             Please select a property from the dropdown above to invite a
-            resident.
+            resident or view current residents.
           </Alert>
         )}
       </TabPanel>
@@ -231,6 +265,17 @@ const PropertyManagerDashboardPanel: React.FC<PropertyManagerDashboardPanelProps
           onClose={handleCloseEditPropertyModal}
           propertyData={propertyToEdit}
           onSuccess={handlePropertyUpdated}
+        />
+      )}
+
+      {residentToEdit && organizationId && selectedPropertyId && (
+        <EditResidentModal
+          open={isEditResidentModalOpen}
+          onClose={handleCloseEditResidentModal}
+          residentData={residentToEdit}
+          organizationId={organizationId}
+          propertyId={selectedPropertyId}
+          onSuccess={handleResidentUpdated}
         />
       )}
     </Paper>

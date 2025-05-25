@@ -9,6 +9,11 @@
 // Firebase Admin SDK typically uses its own Timestamp type.
 import { Timestamp } from 'firebase-admin/firestore'; // Firebase Admin SDK Timestamp
 
+export interface AppError {
+  message: string;
+  code?: string;
+}
+
 export interface Resident {
   id: string; 
   displayName: string;

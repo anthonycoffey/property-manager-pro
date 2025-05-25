@@ -1,10 +1,10 @@
-import { HttpsError } from 'firebase-functions/v2/https';
+import * as functions from 'firebase-functions'; // Use general import
 
-// Helper function to handle errors and throw HttpsError
-export function handleHttpsError(error: unknown, defaultMessage: string): HttpsError {
+// Helper function to handle errors and throw HttpsError (v1 compatible)
+export function handleHttpsError(error: unknown, defaultMessage: string): functions.https.HttpsError {
   console.error(defaultMessage, error);
 
-  if (error instanceof HttpsError) {
+  if (error instanceof functions.https.HttpsError) { // Check against v1 HttpsError
     return error; // Already an HttpsError, re-throw as is
   }
 
@@ -17,7 +17,7 @@ export function handleHttpsError(error: unknown, defaultMessage: string): HttpsE
   ) {
     const firebaseErrorCode = (error as { code: string }).code;
     if (firebaseErrorCode === 'auth/email-already-exists') {
-      return new HttpsError(
+      return new functions.https.HttpsError( // Use v1 HttpsError
         'already-exists',
         'The email address is already in use by another account.'
       );
@@ -34,5 +34,10 @@ export function handleHttpsError(error: unknown, defaultMessage: string): HttpsE
       ? (error as { message: string }).message
       : 'An unknown error occurred.';
 
-  return new HttpsError('internal', defaultMessage, errorMessage);
+  // Constructing a v1 HttpsError. Note: v1 HttpsError constructor is (code, message, details?)
+  // The 'details' (third param) is optional and can be any JSON-serializable object.
+  // Here, errorMessage (extracted message) can be part of the main message or put in details.
+  // For simplicity, appending to defaultMessage if different.
+  const finalMessage = defaultMessage === errorMessage ? defaultMessage : `${defaultMessage} Details: ${errorMessage}`;
+  return new functions.https.HttpsError('internal', finalMessage); 
 }

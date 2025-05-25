@@ -142,7 +142,7 @@ const PropertyResidentsTable: React.FC<PropertyResidentsTableProps> = ({ organiz
   }, [propertyId, organizationId, rowsPerPage, fetchResidents, refreshKey]);
 
 
-  const handleChangePage = (event: unknown, newPage: number) => {
+  const handleChangePage = (_event: unknown, newPage: number) => {
     const direction = newPage > page ? 'next' : 'prev';
     setPage(newPage);
     // Note: True cursor-based pagination for 'prev' is complex.

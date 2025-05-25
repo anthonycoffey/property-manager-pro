@@ -141,6 +141,17 @@ The application employs a modern web architecture with a React-based frontend an
     *   The architecture is open to future integration of libraries like React Query if client-side caching and data synchronization needs become more complex.
 *   **Analytics & Reporting:**
     *   Highcharts will be integrated for visualizing data, such as usage statistics and reports. This will involve preparing data (potentially via Cloud Functions or Server Components) and configuring Highcharts components within the React frontend.
+*   **Address Autocompletion (Google Places API):**
+    *   **Library:** Implemented using `@react-google-maps/api`.
+    *   **Functionality:** Integrated into property creation and editing forms (`CreatePropertyForm.tsx`, `EditPropertyModal.tsx`).
+    *   **Process:**
+        1.  The form is wrapped with the `LoadScript` component from `@react-google-maps/api`, providing the Google Maps API key (stored in `VITE_GOOGLE_MAPS_API_KEY`) and specifying the `places` library.
+        2.  The "Street Address" input field is enhanced with the `Autocomplete` component.
+        3.  As the user types, Google Places API provides address suggestions.
+        4.  Upon selection of a suggestion, the `onPlaceChanged` event handler retrieves the detailed `PlaceResult`.
+        5.  Address components (street number, route, locality, administrative_area_level_1, postal_code) are parsed.
+        6.  The form's state for street, city, state (using short code, e.g., "CA"), and zip code is updated, populating the respective form fields.
+    *   **State Management:** The `Select` component for states uses a mapping of full state names to short codes (e.g., "California" to "CA") to ensure consistency between manual selection and autocompleted values.
 
 ## 3. Component Relationships & Data Flow (Illustrative)
 

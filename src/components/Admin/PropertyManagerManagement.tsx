@@ -393,6 +393,10 @@ const PropertyManagerManagement: React.FC<PropertyManagerManagementProps> = ({
             </Alert>
           )}
 
+          <Typography variant='h6' gutterBottom>
+            Property Managers
+          </Typography>
+
           {!dataLoading && !dataError && (
             <TableContainer component={Paper} sx={{ mt: 2 }}>
               <Table aria-label='property manager and invitations list'>
@@ -401,8 +405,7 @@ const PropertyManagerManagement: React.FC<PropertyManagerManagementProps> = ({
                     <TableCell>Identifier</TableCell>
                     <TableCell>Email</TableCell>
                     <TableCell>Status</TableCell>
-                    <TableCell>Date Created/Sent</TableCell>
-                    <TableCell>Expires (Invites)</TableCell>
+                    <TableCell></TableCell>
                     <TableCell align='right'>Actions</TableCell>
                   </TableRow>
                 </TableHead>
@@ -438,10 +441,7 @@ const PropertyManagerManagement: React.FC<PropertyManagerManagementProps> = ({
                             />
                           )}
                         </TableCell>
-                        <TableCell>
-                          {item.createdAt?.toDate().toLocaleDateString() ||
-                            'N/A'}
-                        </TableCell>
+
                         <TableCell>
                           {item.type === 'pending_invite' && item.expiresAt
                             ? item.expiresAt.toDate().toLocaleDateString()

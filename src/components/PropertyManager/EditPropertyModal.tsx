@@ -15,7 +15,8 @@ import {
   InputLabel,
 } from '@mui/material';
 import { httpsCallable } from 'firebase/functions';
-import { functions } from '../../firebaseConfig';
+import { functions } from '../../firebaseConfig'; // Assuming this is your FirebaseApp instance
+import { LoadScript, Autocomplete } from '@react-google-maps/api';
 import type { Property, PropertyAddress } from '../../types'; // Type-only imports
 import { useAuth } from '../../hooks/useAuth';
 import { Box, Stack } from '@mui/material'; // Import Box and Stack
@@ -37,22 +38,30 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
   const [name, setName] = useState('');
   const [street, setStreet] = useState('');
   const [city, setCity] = useState('');
-  const [state, setState] = useState('');
+  const [state, setState] = useState(''); // This will store the state code e.g. "CA"
   const [zip, setZip] = useState('');
   const [type, setType] = useState('');
-  // const [managedBy, setManagedBy] = useState(''); // Optional: if PMs can change this
+  const [autocompleteInstance, setAutocompleteInstance] = useState<google.maps.places.Autocomplete | null>(null);
 
-  const usStates: string[] = [
-    'Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California', 'Colorado',
-    'Connecticut', 'Delaware', 'Florida', 'Georgia', 'Hawaii', 'Idaho',
-    'Illinois', 'Indiana', 'Iowa', 'Kansas', 'Kentucky', 'Louisiana',
-    'Maine', 'Maryland', 'Massachusetts', 'Michigan', 'Minnesota',
-    'Mississippi', 'Missouri', 'Montana', 'Nebraska', 'Nevada',
-    'New Hampshire', 'New Jersey', 'New Mexico', 'New York',
-    'North Carolina', 'North Dakota', 'Ohio', 'Oklahoma', 'Oregon',
-    'Pennsylvania', 'Rhode Island', 'South Carolina', 'South Dakota',
-    'Tennessee', 'Texas', 'Utah', 'Vermont', 'Virginia', 'Washington',
-    'West Virginia', 'Wisconsin', 'Wyoming'
+  // US States with abbreviations for consistency with Google Places API
+  const usStatesAndAbbrevs = [
+    { name: 'Alabama', code: 'AL' }, { name: 'Alaska', code: 'AK' }, { name: 'Arizona', code: 'AZ' },
+    { name: 'Arkansas', code: 'AR' }, { name: 'California', code: 'CA' }, { name: 'Colorado', code: 'CO' },
+    { name: 'Connecticut', code: 'CT' }, { name: 'Delaware', code: 'DE' }, { name: 'Florida', code: 'FL' },
+    { name: 'Georgia', code: 'GA' }, { name: 'Hawaii', code: 'HI' }, { name: 'Idaho', code: 'ID' },
+    { name: 'Illinois', code: 'IL' }, { name: 'Indiana', code: 'IN' }, { name: 'Iowa', code: 'IA' },
+    { name: 'Kansas', code: 'KS' }, { name: 'Kentucky', code: 'KY' }, { name: 'Louisiana', code: 'LA' },
+    { name: 'Maine', code: 'ME' }, { name: 'Maryland', code: 'MD' }, { name: 'Massachusetts', code: 'MA' },
+    { name: 'Michigan', code: 'MI' }, { name: 'Minnesota', code: 'MN' }, { name: 'Mississippi', code: 'MS' },
+    { name: 'Missouri', code: 'MO' }, { name: 'Montana', code: 'MT' }, { name: 'Nebraska', code: 'NE' },
+    { name: 'Nevada', code: 'NV' }, { name: 'New Hampshire', code: 'NH' }, { name: 'New Jersey', code: 'NJ' },
+    { name: 'New Mexico', code: 'NM' }, { name: 'New York', code: 'NY' }, { name: 'North Carolina', code: 'NC' },
+    { name: 'North Dakota', code: 'ND' }, { name: 'Ohio', code: 'OH' }, { name: 'Oklahoma', code: 'OK' },
+    { name: 'Oregon', code: 'OR' }, { name: 'Pennsylvania', code: 'PA' }, { name: 'Rhode Island', code: 'RI' },
+    { name: 'South Carolina', code: 'SC' }, { name: 'South Dakota', code: 'SD' }, { name: 'Tennessee', code: 'TN' },
+    { name: 'Texas', code: 'TX' }, { name: 'Utah', code: 'UT' }, { name: 'Vermont', code: 'VT' },
+    { name: 'Virginia', code: 'VA' }, { name: 'Washington', code: 'WA' }, { name: 'West Virginia', code: 'WV' },
+    { name: 'Wisconsin', code: 'WI' }, { name: 'Wyoming', code: 'WY' }
   ];
 
   const [loading, setLoading] = useState(false);
@@ -66,21 +75,56 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
       setName(propertyData.name);
       setStreet(propertyData.address.street);
       setCity(propertyData.address.city);
+      // Ensure propertyData.address.state is compatible (e.g., if it's full name, map to code, or assume it's already code)
+      // For now, assuming propertyData.address.state is already the short code.
       setState(propertyData.address.state);
       setZip(propertyData.address.zip);
       setType(propertyData.type);
-      // if (propertyData.managedBy) setManagedBy(propertyData.managedBy);
     } else {
-      // Reset form if no propertyData (e.g., modal closed and reopened without data)
       setName('');
       setStreet('');
       setCity('');
       setState('');
       setZip('');
       setType('');
-      // setManagedBy('');
     }
   }, [propertyData]);
+
+  const onLoadAutocomplete = (autocomplete: google.maps.places.Autocomplete) => {
+    setAutocompleteInstance(autocomplete);
+  };
+
+  const onPlaceChangedAutocomplete = () => {
+    if (autocompleteInstance !== null) {
+      const place = autocompleteInstance.getPlace();
+      if (place.address_components) {
+        let streetNumber = '';
+        let route = '';
+        let currentCity = '';
+        let currentState = '';
+        let currentPostalCode = '';
+
+        place.address_components.forEach(component => {
+          const types = component.types;
+          if (types.includes('street_number')) streetNumber = component.long_name;
+          if (types.includes('route')) route = component.long_name;
+          if (types.includes('locality')) currentCity = component.long_name;
+          if (types.includes('administrative_area_level_1')) currentState = component.short_name;
+          if (types.includes('postal_code')) currentPostalCode = component.long_name;
+        });
+
+        const fullStreet = streetNumber ? `${streetNumber} ${route}` : route;
+        setStreet(fullStreet);
+        setCity(currentCity);
+        setState(currentState); // Sets the short code, e.g., "CA"
+        setZip(currentPostalCode);
+      } else {
+        console.warn("Autocomplete (Edit Modal) place result does not have address_components");
+      }
+    } else {
+      console.log('Autocomplete (Edit Modal) is not loaded yet!');
+    }
+  };
 
   const handleSnackbarClose = () => {
     setSnackbarOpen(false);
@@ -148,33 +192,52 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
     }
   };
 
+  const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+
+  if (!apiKey && open) { // Check only if modal is open to avoid console spam
+    console.error("Google Maps API key is missing for EditPropertyModal. Set VITE_GOOGLE_MAPS_API_KEY in your .env file.");
+    // Optionally, render an error in the modal, but for now, it will just not have autocomplete.
+  }
+  
   return (
     <>
       <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
         <DialogTitle>Edit Property: {propertyData?.name || ''}</DialogTitle>
-        <form onSubmit={handleSubmit}>
-          <DialogContent>
-            {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-            <Stack spacing={2}>
-              <TextField
-                label="Property Name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                fullWidth
-                required
-                margin="dense"
-              />
-              <TextField
-                label="Street Address"
-                value={street}
-                onChange={(e) => setStreet(e.target.value)}
-                fullWidth
-                required
-                margin="dense"
-              />
-              <Stack direction="row" spacing={2}>
+        <LoadScript googleMapsApiKey={apiKey!} libraries={["places"]} loadingElement={<CircularProgress />}>
+          <form onSubmit={handleSubmit}>
+            <DialogContent>
+              {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+              {!apiKey && <Alert severity="warning" sx={{ mb: 2 }}>Google Maps API key missing. Address autocompletion is disabled.</Alert>}
+              <Stack spacing={2}>
                 <TextField
-                  label="City"
+                  label="Property Name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  fullWidth
+                  required
+                  margin="dense"
+                />
+                <Autocomplete
+                  onLoad={onLoadAutocomplete}
+                  onPlaceChanged={onPlaceChangedAutocomplete}
+                  options={{
+                    types: ["address"],
+                    componentRestrictions: { country: "us" },
+                  }}
+                >
+                  <TextField
+                    label="Street Address (Type to search)"
+                    value={street}
+                    onChange={(e) => setStreet(e.target.value)} // Allows manual input
+                    fullWidth
+                    required
+                    margin="dense"
+                    placeholder="Start typing address..."
+                  />
+                </Autocomplete>
+                <Stack direction="row" spacing={2}>
+                  <TextField
+                    label="City"
                   value={city}
                   onChange={(e) => setCity(e.target.value)}
                   fullWidth
@@ -189,18 +252,18 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
                     id="state-select"
                     value={state}
                     label="State"
-                    onChange={(e) => setState(e.target.value)}
+                    onChange={(e) => setState(e.target.value)} // Manual change still possible
                     MenuProps={{
                       PaperProps: {
                         style: {
-                          maxHeight: 224, // Adjust as needed, typically 4.5 * item height (48px) = 216px, or 5 items
+                          maxHeight: 224,
                         },
                       },
                     }}
                   >
-                    {usStates.map((stateName: string) => (
-                      <MenuItem key={stateName} value={stateName}>
-                        {stateName}
+                    {usStatesAndAbbrevs.map((stateObj) => (
+                      <MenuItem key={stateObj.code} value={stateObj.code}>
+                        {stateObj.name}
                       </MenuItem>
                     ))}
                   </Select>
@@ -243,7 +306,8 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
               {loading ? <CircularProgress size={24} /> : 'Save Changes'}
             </Button>
           </DialogActions>
-        </form>
+          </form>
+        </LoadScript>
       </Dialog>
       <Snackbar
         open={snackbarOpen}

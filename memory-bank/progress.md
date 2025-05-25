@@ -2,9 +2,9 @@
 
 ## 1. Current Status: RBAC & Firestore Implementation (As of 2025-05-23)
 
-The project has recently completed the implementation of the Admin Organization Management Panel and a significant refactoring of all Firebase Cloud Functions.
+The project has recently completed the implementation of the Admin Organization Management Panel, a significant refactoring of all Firebase Cloud Functions, and the integration of Google Places API for address autocompletion.
 
-*   **Date of this update:** 2025-05-24 (Updated)
+*   **Date of this update:** 2025-05-25
 
 ## 2. What Works / Completed
 
@@ -123,6 +123,14 @@ The project has recently completed the implementation of the Admin Organization 
         *   Title now displays the selected property's name instead of ID.
         *   Layout updated to place the email input and "Send Invitation" button on the same row.
     *   These changes further refine the UI/UX based on feedback, improving clarity and consistency.
+*   **Google Places API Autocomplete for Property Address (2025-05-25):**
+    *   Integrated Google Places API for address autocompletion in property creation and editing forms.
+    *   Utilized the `@react-google-maps/api` library.
+    *   Modified `src/components/PropertyManager/CreatePropertyForm.tsx` and `src/components/PropertyManager/EditPropertyModal.tsx`.
+    *   The "Street Address" field in these forms now offers autocomplete suggestions.
+    *   Selecting a suggested address automatically populates the street, city, state (using short codes like "CA"), and zip code fields in the form.
+    *   The state selection dropdowns in these forms were updated to use a consistent mapping of US state names to their short codes, aligning with the data provided by the Places API.
+    *   Documented the use of the `VITE_GOOGLE_MAPS_API_KEY` environment variable.
 
 ## 3. What's Left to Build (High-Level from `projectRoadmap.md`)
 

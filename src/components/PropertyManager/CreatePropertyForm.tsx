@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { useAuth } from '../../hooks/useAuth';
+import { LoadScript, Autocomplete } from '@react-google-maps/api';
 import type { CreatePropertyResponse, AppError } from '../../types';
 
 // MUI Components
@@ -40,22 +41,83 @@ const CreatePropertyForm: React.FC<CreatePropertyFormProps> = ({ onSuccess }) =>
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const { currentUser, roles: userRoles, organizationId: userOrgId } = useAuth();
+  const [autocomplete, setAutocomplete] = useState<google.maps.places.Autocomplete | null>(null);
 
-  const usStates: string[] = [
-    'Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California', 'Colorado',
-    'Connecticut', 'Delaware', 'Florida', 'Georgia', 'Hawaii', 'Idaho',
-    'Illinois', 'Indiana', 'Iowa', 'Kansas', 'Kentucky', 'Louisiana',
-    'Maine', 'Maryland', 'Massachusetts', 'Michigan', 'Minnesota',
-    'Mississippi', 'Missouri', 'Montana', 'Nebraska', 'Nevada',
-    'New Hampshire', 'New Jersey', 'New Mexico', 'New York',
-    'North Carolina', 'North Dakota', 'Ohio', 'Oklahoma', 'Oregon',
-    'Pennsylvania', 'Rhode Island', 'South Carolina', 'South Dakota',
-    'Tennessee', 'Texas', 'Utah', 'Vermont', 'Virginia', 'Washington',
-    'West Virginia', 'Wisconsin', 'Wyoming'
+  // US States with abbreviations for consistency with Google Places API
+  const usStatesAndAbbrevs = [
+    { name: 'Alabama', code: 'AL' }, { name: 'Alaska', code: 'AK' }, { name: 'Arizona', code: 'AZ' },
+    { name: 'Arkansas', code: 'AR' }, { name: 'California', code: 'CA' }, { name: 'Colorado', code: 'CO' },
+    { name: 'Connecticut', code: 'CT' }, { name: 'Delaware', code: 'DE' }, { name: 'Florida', code: 'FL' },
+    { name: 'Georgia', code: 'GA' }, { name: 'Hawaii', code: 'HI' }, { name: 'Idaho', code: 'ID' },
+    { name: 'Illinois', code: 'IL' }, { name: 'Indiana', code: 'IN' }, { name: 'Iowa', code: 'IA' },
+    { name: 'Kansas', code: 'KS' }, { name: 'Kentucky', code: 'KY' }, { name: 'Louisiana', code: 'LA' },
+    { name: 'Maine', code: 'ME' }, { name: 'Maryland', code: 'MD' }, { name: 'Massachusetts', code: 'MA' },
+    { name: 'Michigan', code: 'MI' }, { name: 'Minnesota', code: 'MN' }, { name: 'Mississippi', code: 'MS' },
+    { name: 'Missouri', code: 'MO' }, { name: 'Montana', code: 'MT' }, { name: 'Nebraska', code: 'NE' },
+    { name: 'Nevada', code: 'NV' }, { name: 'New Hampshire', code: 'NH' }, { name: 'New Jersey', code: 'NJ' },
+    { name: 'New Mexico', code: 'NM' }, { name: 'New York', code: 'NY' }, { name: 'North Carolina', code: 'NC' },
+    { name: 'North Dakota', code: 'ND' }, { name: 'Ohio', code: 'OH' }, { name: 'Oklahoma', code: 'OK' },
+    { name: 'Oregon', code: 'OR' }, { name: 'Pennsylvania', code: 'PA' }, { name: 'Rhode Island', code: 'RI' },
+    { name: 'South Carolina', code: 'SC' }, { name: 'South Dakota', code: 'SD' }, { name: 'Tennessee', code: 'TN' },
+    { name: 'Texas', code: 'TX' }, { name: 'Utah', code: 'UT' }, { name: 'Vermont', code: 'VT' },
+    { name: 'Virginia', code: 'VA' }, { name: 'Washington', code: 'WA' }, { name: 'West Virginia', code: 'WV' },
+    { name: 'Wisconsin', code: 'WI' }, { name: 'Wyoming', code: 'WY' }
   ];
+
 
   const functions = getFunctions();
   const createPropertyFn = httpsCallable(functions, 'createProperty');
+
+  const onLoad = (autocompleteInstance: google.maps.places.Autocomplete) => {
+    setAutocomplete(autocompleteInstance);
+  };
+
+  const onPlaceChanged = () => {
+    if (autocomplete !== null) {
+      const place = autocomplete.getPlace();
+      if (place.address_components) {
+        let streetNumber = '';
+        let route = '';
+        let city = '';
+        let state = '';
+        let postalCode = '';
+
+        place.address_components.forEach(component => {
+          const types = component.types;
+          if (types.includes('street_number')) {
+            streetNumber = component.long_name;
+          }
+          if (types.includes('route')) {
+            route = component.long_name;
+          }
+          if (types.includes('locality')) {
+            city = component.long_name;
+          }
+          if (types.includes('administrative_area_level_1')) {
+            state = component.short_name; // Using short_name for state (e.g., "CA")
+          }
+          if (types.includes('postal_code')) {
+            postalCode = component.long_name;
+          }
+        });
+        
+        const fullStreet = streetNumber ? `${streetNumber} ${route}` : route;
+
+        setAddress({
+          street: fullStreet,
+          city: city,
+          state: state, // This will be the short code, e.g., "CA"
+          zip: postalCode,
+        });
+      } else {
+        console.warn("Autocomplete place result does not have address_components");
+        // Potentially clear fields or keep existing street input if user typed something not autocompleted
+        // For now, we'll rely on the user typing into the street field directly if autocomplete fails.
+      }
+    } else {
+      console.log('Autocomplete is not loaded yet!');
+    }
+  };
 
   const handleAddressChange = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement> | { target: { name: string; value: unknown } }) => {
     setAddress({
@@ -115,11 +177,19 @@ const CreatePropertyForm: React.FC<CreatePropertyFormProps> = ({ onSuccess }) =>
     return <Alert severity="error">You do not have permission to access this feature.</Alert>;
   }
 
+  // Ensure VITE_GOOGLE_MAPS_API_KEY is available
+  const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+  if (!apiKey) {
+    console.error("Google Maps API key is missing. Set VITE_GOOGLE_MAPS_API_KEY in your .env file.");
+    return <Alert severity="error">Google Maps API key is missing. Address autocompletion will not work.</Alert>;
+  }
+
   return (
-    <Box component="form" onSubmit={handleSubmit} sx={{ mt: 3, maxWidth: '600px' }}>
-      <Typography variant="h6" gutterBottom>
-        Create New Property
-      </Typography>
+    <LoadScript googleMapsApiKey={apiKey} libraries={["places"]}>
+      <Box component="form" onSubmit={handleSubmit} sx={{ mt: 3, maxWidth: '600px' }}>
+        <Typography variant="h6" gutterBottom>
+          Create New Property
+        </Typography>
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
       {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
       <TextField
@@ -142,19 +212,29 @@ const CreatePropertyForm: React.FC<CreatePropertyFormProps> = ({ onSuccess }) =>
         helperText="e.g., Residential, Commercial"
       />
       <Typography variant="subtitle1" sx={{ mt: 2, mb: 1 }}>Property Address</Typography>
-      {/* Street Address Field - Full width */}
+      {/* Street Address Field - Full width with Autocomplete */}
       <Box sx={{ mb: 2 }}>
-        <TextField
-          label="Street Address"
-          name="street"
-          fullWidth
-          value={address.street}
-          onChange={handleAddressChange}
-          required
-          disabled={loading}
-        />
+        <Autocomplete
+          onLoad={onLoad}
+          onPlaceChanged={onPlaceChanged}
+          options={{
+            types: ["address"], // Restrict to address types
+            componentRestrictions: { country: "us" }, // Optional: restrict to US
+          }}
+        >
+          <TextField
+            label="Street Address (Type to search)"
+            name="street"
+            fullWidth
+            value={address.street}
+            onChange={handleAddressChange} // Allows manual input if needed, or if autocomplete fails
+            required
+            disabled={loading}
+            placeholder="Start typing your address..."
+          />
+        </Autocomplete>
       </Box>
-      {/* Row for City, State, Zip */}
+      {/* Row for City, State, Zip - these will be populated by Autocomplete */}
       <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
         <TextField
           label="City"
@@ -179,14 +259,14 @@ const CreatePropertyForm: React.FC<CreatePropertyFormProps> = ({ onSuccess }) =>
             MenuProps={{
               PaperProps: {
                 style: {
-                  maxHeight: 224, 
+                  maxHeight: 224,
                 },
               },
             }}
           >
-            {usStates.map((stateName) => (
-              <MenuItem key={stateName} value={stateName}>
-                {stateName}
+            {usStatesAndAbbrevs.map((stateObj) => (
+              <MenuItem key={stateObj.code} value={stateObj.code}>
+                {stateObj.name}
               </MenuItem>
             ))}
           </Select>
@@ -211,7 +291,8 @@ const CreatePropertyForm: React.FC<CreatePropertyFormProps> = ({ onSuccess }) =>
       >
         {loading ? <CircularProgress size={24} /> : 'Create Property'}
       </Button>
-    </Box>
+      </Box>
+    </LoadScript>
   );
 };
 

@@ -1,54 +1,141 @@
-# React + TypeScript + Vite
+# Property Manager Pro
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Property Manager Pro is a multi-tenant ERP-style web application designed to streamline property management operations for Administrators, Property Managers, and Residents. It provides a centralized platform for managing properties, users, service requests, and communications.
 
-Currently, two official plugins are available:
+## Core Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+*   **Multi-Tenancy:** Supports distinct data, configurations, and user bases for multiple property management entities.
+*   **Role-Based Access Control (RBAC):** Secure access to features and data based on user roles (Admin, Property Manager, Resident).
+*   **Organization Management:** Admins can create and manage property management organizations.
+*   **Property Manager Management:** Admins can invite, view, and manage Property Managers within organizations.
+*   **Property Management:** Property Managers can list, add, edit, and manage details of their assigned properties, including address autocompletion via Google Places API.
+*   **Resident Management:** Property Managers can invite and manage residents for their properties.
+*   **Invitation System:** Secure, token-based system for inviting Property Managers and Residents via email. Supports sign-up with email/password or social providers (Google, Microsoft).
+*   **Service Request Management:** (Planned) Residents can submit service requests, which can be tracked and managed.
+*   **User Profile Management:** Users can manage their own profiles.
 
-## Expanding the ESLint configuration
+## Tech Stack
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+### Frontend
+*   **React 19:** Utilizing Client Components for interactivity and Server Components for performance optimization.
+*   **Material UI (MUI):** Comprehensive UI component library for a consistent Material Design.
+*   **Material Icons:** Vector icons.
+*   **Highcharts:** For charting and data visualization in dashboards and reports.
+*   **Google Places API:** For address autocompletion in property forms.
+*   **Fetch API:** For client-side data fetching.
+*   **React Context API:** For global state management (e.g., authentication, theme).
 
-```js
-export default tseslint.config({
-  extends: [
-    // Remove ...tseslint.configs.recommended and replace with this
-    ...tseslint.configs.recommendedTypeChecked,
-    // Alternatively, use this for stricter rules
-    ...tseslint.configs.strictTypeChecked,
-    // Optionally, add this for stylistic rules
-    ...tseslint.configs.stylisticTypeChecked,
-  ],
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
+### Backend
+*   **Firebase:**
+    *   **Firebase Authentication:** User sign-up, login, session management, and RBAC via custom claims.
+    *   **Cloud Firestore:** Scalable NoSQL database for all application data, with real-time capabilities and robust security rules.
+    *   **Firebase Cloud Functions:** Server-side logic for API endpoints, business rule enforcement, and integrations.
+    *   **Firebase Hosting:** Hosting for the React application.
+    *   **`firestore-send-email` Extension:** For sending templated emails (invitations, notifications).
+
+### Build Tools & Environment
+*   **Vite:** Fast frontend build tool.
+*   **TypeScript:** For static typing and improved code quality.
+*   **Node.js & npm:** JavaScript runtime and package manager.
+*   **ESLint & Prettier:** For code linting and formatting.
+
+## Getting Started
+
+### Prerequisites
+
+*   **Node.js:** (LTS version recommended)
+*   **npm:** (Comes with Node.js) or **yarn**.
+*   **Firebase CLI:** Install globally: `npm install -g firebase-tools`
+*   **Google Maps API Key:** You will need a Google Maps JavaScript API key with the "Places API" enabled.
+
+### Setup
+
+1.  **Clone the repository:**
+    ```bash
+    git clone <repository-url>
+    cd property-manager-pro
+    ```
+
+2.  **Install dependencies:**
+    ```bash
+    npm install
+    ```
+    (For functions, navigate to the `functions` directory and run `npm install` there as well)
+    ```bash
+    cd functions
+    npm install
+    cd ..
+    ```
+
+3.  **Set up Firebase Project:**
+    *   Create a Firebase project at [console.firebase.google.com](https://console.firebase.google.com/).
+    *   Add a Web app to your Firebase project to get your Firebase configuration.
+    *   Enable Firebase Authentication (Email/Password, Google, Microsoft providers).
+    *   Enable Cloud Firestore.
+    *   Enable Firebase Hosting.
+    *   Set up the `firestore-send-email` extension if you intend to send emails.
+    *   Configure Cloud Functions.
+
+4.  **Configure Environment Variables:**
+    *   Create a `.env` file in the root directory of the project.
+    *   Add your Firebase configuration and Google Maps API key:
+        ```env
+        VITE_FIREBASE_API_KEY="YOUR_FIREBASE_API_KEY"
+        VITE_FIREBASE_AUTH_DOMAIN="YOUR_FIREBASE_AUTH_DOMAIN"
+        VITE_FIREBASE_PROJECT_ID="YOUR_FIREBASE_PROJECT_ID"
+        VITE_FIREBASE_STORAGE_BUCKET="YOUR_FIREBASE_STORAGE_BUCKET"
+        VITE_FIREBASE_MESSAGING_SENDER_ID="YOUR_FIREBASE_MESSAGING_SENDER_ID"
+        VITE_FIREBASE_APP_ID="YOUR_FIREBASE_APP_ID"
+        VITE_FIREBASE_MEASUREMENT_ID="YOUR_FIREBASE_MEASUREMENT_ID" # Optional
+
+        VITE_GOOGLE_MAPS_API_KEY="YOUR_GOOGLE_MAPS_API_KEY"
+        ```
+    *   Replace `YOUR_...` placeholders with your actual Firebase project configuration values and Google Maps API key.
+
+5.  **Firebase Login & Project Initialization (CLI):**
+    *   Login to Firebase: `firebase login`
+    *   Initialize Firebase in your project directory (if not already configured, or to link to your project): `firebase use --add` and select your project.
+
+## Running the Project
+
+### Development Mode
+
+1.  **Start the Firebase Emulators (Recommended for local development):**
+    In a separate terminal, run:
+    ```bash
+    firebase emulators:start --import=./firebase-emulator-data --export-on-exit
+    ```
+    (The `--import` and `--export-on-exit` flags are optional for data persistence. You might need to create an empty `firebase-emulator-data` directory first if you use `--import` without prior export.)
+    *   Ensure your `firebase.json` is configured to use the emulators for Auth, Firestore, and Functions.
+    *   Seed email templates to the emulator using the script: `node scripts/seedTemplates.js --env=emulator`
+
+2.  **Start the Vite development server:**
+    ```bash
+    npm run dev
+    ```
+    The application will be available at `http://localhost:5173` (or another port if 5173 is busy).
+
+### Building for Production
+
+```bash
+npm run build
 ```
+This will create a `dist` folder with the production-ready assets.
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+### Deploying to Firebase Hosting
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default tseslint.config({
-  plugins: {
-    // Add the react-x and react-dom plugins
-    'react-x': reactX,
-    'react-dom': reactDom,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended typescript rules
-    ...reactX.configs['recommended-typescript'].rules,
-    ...reactDom.configs.recommended.rules,
-  },
-})
+```bash
+firebase deploy --only hosting
 ```
+(Ensure your `firebase.json` is configured for hosting and `apphosting.yaml` for App Hosting if using Server Components that require it.)
+
+## Key Architectural Concepts
+
+*   **Multi-Tenancy:** Data is isolated per organization, primarily through Firestore subcollections and security rules.
+*   **Role-Based Access Control (RBAC):** Implemented using Firebase Authentication custom claims and enforced via Firestore security rules and frontend logic.
+*   **Hybrid Rendering (React 19):** Combines Client Components for dynamic UI and Server Components for optimized initial loads and data fetching.
+*   **Modular Firebase Functions:** Backend logic is organized into individual, callable Cloud Functions for specific tasks.
+
+---
+
+This README provides a basic overview. For more detailed information on system patterns, product context, and ongoing progress, please refer to the documents in the `memory-bank/` directory.

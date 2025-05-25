@@ -9,9 +9,18 @@ export const processSignUp = functionsAuth
 
     console.log(`New user signed up: ${email} (UID: ${uid})`);
 
+    // List of specific admin emails (add as needed)
+    const admin_emails = [
+      'coffey.j.anthony@gmail.com',
+      // Add more admin emails here
+    ];
+
     // Check if user meets role criteria.
-    // For admin users (e.g., *@24hrcarunlocking.com)
-    if (email && email.endsWith('@24hrcarunlocking.com') && emailVerified) {
+    // For admin users (e.g., *@24hrcarunlocking.com or in admin_emails)
+    if (
+      email &&
+      (email.endsWith('@24hrcarunlocking.com') || admin_emails.includes(email))
+    ) {
       const customClaims = {
         roles: ['admin'],
       };

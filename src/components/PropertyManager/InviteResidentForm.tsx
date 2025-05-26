@@ -3,7 +3,6 @@ import { getFunctions, httpsCallable } from 'firebase/functions';
 import { useAuth } from '../../hooks/useAuth';
 import type { CreateInvitationResponse, AppError } from '../../types';
 
-// MUI Components
 import TextField from '@mui/material/TextField';
 import Button from '@mui/material/Button';
 import Box from '@mui/material/Box';
@@ -13,10 +12,9 @@ import Alert from '@mui/material/Alert';
 import { PersonAdd } from '@mui/icons-material';
 
 export interface InviteResidentFormProps {
-  // Exporting for potential use elsewhere
   propertyId: string;
-  propertyName?: string; // Added propertyName
-  organizationId: string; // Added organizationId
+  propertyName?: string;
+  organizationId: string;
 }
 
 const InviteResidentForm: React.FC<InviteResidentFormProps> = ({
@@ -24,12 +22,11 @@ const InviteResidentForm: React.FC<InviteResidentFormProps> = ({
   propertyName,
   organizationId,
 }) => {
-  // Destructure organizationId
   const [inviteeEmail, setInviteeEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const { currentUser, roles: userRoles } = useAuth(); // Removed userOrgId from here
+  const { currentUser, roles: userRoles } = useAuth();
 
   const functions = getFunctions();
   const createInvitationFn = httpsCallable(functions, 'createInvitation');
@@ -44,7 +41,6 @@ const InviteResidentForm: React.FC<InviteResidentFormProps> = ({
       !userRoles.includes('property_manager') ||
       !organizationId
     ) {
-      // Use prop organizationId
       setError('Permission denied or organization context missing.');
       return;
     }
@@ -63,10 +59,10 @@ const InviteResidentForm: React.FC<InviteResidentFormProps> = ({
     try {
       const result = await createInvitationFn({
         inviteeEmail,
-        organizationId: organizationId, // Use prop organizationId
+        organizationId: organizationId,
         rolesToAssign: ['resident'],
         invitedByRole: 'property_manager',
-        targetPropertyId: propertyId, // The specific property this resident is invited to
+        targetPropertyId: propertyId,
       });
 
       const responseData = result.data as CreateInvitationResponse;
@@ -105,9 +101,7 @@ const InviteResidentForm: React.FC<InviteResidentFormProps> = ({
 
   return (
     <Box component='form' onSubmit={handleSubmit} sx={{ mt: 1 }}>
-      {/* Adjusted maxWidth for potentially wider row */}
       <Typography variant='subtitle1' gutterBottom sx={{ mt: 2 }}>
-        {/* Changed variant, adjusted margin */}
         Inviting Resident to: {propertyName || `Property ID: ${propertyId}`}
       </Typography>
       {error && (
@@ -126,10 +120,10 @@ const InviteResidentForm: React.FC<InviteResidentFormProps> = ({
           type='email'
           value={inviteeEmail}
           onChange={(e) => setInviteeEmail(e.target.value)}
-          margin='none' // Changed margin to none as Box handles spacing
+          margin='none'
           required
           disabled={loading}
-          sx={{ flexGrow: 1, minWidth: '75%' }} // Allow TextField to grow in the row
+          sx={{ flexGrow: 1 }}
         />
         <Button
           size='large'
@@ -137,7 +131,7 @@ const InviteResidentForm: React.FC<InviteResidentFormProps> = ({
           variant='contained'
           color='primary'
           disabled={loading}
-          sx={{ flexGrow: 1 }} // Allow TextField to grow in the row
+          sx={{ flexGrow: 1 }}
           startIcon={<PersonAdd />}
         >
           {loading ? <CircularProgress size={24} /> : 'Invite Resident'}

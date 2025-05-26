@@ -5,6 +5,7 @@ import crypto from 'crypto';
 
 // Define a more specific type for invitationData
 interface InvitationData {
+  name: string;
   email: string;
   organizationId: string;
   rolesToAssign: string[];
@@ -37,6 +38,7 @@ export const createInvitation = onCall(async (request) => {
 
   const {
     inviteeEmail,
+    inviteeName,
     organizationId,
     rolesToAssign, // e.g., ['property_manager'] or ['resident']
     invitedByRole, // 'admin' or 'property_manager'
@@ -108,6 +110,7 @@ export const createInvitation = onCall(async (request) => {
     const invitationPath = `organizations/${organizationId}/invitations/${invitationToken}`;
 
     const invitationData: InvitationData = {
+      name: inviteeName || inviteeEmail, // Use email if name is not provided
       email: inviteeEmail,
       organizationId: organizationId,
       rolesToAssign: rolesToAssign,
@@ -149,7 +152,7 @@ export const createInvitation = onCall(async (request) => {
 
     let emailTemplateName = '';
     const emailData: EmailTemplateData = {
-      inviteeName: inviteeEmail,
+      inviteeName: inviteeName || inviteeEmail,
       invitationLink: `${protocol}://${appDomain}/accept-invitation?token=${invitationToken}&orgId=${organizationId}`,
       appName: appName,
       inviterName: 'The Team', // This will be updated by subsequent logic for inviterDisplayName

@@ -148,7 +148,7 @@ const ResidentProfileManagement: React.FC = () => {
 
   return (
     <>
-      <Typography variant='h5' gutterBottom sx={{ mb: 3 }}>
+      <Typography variant='h5' gutterBottom sx={{ mb: 2 }}>
         Manage Your Profile
       </Typography>
 

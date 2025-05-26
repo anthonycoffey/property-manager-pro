@@ -1,5 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { Box, Typography, Paper, CircularProgress, Alert } from '@mui/material';
+import {
+  Box,
+  Typography,
+  CircularProgress,
+  Alert,
+  Divider,
+} from '@mui/material';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../../firebaseConfig';
 import { useAuth } from '../../hooks/useAuth';
@@ -73,12 +79,13 @@ const PropertyDetailsView: React.FC = () => {
 
   return (
     <>
-      <Typography variant='h5' gutterBottom component='div'>
+      <Typography variant='h5' gutterBottom sx={{ mb: 2 }}>
         Property Information
       </Typography>
+      <Divider />
       <Box sx={{ mt: 2 }}>
         <Typography variant='subtitle1' gutterBottom>
-          <strong>Name:</strong> {propertyDetails.name}
+          <strong>Resident Name:</strong> {propertyDetails.name}
         </Typography>
         <Typography variant='subtitle1' gutterBottom>
           <strong>Type:</strong> {propertyDetails.type}

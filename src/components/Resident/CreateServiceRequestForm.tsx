@@ -12,7 +12,7 @@ import {
   MenuItem,
   type SelectChangeEvent,
   Snackbar,
-  Stack, // Using Stack for layout
+  Stack,
 } from '@mui/material';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns'; // Changed from AdapterDateFnsV3
@@ -141,10 +141,11 @@ const CreateServiceRequestForm: React.FC<CreateServiceRequestFormProps> = ({
 
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
-      <Box component='form' onSubmit={handleSubmit} noValidate sx={{ mt: 1 }}>
-        <Typography variant='h5' gutterBottom sx={{ mb: 3 }}>
-          Request Roadside Assistance
+      <Box component='form' onSubmit={handleSubmit} noValidate>
+        <Typography variant='h5' gutterBottom sx={{ mb: 2 }}>
+          Service Request Form
         </Typography>
+
         {error && (
           <Alert severity='error' sx={{ mb: 2 }}>
             {error}

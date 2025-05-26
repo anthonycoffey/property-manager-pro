@@ -1,9 +1,8 @@
-import React, { useState, useEffect } from 'react'; // Added useEffect
+import React, { useState, useEffect } from 'react';
 import { getFunctions, httpsCallable } from 'firebase/functions';
-import { useAuth } from '../../hooks/useAuth'; // Assuming useAuth provides access to the current user
+import { useAuth } from '../../hooks/useAuth';
 import type { CreateInvitationResponse, AppError } from '../../types';
 
-// MUI Components (assuming you are using Material UI)
 import TextField from '@mui/material/TextField';
 import Button from '@mui/material/Button';
 import Box from '@mui/material/Box';
@@ -19,21 +18,14 @@ interface InvitePropertyManagerFormProps {
 const InvitePropertyManagerForm: React.FC<InvitePropertyManagerFormProps> = ({
   selectedOrganizationId,
 }) => {
+  const [inviteeName, setInviteeName] = useState('');
   const [inviteeEmail, setInviteeEmail] = useState('');
-  // const [organizationId, setOrganizationId] = useState(''); // Admin needs to specify this - REMOVED
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const { currentUser, roles } = useAuth(); // To ensure only admins can see/use this
+  const { currentUser, roles } = useAuth();
 
-  useEffect(() => {
-    // Clear email if the organization context changes, to avoid sending to wrong org if admin changes selection
-    // and had an email typed.
-    if (selectedOrganizationId) {
-      // Optionally, one might clear inviteeEmail here if desired when org changes
-      // setInviteeEmail('');
-    }
-  }, [selectedOrganizationId]);
+  useEffect(() => {}, [selectedOrganizationId]);
 
   const functions = getFunctions();
   const createInvitationFn = httpsCallable(functions, 'createInvitation');
@@ -65,17 +57,18 @@ const InvitePropertyManagerForm: React.FC<InvitePropertyManagerFormProps> = ({
     try {
       const result = await createInvitationFn({
         inviteeEmail,
-        organizationId: selectedOrganizationId, // Use prop here
+        inviteeName,
+        organizationId: selectedOrganizationId,
         rolesToAssign: ['property_manager'],
         invitedByRole: 'admin',
       });
 
-      // Assuming result.data is what needs to be typed
       const responseData = result.data as CreateInvitationResponse;
 
       if (responseData?.success) {
         setSuccess(`Invitation sent successfully to ${inviteeEmail}`);
         setInviteeEmail('');
+        setInviteeName('');
       } else {
         setError(responseData?.message || 'Failed to send invitation.');
       }
@@ -114,6 +107,15 @@ const InvitePropertyManagerForm: React.FC<InvitePropertyManagerFormProps> = ({
       )}
       <Box sx={{ display: 'flex', gap: 2 }}>
         <TextField
+          label='Property Manager Name'
+          value={inviteeName}
+          onChange={(e) => setInviteeName(e.target.value)}
+          margin='none'
+          required
+          disabled={loading}
+          sx={{ flexGrow: 1 }}
+        />
+        <TextField
           label='Property Manager Email'
           type='email'
           value={inviteeEmail}
@@ -121,7 +123,7 @@ const InvitePropertyManagerForm: React.FC<InvitePropertyManagerFormProps> = ({
           margin='none'
           required
           disabled={loading}
-          sx={{ flexGrow: 1, minWidth: '75%' }}
+          sx={{ flexGrow: 1 }}
         />
         <Button
           size='large'

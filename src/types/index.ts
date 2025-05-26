@@ -49,8 +49,8 @@ export interface Resident {
   propertyId: string;
   unitNumber?: string;
   roles: string[]; // Should include "resident"
-  leaseStartDate?: Timestamp | Date;
-  leaseEndDate?: Timestamp | Date;
+  leaseStartDate?: Timestamp | Date | null;
+  leaseEndDate?: Timestamp | Date | null;
   invitedBy?: string; // UID of the user who invited them
   createdAt: Timestamp | Date;
   // Vehicle Information

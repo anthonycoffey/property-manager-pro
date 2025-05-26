@@ -70,6 +70,15 @@ The current focus is on refactoring UI components for better maintainability and
 - **UI Consistency (New Decision 2025-05-25):** Status indicators in tables (like in `OrganizationManagementPanel.tsx`) should use MUI `Chip` components for better visual feedback and consistency across different management panels.
 - **Component Granularity (New Decision 2025-05-25):** Large, multi-functional components like the original `Dashboard.tsx` should be broken down into smaller, role-specific or feature-specific panels to improve maintainability, testability, and readability. This was applied to `Dashboard.tsx`.
 - **Comment Removal (User Request 2025-05-25):** All code comments are to be removed from refactored components to rely on clear code structure for understanding.
+- **RBAC Enhancement: Super Admin and Organization Manager Roles (New Decision 2025-05-26):**
+  - The existing `admin` role is now designated as a "Super Admin" with global system access.
+  - A new `organization_manager` role has been introduced.
+    - `organization_manager` users are invited by Super Admins and assigned to one or more specific organizations.
+    - Their access is scoped to their assigned organization(s) via an `organizationIds: string[]` custom claim.
+    - They have their own dashboard panel (`OrganizationManagerDashboardPanel.tsx`) for managing their assigned organizations.
+  - This change provides a clearer separation between global administration and tenant-specific (organization-level) administration.
+  - Implemented necessary backend (Cloud Functions for invitations and claim updates, Firestore rules) and frontend (Auth context, ProtectedRoute, Dashboard panels) changes.
+  - Documented in `systemPatterns.md` and `projectRoadmap.md`.
 
 ## 5. ImportantPatterns & Preferences
 

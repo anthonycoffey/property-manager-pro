@@ -54,5 +54,8 @@ export const createServiceRequest = createServiceRequestFunction;
 import { updateResidentDetailsByPm as updateResidentDetailsByPmFunction } from './callable/updateResidentDetailsByPm.js';
 export const updateResidentDetailsByPm = updateResidentDetailsByPmFunction;
 
+import { addOrganizationToManager as addOrganizationToManagerFunction } from './callable/addOrganizationToManager.js';
+export const addOrganizationToManager = addOrganizationToManagerFunction;
+
 // Note: The firebaseAdmin.ts and handleHttpsError.ts are not directly exported
 // as they are internal modules used by the functions themselves.

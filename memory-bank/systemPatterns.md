@@ -28,15 +28,16 @@ The application employs a modern web architecture with a React-based frontend an
 ## 2. Key Technical Decisions & Design Patterns
 
 *   **Role-Based Access Control (RBAC):**
-    *   Implemented using Firebase Authentication custom claims. Roles are stored as an array in the `roles` claim. Additional claims like `organizationId` and `propertyId` are used for granular access control.
+    *   Implemented using Firebase Authentication custom claims. Roles are stored as an array in the `roles` claim. Additional claims like `organizationId` (for single-org users), `organizationIds` (for multi-org users like Organization Managers), and `propertyId` are used for granular access control.
     *   **Custom Claims Strategy:**
-        *   **Super Admins:** `claims: { roles: ["admin"] }`
-        *   **Organization Users (Property Managers, Property Staff):** `claims: { roles: ["property_manager" | "property_staff"], organizationId: "{organizationId}" }`
-        *   **Residents:** `claims: { roles: ["resident"], organizationId: "{organizationId}", propertyId: "{propertyId}" }`
-        *   Minimum defined roles: `admin`, `property_manager`, `property_staff`, `resident`.
+        *   **Super Admins (Global Access):** `claims: { roles: ["admin"] }` (Has implicit access to all organizations, does not need `organizationId` or `organizationIds` in claims for this purpose).
+        *   **Organization Managers (Multi-Org Access):** `claims: { roles: ["organization_manager"], organizationIds: ["{organizationId1}", "{organizationId2}", ...] }` (Manages specified organizations).
+        *   **Organization Staff (Property Managers, other staff - Single-Org Access):** `claims: { roles: ["property_manager" | "property_staff"], organizationId: "{organizationId}" }` (Operates within one specific organization).
+        *   **Residents (Single-Property Access within an Org):** `claims: { roles: ["resident"], organizationId: "{organizationId}", propertyId: "{propertyId}" }`
+        *   Minimum defined roles: `admin`, `organization_manager`, `property_manager`, `property_staff`, `resident`.
     *   Enforced at multiple levels:
-        *   **Frontend:** Conditionally rendering UI elements and routes based on user roles and associated IDs in claims.
-        *   **Cloud Firestore:** Through meticulously defined Security Rules that restrict data access based on `request.auth.token.roles` (checking for presence of a role using `hasAny()`, `hasAll()`, or `hasOnly()`), `request.auth.token.organizationId`, `request.auth.token.propertyId`, and data ownership.
+        *   **Frontend:** Conditionally rendering UI elements and routes based on user roles and associated IDs/ID arrays in claims.
+        *   **Cloud Firestore:** Through meticulously defined Security Rules that restrict data access based on `request.auth.token.roles`, `request.auth.token.organizationId` (for single-org users), `request.auth.token.organizationIds` (using `in` operator for multi-org users), `request.auth.token.propertyId`, and data ownership.
         *   **Cloud Functions:** Validating user roles and associated IDs from the token before executing sensitive operations.
 *   **Data Modeling (Firestore - Multi-Tenant Structure):**
     *   The Firestore database is designed with a multi-tenant architecture, primarily centered around a root `organizations` collection. This ensures clear data isolation and management for different tenants.
@@ -69,7 +70,7 @@ The application employs a modern web architecture with a React-based frontend an
                 *   Fields:
                     *   `displayName: string`
                     *   `email: string`
-                    *   `organizationRoles: string[]` (e.g., `["property_manager"]`, `["property_staff"]`, `["property_manager", "property_staff"]`)
+                    *   `organizationRoles: string[]` (e.g., `["organization_manager"]`, `["property_manager"]`, `["property_staff"]`)
                     *   `permissions?: string[]` (Optional: for more granular permissions within the org beyond base roles)
                     *   `invitedBy: string` (Auth UID of user who invited them)
                     *   `createdAt: timestamp`
@@ -105,7 +106,7 @@ The application employs a modern web architecture with a React-based frontend an
                 *   Document ID: `{invitationId}` (e.g., auto-generated unique ID)
                 *   Fields:
                     *   `email: string`
-                    *   `rolesToAssign: string[]` (e.g., `["property_staff"]`, `["resident"]`)
+                    *   `rolesToAssign: string[]` (e.g., `["organization_manager"]`, `["property_staff"]`, `["resident"]`)
                     *   `targetPropertyId?: string` (if for a resident, links to `organizations/{organizationId}/properties/{propertyId}`)
                     *   `status: "pending" | "accepted" | "expired"`
                     *   `createdBy: string` (Auth UID of an org user)

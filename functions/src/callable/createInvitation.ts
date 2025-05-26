@@ -11,10 +11,10 @@ interface InvitationData {
   rolesToAssign: string[];
   status: 'pending' | 'accepted' | 'expired';
   createdBy: string;
-  invitedByRole: 'admin' | 'property_manager';
+  invitedByRole: 'admin' | 'property_manager' | 'organization_manager'; // Added organization_manager
   createdAt: FirebaseFirestore.FieldValue;
   expiresAt: Date | FirebaseFirestore.FieldValue;
-  invitationType: 'resident' | 'property_manager' | string;
+  invitationType: 'resident' | 'property_manager' | 'organization_manager' | string;
   targetPropertyId?: string;
 }
 
@@ -40,8 +40,8 @@ export const createInvitation = onCall(async (request) => {
     inviteeEmail,
     inviteeName,
     organizationId,
-    rolesToAssign, // e.g., ['property_manager'] or ['resident']
-    invitedByRole, // 'admin' or 'property_manager'
+    rolesToAssign, // e.g., ['property_manager'], ['resident'], or ['organization_manager']
+    invitedByRole, // 'admin', 'property_manager', or 'organization_manager'
     targetPropertyId, // Optional, only for resident invitations
   } = request.data;
 
@@ -61,7 +61,8 @@ export const createInvitation = onCall(async (request) => {
 
   const callerUid = request.auth.uid;
   const callerRoles = (request.auth.token?.roles as string[]) || [];
-  const callerOrgId = request.auth.token?.organizationId as string | undefined;
+  const callerOrgId = request.auth.token?.organizationId as string | undefined; // For PM
+  const callerOrgIds = (request.auth.token?.organizationIds as string[]) || []; // For Org Manager
 
   try {
     if (invitedByRole === 'admin') {
@@ -69,6 +70,13 @@ export const createInvitation = onCall(async (request) => {
         throw new HttpsError(
           'permission-denied',
           'Only administrators can create admin-level invitations.'
+        );
+      }
+      // Admin can invite property_manager or organization_manager
+      if (rolesToAssign.includes('organization_manager') && invitedByRole !== 'admin') {
+        throw new HttpsError(
+          'permission-denied',
+          'Only administrators can invite organization managers.'
         );
       }
     } else if (invitedByRole === 'property_manager') {
@@ -84,10 +92,10 @@ export const createInvitation = onCall(async (request) => {
       if (rolesToAssign.includes('resident') && !targetPropertyId) {
         throw new HttpsError(
           'invalid-argument',
-          'targetPropertyId is required for resident invitations.'
+          'targetPropertyId is required for resident invitations by property managers.'
         );
       }
-      if (targetPropertyId) {
+      if (targetPropertyId) { // This check is good, keep it
         const propertyRef = db.doc(
           `organizations/${organizationId}/properties/${targetPropertyId}`
         );
@@ -99,10 +107,38 @@ export const createInvitation = onCall(async (request) => {
           );
         }
       }
+    } else if (invitedByRole === 'organization_manager') {
+      if (!callerRoles.includes('organization_manager')) {
+        throw new HttpsError('permission-denied', 'Caller is not an organization manager.');
+      }
+      if (!callerOrgIds.includes(organizationId)) {
+        throw new HttpsError('permission-denied', 'Organization manager cannot invite for an unassigned organization.');
+      }
+      // Organization managers can typically invite residents or property staff.
+      // For now, let's assume they can invite residents similar to PMs.
+      if (rolesToAssign.includes('resident') && !targetPropertyId) {
+        throw new HttpsError(
+          'invalid-argument',
+          'targetPropertyId is required for resident invitations by organization managers.'
+        );
+      }
+      if (targetPropertyId) { // This check is good, keep it
+        const propertyRef = db.doc(
+          `organizations/${organizationId}/properties/${targetPropertyId}`
+        );
+        const propertyDoc = await propertyRef.get();
+        if (!propertyDoc.exists) {
+          throw new HttpsError(
+            'not-found',
+            `Property ${targetPropertyId} not found in organization ${organizationId}.`
+          );
+        }
+      }
+      // Add other role invitation logic for org managers if needed (e.g., inviting property_staff)
     } else {
       throw new HttpsError(
         'invalid-argument',
-        'Invalid invitedByRole specified.'
+        'Invalid invitedByRole specified. Must be admin, property_manager, or organization_manager.'
       );
     }
 
@@ -116,13 +152,15 @@ export const createInvitation = onCall(async (request) => {
       rolesToAssign: rolesToAssign,
       status: 'pending',
       createdBy: callerUid,
-      invitedByRole: invitedByRole as 'admin' | 'property_manager',
+      invitedByRole: invitedByRole as 'admin' | 'property_manager' | 'organization_manager',
       createdAt: FieldValue.serverTimestamp(),
-      expiresAt: FieldValue.serverTimestamp(),
+      expiresAt: FieldValue.serverTimestamp(), // Will be overwritten
       invitationType: rolesToAssign.includes('resident')
         ? 'resident'
         : rolesToAssign.includes('property_manager')
         ? 'property_manager'
+        : rolesToAssign.includes('organization_manager')
+        ? 'organization_manager'
         : 'general',
     };
 
@@ -160,17 +198,33 @@ export const createInvitation = onCall(async (request) => {
 
     let inviterDisplayName = request.auth.token.name || 'The Team';
     if (!request.auth.token.name) {
-      const inviterProfilePath = callerRoles.includes('admin')
-        ? `admins/${callerUid}`
-        : `organizations/${callerOrgId}/users/${callerUid}`;
-      const inviterProfile = await db.doc(inviterProfilePath).get();
-      if (inviterProfile.exists && inviterProfile.data()?.displayName) {
-        inviterDisplayName = inviterProfile.data()?.displayName;
+      let inviterProfilePath = '';
+      if (callerRoles.includes('admin')) {
+        inviterProfilePath = `admins/${callerUid}`;
+      } else if (callerRoles.includes('property_manager') && callerOrgId) {
+        inviterProfilePath = `organizations/${callerOrgId}/users/${callerUid}`;
+      } else if (callerRoles.includes('organization_manager') && organizationId) { 
+        // Use the target organizationId for the profile path, assuming the org manager has a profile there
+        // or a global profile if that's the pattern. For now, assume org-specific.
+        inviterProfilePath = `organizations/${organizationId}/users/${callerUid}`;
+      }
+
+      if (inviterProfilePath) {
+        const inviterProfile = await db.doc(inviterProfilePath).get();
+        if (inviterProfile.exists && inviterProfile.data()?.displayName) {
+          inviterDisplayName = inviterProfile.data()?.displayName;
+        }
       }
     }
     emailData.inviterName = inviterDisplayName;
 
-    if (rolesToAssign.includes('property_manager')) {
+    if (rolesToAssign.includes('organization_manager')) {
+      emailTemplateName = 'organizationManagerInvitation'; // New template
+      const orgDoc = await db.doc(`organizations/${organizationId}`).get();
+      emailData.organizationName = orgDoc.exists
+        ? orgDoc.data()?.name || organizationId
+        : organizationId;
+    } else if (rolesToAssign.includes('property_manager')) {
       emailTemplateName = 'propertyManagerInvitation';
       const orgDoc = await db.doc(`organizations/${organizationId}`).get();
       emailData.organizationName = orgDoc.exists

@@ -122,18 +122,23 @@ export const signUpWithInvitation = onCall(async (request) => {
     }
 
 
-    // 5. Set Custom Claims
-    const claims: {
-      roles: string[];
-      organizationId: string;
-      propertyId?: string;
-    } = {
-      roles: rolesToAssign,
-      organizationId: organizationId,
-    };
+    let claimsToSet: {
+      roles: string[] | undefined;
+      organizationIds?: string[] | undefined;
+      propertyId?: string | undefined;
+    } = {};
 
-    if (rolesToAssign.includes('resident') && targetPropertyId) {
-      claims.propertyId = targetPropertyId;
+    if (rolesToAssign.includes('organization_manager')) {
+      claimsToSet = {
+        roles: ['organization_manager'],
+        organizationIds: [organizationId], // Store as an array from the start
+      };
+    } else if (rolesToAssign.includes('resident') && targetPropertyId) {
+      claimsToSet = {
+        roles: rolesToAssign,
+        organizationId: organizationId,
+        propertyId: targetPropertyId,
+      };
     } else if (rolesToAssign.includes('resident') && !targetPropertyId) {
       console.error(
         `Resident role assigned for ${uid} but targetPropertyId is missing in invitation ${invitationId}.`
@@ -142,9 +147,16 @@ export const signUpWithInvitation = onCall(async (request) => {
         'internal',
         'Resident invitation is missing targetPropertyId.'
       );
+    } else {
+      // Default for property_manager and other non-resident, non-org_manager roles
+      claimsToSet = {
+        roles: rolesToAssign,
+        organizationId: organizationId,
+      };
     }
-    await adminAuth.setCustomUserClaims(uid, claims);
-    console.log(`Custom claims set for invited user ${uid}: ${JSON.stringify(claims)}`);
+
+    await adminAuth.setCustomUserClaims(uid, claimsToSet);
+    console.log(`Custom claims set for invited user ${uid}: ${JSON.stringify(claimsToSet)}`);
 
     // 6. Create Firestore User Profile
     let userProfilePath = '';
@@ -158,14 +170,17 @@ export const signUpWithInvitation = onCall(async (request) => {
       invitedBy: invitedBy || null,
     };
 
-    if (rolesToAssign.includes('resident')) {
-      if (!claims.propertyId) {
+    if (rolesToAssign.includes('organization_manager')) {
+      userProfilePath = `organizations/${organizationId}/users/${uid}`;
+      userProfileData.organizationRoles = ['organization_manager'];
+    } else if (rolesToAssign.includes('resident')) {
+      if (!claimsToSet.propertyId) { // Use claimsToSet here
         throw new HttpsError('internal', 'Cannot create resident profile without propertyId.');
       }
-      userProfilePath = `organizations/${organizationId}/properties/${claims.propertyId}/residents/${uid}`;
+      userProfilePath = `organizations/${organizationId}/properties/${claimsToSet.propertyId}/residents/${uid}`;
       userProfileData.roles = ['resident'];
-      userProfileData.propertyId = claims.propertyId;
-    } else {
+      userProfileData.propertyId = claimsToSet.propertyId;
+    } else { // For property_manager and other roles that are not resident or org_manager
       userProfilePath = `organizations/${organizationId}/users/${uid}`;
       userProfileData.organizationRoles = rolesToAssign;
     }

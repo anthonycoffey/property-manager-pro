@@ -7,8 +7,8 @@ import {
   IconButton,
   Avatar,
 } from '@mui/material'; // Added Avatar
-import Brightness4Icon from '@mui/icons-material/Brightness4';
-import Brightness7Icon from '@mui/icons-material/Brightness7';
+import LightModeIcon from '@mui/icons-material/LightMode'; // New Icon for light mode
+import DarkModeIcon from '@mui/icons-material/DarkMode';   // New Icon for dark mode
 import PMPLogoLight from '/property-manager-pro-light.svg'; // Import the light logo
 import AppRoutes from './routes';
 import { useThemeMode } from './hooks/useThemeMode';
@@ -33,7 +33,7 @@ function App() {
             Property Manager Pro
           </Typography>
           <IconButton sx={{ ml: 1 }} onClick={toggleColorMode} color='inherit'>
-            {mode === 'dark' ? <Brightness7Icon /> : <Brightness4Icon />}
+            {mode === 'dark' ? <LightModeIcon /> : <DarkModeIcon />}
           </IconButton>
           {currentUser ? (
             <LogoutButton />

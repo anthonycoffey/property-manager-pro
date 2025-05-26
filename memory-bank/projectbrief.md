@@ -2,20 +2,25 @@
 
 ## 1. Project Goal
 
-To develop a multi-tenant ERP-style web application for property management. The application will facilitate various property-related operations for different user roles, including Administrators, Property Managers, and Residents.
+To develop a multi-tenant ERP-style web application for property management. The application will facilitate various property-related operations for different user roles, including Super Administrators (`admin`), Organization Managers (`organization_manager`), Property Managers (`property_manager`), and Residents (`resident`).
 
 ## 2. Core Requirements
 
-*   **Multi-tenancy:** The system must support distinct data, configurations, and user bases for multiple property management entities or clients.
-*   **Role-Based Access Control (RBAC):** Implement a robust RBAC system to ensure users can only access features and data appropriate to their roles (Admin, Property Manager, Resident).
+*   **Multi-tenancy:** The system must support distinct data, configurations, and user bases for multiple property management entities or clients (Organizations).
+*   **Role-Based Access Control (RBAC):** Implement a robust RBAC system to ensure users can only access features and data appropriate to their roles. Key roles include:
+    *   **Super Admin (`admin`):** Global system administration, manages Organizations and Organization Managers.
+    *   **Organization Manager (`organization_manager`):** Manages one or more assigned Organizations, including their staff (Property Managers), properties, and residents.
+    *   **Property Manager (`property_manager`):** Manages specific properties and their residents within an Organization.
+    *   **Resident (`resident`):** Accesses their own information and services related to their property.
 *   **User Management:**
-    *   Admins can manage Property Managers.
+    *   Super Admins can create and manage Organizations and invite/assign Organization Managers to them.
+    *   Organization Managers can manage Property Managers and other staff within their assigned Organization(s).
     *   Property Managers can manage properties and residents associated with their properties.
     *   Residents can manage their own profiles and service requests.
-*   **Property Management:** Allow Property Managers to list, add, edit, and manage details of properties.
+*   **Property Management:** Allow Organization Managers and Property Managers to list, add, edit, and manage details of properties within their scope.
 *   **Resident Management:**
-    *   Property Managers can invite and manage residents for their properties.
-    *   Admins can manage all residents for support purposes.
+    *   Property Managers (and Organization Managers) can invite and manage residents for their properties.
+    *   Super Admins can manage all residents across all organizations for support purposes.
 *   **Service Request Management:** Residents can request services, and these requests can be tracked and managed.
 *   **Invitation System:** Property Managers can generate referral codes (email/QR) to invite new residents.
 *   **Data Storage:** Utilize a scalable and secure NoSQL database (Cloud Firestore) for all application data.
@@ -37,4 +42,4 @@ To develop a multi-tenant ERP-style web application for property management. The
 
 ## 5. Scope
 
-The initial scope focuses on delivering the core functionalities for Admins, Property Managers, and Residents as outlined in the project roadmap. This includes user authentication, property management, resident management, service requests, and the invitation system, CRM integration, and basic analytics.
+The initial scope focuses on delivering the core functionalities for Super Admins, Organization Managers, Property Managers, and Residents as outlined in the project roadmap. This includes user authentication, property management, resident management, service requests, and the invitation system, CRM integration, and basic analytics.

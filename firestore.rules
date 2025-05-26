@@ -19,6 +19,10 @@ service cloud.firestore {
       return hasRole('property_manager');
     }
 
+    function isOrganizationManager() {
+      return hasRole('organization_manager');
+    }
+
     // function isPropertyStaff() {
     //   return hasRole('property_staff');
     // }
@@ -27,8 +31,12 @@ service cloud.firestore {
       return hasRole('resident');
     }
 
-    function isOrgUser(orgId) {
+    function isOrgUser(orgId) { // This is for users with a single organizationId claim
       return isAuthenticated() && request.auth.token.organizationId == orgId;
+    }
+
+    function isOrgManagerForOrg(orgId) { // For organization_manager with an array of organizationIds
+      return isOrganizationManager() && request.auth.token.organizationIds.hasAny([orgId]);
     }
 
     function isPropertyResident(orgId, propId) {
@@ -61,39 +69,47 @@ service cloud.firestore {
       // Admins can create, read, update, delete organizations
       allow create, read, update, delete: if isAdmin();
 
-      // Organization users can read their own organization's document
-      allow read: if isOrgUser(organizationId);
+      // Organization Managers can read/update their assigned organizations
+      allow read, update: if isOrgManagerForOrg(organizationId);
+      // Organization users (like PMs with single orgId) can read their own organization's document
+      allow read: if isOrgUser(organizationId) && (isPropertyManager() /* || isPropertyStaff() */);
 
-      // Subcollection: users (Property Managers, Staff)
+
+      // Subcollection: users (Property Managers, Staff, Organization Managers if profile stored here)
       match /users/{orgUserId} {
         // Admins can manage all organization users
         allow read, write: if isAdmin();
-        // Property Managers can manage users within their organization
+        // Organization Managers can manage users within their assigned organizations
+        allow read, write: if isOrgManagerForOrg(organizationId);
+        // Property Managers can manage users within their organization (if not already covered by OrgManager)
+        // This rule might be redundant if OrgManagers handle user management.
+        // For now, let's assume PMs can also manage users if they have the PM role and are in their org.
         allow read, write: if isPropertyManager() && isOrgUser(organizationId);
         // Property Staff can read users within their organization
-        allow read: if isPropertyStaff() && isOrgUser(organizationId);
+        // allow read: if isPropertyStaff() && isOrgUser(organizationId); // isPropertyStaff is commented out
       }
 
       // Subcollection: properties
       match /properties/{propertyId} {
         // Admins can manage all properties
         allow read, write: if isAdmin();
+        // Organization Managers can manage properties within their assigned organizations
+        allow read, write: if isOrgManagerForOrg(organizationId);
         // Property Managers can manage properties within their organization
         allow read, write: if isPropertyManager() && isOrgUser(organizationId);
-      // Property Staff can read properties within their organization
-      allow read: if isPropertyStaff() && isOrgUser(organizationId);
-      // Residents can read the specific property they belong to
-      allow read: if isResident() && isPropertyResident(organizationId, propertyId);
+        // Property Staff can read properties within their organization
+        // allow read: if isPropertyStaff() && isOrgUser(organizationId); // isPropertyStaff is commented out
+        // Residents can read the specific property they belong to
+        allow read: if isResident() && isPropertyResident(organizationId, propertyId);
 
       // Subcollection: residents
         match /residents/{residentId} {
           // Admins can manage all residents
           allow read, write: if isAdmin();
+          // Organization Managers can manage residents within their assigned organizations
+          allow read, write: if isOrgManagerForOrg(organizationId);
           // Property Managers can manage residents within their organization and property
-          // Note: PMs should typically invite/create residents, and perhaps deactivate. Full write might be too broad.
-          // For now, let's assume PMs can manage (read/write) residents of properties they are associated with.
-          // This might need refinement based on specific PM permissions for properties.
-          allow read, write: if isPropertyManager() && isOrgUser(organizationId); // Simplified for now, assumes PM has org-level access to residents
+          allow read, write: if isPropertyManager() && isOrgUser(organizationId);
 
           // Residents can read their own profile
           allow read: if isResident() && request.auth.uid == residentId && isPropertyResident(organizationId, propertyId);
@@ -122,14 +138,19 @@ service cloud.firestore {
         // Admins can manage all invitations (create, read, update, delete)
         allow read, write: if isAdmin();
 
+        // Organization Managers can manage invitations within their assigned organizations
+        allow create: if isOrgManagerForOrg(organizationId) &&
+                        request.resource.data.createdBy == request.auth.uid &&
+                        request.resource.data.organizationId == organizationId; // Ensure invitation is for one of their orgs
+        allow read, update: if isOrgManagerForOrg(organizationId);
+
+
         // Property Managers can create invitations within their organization.
-        // They can read/update invitations they created or for their organization.
         allow create: if isPropertyManager() && isOrgUser(organizationId) &&
                         request.resource.data.createdBy == request.auth.uid &&
                         request.resource.data.organizationId == organizationId;
-
         allow read, update: if isPropertyManager() && isOrgUser(organizationId);
-        // No direct delete for PMs unless specifically designed (e.g., only for 'pending' ones they created)
+
 
         // Public read for a specific invitation token (e.g., when user clicks link before sign-up)
         // This is tricky because unauthenticated users can't be easily granted specific doc access.
@@ -143,20 +164,24 @@ service cloud.firestore {
       match /services/{serviceId} {
         allow read, write: if isAdmin(); // Admin full access
 
+        // Organization Manager access
+        allow read, write: if isOrgManagerForOrg(organizationId) && resource.data.organizationId == organizationId;
+
+
         // --- Property Manager/Staff Rules ---
         // GET, UPDATE, DELETE single service document
-        allow get, update, delete: if (isPropertyManager() || isPropertyStaff()) &&
+        allow get, update, delete: if (isPropertyManager() /* || isPropertyStaff() */ ) &&
                                       isOrgUser(organizationId) &&
-                                      resource.data.organizationId == organizationId && 
+                                      resource.data.organizationId == organizationId &&
                                       resource.data.propertyId == request.auth.token.propertyId;
 
         // LIST services (client query must filter by propertyId for effective scoping by this rule)
-        allow list: if (isPropertyManager() || isPropertyStaff()) &&
+        allow list: if (isPropertyManager() /* || isPropertyStaff() */) &&
                        isOrgUser(organizationId) &&
                        request.auth.token.propertyId != null; // Must be associated with a property
 
         // CREATE service
-        allow create: if (isPropertyManager() || isPropertyStaff()) &&
+        allow create: if (isPropertyManager() /* || isPropertyStaff() */) &&
                          isOrgUser(organizationId) &&
                          request.auth.token.propertyId != null &&
                          request.resource.data.organizationId == organizationId &&

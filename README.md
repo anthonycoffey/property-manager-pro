@@ -87,7 +87,6 @@ Property Manager Pro is a multi-tenant ERP-style web application designed to str
         VITE_FIREBASE_MESSAGING_SENDER_ID="YOUR_FIREBASE_MESSAGING_SENDER_ID"
         VITE_FIREBASE_APP_ID="YOUR_FIREBASE_APP_ID"
         VITE_FIREBASE_MEASUREMENT_ID="YOUR_FIREBASE_MEASUREMENT_ID" # Optional
-
         VITE_GOOGLE_MAPS_API_KEY="YOUR_GOOGLE_MAPS_API_KEY"
         ```
     *   Replace `YOUR_...` placeholders with your actual Firebase project configuration values and Google Maps API key.

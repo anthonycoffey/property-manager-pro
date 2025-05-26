@@ -20,7 +20,7 @@ import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { httpsCallable } from 'firebase/functions';
 import { Timestamp } from 'firebase/firestore';
-import { functions } from '../../firebaseConfig'; 
+import { functions } from '../../firebaseConfig';
 import type { Resident, AppError } from '../../types';
 
 interface EditResidentModalProps {
@@ -31,6 +31,39 @@ interface EditResidentModalProps {
   propertyId: string;
   onSuccess: () => void;
 }
+
+// Define helper and interface at module scope
+interface FirestoreTimestampLike {
+  seconds: number;
+  nanoseconds: number;
+}
+
+const convertToDateOrNull = (
+  field?: Timestamp | Date | FirestoreTimestampLike | string | number | null
+): Date | null => {
+  if (!field) return null; // Handles null and undefined by returning null
+  if (field instanceof Timestamp) return field.toDate();
+  if (field instanceof Date) return field;
+
+  // Check for Firestore Timestamp-like plain object
+  if (
+    typeof field === 'object' && // Already checked not null by !field
+    'seconds' in field && // Check if properties exist
+    'nanoseconds' in field &&
+    typeof (field as FirestoreTimestampLike).seconds === 'number' && // Then assert and check type
+    typeof (field as FirestoreTimestampLike).nanoseconds === 'number'
+  ) {
+    const tsLike = field as FirestoreTimestampLike;
+    return new Timestamp(tsLike.seconds, tsLike.nanoseconds).toDate();
+  }
+
+  // Try to parse if it's a string or number
+  if (typeof field === 'string' || typeof field === 'number') {
+    const d = new Date(field);
+    if (!isNaN(d.getTime())) return d;
+  }
+  return null; // Return null if parsing failed or type not matched
+};
 
 const EditResidentModal: React.FC<EditResidentModalProps> = ({
   open,
@@ -54,8 +87,8 @@ const EditResidentModal: React.FC<EditResidentModalProps> = ({
       setFormData({
         displayName: residentData.displayName || '',
         unitNumber: residentData.unitNumber || '',
-        leaseStartDate: residentData.leaseStartDate instanceof Timestamp ? residentData.leaseStartDate.toDate() : residentData.leaseStartDate,
-        leaseEndDate: residentData.leaseEndDate instanceof Timestamp ? residentData.leaseEndDate.toDate() : residentData.leaseEndDate,
+        leaseStartDate: convertToDateOrNull(residentData.leaseStartDate),
+        leaseEndDate: convertToDateOrNull(residentData.leaseEndDate),
         vehicleMake: residentData.vehicleMake || '',
         vehicleModel: residentData.vehicleModel || '',
         vehicleColor: residentData.vehicleColor || '',
@@ -74,10 +107,15 @@ const EditResidentModal: React.FC<EditResidentModalProps> = ({
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleDateChange = (name: 'leaseStartDate' | 'leaseEndDate', newValue: Date | null) => {
-    setFormData(prev => ({ ...prev, [name]: newValue }));
+  const handleDateChange = (
+    name: 'leaseStartDate' | 'leaseEndDate',
+    newValue: Date | null
+  ) => {
+    // newValue is Date | null from DatePicker.
+    // formData state for dates should be Date | null.
+    // Resident type now allows null for dates.
+    setFormData((prev) => ({ ...prev, [name]: newValue }));
   };
-
 
   const handleSnackbarClose = () => setSnackbarOpen(false);
 
@@ -94,59 +132,89 @@ const EditResidentModal: React.FC<EditResidentModalProps> = ({
     let changed = false;
 
     // Compare and collect changed fields
-    if (formData.displayName !== undefined && formData.displayName !== residentData.displayName) {
-        updatedDetails.displayName = formData.displayName;
-        changed = true;
+    if (
+      formData.displayName !== undefined &&
+      formData.displayName !== residentData.displayName
+    ) {
+      updatedDetails.displayName = formData.displayName;
+      changed = true;
     }
-    if (formData.unitNumber !== undefined && formData.unitNumber !== (residentData.unitNumber || '')) {
-        updatedDetails.unitNumber = formData.unitNumber;
-        changed = true;
+    if (
+      formData.unitNumber !== undefined &&
+      formData.unitNumber !== (residentData.unitNumber || '')
+    ) {
+      updatedDetails.unitNumber = formData.unitNumber;
+      changed = true;
     }
-    if (formData.vehicleMake !== undefined && formData.vehicleMake !== (residentData.vehicleMake || '')) {
-        updatedDetails.vehicleMake = formData.vehicleMake;
-        changed = true;
+    if (
+      formData.vehicleMake !== undefined &&
+      formData.vehicleMake !== (residentData.vehicleMake || '')
+    ) {
+      updatedDetails.vehicleMake = formData.vehicleMake;
+      changed = true;
     }
-    if (formData.vehicleModel !== undefined && formData.vehicleModel !== (residentData.vehicleModel || '')) {
-        updatedDetails.vehicleModel = formData.vehicleModel;
-        changed = true;
+    if (
+      formData.vehicleModel !== undefined &&
+      formData.vehicleModel !== (residentData.vehicleModel || '')
+    ) {
+      updatedDetails.vehicleModel = formData.vehicleModel;
+      changed = true;
     }
-    if (formData.vehicleColor !== undefined && formData.vehicleColor !== (residentData.vehicleColor || '')) {
-        updatedDetails.vehicleColor = formData.vehicleColor;
-        changed = true;
+    if (
+      formData.vehicleColor !== undefined &&
+      formData.vehicleColor !== (residentData.vehicleColor || '')
+    ) {
+      updatedDetails.vehicleColor = formData.vehicleColor;
+      changed = true;
     }
-    if (formData.licensePlate !== undefined && formData.licensePlate !== (residentData.licensePlate || '')) {
-        updatedDetails.licensePlate = formData.licensePlate;
-        changed = true;
+    if (
+      formData.licensePlate !== undefined &&
+      formData.licensePlate !== (residentData.licensePlate || '')
+    ) {
+      updatedDetails.licensePlate = formData.licensePlate;
+      changed = true;
     }
 
     // Date comparison is more complex
-    const originalStartDate = residentData.leaseStartDate instanceof Timestamp ? residentData.leaseStartDate.toDate() : residentData.leaseStartDate;
-    const originalEndDate = residentData.leaseEndDate instanceof Timestamp ? residentData.leaseEndDate.toDate() : residentData.leaseEndDate;
+    // originalStartDateJs and originalEndDateJs will be Date | null
+    const originalStartDateJs = convertToDateOrNull(residentData.leaseStartDate);
+    const originalEndDateJs = convertToDateOrNull(residentData.leaseEndDate);
 
-    if (formData.leaseStartDate !== undefined) {
-        // formData.leaseStartDate is already a Date object from handleDateChange or useEffect
-        const newStartDate = formData.leaseStartDate as Date; // Assert as Date
-        if (!originalStartDate || newStartDate.getTime() !== new Date(originalStartDate).getTime()) {
-            updatedDetails.leaseStartDate = Timestamp.fromDate(newStartDate);
-            changed = true;
+    // Handle leaseStartDate
+    if (Object.prototype.hasOwnProperty.call(formData, 'leaseStartDate')) {
+      // newStartDateValue is Date | null from formData state (via handleDateChange)
+      const newStartDateValue = formData.leaseStartDate as Date | null | undefined; // Cast to include undefined due to Partial<Resident>
+
+      if (newStartDateValue === null) { // Date was explicitly cleared
+        if (originalStartDateJs !== null) { // It was cleared from a previously set value
+          updatedDetails.leaseStartDate = null; 
+          changed = true;
         }
-    } else if (Object.prototype.hasOwnProperty.call(formData, 'leaseStartDate') && originalStartDate) { // Explicitly cleared
-        updatedDetails.leaseStartDate = undefined; 
-        changed = true;
+      } else if (newStartDateValue instanceof Date) { // It's a valid Date object
+        if (!originalStartDateJs || newStartDateValue.getTime() !== originalStartDateJs.getTime()) {
+          updatedDetails.leaseStartDate = Timestamp.fromDate(newStartDateValue);
+          changed = true;
+        }
+      }
+      // If newStartDateValue is undefined (field not touched), this block is skipped by hasOwnProperty
     }
 
-    if (formData.leaseEndDate !== undefined) {
-        // formData.leaseEndDate is already a Date object
-        const newEndDate = formData.leaseEndDate as Date; // Assert as Date
-        if (!originalEndDate || newEndDate.getTime() !== new Date(originalEndDate).getTime()) {
-            updatedDetails.leaseEndDate = Timestamp.fromDate(newEndDate);
-            changed = true;
-        }
-    } else if (Object.prototype.hasOwnProperty.call(formData, 'leaseEndDate') && originalEndDate) { // Explicitly cleared
-        updatedDetails.leaseEndDate = undefined;
-        changed = true;
-    }
+    // Handle leaseEndDate
+    if (Object.prototype.hasOwnProperty.call(formData, 'leaseEndDate')) {
+      const newEndDateValue = formData.leaseEndDate as Date | null | undefined;
 
+      if (newEndDateValue === null) {
+        if (originalEndDateJs !== null) {
+          updatedDetails.leaseEndDate = null;
+          changed = true;
+        }
+      } else if (newEndDateValue instanceof Date) {
+        if (!originalEndDateJs || newEndDateValue.getTime() !== originalEndDateJs.getTime()) {
+          updatedDetails.leaseEndDate = Timestamp.fromDate(newEndDateValue);
+          changed = true;
+        }
+      }
+    }
 
     if (!changed) {
       setSnackbarMessage('No changes detected.');
@@ -155,10 +223,13 @@ const EditResidentModal: React.FC<EditResidentModalProps> = ({
       onClose();
       return;
     }
-    
+
     setLoading(true);
 
-    const updateResidentFunction = httpsCallable(functions, 'updateResidentDetailsByPm');
+    const updateResidentFunction = httpsCallable(
+      functions,
+      'updateResidentDetailsByPm'
+    );
     try {
       await updateResidentFunction({
         organizationId,
@@ -173,14 +244,16 @@ const EditResidentModal: React.FC<EditResidentModalProps> = ({
     } catch (err: unknown) {
       const castError = err as AppError;
       setError(castError.message || 'Failed to update resident details.');
-      setSnackbarMessage(castError.message || 'Failed to update resident details.');
+      setSnackbarMessage(
+        castError.message || 'Failed to update resident details.'
+      );
       setSnackbarSeverity('error');
       setSnackbarOpen(true);
     } finally {
       setLoading(false);
     }
   };
-  
+
   // formatDateForInput is no longer needed for DatePicker
 
   return (
@@ -210,7 +283,13 @@ const EditResidentModal: React.FC<EditResidentModalProps> = ({
             )}
             {/* Using Box with flexbox instead of Grid */}
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-              <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2 }}>
+              <Box
+                sx={{
+                  display: 'flex',
+                  flexDirection: { xs: 'column', sm: 'row' },
+                  gap: 2,
+                }}
+              >
                 <TextField
                   label='Display Name'
                   name='displayName'
@@ -235,7 +314,13 @@ const EditResidentModal: React.FC<EditResidentModalProps> = ({
                   sx={{ flex: 1 }}
                 />
               </Box>
-              <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2 }}>
+              <Box
+                sx={{
+                  display: 'flex',
+                  flexDirection: { xs: 'column', sm: 'row' },
+                  gap: 2,
+                }}
+              >
                 <TextField
                   label='Unit Number'
                   name='unitNumber'
@@ -247,26 +332,58 @@ const EditResidentModal: React.FC<EditResidentModalProps> = ({
                   sx={{ flex: 1 }}
                 />
                 <DatePicker
-                  label="Lease Start Date"
-                  value={formData.leaseStartDate instanceof Timestamp ? formData.leaseStartDate.toDate() : formData.leaseStartDate || null}
-                  onChange={(newValue) => handleDateChange('leaseStartDate', newValue)}
+                  label='Lease Start Date'
+                  value={(formData.leaseStartDate as Date | null | undefined) || null}
+                  onChange={(newValue) =>
+                    handleDateChange('leaseStartDate', newValue)
+                  }
                   disabled={loading}
-                  slotProps={{ textField: { fullWidth: true, margin: 'dense', sx: { flex: 1 } } }}
+                  slotProps={{
+                    textField: {
+                      fullWidth: true,
+                      margin: 'dense',
+                      sx: { flex: 1 },
+                    },
+                  }}
                 />
               </Box>
-              <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2 }}>
+              <Box
+                sx={{
+                  display: 'flex',
+                  flexDirection: { xs: 'column', sm: 'row' },
+                  gap: 2,
+                }}
+              >
                 <DatePicker
-                  label="Lease End Date"
-                  value={formData.leaseEndDate instanceof Timestamp ? formData.leaseEndDate.toDate() : formData.leaseEndDate || null}
-                  onChange={(newValue) => handleDateChange('leaseEndDate', newValue)}
+                  label='Lease End Date'
+                  value={(formData.leaseEndDate as Date | null | undefined) || null}
+                  onChange={(newValue) =>
+                    handleDateChange('leaseEndDate', newValue)
+                  }
                   disabled={loading}
-                  slotProps={{ textField: { fullWidth: true, margin: 'dense', sx: { flex: 1 } } }}
+                  slotProps={{
+                    textField: {
+                      fullWidth: true,
+                      margin: 'dense',
+                      sx: { flex: 1 },
+                    },
+                  }}
                 />
-                <Box sx={{flex: 1}} /> {/* Spacer to balance the row if only one item */}
+                <Box sx={{ flex: 1 }} />{' '}
+                {/* Spacer to balance the row if only one item */}
               </Box>
 
-              <Typography variant="subtitle1" sx={{mt: 3, mb: 1}}>Vehicle Information</Typography>
-              <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, flexWrap: 'wrap', gap: 2 }}>
+              <Typography variant='subtitle1' sx={{ mt: 3, mb: 1 }}>
+                Vehicle Information
+              </Typography>
+              <Box
+                sx={{
+                  display: 'flex',
+                  flexDirection: { xs: 'column', sm: 'row' },
+                  flexWrap: 'wrap',
+                  gap: 2,
+                }}
+              >
                 <TextField
                   label='Vehicle Make'
                   name='vehicleMake'
@@ -275,7 +392,14 @@ const EditResidentModal: React.FC<EditResidentModalProps> = ({
                   fullWidth
                   margin='dense'
                   disabled={loading}
-                  sx={{ flexBasis: { xs: '100%', sm: 'calc(50% - 8px)', md: 'calc(25% - 12px)'}, flexGrow: 1 }}
+                  sx={{
+                    flexBasis: {
+                      xs: '100%',
+                      sm: 'calc(50% - 8px)',
+                      md: 'calc(25% - 12px)',
+                    },
+                    flexGrow: 1,
+                  }}
                 />
                 <TextField
                   label='Vehicle Model'
@@ -285,7 +409,14 @@ const EditResidentModal: React.FC<EditResidentModalProps> = ({
                   fullWidth
                   margin='dense'
                   disabled={loading}
-                  sx={{ flexBasis: { xs: '100%', sm: 'calc(50% - 8px)', md: 'calc(25% - 12px)'}, flexGrow: 1 }}
+                  sx={{
+                    flexBasis: {
+                      xs: '100%',
+                      sm: 'calc(50% - 8px)',
+                      md: 'calc(25% - 12px)',
+                    },
+                    flexGrow: 1,
+                  }}
                 />
                 <TextField
                   label='Vehicle Color'
@@ -295,7 +426,14 @@ const EditResidentModal: React.FC<EditResidentModalProps> = ({
                   fullWidth
                   margin='dense'
                   disabled={loading}
-                  sx={{ flexBasis: { xs: '100%', sm: 'calc(50% - 8px)', md: 'calc(25% - 12px)'}, flexGrow: 1 }}
+                  sx={{
+                    flexBasis: {
+                      xs: '100%',
+                      sm: 'calc(50% - 8px)',
+                      md: 'calc(25% - 12px)',
+                    },
+                    flexGrow: 1,
+                  }}
                 />
                 <TextField
                   label='License Plate'
@@ -305,7 +443,14 @@ const EditResidentModal: React.FC<EditResidentModalProps> = ({
                   fullWidth
                   margin='dense'
                   disabled={loading}
-                  sx={{ flexBasis: { xs: '100%', sm: 'calc(50% - 8px)', md: 'calc(25% - 12px)'}, flexGrow: 1 }}
+                  sx={{
+                    flexBasis: {
+                      xs: '100%',
+                      sm: 'calc(50% - 8px)',
+                      md: 'calc(25% - 12px)',
+                    },
+                    flexGrow: 1,
+                  }}
                 />
               </Box>
             </Box>
@@ -314,11 +459,7 @@ const EditResidentModal: React.FC<EditResidentModalProps> = ({
             <Button onClick={onClose} color='inherit' disabled={loading}>
               Cancel
             </Button>
-            <Button
-              type='submit'
-              variant='contained'
-              disabled={loading}
-            >
+            <Button type='submit' variant='contained' disabled={loading}>
               {loading ? <CircularProgress size={24} /> : 'Save Changes'}
             </Button>
           </DialogActions>

@@ -11,6 +11,7 @@ import {
   DialogTitle,
   DialogContent,
   IconButton,
+  Container,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import CloseIcon from '@mui/icons-material/Close';
@@ -59,19 +60,27 @@ interface PropertyManagerDashboardPanelProps {
   organizationId: string | null;
 }
 
-const PropertyManagerDashboardPanel: React.FC<PropertyManagerDashboardPanelProps> = ({ organizationId }) => {
+const PropertyManagerDashboardPanel: React.FC<
+  PropertyManagerDashboardPanelProps
+> = ({ organizationId }) => {
   const [pmTabValue, setPmTabValue] = useState(0);
-  const [selectedPropertyId, setSelectedPropertyId] = useState<string | null>(null);
-  const [selectedPropertyName, setSelectedPropertyName] = useState<string | null>(null);
-  const [isCreatePropertyModalOpen, setIsCreatePropertyModalOpen] = useState(false);
+  const [selectedPropertyId, setSelectedPropertyId] = useState<string | null>(
+    null
+  );
+  const [selectedPropertyName, setSelectedPropertyName] = useState<
+    string | null
+  >(null);
+  const [isCreatePropertyModalOpen, setIsCreatePropertyModalOpen] =
+    useState(false);
   const [organizationName, setOrganizationName] = useState<string | null>(null);
   const [isEditPropertyModalOpen, setIsEditPropertyModalOpen] = useState(false);
-  const [propertyToEdit, setPropertyToEdit] = useState<PropertyType | null>(null);
+  const [propertyToEdit, setPropertyToEdit] = useState<PropertyType | null>(
+    null
+  );
   const [refreshPropertiesKey, setRefreshPropertiesKey] = useState(0);
   const [isEditResidentModalOpen, setIsEditResidentModalOpen] = useState(false);
   const [residentToEdit, setResidentToEdit] = useState<Resident | null>(null);
   const [refreshResidentsKey, setRefreshResidentsKey] = useState(0);
-
 
   useEffect(() => {
     const fetchOrgName = async () => {
@@ -154,131 +163,134 @@ const PropertyManagerDashboardPanel: React.FC<PropertyManagerDashboardPanelProps
   };
 
   return (
-    <Paper elevation={3} sx={{ mb: 4, p: 2 }}>
-      <Box
-        sx={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          mb: 2,
-        }}
-      >
-        <Typography variant='h4' color='secondary'>
-          {organizationName || 'Property Manager Dashboard'}
-        </Typography>
-        <Button
-          variant='contained'
-          startIcon={<AddIcon />}
-          onClick={handleOpenCreatePropertyModal}
+    <Container component='main' maxWidth='lg'>
+      <Paper elevation={3} sx={{ mb: 4, p: 2 }}>
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            mb: 2,
+          }}
         >
-          Add Property
-        </Button>
-      </Box>
-      <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-        <Tabs
-          value={pmTabValue}
-          onChange={handlePmTabChange}
-          aria-label='property manager actions tabs'
-        >
-          <Tab label='Properties' {...a11yProps(0)} />
-          <Tab label='Residents' {...a11yProps(1)} />
-        </Tabs>
-      </Box>
-      <TabPanel value={pmTabValue} index={0}>
-        <Typography variant='h6' gutterBottom sx={{ mb: 2 }}>
-          Your Managed Properties
-        </Typography>
-        <PropertyManagerPropertiesList
-          key={refreshPropertiesKey}
-          selectedPropertyId={selectedPropertyId}
-          onPropertySelect={(id: string) => handlePropertySelect(id)}
-          onEditProperty={handleOpenEditPropertyModal}
-          onPropertiesUpdate={() =>
-            setRefreshPropertiesKey((prev) => prev + 1)
-          }
-        />
-      </TabPanel>
-      <TabPanel value={pmTabValue} index={1}>
-        <Typography variant='h6' gutterBottom sx={{ mb: 2 }}>
-          Invite New Resident
-        </Typography>
-        <PropertySelectorDropdown
-          selectedPropertyId={selectedPropertyId}
-          onPropertyChange={handlePropertySelect}
-        />
-        {selectedPropertyId && organizationId ? (
-          <>
-            <InviteResidentForm
-              organizationId={organizationId}
-              propertyId={selectedPropertyId}
-              propertyName={selectedPropertyName || undefined}
-            />
-            <Box sx={{ mt: 4 }}>
-              <Typography variant='h6' gutterBottom sx={{ mb: 2 }}>
-                Current Residents for {selectedPropertyName || 'Selected Property'}
-              </Typography>
-              <PropertyResidentsTable
+          <Typography variant='h4' color='secondary'>
+            {organizationName || 'Property Manager Dashboard'}
+          </Typography>
+          <Button
+            variant='contained'
+            startIcon={<AddIcon />}
+            onClick={handleOpenCreatePropertyModal}
+          >
+            Add Property
+          </Button>
+        </Box>
+        <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+          <Tabs
+            value={pmTabValue}
+            onChange={handlePmTabChange}
+            aria-label='property manager actions tabs'
+          >
+            <Tab label='Properties' {...a11yProps(0)} />
+            <Tab label='Residents' {...a11yProps(1)} />
+          </Tabs>
+        </Box>
+        <TabPanel value={pmTabValue} index={0}>
+          <Typography variant='h6' gutterBottom sx={{ mb: 2 }}>
+            Your Managed Properties
+          </Typography>
+          <PropertyManagerPropertiesList
+            key={refreshPropertiesKey}
+            selectedPropertyId={selectedPropertyId}
+            onPropertySelect={(id: string) => handlePropertySelect(id)}
+            onEditProperty={handleOpenEditPropertyModal}
+            onPropertiesUpdate={() =>
+              setRefreshPropertiesKey((prev) => prev + 1)
+            }
+          />
+        </TabPanel>
+        <TabPanel value={pmTabValue} index={1}>
+          <Typography variant='h6' gutterBottom sx={{ mb: 2 }}>
+            Invite New Resident
+          </Typography>
+          <PropertySelectorDropdown
+            selectedPropertyId={selectedPropertyId}
+            onPropertyChange={handlePropertySelect}
+          />
+          {selectedPropertyId && organizationId ? (
+            <>
+              <InviteResidentForm
                 organizationId={organizationId}
                 propertyId={selectedPropertyId}
-                onEditResident={handleOpenEditResidentModal}
-                refreshKey={refreshResidentsKey}
+                propertyName={selectedPropertyName || undefined}
               />
-            </Box>
-          </>
-        ) : (
-          <Alert severity='info' sx={{ mt: 2 }}>
-            Please select a property from the dropdown above to invite a
-            resident or view current residents.
-          </Alert>
+              <Box sx={{ mt: 4 }}>
+                <Typography variant='h6' gutterBottom sx={{ mb: 2 }}>
+                  Current Residents for{' '}
+                  {selectedPropertyName || 'Selected Property'}
+                </Typography>
+                <PropertyResidentsTable
+                  organizationId={organizationId}
+                  propertyId={selectedPropertyId}
+                  onEditResident={handleOpenEditResidentModal}
+                  refreshKey={refreshResidentsKey}
+                />
+              </Box>
+            </>
+          ) : (
+            <Alert severity='info' sx={{ mt: 2 }}>
+              Please select a property from the dropdown above to invite a
+              resident or view current residents.
+            </Alert>
+          )}
+        </TabPanel>
+
+        <Dialog
+          open={isCreatePropertyModalOpen}
+          onClose={handleCloseCreatePropertyModal}
+          fullWidth
+          maxWidth='sm'
+        >
+          <DialogTitle>
+            Create New Property
+            <IconButton
+              aria-label='close'
+              onClick={handleCloseCreatePropertyModal}
+              sx={{
+                position: 'absolute',
+                right: 8,
+                top: 8,
+                color: (theme) => theme.palette.grey[500],
+              }}
+            >
+              <CloseIcon />
+            </IconButton>
+          </DialogTitle>
+          <DialogContent dividers>
+            <CreatePropertyForm onSuccess={handlePropertyCreated} />
+          </DialogContent>
+        </Dialog>
+
+        {propertyToEdit && (
+          <EditPropertyModal
+            open={isEditPropertyModalOpen}
+            onClose={handleCloseEditPropertyModal}
+            propertyData={propertyToEdit}
+            onSuccess={handlePropertyUpdated}
+          />
         )}
-      </TabPanel>
 
-      <Dialog
-        open={isCreatePropertyModalOpen}
-        onClose={handleCloseCreatePropertyModal}
-        fullWidth
-        maxWidth='sm'
-      >
-        <DialogTitle>
-          Create New Property
-          <IconButton
-            aria-label='close'
-            onClick={handleCloseCreatePropertyModal}
-            sx={{
-              position: 'absolute',
-              right: 8,
-              top: 8,
-              color: (theme) => theme.palette.grey[500],
-            }}
-          >
-            <CloseIcon />
-          </IconButton>
-        </DialogTitle>
-        <DialogContent dividers>
-          <CreatePropertyForm onSuccess={handlePropertyCreated} />
-        </DialogContent>
-      </Dialog>
-
-      {propertyToEdit && (
-        <EditPropertyModal
-          open={isEditPropertyModalOpen}
-          onClose={handleCloseEditPropertyModal}
-          propertyData={propertyToEdit}
-          onSuccess={handlePropertyUpdated}
-        />
-      )}
-
-      {residentToEdit && organizationId && selectedPropertyId && (
-        <EditResidentModal
-          open={isEditResidentModalOpen}
-          onClose={handleCloseEditResidentModal}
-          residentData={residentToEdit}
-          organizationId={organizationId}
-          propertyId={selectedPropertyId}
-          onSuccess={handleResidentUpdated}
-        />
-      )}
-    </Paper>
+        {residentToEdit && organizationId && selectedPropertyId && (
+          <EditResidentModal
+            open={isEditResidentModalOpen}
+            onClose={handleCloseEditResidentModal}
+            residentData={residentToEdit}
+            organizationId={organizationId}
+            propertyId={selectedPropertyId}
+            onSuccess={handleResidentUpdated}
+          />
+        )}
+      </Paper>
+    </Container>
   );
 };
 

@@ -10,6 +10,7 @@ import {
   Stack,
   Snackbar,
   Alert,
+  Container,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import { AdminPanelSettings } from '@mui/icons-material';
@@ -57,7 +58,9 @@ const AdminDashboardPanel: React.FC = () => {
   const [refreshOrgListKey, setRefreshOrgListKey] = useState(0);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
-  const [snackbarSeverity, setSnackbarSeverity] = useState< 'success' | 'error' | 'info' | 'warning'>('success');
+  const [snackbarSeverity, setSnackbarSeverity] = useState<
+    'success' | 'error' | 'info' | 'warning'
+  >('success');
 
   const handleAdminOrgChange = (orgId: string | null) => {
     setSelectedAdminOrgId(orgId);
@@ -76,7 +79,7 @@ const AdminDashboardPanel: React.FC = () => {
     setSnackbarSeverity('success');
     setSnackbarOpen(true);
     setIsAddOrgModalOpen(false);
-    setRefreshOrgListKey(prev => prev + 1);
+    setRefreshOrgListKey((prev) => prev + 1);
   };
 
   const handleAdminTabChange = (
@@ -87,74 +90,80 @@ const AdminDashboardPanel: React.FC = () => {
   };
 
   return (
-    <Paper elevation={3} sx={{ mb: 4, p: 2 }}>
-      <Box
-        sx={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          mb: 2,
-        }}
-      >
-        <Stack direction='row' alignItems='center'>
-          <AdminPanelSettings fontSize='large' color="primary" sx={{ mr: 1 }} />
-          <Typography variant='h4' color='secondary'>
-            Admin Dashboard
-          </Typography>
-        </Stack>
-        <Button
-          variant='contained'
-          startIcon={<AddIcon />}
-          onClick={handleOpenAddOrgModal}
-          sx={{ float: 'right' }}
+    <Container component='main' maxWidth='lg'>
+      <Paper elevation={3} sx={{ mb: 4, p: 2 }}>
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            mb: 2,
+          }}
         >
-          Add Organization
-        </Button>
-      </Box>
+          <Stack direction='row' alignItems='center'>
+            <AdminPanelSettings
+              fontSize='large'
+              color='primary'
+              sx={{ mr: 1 }}
+            />
+            <Typography variant='h4' color='secondary'>
+              Admin Dashboard
+            </Typography>
+          </Stack>
+          <Button
+            variant='contained'
+            startIcon={<AddIcon />}
+            onClick={handleOpenAddOrgModal}
+            sx={{ float: 'right' }}
+          >
+            Add Organization
+          </Button>
+        </Box>
 
-      <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-        <Tabs
-          value={adminTabValue}
-          onChange={handleAdminTabChange}
-          aria-label='admin actions tabs'
-        >
-        <Tab label='Organizations' {...a11yProps(0)} />
-        <Tab label='Property Managers' {...a11yProps(1)} />
-      </Tabs>
-    </Box>
-    <TabPanel value={adminTabValue} index={0}>
-      <OrganizationManagementPanel key={refreshOrgListKey} />
-    </TabPanel>
-    <TabPanel value={adminTabValue} index={1}>
-      <OrganizationSelector
-          selectedOrganizationId={selectedAdminOrgId}
-          onOrganizationChange={handleAdminOrgChange}
+        <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+          <Tabs
+            value={adminTabValue}
+            onChange={handleAdminTabChange}
+            aria-label='admin actions tabs'
+          >
+            <Tab label='Organizations' {...a11yProps(0)} />
+            <Tab label='Property Managers' {...a11yProps(1)} />
+          </Tabs>
+        </Box>
+        <TabPanel value={adminTabValue} index={0}>
+          <OrganizationManagementPanel key={refreshOrgListKey} />
+        </TabPanel>
+        <TabPanel value={adminTabValue} index={1}>
+          <OrganizationSelector
+            selectedOrganizationId={selectedAdminOrgId}
+            onOrganizationChange={handleAdminOrgChange}
+          />
+          <Divider sx={{ my: 2 }} />
+          <PropertyManagerManagement organizationId={selectedAdminOrgId} />
+        </TabPanel>
+
+        <AddOrganizationModal
+          open={isAddOrgModalOpen}
+          onClose={handleCloseAddOrgModal}
+          onOrganizationCreated={handleOrganizationCreated}
         />
-        <Divider sx={{ my: 2 }} />
-        <PropertyManagerManagement organizationId={selectedAdminOrgId} />
-      </TabPanel>
 
-      <AddOrganizationModal
-        open={isAddOrgModalOpen}
-        onClose={handleCloseAddOrgModal}
-        onOrganizationCreated={handleOrganizationCreated}
-      />
-
-      <Snackbar
-        open={snackbarOpen}
-        autoHideDuration={6000}
-        onClose={() => setSnackbarOpen(false)}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert
+        <Snackbar
+          open={snackbarOpen}
+          autoHideDuration={6000}
           onClose={() => setSnackbarOpen(false)}
-          severity={snackbarSeverity}
-          sx={{ width: '100%' }}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
         >
-          {snackbarMessage}
-        </Alert>
-      </Snackbar>
-    </Paper>
+          <Alert
+            onClose={() => setSnackbarOpen(false)}
+            severity={snackbarSeverity}
+            sx={{ width: '100%' }}
+          >
+            {snackbarMessage}
+          </Alert>
+        </Snackbar>
+      </Paper>
+    </Container>
   );
 };
 

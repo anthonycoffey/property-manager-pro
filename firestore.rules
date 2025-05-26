@@ -19,9 +19,9 @@ service cloud.firestore {
       return hasRole('property_manager');
     }
 
-    function isPropertyStaff() {
-      return hasRole('property_staff');
-    }
+    // function isPropertyStaff() {
+    //   return hasRole('property_staff');
+    // }
 
     function isResident() {
       return hasRole('resident');

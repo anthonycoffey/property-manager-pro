@@ -38,7 +38,9 @@ const PropertyDetailsView: React.FC = () => {
           setLoading(false);
         }
       } else {
-        setError('Organization ID or Property ID is missing. Cannot fetch details.');
+        setError(
+          'Organization ID or Property ID is missing. Cannot fetch details.'
+        );
         setLoading(false);
       }
     };
@@ -48,49 +50,54 @@ const PropertyDetailsView: React.FC = () => {
 
   if (loading) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '200px' }}>
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          minHeight: '200px',
+        }}
+      >
         <CircularProgress />
       </Box>
     );
   }
 
   if (error) {
-    return <Alert severity="error">{error}</Alert>;
+    return <Alert severity='error'>{error}</Alert>;
   }
 
   if (!propertyDetails) {
-    return <Alert severity="info">No property details available.</Alert>;
+    return <Alert severity='info'>No property details available.</Alert>;
   }
 
   return (
-    <Paper elevation={2} sx={{ p: 3 }}>
-      <Typography variant="h5" gutterBottom component="div">
+    <>
+      <Typography variant='h5' gutterBottom component='div'>
         Property Information
       </Typography>
       <Box sx={{ mt: 2 }}>
-        <Typography variant="subtitle1" gutterBottom>
+        <Typography variant='subtitle1' gutterBottom>
           <strong>Name:</strong> {propertyDetails.name}
         </Typography>
-        <Typography variant="subtitle1" gutterBottom>
+        <Typography variant='subtitle1' gutterBottom>
           <strong>Type:</strong> {propertyDetails.type}
         </Typography>
         {propertyDetails.address && (
           <>
-            <Typography variant="subtitle1" gutterBottom>
+            <Typography variant='subtitle1' gutterBottom>
               <strong>Address:</strong>
             </Typography>
-            <Typography variant="body2" sx={{ pl: 2 }}>
+            <Typography variant='body2' sx={{ pl: 2 }}>
               {propertyDetails.address.street}
               <br />
-              {propertyDetails.address.city}, {propertyDetails.address.state} {propertyDetails.address.zip}
+              {propertyDetails.address.city}, {propertyDetails.address.state}{' '}
+              {propertyDetails.address.zip}
             </Typography>
           </>
         )}
-        {/* Add more property details as needed from the Property type */}
-        {/* Resident's unit number is typically part of their specific lease/profile, not general property details. */}
-        {/* It's displayed in ResidentProfileManagement.tsx */}
       </Box>
-    </Paper>
+    </>
   );
 };
 

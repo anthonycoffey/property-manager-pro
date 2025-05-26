@@ -112,7 +112,9 @@ const CreateServiceRequestForm: React.FC<CreateServiceRequestFormProps> = ({
       const responseData = result.data as CreateServiceRequestCallableResponse;
 
       if (responseData.success) {
-        setSuccessMessage(responseData.message || 'Service request submitted successfully!');
+        setSuccessMessage(
+          responseData.message || 'Service request submitted successfully!'
+        );
         setRequestType('');
         setServiceLocation('');
         setServiceDateTime(new Date());
@@ -122,10 +124,13 @@ const CreateServiceRequestForm: React.FC<CreateServiceRequestFormProps> = ({
       } else {
         setError(responseData.message || 'Failed to submit service request.');
       }
-    } catch (err: unknown) { // Changed from any to unknown
+    } catch (err: unknown) {
+      // Changed from any to unknown
       console.error('Error submitting service request:', err);
       if (err instanceof Error) {
-        setError(err.message || 'An unexpected error occurred. Please try again.');
+        setError(
+          err.message || 'An unexpected error occurred. Please try again.'
+        );
       } else {
         setError('An unexpected error occurred. Please try again.');
       }
@@ -137,7 +142,7 @@ const CreateServiceRequestForm: React.FC<CreateServiceRequestFormProps> = ({
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
       <Box component='form' onSubmit={handleSubmit} noValidate sx={{ mt: 1 }}>
-        <Typography variant='h6' gutterBottom sx={{ mb: 2 }}>
+        <Typography variant='h5' gutterBottom sx={{ mb: 3 }}>
           Request Roadside Assistance
         </Typography>
         {error && (

@@ -1,23 +1,33 @@
-import React, { useState, useMemo, type ReactNode } from 'react';
-import { ThemeProvider as MuiThemeProvider, CssBaseline } from '@mui/material';
+import React, { useState, useMemo, useEffect, type ReactNode } from 'react';
+import { ThemeProvider as MuiThemeProvider, CssBaseline, useMediaQuery } from '@mui/material';
 import { ThemeContext } from '../hooks/useThemeMode';
 import type { PaletteMode } from '@mui/material';
-import { createAppTheme } from '../theme'; // Import our new theme creator
-import type { ThemeColorScheme } from '../theme'; // Import ThemeColorScheme
+import { createAppTheme } from '../theme';
+import type { ThemeColorScheme } from '../theme';
 
 interface ThemeProviderProps {
   children: ReactNode;
 }
 
 export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
-  // PaletteMode from MUI is 'light' | 'dark' | undefined. Our ThemeColorScheme is 'light' | 'dark'.
-  const [mode, setMode] = useState<ThemeColorScheme>('light');
+  const prefersDarkMode = useMediaQuery('(prefers-color-scheme: dark)');
+  const [mode, setMode] = useState<ThemeColorScheme>(prefersDarkMode ? 'dark' : 'light');
+
+  useEffect(() => {
+    // This effect updates the theme if the OS preference changes,
+    // assuming the user hasn't manually toggled the theme.
+    // For a more robust solution, we'd also check if the user
+    // has made an explicit choice (e.g., stored in localStorage)
+    // and only update if they are on a "system" or "auto" setting.
+    // For now, this will react to OS changes directly.
+    setMode(prefersDarkMode ? 'dark' : 'light');
+  }, [prefersDarkMode]);
 
   const toggleColorMode = React.useCallback(() => {
     setMode((prevMode) => (prevMode === 'light' ? 'dark' : 'light'));
+    // Future: If persisting choice, save to localStorage here.
   }, []);
 
-  // Use our new createAppTheme
   const theme = useMemo(
     () => createAppTheme({ mode }),
     [mode]

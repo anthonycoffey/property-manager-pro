@@ -83,8 +83,7 @@ export function createAppTheme({ mode = 'light', themeOverrides = {} }: CreateAp
     delete (finalMergedOptions as Partial<ThemeOptions>).colorSchemes;
   }
 
-  // @ts-ignore
-  let theme = createMuiThemeInternal(finalMergedOptions as any); // Reverting cast to unknown
+  let theme = createMuiThemeInternal(finalMergedOptions as ThemeOptions);
 
   // Apply responsive font sizes
   theme = responsiveFontSizes(theme);

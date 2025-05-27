@@ -53,6 +53,7 @@ const revokeInvitationCallable = httpsCallable(functions, 'revokeInvitation');
 
 interface OrgScopedPropertyManagerManagementProps {
   organizationId: string | null; // This will be the selected org ID for the Org Manager
+  organizationCreatedBy: string | null; // UID of the user who created the selected organization
 }
 
 interface PropertyManagerUser {
@@ -75,10 +76,15 @@ type ManagementListItem =
   | ({ type: 'active_pm' } & PropertyManagerUser)
   | ({ type: 'pending_invite' } & PendingInvitation);
 
-const OrgScopedPropertyManagerManagement: React.FC<OrgScopedPropertyManagerManagementProps> = ({
-  organizationId,
-}) => {
-  const { currentUser, roles, organizationIds, loading: authLoading } = useAuth();
+const OrgScopedPropertyManagerManagement: React.FC<
+  OrgScopedPropertyManagerManagementProps
+> = ({ organizationId, organizationCreatedBy }) => {
+  const {
+    currentUser,
+    roles,
+    organizationIds,
+    loading: authLoading,
+  } = useAuth();
 
   const [combinedList, setCombinedList] = useState<ManagementListItem[]>([]);
   const [dataLoading, setDataLoading] = useState<boolean>(false);
@@ -107,21 +113,27 @@ const OrgScopedPropertyManagerManagement: React.FC<OrgScopedPropertyManagerManag
   const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error'>(
     'success'
   );
-  
-  const canManage = currentUser && 
-                    roles.includes('organization_manager') && 
-                    organizationIds?.includes(organizationId || '');
+
+  const canManage =
+    currentUser &&
+    roles.includes('organization_manager') &&
+    (organizationIds?.includes(organizationId || '') ||
+      currentUser.uid === organizationCreatedBy);
 
   useEffect(() => {
+    // Reset dataError at the beginning of the effect to clear previous errors if conditions are now met
+    setDataError(null); 
+
     if (!organizationId || !canManage) {
       setCombinedList([]);
+      // Only set error if canManage is false, otherwise it's a "select org" message
       setDataError(canManage ? null : 'You do not have permission to manage this organization.');
       setDataLoading(false);
       return;
     }
 
     setDataLoading(true);
-    setDataError(null);
+    // dataError is already reset above, no need to reset again here
 
     let activePMsData: PropertyManagerUser[] = [];
     let pendingInvitesData: PendingInvitation[] = [];
@@ -213,10 +225,15 @@ const OrgScopedPropertyManagerManagement: React.FC<OrgScopedPropertyManagerManag
     );
   }
 
-  if (!canManage && !authLoading) { // Check authLoading to prevent premature redirect
-     return <Alert severity="error">You do not have permission to manage property managers for this organization.</Alert>;
+  if (!canManage && !authLoading) {
+    // Check authLoading to prevent premature redirect
+    return (
+      <Alert severity='error'>
+        You do not have permission to manage property managers for this
+        organization.
+      </Alert>
+    );
   }
-
 
   const handleOpenRevokeDialog = (invitation: PendingInvitation) => {
     setSelectedInvitationForRevoke(invitation);
@@ -332,7 +349,7 @@ const OrgScopedPropertyManagerManagement: React.FC<OrgScopedPropertyManagerManag
       handleCloseDeletePmDialog();
     }
   };
-  
+
   if (!organizationId) {
     return (
       <Alert severity='info' sx={{ m: 2 }}>
@@ -341,13 +358,10 @@ const OrgScopedPropertyManagerManagement: React.FC<OrgScopedPropertyManagerManag
     );
   }
 
-
   return (
     <Box>
       <Box sx={{ mb: 4 }}>
-        <InvitePropertyManagerForm
-          selectedOrganizationId={organizationId}
-        />
+        <InvitePropertyManagerForm selectedOrganizationId={organizationId} />
       </Box>
 
       {dataLoading && (
@@ -405,17 +419,19 @@ const OrgScopedPropertyManagerManagement: React.FC<OrgScopedPropertyManagerManag
                       {item.type === 'active_pm' ? (
                         <Chip label='Active' color='success' size='small' />
                       ) : (
-                        <Chip
-                          label='Invite Sent'
-                          color='info'
-                          size='small'
-                        />
+                        <Chip label='Invite Sent' color='info' size='small' />
                       )}
                     </TableCell>
                     <TableCell>
                       {item.type === 'pending_invite' && item.expiresAt
-                        ? `Expires: ${item.expiresAt.toDate().toLocaleDateString()}`
-                        : item.createdAt ? `Created: ${item.createdAt.toDate().toLocaleDateString()}` : 'N/A'}
+                        ? `Expires: ${item.expiresAt
+                            .toDate()
+                            .toLocaleDateString()}`
+                        : item.createdAt
+                        ? `Created: ${item.createdAt
+                            .toDate()
+                            .toLocaleDateString()}`
+                        : 'N/A'}
                     </TableCell>
                     <TableCell align='right'>
                       {item.type === 'active_pm' && (
@@ -452,9 +468,7 @@ const OrgScopedPropertyManagerManagement: React.FC<OrgScopedPropertyManagerManag
                           <IconButton
                             size='small'
                             onClick={() =>
-                              handleOpenRevokeDialog(
-                                item as PendingInvitation
-                              )
+                              handleOpenRevokeDialog(item as PendingInvitation)
                             }
                           >
                             <RevokeIcon />
@@ -472,34 +486,113 @@ const OrgScopedPropertyManagerManagement: React.FC<OrgScopedPropertyManagerManag
       {/* Dialogs and Snackbar */}
       <Dialog open={revokeDialogOpen} onClose={handleCloseRevokeDialog}>
         <DialogTitle>Revoke Invitation?</DialogTitle>
-        <DialogContent><DialogContentText>Are you sure you want to revoke the invitation for {selectedInvitationForRevoke?.inviteeEmail}? This action cannot be undone.</DialogContentText></DialogContent>
+        <DialogContent>
+          <DialogContentText>
+            Are you sure you want to revoke the invitation for{' '}
+            {selectedInvitationForRevoke?.inviteeEmail}? This action cannot be
+            undone.
+          </DialogContentText>
+        </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseRevokeDialog} disabled={revokeLoading}>Cancel</Button>
-          <Button onClick={handleConfirmRevoke} color="error" disabled={revokeLoading} autoFocus>{revokeLoading ? <CircularProgress size={20} /> : 'Revoke'}</Button>
+          <Button onClick={handleCloseRevokeDialog} disabled={revokeLoading}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleConfirmRevoke}
+            color='error'
+            disabled={revokeLoading}
+            autoFocus
+          >
+            {revokeLoading ? <CircularProgress size={20} /> : 'Revoke'}
+          </Button>
         </DialogActions>
       </Dialog>
       <Dialog open={updatePmDialogOpen} onClose={handleCloseUpdatePmDialog}>
         <DialogTitle>Update Property Manager</DialogTitle>
         <DialogContent>
-          <DialogContentText sx={{ mb: 1 }}>Modify the details for {selectedPmForUpdate?.displayName || 'this Property Manager'}. Password and role changes are not handled here.</DialogContentText>
-          <TextField autoFocus margin="dense" id="displayName" name="displayName" label="Display Name" type="text" fullWidth variant="standard" value={updatePmForm.displayName} onChange={handleUpdatePmFormChange} required />
-          <TextField margin="dense" id="email" name="email" label="Email Address" type="email" fullWidth variant="standard" value={updatePmForm.email} onChange={handleUpdatePmFormChange} required />
+          <DialogContentText sx={{ mb: 1 }}>
+            Modify the details for{' '}
+            {selectedPmForUpdate?.displayName || 'this Property Manager'}.
+            Password and role changes are not handled here.
+          </DialogContentText>
+          <TextField
+            autoFocus
+            margin='dense'
+            id='displayName'
+            name='displayName'
+            label='Display Name'
+            type='text'
+            fullWidth
+            variant='standard'
+            value={updatePmForm.displayName}
+            onChange={handleUpdatePmFormChange}
+            required
+          />
+          <TextField
+            margin='dense'
+            id='email'
+            name='email'
+            label='Email Address'
+            type='email'
+            fullWidth
+            variant='standard'
+            value={updatePmForm.email}
+            onChange={handleUpdatePmFormChange}
+            required
+          />
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseUpdatePmDialog} disabled={updatePmLoading}>Cancel</Button>
-          <Button onClick={handleConfirmUpdatePm} disabled={updatePmLoading}>{updatePmLoading ? <CircularProgress size={20} /> : 'Update'}</Button>
+          <Button
+            onClick={handleCloseUpdatePmDialog}
+            disabled={updatePmLoading}
+          >
+            Cancel
+          </Button>
+          <Button onClick={handleConfirmUpdatePm} disabled={updatePmLoading}>
+            {updatePmLoading ? <CircularProgress size={20} /> : 'Update'}
+          </Button>
         </DialogActions>
       </Dialog>
       <Dialog open={deletePmDialogOpen} onClose={handleCloseDeletePmDialog}>
         <DialogTitle>Delete Property Manager?</DialogTitle>
-        <DialogContent><DialogContentText>Are you sure you want to delete the property manager {selectedPmForDelete?.displayName} ({selectedPmForDelete?.email})? This action will permanently remove their account and access. This cannot be undone.</DialogContentText></DialogContent>
+        <DialogContent>
+          <DialogContentText>
+            Are you sure you want to delete the property manager{' '}
+            {selectedPmForDelete?.displayName} ({selectedPmForDelete?.email})?
+            This action will permanently remove their account and access. This
+            cannot be undone.
+          </DialogContentText>
+        </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseDeletePmDialog} disabled={deletePmLoading}>Cancel</Button>
-          <Button onClick={handleConfirmDeletePm} color="error" disabled={deletePmLoading} autoFocus>{deletePmLoading ? <CircularProgress size={20} /> : 'Delete'}</Button>
+          <Button
+            onClick={handleCloseDeletePmDialog}
+            disabled={deletePmLoading}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleConfirmDeletePm}
+            color='error'
+            disabled={deletePmLoading}
+            autoFocus
+          >
+            {deletePmLoading ? <CircularProgress size={20} /> : 'Delete'}
+          </Button>
         </DialogActions>
       </Dialog>
-      <Snackbar open={!!snackbarMessage} autoHideDuration={6000} onClose={handleCloseSnackbar} anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}>
-        <Alert onClose={handleCloseSnackbar} severity={snackbarSeverity} sx={{ width: '100%' }}>{snackbarMessage}</Alert>
+      <Snackbar
+        open={!!snackbarMessage}
+        autoHideDuration={6000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert
+          onClose={handleCloseSnackbar}
+          severity={snackbarSeverity}
+          sx={{ width: '100%' }}
+        >
+          {snackbarMessage}
+        </Alert>
       </Snackbar>
     </Box>
   );

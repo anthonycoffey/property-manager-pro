@@ -23,9 +23,19 @@ const InvitePropertyManagerForm: React.FC<InvitePropertyManagerFormProps> = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const { currentUser, roles } = useAuth();
+  const { currentUser, roles, organizationIds } = useAuth(); // Destructure organizationIds
 
-  useEffect(() => {}, [selectedOrganizationId]);
+  // Determine if the current user has permission to send invitations
+  const canSendInvitation = currentUser && (
+    roles.includes('admin') ||
+    (roles.includes('organization_manager') && organizationIds?.includes(selectedOrganizationId || ''))
+  );
+
+  useEffect(() => {
+    // Clear any previous errors/success messages when organizationId changes or permissions change
+    setError(null);
+    setSuccess(null);
+  }, [selectedOrganizationId, canSendInvitation]); // Add canSendInvitation to dependencies
 
   const functions = getFunctions();
   const createInvitationFn = httpsCallable(functions, 'createInvitation');
@@ -35,8 +45,8 @@ const InvitePropertyManagerForm: React.FC<InvitePropertyManagerFormProps> = ({
     setError(null);
     setSuccess(null);
 
-    if (!currentUser || !roles.includes('admin')) {
-      setError('Permission denied. Only administrators can send invitations.');
+    if (!canSendInvitation) {
+      setError('Permission denied. You do not have the necessary role or organization access to send invitations.');
       return;
     }
 
@@ -58,7 +68,7 @@ const InvitePropertyManagerForm: React.FC<InvitePropertyManagerFormProps> = ({
       const result = await createInvitationFn({
         inviteeEmail,
         inviteeName,
-        organizationId: selectedOrganizationId,
+        organizationIds: [selectedOrganizationId],
         rolesToAssign: ['property_manager'],
         invitedByRole: 'admin',
       });
@@ -81,10 +91,10 @@ const InvitePropertyManagerForm: React.FC<InvitePropertyManagerFormProps> = ({
     }
   };
 
-  if (!currentUser || !roles.includes('admin')) {
+  if (!canSendInvitation) {
     return (
       <Alert severity='error'>
-        You do not have permission to access this feature.
+        You do not have permission to access property manager invitations. Only administrators or assigned organization managers can send invitations.
       </Alert>
     );
   }

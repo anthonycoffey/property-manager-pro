@@ -49,14 +49,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             customClaims: {
               roles: (claims.roles as string[]) || [],
               organizationId: (claims.organizationId as string) || undefined,
-              organizationIds: (claims.organizationIds as string[]) || undefined, // Extract organizationIds
+              organizationIds: (claims.organizationIds as string[]) || undefined,
               propertyId: (claims.propertyId as string) || undefined,
             },
           };
           setCurrentUser(processedUser);
           setRoles((claims.roles as string[]) || []);
           setOrganizationId((claims.organizationId as string) || null);
-          setOrganizationIds((claims.organizationIds as string[]) || null); // Set organizationIds state
+          setOrganizationIds((claims.organizationIds as string[]) || null);
           setPropertyId((claims.propertyId as string) || null);
           setLoading(false);
         })
@@ -66,7 +66,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           setCurrentUser(null);
           setRoles([]);
           setOrganizationId(null);
-          setOrganizationIds(null); // Reset organizationIds on error
+          setOrganizationIds(null);
           setPropertyId(null);
           setLoading(false);
         });
@@ -78,7 +78,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setCurrentUser(null);
       setRoles([]);
       setOrganizationId(null);
-      setOrganizationIds(null); // Reset organizationIds
+      setOrganizationIds(null);
       setPropertyId(null);
       setLoading(false);
     }
@@ -89,7 +89,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     loading,
     roles,
     organizationId,
-    organizationIds, // Add organizationIds to context value
+    organizationIds,
     propertyId,
   };
 

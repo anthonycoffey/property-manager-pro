@@ -300,18 +300,18 @@ export const createInvitation = onCall(async (request) => {
 
     const appName = 'Property Manager Pro';
     let emailTemplateName = '';
-    let invitationLink = `${protocol}://${appDomain}/accept-invitation?token=${invitationToken}`;
+    let invitationLink: string;
 
     // Construct the rendered subject for the message fallback
     const renderedSubject = `Invitation to Manage Organization on ${appName}`;
 
-    // For non-OM invites, the link needs the single target orgId.
-    // For OM invites (stored in globalInvitations), no orgId is appended to the link.
-    if (
-      !rolesToAssign.includes('organization_manager') &&
-      singleOrgIdForInvite
-    ) {
-      invitationLink += `&orgId=${singleOrgIdForInvite}`;
+    if (rolesToAssign.includes('organization_manager')) {
+      invitationLink = `${protocol}://${appDomain}/accept-org-manager-invitation?token=${invitationToken}`;
+    } else {
+      invitationLink = `${protocol}://${appDomain}/accept-invitation?token=${invitationToken}`;
+      if (singleOrgIdForInvite) {
+        invitationLink += `&orgId=${singleOrgIdForInvite}`;
+      }
     }
 
     const emailData: EmailTemplateData = {

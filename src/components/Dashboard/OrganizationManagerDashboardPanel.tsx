@@ -1,7 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { Box, Typography, Select, MenuItem, FormControl, InputLabel, Paper, Tabs, Tab, type SelectChangeEvent } from '@mui/material'; // Added type keyword for SelectChangeEvent
+import React, { useState, useEffect, useCallback } from 'react';
+import { Box, Typography, Select, MenuItem, FormControl, InputLabel, Paper, Tabs, Tab, Button, CircularProgress, Snackbar, Alert, type SelectChangeEvent } from '@mui/material';
 import { useAuth } from '../../hooks/useAuth';
-import OrgScopedPropertyManagerManagement from '../OrganizationManager/OrgScopedPropertyManagerManagement'; // Import the new component
+import OrgScopedPropertyManagerManagement from '../OrganizationManager/OrgScopedPropertyManagerManagement';
+import AddOrganizationModal from '../Admin/AddOrganizationModal';
+import { db } from '../../firebaseConfig';
+import { collection, query, where, getDocs } from 'firebase/firestore';
+import type { Organization, AppError } from '../../types';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -40,19 +44,84 @@ interface OrganizationManagerDashboardPanelProps {
 }
 
 const OrganizationManagerDashboardPanel: React.FC<OrganizationManagerDashboardPanelProps> = ({ orgIds }) => {
-  const { currentUser } = useAuth(); // May need more from useAuth later
+  const { currentUser } = useAuth();
+  const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [selectedOrgId, setSelectedOrgId] = useState<string>('');
   const [tabValue, setTabValue] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<AppError | null>(null);
+  const [isAddOrgModalOpen, setIsAddOrgModalOpen] = useState(false);
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
+  const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error'>('success');
+
+  const fetchOrganizations = useCallback(async () => {
+    if (!currentUser?.uid) {
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    try {
+      const orgs: Organization[] = [];
+      const fetchedOrgIds = new Set<string>();
+
+      // Query for organizations created by the current user
+      const createdByQuery = query(
+        collection(db, 'organizations'),
+        where('createdBy', '==', currentUser.uid)
+      );
+      const createdBySnapshot = await getDocs(createdByQuery);
+      createdBySnapshot.forEach((doc) => {
+        const orgData = { id: doc.id, ...doc.data() } as Organization;
+        if (!fetchedOrgIds.has(orgData.id)) {
+          orgs.push(orgData);
+          fetchedOrgIds.add(orgData.id);
+        }
+      });
+
+      // Query for organizations assigned to the current user via claims
+      if (orgIds && orgIds.length > 0) {
+        // Firestore 'in' query has a limit of 10, so split if necessary
+        const chunkSize = 10;
+        for (let i = 0; i < orgIds.length; i += chunkSize) {
+          const chunk = orgIds.slice(i, i + chunkSize);
+          const assignedQuery = query(
+            collection(db, 'organizations'),
+            where('__name__', 'in', chunk) // Query by document ID
+          );
+          const assignedSnapshot = await getDocs(assignedQuery);
+          assignedSnapshot.forEach((doc) => {
+            const orgData = { id: doc.id, ...doc.data() } as Organization;
+            if (!fetchedOrgIds.has(orgData.id)) {
+              orgs.push(orgData);
+              fetchedOrgIds.add(orgData.id);
+            }
+          });
+        }
+      }
+
+      setOrganizations(orgs);
+      if (orgs.length > 0) {
+        setSelectedOrgId(orgs[0].id);
+      } else {
+        setSelectedOrgId('');
+      }
+    } catch (err) {
+      console.error('Error fetching organizations:', err);
+      setError({ message: 'Failed to load organizations.' });
+      setOrganizations([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [currentUser?.uid, orgIds]);
 
   useEffect(() => {
-    if (orgIds && orgIds.length > 0) {
-      setSelectedOrgId(orgIds[0]); // Default to the first organization
-    } else {
-      setSelectedOrgId('');
-    }
-  }, [orgIds]);
+    fetchOrganizations();
+  }, [fetchOrganizations]);
 
-  const handleOrgChange = (event: SelectChangeEvent<string>) => { 
+  const handleOrgChange = (event: SelectChangeEvent<string>) => {
     setSelectedOrgId(event.target.value as string);
   };
 
@@ -60,16 +129,65 @@ const OrganizationManagerDashboardPanel: React.FC<OrganizationManagerDashboardPa
     setTabValue(newValue);
   };
 
-  if (!orgIds || orgIds.length === 0) {
+  const handleOpenAddOrgModal = () => setIsAddOrgModalOpen(true);
+  const handleCloseAddOrgModal = () => setIsAddOrgModalOpen(false);
+
+  const handleAddOrgSuccess = () => {
+    handleCloseAddOrgModal();
+    setSnackbarMessage('Organization created successfully!');
+    setSnackbarSeverity('success');
+    setSnackbarOpen(true);
+    fetchOrganizations(); // Re-fetch organizations to include the new one
+  };
+
+  const handleSnackbarClose = (_event?: React.SyntheticEvent | Event, reason?: string) => {
+    if (reason === 'clickaway') {
+      return;
+    }
+    setSnackbarOpen(false);
+  };
+
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh' }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (error) {
     return (
       <Paper sx={{ p: 2, margin: 2 }}>
-        <Typography variant="h6">Organization Manager Dashboard</Typography>
-        <Typography>
-          You are not currently assigned to manage any organizations. Please contact an administrator.
-        </Typography>
+        <Alert severity="error">{error.message}</Alert>
       </Paper>
     );
   }
+
+  if (organizations.length === 0) {
+    return (
+      <Paper sx={{ p: 2, margin: 2 }}>
+        <Typography variant="h6">Organization Manager Dashboard</Typography>
+        <Typography sx={{ mb: 2 }}>
+          You are not currently assigned to manage any organizations. Please contact an administrator or create a new one.
+        </Typography>
+        <Button variant="contained" onClick={handleOpenAddOrgModal}>
+          Create New Organization
+        </Button>
+        <AddOrganizationModal
+          open={isAddOrgModalOpen}
+          onClose={handleCloseAddOrgModal}
+          onOrganizationCreated={handleAddOrgSuccess}
+        />
+        <Snackbar open={snackbarOpen} autoHideDuration={6000} onClose={handleSnackbarClose}>
+          <Alert onClose={handleSnackbarClose} severity={snackbarSeverity} sx={{ width: '100%' }}>
+            {snackbarMessage}
+          </Alert>
+        </Snackbar>
+      </Paper>
+    );
+  }
+
+  const selectedOrganization = organizations.find(org => org.id === selectedOrgId);
 
   return (
     <Box sx={{ width: '100%' }}>
@@ -79,7 +197,7 @@ const OrganizationManagerDashboardPanel: React.FC<OrganizationManagerDashboardPa
         </Typography>
         {currentUser && <Typography variant="subtitle1">Welcome, {currentUser.displayName || currentUser.email}</Typography>}
 
-        {orgIds.length > 1 && (
+        {organizations.length > 0 && (
           <FormControl fullWidth margin="normal">
             <InputLabel id="om-org-selector-label">Select Organization</InputLabel>
             <Select
@@ -89,17 +207,23 @@ const OrganizationManagerDashboardPanel: React.FC<OrganizationManagerDashboardPa
               label="Select Organization"
               onChange={handleOrgChange}
             >
-              {orgIds.map((id) => (
-                // In a real app, you'd fetch organization names to display here
-                <MenuItem key={id} value={id}>
-                  Organization ID: {id}
+              {organizations.map((org) => (
+                <MenuItem key={org.id} value={org.id}>
+                  {org.name}
                 </MenuItem>
               ))}
             </Select>
           </FormControl>
         )}
-         {orgIds.length === 1 && selectedOrgId && (
-            <Typography variant="h6" sx={{mt: 1}}>Managing Organization ID: {selectedOrgId}</Typography>
+        {selectedOrganization && (
+            <Typography variant="h6" sx={{mt: 1}}>Managing Organization: {selectedOrganization.name}</Typography>
+        )}
+        {organizations.length > 0 && ( // Show "Create Another Organization" if any orgs exist
+          <Box sx={{ mt: 2 }}>
+            <Button variant="outlined" onClick={handleOpenAddOrgModal}>
+              Create Another Organization
+            </Button>
+          </Box>
         )}
       </Paper>
 
@@ -114,7 +238,10 @@ const OrganizationManagerDashboardPanel: React.FC<OrganizationManagerDashboardPa
             </Tabs>
           </Box>
           <TabPanel value={tabValue} index={0}>
-            <OrgScopedPropertyManagerManagement organizationId={selectedOrgId} />
+            <OrgScopedPropertyManagerManagement 
+              organizationId={selectedOrgId} 
+              organizationCreatedBy={selectedOrganization?.createdBy || null} 
+            />
           </TabPanel>
           <TabPanel value={tabValue} index={1}>
             <Typography>Property Management for Org ID: {selectedOrgId}</Typography>

@@ -57,5 +57,12 @@ export const updateResidentDetailsByPm = updateResidentDetailsByPmFunction;
 import { addOrganizationToManager as addOrganizationToManagerFunction } from './callable/addOrganizationToManager.js';
 export const addOrganizationToManager = addOrganizationToManagerFunction;
 
+// New Callable Functions for Organization Manager Invitation Workflow
+import { getOrgManagerInvitationDetails as getOrgManagerInvitationDetailsFunction } from './callable/getOrgManagerInvitationDetails.js';
+export const getOrgManagerInvitationDetails = getOrgManagerInvitationDetailsFunction;
+
+import { signUpWithOrgManagerInvitation as signUpWithOrgManagerInvitationFunction } from './callable/signUpWithOrgManagerInvitation.js';
+export const signUpWithOrgManagerInvitation = signUpWithOrgManagerInvitationFunction;
+
 // Note: The firebaseAdmin.ts and handleHttpsError.ts are not directly exported
 // as they are internal modules used by the functions themselves.

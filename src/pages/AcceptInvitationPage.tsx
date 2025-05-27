@@ -462,7 +462,6 @@ const AcceptInvitationPage: React.FC = () => {
               readOnly: true,
             }}
             disabled={isFetchingInvite || loading || !!socialLoading} // Also disable if fetching invite
-            sx={{ backgroundColor: '#f0f0f0' }} // Visual cue for readonly
           />
           <TextField
             margin='normal'

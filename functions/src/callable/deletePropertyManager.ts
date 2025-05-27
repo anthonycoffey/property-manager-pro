@@ -11,14 +11,25 @@ export const deletePropertyManager = onCall(async (request) => {
   }
 
   const callerRoles = (request.auth.token?.roles as string[]) || [];
-  if (!callerRoles.includes('admin')) {
+  const callerOrgIds = (request.auth.token?.organizationIds as string[]) || []; // For organization_manager
+  const { uid, organizationId } = request.data;
+
+  // Permission check: Allow admin OR organization_manager for their assigned orgs
+  if (callerRoles.includes('admin')) {
+    // Admin has global access, no further org check needed for this operation
+  } else if (callerRoles.includes('organization_manager')) {
+    if (!callerOrgIds.includes(organizationId)) {
+      throw new HttpsError(
+        'permission-denied',
+        'Organization managers can only delete property managers within their assigned organizations.'
+      );
+    }
+  } else {
     throw new HttpsError(
       'permission-denied',
-      'Only administrators can delete property managers.'
+      'Caller does not have permission to delete property managers.'
     );
   }
-
-  const { uid, organizationId } = request.data;
 
   if (!uid || !organizationId) {
     throw new HttpsError(

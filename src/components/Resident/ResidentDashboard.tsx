@@ -1,5 +1,13 @@
 import React from 'react';
-import { Box, Typography, Paper, Container, Tabs, Tab, Divider } from '@mui/material'; // Added Divider, Removed Grid
+import {
+  Box,
+  Typography,
+  Paper,
+  Container,
+  Tabs,
+  Tab,
+  Divider,
+} from '@mui/material'; // Added Divider, Removed Grid
 import { useAuth } from '../../hooks/useAuth';
 import ApartmentIcon from '@mui/icons-material/Apartment';
 import PersonIcon from '@mui/icons-material/Person';
@@ -20,17 +28,13 @@ function TabPanel(props: TabPanelProps) {
 
   return (
     <div
-      role="tabpanel"
+      role='tabpanel'
       hidden={value !== index}
       id={`resident-tabpanel-${index}`}
       aria-labelledby={`resident-tab-${index}`}
       {...other}
     >
-      {value === index && (
-        <Box sx={{ p: 3 }}>
-          {children}
-        </Box>
-      )}
+      {value === index && <Box sx={{ p: 3 }}>{children}</Box>}
     </div>
   );
 }
@@ -55,16 +59,28 @@ const ResidentDashboard: React.FC = () => {
   }
 
   return (
-    <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+    <Container component='main' maxWidth='lg'>
       <Paper sx={{ p: 3, display: 'flex', flexDirection: 'column' }}>
-        <Typography variant="h4" gutterBottom component="div" sx={{ mb: 2 }}>
+        <Typography variant='h4' gutterBottom component='div' sx={{ mb: 2 }}>
           Welcome, {currentUser.displayName || 'Resident'}!
         </Typography>
         <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-          <Tabs value={tabValue} onChange={handleChangeTab} aria-label="resident dashboard tabs">
-            <Tab icon={<ApartmentIcon />} label="My Property" {...a11yProps(0)} />
-            <Tab icon={<PersonIcon />} label="My Profile" {...a11yProps(1)} />
-            <Tab icon={<BuildIcon />} label="Service Requests" {...a11yProps(2)} />
+          <Tabs
+            value={tabValue}
+            onChange={handleChangeTab}
+            aria-label='resident dashboard tabs'
+          >
+            <Tab
+              icon={<ApartmentIcon />}
+              label='My Property'
+              {...a11yProps(0)}
+            />
+            <Tab icon={<PersonIcon />} label='My Profile' {...a11yProps(1)} />
+            <Tab
+              icon={<BuildIcon />}
+              label='Service Requests'
+              {...a11yProps(2)}
+            />
           </Tabs>
         </Box>
         <TabPanel value={tabValue} index={0}>
@@ -74,12 +90,14 @@ const ResidentDashboard: React.FC = () => {
           <ResidentProfileManagement />
         </TabPanel>
         <TabPanel value={tabValue} index={2}>
-          <CreateServiceRequestForm 
+          <CreateServiceRequestForm
             onServiceRequestSubmitted={() => {
               // Potentially refresh the list or show a global success message
               // For now, ServiceRequestList uses onSnapshot so it will update automatically
-              console.log("Service request submitted, list should auto-refresh.");
-            }} 
+              console.log(
+                'Service request submitted, list should auto-refresh.'
+              );
+            }}
           />
           <Divider sx={{ my: 3 }} />
           <ServiceRequestList />

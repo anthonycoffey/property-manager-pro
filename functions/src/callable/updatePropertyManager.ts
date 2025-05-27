@@ -11,14 +11,25 @@ export const updatePropertyManager = onCall(async (request) => {
   }
 
   const callerRoles = (request.auth.token?.roles as string[]) || [];
-  if (!callerRoles.includes('admin')) {
+  const callerOrgIds = (request.auth.token?.organizationIds as string[]) || []; // For organization_manager
+  const { uid, email, displayName, organizationId, roles } = request.data;
+
+  // Permission check: Allow admin OR organization_manager for their assigned orgs
+  if (callerRoles.includes('admin')) {
+    // Admin has global access
+  } else if (callerRoles.includes('organization_manager')) {
+    if (!callerOrgIds.includes(organizationId)) {
+      throw new HttpsError(
+        'permission-denied',
+        'Organization managers can only update property managers within their assigned organizations.'
+      );
+    }
+  } else {
     throw new HttpsError(
       'permission-denied',
-      'Only administrators can update property managers.'
+      'Caller does not have permission to update property managers.'
     );
   }
-
-  const { uid, email, displayName, organizationId, roles } = request.data;
 
   if (!uid || !organizationId) {
     throw new HttpsError(

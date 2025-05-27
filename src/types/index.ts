@@ -68,6 +68,14 @@ export type ServiceRequestStatus =
   | 'cancelled' 
   | 'on_hold';
 
+export interface Organization {
+  id: string; // Firestore document ID
+  name: string;
+  createdBy: string; // UID of the user who created this organization
+  createdAt: Timestamp | Date;
+  status: string; // e.g., "active", "trial", "suspended"
+}
+
 export interface ServiceRequest {
   id: string; // Firestore document ID
   organizationId: string;

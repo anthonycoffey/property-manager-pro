@@ -12,7 +12,7 @@ import {
   MenuItem,
   type SelectChangeEvent,
   Snackbar,
-  Stack, // Using Stack for layout
+  Stack,
 } from '@mui/material';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns'; // Changed from AdapterDateFnsV3
@@ -112,7 +112,9 @@ const CreateServiceRequestForm: React.FC<CreateServiceRequestFormProps> = ({
       const responseData = result.data as CreateServiceRequestCallableResponse;
 
       if (responseData.success) {
-        setSuccessMessage(responseData.message || 'Service request submitted successfully!');
+        setSuccessMessage(
+          responseData.message || 'Service request submitted successfully!'
+        );
         setRequestType('');
         setServiceLocation('');
         setServiceDateTime(new Date());
@@ -122,10 +124,13 @@ const CreateServiceRequestForm: React.FC<CreateServiceRequestFormProps> = ({
       } else {
         setError(responseData.message || 'Failed to submit service request.');
       }
-    } catch (err: unknown) { // Changed from any to unknown
+    } catch (err: unknown) {
+      // Changed from any to unknown
       console.error('Error submitting service request:', err);
       if (err instanceof Error) {
-        setError(err.message || 'An unexpected error occurred. Please try again.');
+        setError(
+          err.message || 'An unexpected error occurred. Please try again.'
+        );
       } else {
         setError('An unexpected error occurred. Please try again.');
       }
@@ -136,10 +141,11 @@ const CreateServiceRequestForm: React.FC<CreateServiceRequestFormProps> = ({
 
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
-      <Box component='form' onSubmit={handleSubmit} noValidate sx={{ mt: 1 }}>
-        <Typography variant='h6' gutterBottom sx={{ mb: 2 }}>
-          Request Roadside Assistance
+      <Box component='form' onSubmit={handleSubmit} noValidate>
+        <Typography variant='h5' gutterBottom sx={{ mb: 2 }}>
+          Service Request Form
         </Typography>
+
         {error && (
           <Alert severity='error' sx={{ mb: 2 }}>
             {error}

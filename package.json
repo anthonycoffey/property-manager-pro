@@ -9,8 +9,8 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "seed:emulator:templates": "node scripts/seedTemplates.js --env=emulator",
-    "seed:prod:templates": "node scripts/seedTemplates.js --env=production"
+    "seed:templates:local": "node scripts/seedTemplates.js --env=emulator",
+    "seed:templates:prod": "node scripts/seedTemplates.js --env=production"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",

@@ -1,43 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Box, Typography, Select, MenuItem, FormControl, InputLabel, Paper, Tabs, Tab, Button, CircularProgress, Snackbar, Alert, type SelectChangeEvent } from '@mui/material';
+import { Box, Typography, Select, MenuItem, FormControl, InputLabel, Paper, Button, CircularProgress, Snackbar, Alert, type SelectChangeEvent, Stack } from '@mui/material';
+import AddIcon from '@mui/icons-material/Add';
 import { useAuth } from '../../hooks/useAuth';
 import OrgScopedPropertyManagerManagement from '../OrganizationManager/OrgScopedPropertyManagerManagement';
 import AddOrganizationModal from '../Admin/AddOrganizationModal';
 import { db } from '../../firebaseConfig';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import type { Organization, AppError } from '../../types';
-
-interface TabPanelProps {
-  children?: React.ReactNode;
-  index: number;
-  value: number;
-}
-
-function TabPanel(props: TabPanelProps) {
-  const { children, value, index, ...other } = props;
-  return (
-    <div
-      role="tabpanel"
-      hidden={value !== index}
-      id={`om-dashboard-tabpanel-${index}`}
-      aria-labelledby={`om-dashboard-tab-${index}`}
-      {...other}
-    >
-      {value === index && (
-        <Box sx={{ p: 3 }}>
-          {children}
-        </Box>
-      )}
-    </div>
-  );
-}
-
-function a11yProps(index: number) {
-  return {
-    id: `om-dashboard-tab-${index}`,
-    'aria-controls': `om-dashboard-tabpanel-${index}`,
-  };
-}
 
 interface OrganizationManagerDashboardPanelProps {
   orgIds: string[] | null | undefined;
@@ -47,7 +16,6 @@ const OrganizationManagerDashboardPanel: React.FC<OrganizationManagerDashboardPa
   const { currentUser } = useAuth();
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [selectedOrgId, setSelectedOrgId] = useState<string>('');
-  const [tabValue, setTabValue] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<AppError | null>(null);
   const [isAddOrgModalOpen, setIsAddOrgModalOpen] = useState(false);
@@ -125,10 +93,6 @@ const OrganizationManagerDashboardPanel: React.FC<OrganizationManagerDashboardPa
     setSelectedOrgId(event.target.value as string);
   };
 
-  const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
-    setTabValue(newValue);
-  };
-
   const handleOpenAddOrgModal = () => setIsAddOrgModalOpen(true);
   const handleCloseAddOrgModal = () => setIsAddOrgModalOpen(false);
 
@@ -166,23 +130,15 @@ const OrganizationManagerDashboardPanel: React.FC<OrganizationManagerDashboardPa
   if (organizations.length === 0) {
     return (
       <Paper sx={{ p: 2, margin: 2 }}>
-        <Typography variant="h6">Organization Manager Dashboard</Typography>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+          <Typography variant="h6">Organization Manager Dashboard</Typography>
+          <Button variant="contained" startIcon={<AddIcon />} onClick={handleOpenAddOrgModal}>
+            Add Organization
+          </Button>
+        </Box>
         <Typography sx={{ mb: 2 }}>
-          You are not currently assigned to manage any organizations. Please contact an administrator or create a new one.
+          You are not currently assigned to manage any organizations. Please contact an administrator or create a new one using the button above.
         </Typography>
-        <Button variant="contained" onClick={handleOpenAddOrgModal}>
-          Create New Organization
-        </Button>
-        <AddOrganizationModal
-          open={isAddOrgModalOpen}
-          onClose={handleCloseAddOrgModal}
-          onOrganizationCreated={handleAddOrgSuccess}
-        />
-        <Snackbar open={snackbarOpen} autoHideDuration={6000} onClose={handleSnackbarClose}>
-          <Alert onClose={handleSnackbarClose} severity={snackbarSeverity} sx={{ width: '100%' }}>
-            {snackbarMessage}
-          </Alert>
-        </Snackbar>
       </Paper>
     );
   }
@@ -191,14 +147,22 @@ const OrganizationManagerDashboardPanel: React.FC<OrganizationManagerDashboardPa
 
   return (
     <Box sx={{ width: '100%' }}>
-      <Paper sx={{ p: 2, margin: 2, mb: 0, borderBottomLeftRadius:0, borderBottomRightRadius:0 }}>
-        <Typography variant="h5" gutterBottom>
-          Organization Manager Dashboard
-        </Typography>
-        {currentUser && <Typography variant="subtitle1">Welcome, {currentUser.displayName || currentUser.email}</Typography>}
+      <Paper sx={{ p: 2, margin: 2 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: organizations.length > 0 ? 0 : 2 }}>
+          <Typography variant="h5" gutterBottom sx={{ mb: 0 }}>
+            Organization Manager Dashboard
+          </Typography>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={handleOpenAddOrgModal}
+          >
+            Add Organization
+          </Button>
+        </Box>
 
         {organizations.length > 0 && (
-          <FormControl fullWidth margin="normal">
+          <FormControl fullWidth margin="normal" sx={{ mt: 2 }}>
             <InputLabel id="om-org-selector-label">Select Organization</InputLabel>
             <Select
               labelId="om-org-selector-label"
@@ -216,47 +180,30 @@ const OrganizationManagerDashboardPanel: React.FC<OrganizationManagerDashboardPa
           </FormControl>
         )}
         {selectedOrganization && (
-            <Typography variant="h6" sx={{mt: 1}}>Managing Organization: {selectedOrganization.name}</Typography>
-        )}
-        {organizations.length > 0 && ( // Show "Create Another Organization" if any orgs exist
-          <Box sx={{ mt: 2 }}>
-            <Button variant="outlined" onClick={handleOpenAddOrgModal}>
-              Create Another Organization
-            </Button>
-          </Box>
+          <Alert severity="info" sx={{ mt: 1 }}>
+            Managing Organization: {selectedOrganization.name}
+          </Alert>
         )}
       </Paper>
 
-      {selectedOrgId && (
-        <>
-          <Box sx={{ borderBottom: 1, borderColor: 'divider', backgroundColor: 'background.paper', mx:2 }}>
-            <Tabs value={tabValue} onChange={handleTabChange} aria-label="Organization Manager Dashboard Tabs">
-              <Tab label="Property Managers" {...a11yProps(0)} />
-              <Tab label="Properties" {...a11yProps(1)} />
-              <Tab label="Residents" {...a11yProps(2)} />
-              <Tab label="Invitations" {...a11yProps(3)} />
-            </Tabs>
-          </Box>
-          <TabPanel value={tabValue} index={0}>
-            <OrgScopedPropertyManagerManagement 
-              organizationId={selectedOrgId} 
-              organizationCreatedBy={selectedOrganization?.createdBy || null} 
-            />
-          </TabPanel>
-          <TabPanel value={tabValue} index={1}>
-            <Typography>Property Management for Org ID: {selectedOrgId}</Typography>
-            {/* Placeholder: <OrgScopedPropertyManagement organizationId={selectedOrgId} /> */}
-          </TabPanel>
-          <TabPanel value={tabValue} index={2}>
-            <Typography>Resident Management for Org ID: {selectedOrgId}</Typography>
-            {/* Placeholder: <OrgScopedResidentManagement organizationId={selectedOrgId} /> */}
-          </TabPanel>
-          <TabPanel value={tabValue} index={3}>
-            <Typography>Invitation Management for Org ID: {selectedOrgId}</Typography>
-            {/* Placeholder: <OrgScopedInvitationManagement organizationId={selectedOrgId} /> */}
-          </TabPanel>
-        </>
+      {selectedOrgId && selectedOrganization && (
+        <Paper sx={{ p: 3, marginX: 2, marginTop: 2 }}>
+          <OrgScopedPropertyManagerManagement
+            organizationId={selectedOrgId}
+            organizationCreatedBy={selectedOrganization?.createdBy || null}
+          />
+        </Paper>
       )}
+      <AddOrganizationModal
+        open={isAddOrgModalOpen}
+        onClose={handleCloseAddOrgModal}
+        onOrganizationCreated={handleAddOrgSuccess}
+      />
+      <Snackbar open={snackbarOpen} autoHideDuration={6000} onClose={handleSnackbarClose}>
+        <Alert onClose={handleSnackbarClose} severity={snackbarSeverity} sx={{ width: '100%' }}>
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };

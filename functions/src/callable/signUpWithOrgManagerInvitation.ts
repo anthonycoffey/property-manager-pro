@@ -126,8 +126,9 @@ export const signUpWithOrgManagerInvitation = onCall(async (request) => {
       organizationIds: invOrganizationIds || [], // Use the array from invitation, or empty if null
     };
 
+    console.log(`Attempting to set custom claims for OM user ${uid}: ${JSON.stringify(claimsToSet)}`);
     await adminAuth.setCustomUserClaims(uid, claimsToSet);
-    console.log(`Custom claims set for invited Organization Manager user ${uid}: ${JSON.stringify(claimsToSet)}`);
+    console.log(`Custom claims successfully set for invited Organization Manager user ${uid}: ${JSON.stringify(claimsToSet)}`);
 
     // 6. Create Firestore User Profile(s)
     const baseProfileData = {
@@ -138,6 +139,16 @@ export const signUpWithOrgManagerInvitation = onCall(async (request) => {
       status: 'active',
       invitedBy: invitedBy || null,
     };
+
+    // Create profile in /admins collection for ALL Organization Managers
+    const adminProfileData = {
+      ...baseProfileData, // Includes uid, email, displayName, createdAt, status, invitedBy
+      roles: ['organization_manager'], // Explicitly set the role for the profile document
+      // organizationIds: invOrganizationIds || [], // Optionally, store initial orgs here too. For now, claims are primary.
+    };
+    console.log(`Attempting to create/update profile in 'admins' collection for OM user ${uid} with data: ${JSON.stringify(adminProfileData)}`);
+    await db.collection('admins').doc(uid).set(adminProfileData, { merge: true });
+    console.log(`Organization Manager profile successfully created/updated in 'admins' collection for ${uid}`);
 
     if (invOrganizationIds && invOrganizationIds.length > 0) {
       // Create a profile in each assigned organization

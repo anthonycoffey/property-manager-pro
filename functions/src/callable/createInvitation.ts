@@ -192,8 +192,21 @@ export const createInvitation = onCall(async (request) => {
             `Property ${targetPropertyId} not found in organization ${singleOrgIdForInvite}.`
           );
         }
+      } else if (rolesToAssign.includes('property_manager')) {
+        // OM inviting a property_manager
+        if (!singleOrgIdForInvite) {
+          throw new HttpsError(
+            'invalid-argument',
+            'A single organizationId is required when an organization manager invites a property manager.'
+          );
+        }
+        if (!callerOrgIdsFromToken.includes(singleOrgIdForInvite)) {
+          throw new HttpsError(
+            'permission-denied',
+            'Organization manager cannot invite for an unassigned organization.'
+          );
+        }
       }
-      // TODO: Add logic if OMs can invite other roles like property_staff, which would also need singleOrgIdForInvite.
     } else {
       throw new HttpsError(
         'invalid-argument',

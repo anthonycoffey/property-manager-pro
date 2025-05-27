@@ -70,7 +70,7 @@ const InvitePropertyManagerForm: React.FC<InvitePropertyManagerFormProps> = ({
         inviteeName,
         organizationIds: [selectedOrganizationId],
         rolesToAssign: ['property_manager'],
-        invitedByRole: 'admin',
+        invitedByRole: roles.includes('admin') ? 'admin' : 'organization_manager',
       });
 
       const responseData = result.data as CreateInvitationResponse;

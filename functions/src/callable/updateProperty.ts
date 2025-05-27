@@ -7,8 +7,12 @@ interface UpdatePropertyData {
   propertyId: string;
   updatedData: {
     name?: string;
-    address?: { // Address now only contains street
+    address?: {
       street?: string;
+      city?: string;
+      state?: string;
+      zip?: string;
+      // Add other address fields as necessary
     };
     type?: string;
     managedBy?: string;
@@ -28,22 +32,10 @@ export const updateProperty = onCall(async (request) => { // Use request paramet
   }
 
   // request.auth is now guaranteed to exist
-  const callerRoles = request.auth.token.roles || [];
-  
-  let authorized = false;
-  if (callerRoles.includes('property_manager')) {
-    const callerOrgId = request.auth.token.organizationId;
-    if (callerOrgId === organizationId) {
-      authorized = true;
-    }
-  } else if (callerRoles.includes('organization_manager')) {
-    const callerOrgIds = (request.auth.token.organizationIds as string[]) || [];
-    if (callerOrgIds.includes(organizationId)) {
-      authorized = true;
-    }
-  }
+  const userRoles = request.auth.token.roles || [];
+  const userOrgId = request.auth.token.organizationId;
 
-  if (!authorized) {
+  if (!userRoles.includes('property_manager') || userOrgId !== organizationId) {
     throw new HttpsError('permission-denied', 'User does not have permission to update properties for this organization.');
   }
 

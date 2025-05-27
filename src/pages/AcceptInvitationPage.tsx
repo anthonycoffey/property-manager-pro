@@ -166,8 +166,8 @@ const AcceptInvitationPage: React.FC = () => {
       setError('Please wait for invitation details to load.');
       return;
     }
-    if (!invitationToken) {
-      setError('Invitation token is missing. Cannot proceed.');
+    if (!invitationToken || !organizationId) {
+      setError('Invitation details are missing. Cannot proceed.');
       setSocialLoading(null);
       return;
     }
@@ -271,8 +271,8 @@ const AcceptInvitationPage: React.FC = () => {
     setError(null);
     setSuccess(null);
 
-    if (!invitationToken) {
-      setError('Invitation token is missing. Cannot proceed.');
+    if (!invitationToken || !organizationId) {
+      setError('Invitation details are missing. Cannot proceed.');
       return;
     }
     // Email is now pre-filled and readonly, so we use `invitedEmail`
@@ -462,6 +462,7 @@ const AcceptInvitationPage: React.FC = () => {
               readOnly: true,
             }}
             disabled={isFetchingInvite || loading || !!socialLoading} // Also disable if fetching invite
+            sx={{ backgroundColor: '#f0f0f0' }} // Visual cue for readonly
           />
           <TextField
             margin='normal'

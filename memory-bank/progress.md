@@ -2,9 +2,9 @@
 
 ## 1. Current Status: RBAC & Firestore Implementation (As of 2025-05-23)
 
-The project has recently completed the implementation of the Admin Organization Management Panel, a significant refactoring of all Firebase Cloud Functions, the integration of Google Places API for address autocompletion, and a major RBAC enhancement introducing the Organization Manager role.
+The project has recently completed the implementation of the Admin Organization Management Panel, a significant refactoring of all Firebase Cloud Functions, and the integration of Google Places API for address autocompletion.
 
-*   **Date of this update:** 2025-05-26
+*   **Date of this update:** 2025-05-25
 
 ## 2. What Works / Completed
 
@@ -23,32 +23,13 @@ The project has recently completed the implementation of the Admin Organization 
             *   For admin users (`*@24hrcarunlocking.com`): sets `roles: ['admin']` and creates a profile in `admins/{uid}`.
             *   For other direct sign-ups: sets `roles: ['pending_association']`. **No Firestore document is created by `processSignUp` for these users.** The temporary profile creation in the root `users/{uid}` and the check for `organizationId` claim were removed.
         *   (Previous TypeScript error resolutions and logger changes remain relevant to the function's history but are now within its modularized file).
-    *   Updated `src/hooks/useAuth.ts` and `src/providers/AuthProvider.tsx` to fetch and expose custom claims, including `organizationIds` for multi-org roles.
-*   **RBAC Enhancement (Super Admin & Organization Manager - 2025-05-26):**
-    *   Clarified existing `admin` role as "Super Admin" with global system access.
-    *   Introduced new `organization_manager` role for managing one or more specific organizations.
-        *   Custom claims: `roles: ['organization_manager']`, `organizationIds: ["orgId1", "orgId2", ...]`.
-    *   Updated `functions/src/callable/createInvitation.ts` to allow Admins to invite `organization_manager`s.
-    *   Updated `functions/src/callable/signUpWithInvitation.ts` to correctly set claims and create profiles for `organization_manager`s.
-    *   Created new `functions/src/callable/addOrganizationToManager.ts` Cloud Function for Admins to assign existing `organization_manager`s to additional organizations.
-    *   Updated `functions/src/index.ts` to export the new Cloud Function.
-    *   Created `docs/organizationManagerInvitation.json` email template.
+    *   Updated `src/hooks/useAuth.ts` and `src/providers/AuthProvider.tsx` to fetch and expose custom claims.
 *   **Phase 3: Firestore Security Rules:**
     *   Implemented comprehensive multi-tenant and RBAC security rules in `firestore.rules`.
     *   **Removed rules for the root `/users` collection** as it's no longer used for `pending_association` profiles (2025-05-24).
-    *   Updated `firestore.rules` (2025-05-26) to:
-        *   Grant Super Admins (`admin` role) broad/global access.
-        *   Scope `organization_manager` access based on their `request.auth.token.organizationIds` array claim using the `in` operator.
-        *   Added helper functions `isOrganizationManager()` and `isOrgManagerForOrg(orgId)`.
 *   **Phase 4: Frontend Integration & UI Adaptation:**
-    *   Updated `src/hooks/useAuth.ts` and `src/providers/AuthProvider.tsx` to include `organizationIds` in the auth context (2025-05-26).
-    *   Updated `src/components/ProtectedRoute.tsx` to correctly handle route protection for `organization_manager` role using `organizationIds` (2025-05-26).
-    *   Updated `src/components/Dashboard.tsx` to conditionally render a new `OrganizationManagerDashboardPanel.tsx` for the `organization_manager` role (2025-05-26).
-    *   Created `src/components/Dashboard/OrganizationManagerDashboardPanel.tsx` with basic structure, including an organization selector for multi-org managers, and integrated `OrgScopedPropertyManagerManagement` for PM management within the selected org (2025-05-26).
-    *   Created `src/components/OrganizationManager/OrgScopedPropertyManagerManagement.tsx` (2025-05-26).
-    *   Updated `src/components/Dashboard/AdminDashboardPanel.tsx` with a new "Organization Managers" tab, integrating `InviteOrganizationManagerForm` and `AssignOrgToManagerForm` (2025-05-26).
-    *   Created `src/components/Admin/InviteOrganizationManagerForm.tsx` (2025-05-26).
-    *   Created `src/components/Admin/AssignOrgToManagerForm.tsx` for assigning existing Organization Managers to additional organizations (2025-05-26).
+    *   Updated `src/components/ProtectedRoute.tsx` to enforce route protection based on roles and IDs.
+    *   Modified `src/components/Dashboard.tsx` for conditional UI rendering based on user roles.
 *   **Phase 5 (Partial): Initial Feature Development (Admin Dashboard - Property Manager CRUD):**
     *   Created `src/components/Admin` directory and `src/components/Admin/PropertyManagerManagement.tsx` component.
     *   Implemented `createPropertyManager`, `updatePropertyManager`, and `deletePropertyManager` Cloud Functions (now in `functions/src/callable/`).
@@ -181,23 +162,13 @@ The project has recently completed the implementation of the Admin Organization 
 
 The remaining application functionality includes:
 
-*   **A. Authentication & Authorization:** (Core setup significantly enhanced with Super Admin/Org Manager distinction, ongoing refinement).
-*   **B. Admin Dashboard (Super Admin View):**
+*   **A. Authentication & Authorization:** (Core setup complete, ongoing refinement)
+*   **B. Admin Dashboard:**
     *   Organization Management (CRUD - Add, List, Edit, Deactivate implemented).
-    *   Organization Managers Management:
-        *   Invite new `organization_manager` (Initial form `InviteOrganizationManagerForm` implemented).
-        *   Assign existing `organization_manager` to additional organizations (Initial UI `AssignOrgToManagerForm` implemented; backend function `addOrganizationToManager` created. User selector in form is a TODO for enhancement).
-        *   View/List `organization_manager` users (Pending).
-    *   Property Managers Management (by selected Org - Core UI for listing, editing, deleting, and revoking invites is complete).
-    *   Properties Management (by selected Org - CRUD - Pending).
-    *   Residents Management (by selected Org - View, Edit, Delete for support - Pending).
-*   **C. Organization Manager Dashboard (New - Scoped to Assigned Orgs):**
-    *   Organization Selector (if managing multiple orgs - Implemented).
-    *   Property Managers Management (within selected org - Initial implementation with `OrgScopedPropertyManagerManagement.tsx` complete).
-    *   Properties Management (within selected org - Pending).
-    *   Residents Management (within selected org - Pending).
-    *   Invitation Management (for PMs, Staff, Residents within selected org - Pending).
-*   **D. Property Manager Dashboard:**
+    *   Property Managers Management (Core UI for listing, editing, deleting, and revoking invites is complete. Future enhancements or minor adjustments as needed).
+    *   Properties Management (CRUD).
+    *   Residents Management (View, Edit, Delete for support).
+*   **C. Property Manager Dashboard:**
     *   **Property Creation:** (Implemented via "Create Property" button and modal with `CreatePropertyForm.tsx`).
     *   **View Assigned Properties:** (Implemented in "My Properties" tab via table-based `PropertyManagerPropertiesList`, showing Name and Address).
     *   **Invite Residents:**
@@ -206,15 +177,14 @@ The remaining application functionality includes:
     *   Manage residents for their properties (e.g., view list, edit details - Pending).
     *   Manage invitations (beyond the initial invite form, e.g., view status, revoke - Pending).
     *   Track service requests (Pending).
-*   **E. Resident Dashboard:**
+*   **D. Resident Dashboard:**
     *   View property details.
     *   Manage profile (vehicle info).
     *   Submit and track service requests.
-*   **F. Core Systems & Features:**
+*   **E. Core Systems & Features:**
     *   **Data Models in Firestore:** (Initial implementation complete, ongoing refinement as features are built).
     *   **Invitation System:**
-        *   Thorough end-to-end testing of all invitation flows (Admin invites PM, Admin invites Org Manager, PM creates Property, PM invites Resident with dynamic property selection, invitee accepts via email/password and social sign-on).
-        *   Created `organizationManagerInvitation.json` email template (needs seeding to Firestore).
+        *   Thorough end-to-end testing of all invitation flows (Admin invites PM, PM creates Property, PM invites Resident with dynamic property selection, invitee accepts via email/password and social sign-on).
         *   Manually add email templates from `docs/` to Firestore `templates` collection.
         *   The `InviteResidentForm.tsx` in `Dashboard.tsx` now uses a dynamic `propertyId`.
     *   **Service Request System:** (Full implementation pending).
@@ -271,41 +241,13 @@ The remaining application functionality includes:
     *   Defaults to `emulator` if no flag is provided, automatically setting `FIRESTORE_EMULATOR_HOST="localhost:8080"` if not already set.
     *   If `--env=production` is used, it prompts the user for explicit confirmation ("Y" or "yes") before attempting to connect to the live Firestore database, as a safety measure.
     *   Updated logging to clearly indicate the target environment.
-*   **2025-05-26 (RBAC Enhancement: Super Admin & Organization Manager Roles):**
-    *   Clarified `admin` role as Super Admin with global access.
-    *   Introduced new `organization_manager` role with `organizationIds` custom claim for scoped access to one or more organizations.
-    *   Implemented backend Cloud Functions (`createInvitation` update, `signUpWithInvitation` update, new `addOrganizationToManager`) for managing `organization_manager` users and their organization assignments.
-    *   Updated Firestore Security Rules for differentiated access.
-    *   Updated frontend Auth context (`useAuth`, `AuthProvider`), `ProtectedRoute`, and `Dashboard` to support the new role and claims.
-    *   Created initial `OrganizationManagerDashboardPanel` and `InviteOrganizationManagerForm` components.
-    *   Updated `AdminDashboardPanel` to include management options for Organization Managers.
-*   **Organization Manager Invitation & Creation Enhancements (2025-05-26):**
-    *   **Invite Organization Manager Form (`src/components/Admin/InviteOrganizationManagerForm.tsx`):**
-        *   Optimized layout: Name/Email on one row.
-        *   Organization Selector is now a multi-select dropdown, allowing assignment to none, one, or multiple organizations during invitation. Labels streamlined.
-    *   **`createInvitation.ts` Cloud Function:**
-        *   Admins can now invite Organization Managers and assign them to multiple organizations (or none) simultaneously.
-        *   All Organization Manager invitations are stored in the `globalInvitations` collection.
-        *   The invitation document now stores an `organizationIds` array (which can be `null` or empty if no organizations are selected at invite time).
-    *   **`signUpWithInvitation.ts` Cloud Function:**
-        *   Handles sign-ups from `globalInvitations`.
-        *   Sets the `organizationIds` custom claim based on the `organizationIds` array from the invitation.
-        *   Creates user profiles in each specified organization if `organizationIds` were provided in the invitation.
-    *   **`createOrganization.ts` Cloud Function:**
-        *   Now allows users with the `organization_manager` role to create organizations.
-        *   If an OM creates an organization, they are auto-assigned: claims updated with new org ID, and their profile is created in the new organization's `users` subcollection.
 
 ## 6. Immediate Next Steps
 
 1.  **Invitation System (Phase 3 - Refinement & Testing):**
-    *   Thoroughly test all invitation flows, including:
-        *   Admin invites Organization Manager (with and without initial organization).
-        *   Organization Manager accepts global invitation.
-        *   Organization Manager (who created an org or was assigned one) invites other users (e.g., Property Managers, Residents - if this flow is enabled for them).
-    *   Verify email content and links for all scenarios.
+    *   Thoroughly test all invitation flows, including the new dynamic property selection for resident invites.
+    *   Verify email content and links.
     *   Seed email templates from `docs/` to Firestore `templates` collection using the enhanced `seedTemplates.js` script.
 2.  **Admin Dashboard - Properties Management:**
     *   Begin implementation of property CRUD operations for Admins.
-3.  **Organization Manager Dashboard - Organization Creation UI (New Task):**
-    *   Implement UI for Organization Managers to use their new ability to create organizations (if they don't have one or wish to create more).
-4.  **Continue with Project Roadmap:** Proceed with other features as prioritized.
+3.  **Continue with Project Roadmap:** Proceed with other features as prioritized.

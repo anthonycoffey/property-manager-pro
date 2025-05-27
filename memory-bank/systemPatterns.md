@@ -28,21 +28,19 @@ The application employs a modern web architecture with a React-based frontend an
 ## 2. Key Technical Decisions & Design Patterns
 
 *   **Role-Based Access Control (RBAC):**
-    *   Implemented using Firebase Authentication custom claims. Roles are stored as an array in the `roles` claim. Additional claims like `organizationId` (for single-org users), `organizationIds` (for multi-org users like Organization Managers), and `propertyId` are used for granular access control.
+    *   Implemented using Firebase Authentication custom claims. Roles are stored as an array in the `roles` claim. Additional claims like `organizationId` and `propertyId` are used for granular access control.
     *   **Custom Claims Strategy:**
-        *   **Super Admins (Global Access):** `claims: { roles: ["admin"] }` (Has implicit access to all organizations, does not need `organizationId` or `organizationIds` in claims for this purpose).
-        *   **Organization Managers (Multi-Org Access):** `claims: { roles: ["organization_manager"], organizationIds: ["{organizationId1}", "{organizationId2}", ...] }`. If invited without an initial organization or with multiple, `organizationIds` will reflect this (can be empty or contain multiple IDs).
-        *   **Organization Staff (Property Managers, other staff - Single-Org Access):** `claims: { roles: ["property_manager" | "property_staff"], organizationId: "{organizationId}" }` (Operates within one specific organization).
-        *   **Residents (Single-Property Access within an Org):** `claims: { roles: ["resident"], organizationId: "{organizationId}", propertyId: "{propertyId}" }`
-        *   Minimum defined roles: `admin`, `organization_manager`, `property_manager`, `property_staff`, `resident`.
+        *   **Super Admins:** `claims: { roles: ["admin"] }`
+        *   **Organization Users (Property Managers, Property Staff):** `claims: { roles: ["property_manager" | "property_staff"], organizationId: "{organizationId}" }`
+        *   **Residents:** `claims: { roles: ["resident"], organizationId: "{organizationId}", propertyId: "{propertyId}" }`
+        *   Minimum defined roles: `admin`, `property_manager`, `property_staff`, `resident`.
     *   Enforced at multiple levels:
-        *   **Frontend:** Conditionally rendering UI elements and routes based on user roles and associated IDs/ID arrays in claims.
-        *   **Cloud Firestore:** Through meticulously defined Security Rules that restrict data access based on `request.auth.token.roles`, `request.auth.token.organizationId` (for single-org users), `request.auth.token.organizationIds` (using `in` operator for multi-org users), `request.auth.token.propertyId`, and data ownership.
+        *   **Frontend:** Conditionally rendering UI elements and routes based on user roles and associated IDs in claims.
+        *   **Cloud Firestore:** Through meticulously defined Security Rules that restrict data access based on `request.auth.token.roles` (checking for presence of a role using `hasAny()`, `hasAll()`, or `hasOnly()`), `request.auth.token.organizationId`, `request.auth.token.propertyId`, and data ownership.
         *   **Cloud Functions:** Validating user roles and associated IDs from the token before executing sensitive operations.
 *   **Data Modeling (Firestore - Multi-Tenant Structure):**
     *   The Firestore database is designed with a multi-tenant architecture, primarily centered around a root `organizations` collection. This ensures clear data isolation and management for different tenants.
     *   The `mail` and `templates` collections (for the `firestore-send-email` extension) remain as top-level collections and are not part of the direct multi-tenant data hierarchy for organizations, users, or properties.
-    *   A new root `globalInvitations` collection is introduced for Organization Manager invitations. These invitations can specify multiple organizations, a single organization, or no organizations for initial assignment.
 
     *   **1. `admins` (Root Collection)**
         *   Purpose: Stores profile data for Super Administrators (distinct from their Firebase Auth record).
@@ -55,25 +53,25 @@ The application employs a modern web architecture with a React-based frontend an
             *   *(Other super_admin specific profile data)*
 
     *   **2. `organizations` (Root Collection)**
-        *   Purpose: Represents each tenant (e.g., a Property Management company). Can be created by `admin` or `organization_manager`.
+        *   Purpose: Represents each tenant (e.g., a Property Management company).
         *   Document ID: `{organizationId}` (e.g., auto-generated unique ID)
         *   Fields:
             *   `name: string` (e.g., "Prime Properties LLC")
-            *   `createdBy: string` (Firebase Auth UID of the user who created it - admin or org_manager)
+            *   `ownerId: string` (Firebase Auth UID of the primary Property Manager for this org)
             *   `createdAt: timestamp`
             *   `status: string` (e.g., "active", "trial", "suspended")
             *   *(Other organization-level settings, billing info, etc.)*
         *   **Subcollections within each `organization` document:**
 
             *   **`users`** (Subcollection: `organizations/{organizationId}/users`)
-                *   Purpose: Stores profiles for users belonging to this organization (Organization Managers, Property Managers, staff).
+                *   Purpose: Stores profiles for users belonging to this organization (Property Managers, staff).
                 *   Document ID: `{orgUserAuthUid}` (Firebase Auth UID)
                 *   Fields:
                     *   `displayName: string`
                     *   `email: string`
-                    *   `organizationRoles: string[]` (e.g., `["organization_manager"]`, `["property_manager"]`, `["property_staff"]`)
+                    *   `organizationRoles: string[]` (e.g., `["property_manager"]`, `["property_staff"]`, `["property_manager", "property_staff"]`)
                     *   `permissions?: string[]` (Optional: for more granular permissions within the org beyond base roles)
-                    *   `invitedBy?: string` (Auth UID of user who invited them, if applicable)
+                    *   `invitedBy: string` (Auth UID of user who invited them)
                     *   `createdAt: timestamp`
 
             *   **`properties`** (Subcollection: `organizations/{organizationId}/properties`)
@@ -103,18 +101,17 @@ The application employs a modern web architecture with a React-based frontend an
                             *   *(Vehicle information, contact preferences, etc.)*
 
             *   **`invitations`** (Subcollection: `organizations/{organizationId}/invitations`)
-                *   Purpose: Tracks invitations sent for this organization (for new org users like Property Managers or Residents). Excludes Organization Manager invites which are in `globalInvitations`.
+                *   Purpose: Tracks invitations sent for this organization (for new org users or residents).
                 *   Document ID: `{invitationId}` (e.g., auto-generated unique ID)
                 *   Fields:
                     *   `email: string`
                     *   `rolesToAssign: string[]` (e.g., `["property_staff"]`, `["resident"]`)
-                    *   `organizationIds: string[]` (Array containing the single ID of this parent organization)
                     *   `targetPropertyId?: string` (if for a resident, links to `organizations/{organizationId}/properties/{propertyId}`)
                     *   `status: "pending" | "accepted" | "expired"`
                     *   `createdBy: string` (Auth UID of an org user)
                     *   `createdAt: timestamp`
                     *   `expiresAt: timestamp`
-            
+
             *   **`services`** (Subcollection: `organizations/{organizationId}/services`)
                 *   Purpose: Tracks service requests for properties within this organization.
                 *   Document ID: `{serviceId}` (e.g., auto-generated unique ID)
@@ -127,22 +124,6 @@ The application employs a modern web architecture with a React-based frontend an
                     *   `submittedAt: timestamp`
                     *   `assignedTo?: string` (Auth UID of an org user)
                     *   `completedAt?: timestamp`
-
-    *   **3. `globalInvitations` (Root Collection - New/Updated)**
-        *   Purpose: Tracks invitations for Organization Managers.
-        *   Document ID: `{invitationId}` (e.g., auto-generated unique ID, same as token)
-        *   Fields:
-            *   `email: string`
-            *   `name: string` (invitee name)
-            *   `rolesToAssign: ["organization_manager"]`
-            *   `organizationIds: string[] | null` (Array of organization IDs to assign, or null/empty if none initially)
-            *   `status: "pending" | "accepted" | "expired"`
-            *   `createdBy: string` (Auth UID of the inviting Super Admin)
-            *   `invitedByRole: "admin"`
-            *   `createdAt: timestamp`
-            *   `expiresAt: timestamp`
-            *   `invitationType: "organization_manager"`
-
 *   **Hybrid Rendering Strategy (React 19):**
     *   **Client Components:** Default for most UI, especially interactive parts.
     *   **Server Components:**
@@ -151,7 +132,6 @@ The application employs a modern web architecture with a React-based frontend an
 *   **API Design (Cloud Functions):**
     *   Cloud Functions act as the primary backend API layer.
     *   Functions will be designed to be granular and secure, performing specific tasks (e.g., `createInvitation`, `processServiceRequest`, `importResidentsFromCSV`).
-    *   `createOrganization` function now allows `organization_manager` role to create organizations and auto-assigns them.
 *   **State Management Strategy:**
     *   **Global State (React Context):** For broadly shared, less frequently updated data (e.g., authenticated user object, theme settings).
     *   **Local/Feature State (React Hooks):** For more complex, dynamic, or localized state within specific features or component trees.

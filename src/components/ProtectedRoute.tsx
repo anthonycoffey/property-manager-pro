@@ -16,7 +16,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   requiredOrgId,
   requiredPropertyId,
 }) => {
-  const { currentUser, loading, roles, organizationId, organizationIds, propertyId } = useAuth();
+  const { currentUser, loading, roles, organizationId, propertyId } = useAuth();
 
   if (loading) {
     return (
@@ -47,18 +47,8 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   }
 
   // Check for organization ID
-  if (requiredOrgId) {
-    if (roles.includes('organization_manager')) {
-      // For organization_manager, check if requiredOrgId is in their organizationIds array
-      if (!organizationIds || !organizationIds.includes(requiredOrgId)) {
-        return <Navigate to="/unauthorized" replace />;
-      }
-    } else {
-      // For other roles (like property_manager), use the single organizationId claim
-      if (organizationId !== requiredOrgId) {
-        return <Navigate to="/unauthorized" replace />;
-      }
-    }
+  if (requiredOrgId && organizationId !== requiredOrgId) {
+    return <Navigate to="/unauthorized" replace />; // Redirect if organization ID doesn't match
   }
 
   // Check for property ID

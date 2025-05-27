@@ -17,22 +17,14 @@ This project aims to provide a modern, efficient, and scalable solution for prop
 
 The application should provide a seamless and intuitive experience tailored to each user role:
 
-*   **Super Administrators (`admin`):**
-    *   **Global Oversight:** A comprehensive dashboard to monitor the entire system, manage organizations, invite/assign Organization Managers, oversee all property portfolios at a high level, and access system-wide analytics.
-    *   **System Configuration:** Tools for managing core system settings (if any).
-    *   **Top-Level Support:** Easy access to all data (organizations, users, properties, residents, services) for customer support and troubleshooting across the platform.
-    *   **Organization Management:** Tools for creating, viewing, editing, and deactivating organizations.
+*   **Administrators:**
+    *   **Effortless Oversight:** A comprehensive dashboard to monitor the entire system, manage property managers, oversee property portfolios, and access high-level analytics.
+    *   **Simplified Management:** Intuitive tools for adding, editing, and removing property managers and properties.
+    *   **Support Capabilities:** Easy access to resident and service data for customer support and troubleshooting.
 
-*   **Organization Managers (`organization_manager`):**
-    *   **Scoped Oversight:** A dedicated dashboard to manage their assigned organization(s). If managing multiple, an easy way to switch context.
-    *   **Staff Management:** Intuitive tools for inviting, viewing, and managing Property Managers and other staff within their organization(s).
-    *   **Property Portfolio Management:** Tools for adding, editing, and removing properties within their organization(s).
-    *   **Resident & Service Oversight:** Ability to view resident information and service request data within their organization(s) for management and support.
-    *   **Reporting:** Access to reports and analytics specific to their organization(s).
-
-*   **Property Managers (`property_manager`):**
-    *   **Centralized Control:** A dedicated dashboard to manage their assigned properties within a specific organization, view resident information, track service requests, and manage invitations for residents to their properties.
-    *   **Streamlined Resident Onboarding:** Simple tools to generate and send invitations (email/QR codes) to new residents for their specific properties.
+*   **Property Managers:**
+    *   **Centralized Control:** A dedicated dashboard to manage their assigned properties, view resident information, track service requests, and manage invitations.
+    *   **Streamlined Resident Onboarding:** Simple tools to generate and send invitations (email/QR codes) to new residents.
     *   **Efficient Communication:** Tools to communicate effectively with residents (future enhancement).
     *   **Clear Reporting:** Access to reports on property performance and service metrics.
 

@@ -5,7 +5,6 @@ import SignupForm from './components/SignupForm';
 import Dashboard from './components/Dashboard';
 import ProtectedRoute from './components/ProtectedRoute';
 import AcceptInvitationPage from './pages/AcceptInvitationPage';
-import AcceptOrgManagerInvitationPage from './pages/AcceptOrgManagerInvitationPage';
 
 const AppRoutes: React.FC = () => {
   return (
@@ -21,7 +20,6 @@ const AppRoutes: React.FC = () => {
         }
       />
       <Route path="/accept-invitation" element={<AcceptInvitationPage />} />
-      <Route path="/accept-org-manager-invitation" element={<AcceptOrgManagerInvitationPage />} />
       {/* Placeholder for unauthorized access */}
       <Route path="/unauthorized" element={<div>You are not authorized to view this page.</div>} />
       {/* Add more public and protected routes as needed */}

@@ -19,8 +19,6 @@ import OrganizationSelector from '../Admin/OrganizationSelector';
 import PropertyManagerManagement from '../Admin/PropertyManagerManagement';
 import OrganizationManagementPanel from '../Admin/OrganizationManagementPanel';
 import AddOrganizationModal from '../Admin/AddOrganizationModal';
-import InviteOrganizationManagerForm from '../Admin/InviteOrganizationManagerForm';
-import AssignOrgToManagerForm from '../Admin/AssignOrgToManagerForm'; // Import the new form for assigning
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -108,7 +106,7 @@ const AdminDashboardPanel: React.FC = () => {
               color='primary'
               sx={{ mr: 1 }}
             />
-            <Typography variant='h4' color='primary'>
+            <Typography variant='h4' color='secondary'>
               Admin Dashboard
             </Typography>
           </Stack>
@@ -129,39 +127,19 @@ const AdminDashboardPanel: React.FC = () => {
             aria-label='admin actions tabs'
           >
             <Tab label='Organizations' {...a11yProps(0)} />
-            <Tab label='Organization Managers' {...a11yProps(1)} />
-            <Tab label='Property Managers (by Org)' {...a11yProps(2)} />
+            <Tab label='Property Managers' {...a11yProps(1)} />
           </Tabs>
         </Box>
         <TabPanel value={adminTabValue} index={0}>
           <OrganizationManagementPanel key={refreshOrgListKey} />
         </TabPanel>
         <TabPanel value={adminTabValue} index={1}>
-          <Typography variant='h6' gutterBottom>
-            Invite New Organization Manager
-          </Typography>
-          <InviteOrganizationManagerForm />
-
-          <Divider sx={{ my: 3 }} />
-
-          <Typography variant='h6' gutterBottom>
-            Assign Existing Organization Manager to Additional Organization
-          </Typography>
-          <AssignOrgToManagerForm />
-        </TabPanel>
-        <TabPanel value={adminTabValue} index={2}>
           <OrganizationSelector
             selectedOrganizationId={selectedAdminOrgId}
             onOrganizationChange={handleAdminOrgChange}
           />
           <Divider sx={{ my: 2 }} />
-          {selectedAdminOrgId ? (
-            <PropertyManagerManagement organizationId={selectedAdminOrgId} />
-          ) : (
-            <Typography>
-              Select an organization to view its property managers.
-            </Typography>
-          )}
+          <PropertyManagerManagement organizationId={selectedAdminOrgId} />
         </TabPanel>
 
         <AddOrganizationModal

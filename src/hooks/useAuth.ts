@@ -3,8 +3,7 @@ import type { User } from 'firebase/auth';
 
 interface CustomClaims {
   roles?: string[];
-  organizationId?: string; // For PMs, Residents (single org)
-  organizationIds?: string[]; // For Organization Managers (multiple orgs)
+  organizationId?: string;
   propertyId?: string;
 }
 
@@ -16,8 +15,7 @@ interface AuthContextType {
   currentUser: CustomUser | null;
   loading: boolean;
   roles: string[];
-  organizationId: string | null | undefined; // Primarily for PMs/Residents
-  organizationIds: string[] | null | undefined; // For Organization Managers
+  organizationId: string | null | undefined;
   propertyId: string | null | undefined;
 }
 

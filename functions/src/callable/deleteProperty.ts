@@ -54,22 +54,10 @@ export const deleteProperty = onCall(async (request) => {
     throw new HttpsError('invalid-argument', 'Missing required parameters: organizationId or propertyId.');
   }
 
-  const callerRoles = request.auth.token.roles || [];
-  
-  let authorized = false;
-  if (callerRoles.includes('property_manager')) {
-    const callerOrgId = request.auth.token.organizationId;
-    if (callerOrgId === organizationId) {
-      authorized = true;
-    }
-  } else if (callerRoles.includes('organization_manager')) {
-    const callerOrgIds = (request.auth.token.organizationIds as string[]) || [];
-    if (callerOrgIds.includes(organizationId)) {
-      authorized = true;
-    }
-  }
+  const userRoles = request.auth.token.roles || [];
+  const userOrgId = request.auth.token.organizationId;
 
-  if (!authorized) {
+  if (!userRoles.includes('property_manager') || userOrgId !== organizationId) {
     throw new HttpsError('permission-denied', 'User does not have permission to delete properties for this organization.');
   }
 

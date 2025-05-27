@@ -1,39 +1,36 @@
 :root {
-  /* font-family can be set by MUI theme */
-  line-height: 1.5; /* This is fine */
-  font-weight: 400; /* Base font weight, MUI typography will override for specific elements */
+  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
 
-  color-scheme: light dark; /* Good for browser features like scrollbars */
-  /* Let MUI ThemeProvider and CssBaseline handle default text and background colors */
-  /* color: rgba(255, 255, 255, 0.87); */
-  /* background-color: #242424; */
+  color-scheme: light dark;
+  color: rgba(255, 255, 255, 0.87);
+  background-color: #242424;
 
-  font-synthesis: none; /* This is fine */
-  text-rendering: optimizeLegibility; /* This is fine */
-  -webkit-font-smoothing: antialiased; /* This is fine */
-  -moz-osx-font-smoothing: grayscale; /* This is fine */
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 body {
-  margin: 0; /* MUI CssBaseline also does this, but it's fine here */
-  padding: 0; /* Added for completeness, though CssBaseline might handle */
-  min-height: 100vh; /* Good for full-height layouts */
-  /* background-color and color for body will be set by MUI CssBaseline */
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
 }
 
-/* Remove OS-level preference overrides, let the theme toggle control it */
-/* @media (prefers-color-scheme: light) { */
-  /* :root { */
-    /* color: #213547; */
-    /* background-color: #ffffff; */
-  /* } */
-  /* a:hover { */
-    /* color: #747bff; */ /* Let theme handle link colors */
-  /* } */
-  /* button { */
-    /* background-color: #f9f9f9; */ /* Let theme handle button styles */
-  /* } */
-/* } */
+@media (prefers-color-scheme: light) {
+  :root {
+    color: #213547;
+    background-color: #ffffff;
+  }
+  a:hover {
+    color: #747bff;
+  }
+  button {
+    background-color: #f9f9f9;
+  }
+}
 
 /* Google Places Autocomplete suggestions container */
 .pac-container {

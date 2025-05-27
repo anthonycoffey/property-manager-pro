@@ -15,7 +15,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [currentUser, setCurrentUser] = useState<CustomUser | null>(null);
   const [roles, setRoles] = useState<string[]>([]);
   const [organizationId, setOrganizationId] = useState<string | null>(null);
-  const [organizationIds, setOrganizationIds] = useState<string[] | null>(null); // New state
   const [propertyId, setPropertyId] = useState<string | null>(null);
 
   const [loading, setLoading] = useState(true);
@@ -49,14 +48,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             customClaims: {
               roles: (claims.roles as string[]) || [],
               organizationId: (claims.organizationId as string) || undefined,
-              organizationIds: (claims.organizationIds as string[]) || undefined,
               propertyId: (claims.propertyId as string) || undefined,
             },
           };
           setCurrentUser(processedUser);
           setRoles((claims.roles as string[]) || []);
           setOrganizationId((claims.organizationId as string) || null);
-          setOrganizationIds((claims.organizationIds as string[]) || null);
           setPropertyId((claims.propertyId as string) || null);
           setLoading(false);
         })
@@ -66,7 +63,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           setCurrentUser(null);
           setRoles([]);
           setOrganizationId(null);
-          setOrganizationIds(null);
           setPropertyId(null);
           setLoading(false);
         });
@@ -78,7 +74,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setCurrentUser(null);
       setRoles([]);
       setOrganizationId(null);
-      setOrganizationIds(null);
       setPropertyId(null);
       setLoading(false);
     }
@@ -89,7 +84,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     loading,
     roles,
     organizationId,
-    organizationIds,
     propertyId,
   };
 

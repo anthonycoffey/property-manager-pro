@@ -81,17 +81,15 @@ The following top-level collections are also part of the system:
 
 * **Firebase Authentication:** We'll handle user sign-up, login, and password reset using Firebase Auth.
 * **Custom Claims:** After a user signs up or is created, a Firebase Cloud Function will set custom claims on their Firebase Auth token. These claims are crucial for role-based access control (RBAC) and data scoping.
-    * **Strategy:** Roles are stored as an array in the `roles` claim. Additional claims like `organizationId` (for single-org users), `organizationIds` (for multi-org users like Organization Managers), and `propertyId` are used for granular access control.
-        *   **Super Admins (Global Access):** `claims: { roles: ["admin"] }` (Has implicit access to all organizations).
-        *   **Organization Managers (Multi-Org Access):** `claims: { roles: ["organization_manager"], organizationIds: ["{organizationId1}", "{organizationId2}", ...] }` (Manages specified organizations).
-        *   **Organization Staff (Property Managers, other staff - Single-Org Access):** `claims: { roles: ["property_manager" | "property_staff"], organizationId: "{organizationId}" }` (Operates within one specific organization).
-        *   **Residents (Single-Property Access within an Org):** `claims: { roles: ["resident"], organizationId: "{organizationId}", propertyId: "{propertyId}" }`
-    *   The minimum defined roles are `admin`, `organization_manager`, `property_manager`, `property_staff`, and `resident`.
+    * **Strategy:** Roles are stored as an array in the `roles` claim. Additional claims like `organizationId` and `propertyId` are used for granular access control within the multi-tenant structure.
+        *   **Super Admins:** `claims: { roles: ["admin"] }`
+        *   **Organization Users (Property Managers, Property Staff):** `claims: { roles: ["property_manager" | "property_staff"], organizationId: "{organizationId}" }`
+        *   **Residents:** `claims: { roles: ["resident"], organizationId: "{organizationId}", propertyId: "{propertyId}" }`
+    *   The minimum defined roles are `admin`, `property_manager`, `property_staff`, and `resident`.
     *   **For detailed custom claims strategy, refer to `memory-bank/systemPatterns.md`.**
-* **Firestore Security Rules:** These are crucial for enforcing data access. Rules will leverage the custom claims (`request.auth.token.roles`, `request.auth.token.organizationId`, `request.auth.token.organizationIds`, `request.auth.token.propertyId`) to ensure:
-    * Super Admins (`admin` role) can access all data system-wide.
-    * Organization Managers (`organization_manager` role) can access data only within the organizations listed in their `organizationIds` claim.
-    * Property Managers and Property Staff can only access data within their assigned single `organizationId`.
+* **Firestore Security Rules:** These are crucial for enforcing data access. Rules will leverage the custom claims (`request.auth.token.roles`, `request.auth.token.organizationId`, `request.auth.token.propertyId`) to ensure:
+    * Admins can access necessary system-wide data.
+    * Property Managers and Property Staff can only access data within their assigned `organizationId`.
     * Residents can only access their own data within their assigned `organizationId` and `propertyId`.
     * Data ownership and specific role permissions will be meticulously checked.
 

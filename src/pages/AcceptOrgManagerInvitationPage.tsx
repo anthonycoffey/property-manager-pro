@@ -26,7 +26,7 @@ import type { SignUpWithInvitationResponse, AppError } from '../types';
 import { isAppError } from '../utils/errorUtils';
 import { auth } from '../firebaseConfig';
 
-const AcceptInvitationPage: React.FC = () => {
+const AcceptOrgManagerInvitationPage: React.FC = () => {
   const [email, setEmail] = useState(''); // This will be set by invitedEmail
   const [password, setPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
@@ -45,7 +45,8 @@ const AcceptInvitationPage: React.FC = () => {
   const { currentUser } = useAuth();
 
   const [invitationToken, setInvitationToken] = useState<string | null>(null);
-  const [organizationId, setOrganizationId] = useState<string | null>(null);
+  // organizationId is not needed for OM invites in the URL
+  // const [organizationId, setOrganizationId] = useState<string | null>(null);
 
   useEffect(() => {
     if (currentUser) {
@@ -56,56 +57,55 @@ const AcceptInvitationPage: React.FC = () => {
   useEffect(() => {
     const queryParams = new URLSearchParams(location.search);
     const token = queryParams.get('token');
-    const orgId = queryParams.get('orgId');
+    // orgId is not expected for OM invites
+    // const orgId = queryParams.get('orgId');
 
     const functionsInstance = getFunctions();
-    const getInvitationDetailsFn = httpsCallable(
+    const getOrgManagerInvitationDetailsFn = httpsCallable(
       functionsInstance,
-      'getInvitationDetails'
+      'getOrgManagerInvitationDetails'
     );
 
-    if (token && orgId) {
+    if (token) { // Only token is strictly required for OM invites
       setInvitationToken(token);
-      setOrganizationId(orgId);
 
       const fetchInviteDetails = async () => {
         setIsFetchingInvite(true);
         setError(null);
         try {
-          const result = await getInvitationDetailsFn({
+          const result = await getOrgManagerInvitationDetailsFn({
             invitationId: token,
-            organizationId: orgId,
           });
           const details = result.data as {
             email: string;
             displayName?: string;
+            rolesToAssign: string[]; // Expected from backend
+            organizationIds: string[] | null; // Expected from backend
           };
 
-          if (details.email) {
+          if (details.email && details.rolesToAssign.includes('organization_manager')) {
             setInvitedEmail(details.email);
             setEmail(details.email);
             // if (details.displayName) setDisplayName(details.displayName); // Optional: prefill display name
           } else {
             setError(
-              'Could not retrieve invitation details. The link may be invalid or expired.'
+              'Could not retrieve organization manager invitation details. The link may be invalid or expired, or not for an Organization Manager.'
             );
           }
         } catch (error: unknown) {
-          console.error('Error fetching invitation details:', error);
+          console.error('Error fetching organization manager invitation details:', error);
           let specificError =
-            'Failed to load invitation. The link may be invalid, expired, or already used.';
+            'Failed to load organization manager invitation. The link may be invalid, expired, or already used.';
 
           if (isAppError(error)) {
             specificError = `Failed to load invitation: ${error.message}`;
-            // Attempt to access Firebase-specific codes if they exist
             const firebaseError = error as AppError & { code?: string; details?: { code?: string } };
             if (firebaseError.code === 'not-found' || firebaseError.details?.code === 'not-found') {
-              specificError = 'Invitation not found. Please check the link.';
+              specificError = 'Organization Manager Invitation not found. Please check the link.';
             } else if (firebaseError.code === 'failed-precondition' || firebaseError.details?.code === 'failed-precondition') {
-              specificError = firebaseError.message || 'Invitation is not valid (it may have been accepted, revoked, or expired).';
+              specificError = firebaseError.message || 'Organization Manager Invitation is not valid (it may have been accepted, revoked, or expired).';
             }
           } else if (error instanceof Error) {
-            // Fallback for generic errors
             specificError = `Failed to load invitation: ${error.message}`;
           }
           setError(specificError);
@@ -116,15 +116,15 @@ const AcceptInvitationPage: React.FC = () => {
 
       fetchInviteDetails();
     } else {
-      setError('Invitation token or organization ID is missing from the URL.');
+      setError('Invitation token is missing from the URL.');
       setIsFetchingInvite(false);
     }
   }, [location.search]);
 
   const functions = getFunctions();
-  const signUpWithInvitationFn = httpsCallable(
+  const signUpWithOrgManagerInvitationFn = httpsCallable(
     functions,
-    'signUpWithInvitation'
+    'signUpWithOrgManagerInvitation'
   );
 
   const handleAuthSuccess = (message: string) => {
@@ -139,7 +139,6 @@ const AcceptInvitationPage: React.FC = () => {
     let errorMessage = `An unexpected error occurred with ${providerName} sign-up.`;
 
     if (isAppError(error)) {
-      // Check for specific Firebase Auth error codes
       const authError = error as AppError & { code?: string };
       if (authError.code === 'auth/account-exists-with-different-credential') {
         errorMessage = `An account already exists with this email address using a different sign-in method. Please sign in with that method.`;
@@ -147,7 +146,6 @@ const AcceptInvitationPage: React.FC = () => {
         errorMessage = authError.message;
       }
     } else if (error instanceof Error) {
-      // Fallback for generic errors, also try to check for the code
       const genericError = error as Error & { code?: string };
       if (genericError.code === 'auth/account-exists-with-different-credential') {
         errorMessage = `An account already exists with this email address using a different sign-in method. Please sign in with that method.`;
@@ -189,21 +187,20 @@ const AcceptInvitationPage: React.FC = () => {
       return;
     }
 
-    console.log("Proceeding to call backend (signUpWithInvitationFn) in processSocialSignUp.");
+    console.log("Proceeding to call backend (signUpWithOrgManagerInvitationFn) in processSocialSignUp.");
     setLoading(true);
     setSocialLoading(null);
 
     try {
-      const result = await signUpWithInvitationFn({
+      const result = await signUpWithOrgManagerInvitationFn({
         uid: socialUser.uid,
-        email: invitedEmail, // Use the authoritative invitedEmail
+        email: invitedEmail,
         displayName:
           socialUser.displayName || invitedEmail.split('@')[0] || 'New User',
-        organizationId,
         invitationId: invitationToken,
       });
 
-      const responseData = result.data as SignUpWithInvitationResponse;
+      const responseData = result.data as SignUpWithInvitationResponse; // Re-use type, but it's for OM now
 
       if (responseData?.success) {
         handleAuthSuccess(
@@ -283,15 +280,14 @@ const AcceptInvitationPage: React.FC = () => {
 
     setLoading(true);
     try {
-      const result = await signUpWithInvitationFn({
-        email: invitedEmail, // Use the authoritative invitedEmail
+      const result = await signUpWithOrgManagerInvitationFn({
+        email: invitedEmail,
         password,
         displayName,
-        organizationId,
         invitationId: invitationToken,
       });
 
-      const responseData = result.data as SignUpWithInvitationResponse;
+      const responseData = result.data as SignUpWithInvitationResponse; // Re-use type, but it's for OM now
 
       if (responseData?.success) {
         handleAuthSuccess(
@@ -335,7 +331,7 @@ const AcceptInvitationPage: React.FC = () => {
 
   // If critical error during fetch or missing token (and not yet successful)
   if (
-    (!invitationToken || !organizationId || (error && !invitedEmail)) &&
+    (!invitationToken || (error && !invitedEmail)) &&
     !success
   ) {
     return (
@@ -399,7 +395,7 @@ const AcceptInvitationPage: React.FC = () => {
         }}
       >
         <Typography component='h1' variant='h5' sx={{ mb: 2 }}>
-          Accept Invitation & Create Account
+          Accept Organization Manager Invitation & Create Account
         </Typography>
 
         {error && ( // General error display, might be redundant if specific error UI is shown above
@@ -514,4 +510,4 @@ const AcceptInvitationPage: React.FC = () => {
   );
 };
 
-export default AcceptInvitationPage;
+export default AcceptOrgManagerInvitationPage;

@@ -50,6 +50,10 @@ const templatesToSeed = [
     {
         id: 'propertyManagerInvitation',
         filePath: path.join(__dirname, '../docs/propertyManagerInvitation.json') // Path relative to scripts/
+    },
+    {
+        id: 'organizationManagerInvitation',
+        filePath: path.join(__dirname, '../docs/organizationManagerInvitation.json') // Path relative to scripts/
     }
 ];
 

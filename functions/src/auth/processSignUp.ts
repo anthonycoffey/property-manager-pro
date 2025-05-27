@@ -61,10 +61,10 @@ export const processSignUp = functionsAuth
         const existingUserRecord = await adminAuth.getUser(uid);
         const currentClaims = existingUserRecord.customClaims;
 
-        // If user already has an organizationId, they were likely processed by invitation.
-        if (currentClaims && currentClaims.organizationId) {
+        // If user already has an organizationId or organizationIds, they were likely processed by invitation.
+        if (currentClaims && (currentClaims.organizationId || (currentClaims.organizationIds && currentClaims.organizationIds.length > 0))) {
           console.log(
-            `User ${uid} (${email}) already has organizationId: '${currentClaims.organizationId}'. Skipping default claim setting in processSignUp.`
+            `User ${uid} (${email}) already has organizationId or organizationIds. Skipping default claim setting in processSignUp.`
           );
           return; // Do nothing, claims are presumed to be correctly set by invitation flow.
         }

@@ -4,11 +4,13 @@ import {
   Typography,
   Button,
   Box,
-  IconButton,
+  // IconButton, // Removed unused import
   Avatar,
+  Switch, // Added Switch
+  Stack, // Added Stack for layout
 } from '@mui/material'; // Added Avatar
-import Brightness4Icon from '@mui/icons-material/Brightness4';
-import Brightness7Icon from '@mui/icons-material/Brightness7';
+import LightModeIcon from '@mui/icons-material/LightMode';
+import DarkModeIcon from '@mui/icons-material/DarkMode';
 import PMPLogoLight from '/property-manager-pro-light.svg'; // Import the light logo
 import AppRoutes from './routes';
 import { useThemeMode } from './hooks/useThemeMode';
@@ -32,9 +34,15 @@ function App() {
           <Typography variant='h6' component='div' sx={{ flexGrow: 1 }}>
             Property Manager Pro
           </Typography>
-          <IconButton sx={{ ml: 1 }} onClick={toggleColorMode} color='inherit'>
-            {mode === 'dark' ? <Brightness7Icon /> : <Brightness4Icon />}
-          </IconButton>
+          <Stack direction="row" spacing={1} alignItems="center" sx={{ mx: 2 }}>
+            <LightModeIcon sx={{ color: mode === 'light' ? 'inherit' : 'action.disabled' }} />
+            <Switch
+              checked={mode === 'dark'}
+              onChange={toggleColorMode}
+              color="default"
+            />
+            <DarkModeIcon sx={{ color: mode === 'dark' ? 'inherit' : 'action.disabled' }} />
+          </Stack>
           {currentUser ? (
             <LogoutButton />
           ) : (

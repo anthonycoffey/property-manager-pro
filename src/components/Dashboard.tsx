@@ -13,6 +13,7 @@ import { useAuth } from '../hooks/useAuth';
 
 import AdminDashboardPanel from './Dashboard/AdminDashboardPanel';
 import PropertyManagerDashboardPanel from './Dashboard/PropertyManagerDashboardPanel';
+import OrganizationManagerDashboardPanel from './Dashboard/OrganizationManagerDashboardPanel';
 import ResidentDashboard from './Resident/ResidentDashboard';
 import { Cached } from '@mui/icons-material';
 
@@ -21,13 +22,17 @@ const handleReload = () => {
 };
 
 const Dashboard: React.FC = () => {
-  const { roles, organizationId } = useAuth();
+  const { roles, organizationId, organizationIds } = useAuth();
 
   return (
     <Box>
       {roles.includes('admin') && <AdminDashboardPanel />}
 
-      {roles.includes('property_manager') && (
+      {roles.includes('organization_manager') && (
+        <OrganizationManagerDashboardPanel orgIds={organizationIds} />
+      )}
+
+      {roles.includes('property_manager') && !roles.includes('organization_manager') && ( // Ensure OM doesn't also see PM panel if they have both roles for some reason
         <PropertyManagerDashboardPanel
           organizationId={organizationId ?? null}
         />
@@ -36,6 +41,7 @@ const Dashboard: React.FC = () => {
       {roles.includes('resident') && <ResidentDashboard />}
 
       {!roles.includes('admin') &&
+        !roles.includes('organization_manager') &&
         !roles.includes('property_manager') &&
         !roles.includes('resident') && (
           <Container component='main' maxWidth='sm'>

@@ -279,13 +279,33 @@ The remaining application functionality includes:
     *   Updated frontend Auth context (`useAuth`, `AuthProvider`), `ProtectedRoute`, and `Dashboard` to support the new role and claims.
     *   Created initial `OrganizationManagerDashboardPanel` and `InviteOrganizationManagerForm` components.
     *   Updated `AdminDashboardPanel` to include management options for Organization Managers.
+*   **Organization Manager Invitation & Creation Enhancements (2025-05-26):**
+    *   **Invite Organization Manager Form (`src/components/Admin/InviteOrganizationManagerForm.tsx`):**
+        *   Optimized layout: Name/Email on one row.
+        *   Organization Selector is now a multi-select dropdown, allowing assignment to none, one, or multiple organizations during invitation. Labels streamlined.
+    *   **`createInvitation.ts` Cloud Function:**
+        *   Admins can now invite Organization Managers and assign them to multiple organizations (or none) simultaneously.
+        *   All Organization Manager invitations are stored in the `globalInvitations` collection.
+        *   The invitation document now stores an `organizationIds` array (which can be `null` or empty if no organizations are selected at invite time).
+    *   **`signUpWithInvitation.ts` Cloud Function:**
+        *   Handles sign-ups from `globalInvitations`.
+        *   Sets the `organizationIds` custom claim based on the `organizationIds` array from the invitation.
+        *   Creates user profiles in each specified organization if `organizationIds` were provided in the invitation.
+    *   **`createOrganization.ts` Cloud Function:**
+        *   Now allows users with the `organization_manager` role to create organizations.
+        *   If an OM creates an organization, they are auto-assigned: claims updated with new org ID, and their profile is created in the new organization's `users` subcollection.
 
 ## 6. Immediate Next Steps
 
 1.  **Invitation System (Phase 3 - Refinement & Testing):**
-    *   Thoroughly test all invitation flows, including the new dynamic property selection for resident invites.
-    *   Verify email content and links.
+    *   Thoroughly test all invitation flows, including:
+        *   Admin invites Organization Manager (with and without initial organization).
+        *   Organization Manager accepts global invitation.
+        *   Organization Manager (who created an org or was assigned one) invites other users (e.g., Property Managers, Residents - if this flow is enabled for them).
+    *   Verify email content and links for all scenarios.
     *   Seed email templates from `docs/` to Firestore `templates` collection using the enhanced `seedTemplates.js` script.
 2.  **Admin Dashboard - Properties Management:**
     *   Begin implementation of property CRUD operations for Admins.
-3.  **Continue with Project Roadmap:** Proceed with other features as prioritized.
+3.  **Organization Manager Dashboard - Organization Creation UI (New Task):**
+    *   Implement UI for Organization Managers to use their new ability to create organizations (if they don't have one or wish to create more).
+4.  **Continue with Project Roadmap:** Proceed with other features as prioritized.

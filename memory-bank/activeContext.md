@@ -79,14 +79,34 @@ The current focus is on refactoring UI components for better maintainability and
   - This change provides a clearer separation between global administration and tenant-specific (organization-level) administration.
   - Implemented necessary backend (Cloud Functions for invitations and claim updates, Firestore rules) and frontend (Auth context, ProtectedRoute, Dashboard panels) changes.
   - Documented in `systemPatterns.md` and `projectRoadmap.md`.
+- **Organization Manager Invitation & Creation Enhancements (2025-05-26):**
+  - **Invite Organization Manager Form (`src/components/Admin/InviteOrganizationManagerForm.tsx`):**
+    - Layout optimized: Name and Email fields on a single row.
+    - Organization selection is now a multi-select dropdown, allowing assignment to multiple organizations (or none) during invitation. Redundant labels removed.
+  - **`createInvitation` Cloud Function (`functions/src/callable/createInvitation.ts`):**
+    - Modified to accept an `organizationIds` array (or undefined) when an Admin invites an `organization_manager`.
+    - All `organization_manager` invitations are now stored in the `globalInvitations` collection.
+    - The invitation document stores the `organizationIds` array (or `null` if none were selected).
+    - Email templates and links adjusted.
+  - **`signUpWithInvitation` Cloud Function (`functions/src/callable/signUpWithInvitation.ts`):**
+    - Updated to fetch `organization_manager` invitations from `globalInvitations`.
+    - Sets the `organizationIds` custom claim based on the `organizationIds` array from the invitation (or an empty array if none).
+    - Creates user profiles in each specified organization if `organizationIds` were provided in the invitation.
+  - **`createOrganization` Cloud Function (`functions/src/callable/createOrganization.ts`):**
+    - Permissions updated to allow users with the `organization_manager` role (in addition to `admin`) to create new organizations.
+    - If an `organization_manager` creates an organization, they are automatically assigned to it:
+        - Their `organizationIds` custom claim is updated with the new organization's ID.
+        - Their user profile is created within the new organization's `users` subcollection.
 
 ## 5. ImportantPatterns & Preferences
 
 - **Modular Component Design:** Favor breaking down large components into smaller, more focused ones.
 - **Clear Code Over Comments:** Strive for self-documenting code, reducing the need for explanatory comments, especially for straightforward UI logic.
+- **Explicit Handling of Optionality:** When a previously required field (like `organizationId` for OM invites) becomes optional, ensure backend, frontend, and data models are consistently updated to reflect this.
 
 ## 6. Learnings & Project Insights
 
 - **Refactoring Impact:** Breaking down large components significantly improves the clarity of the main component and makes individual role-based functionalities easier to manage and understand.
 - **Prop Drilling vs. Context:** While refactoring, it's important to consider if props are being passed down too many levels. For the current Dashboard refactor, direct prop passing was manageable. For more deeply nested structures, React Context or state management libraries might be considered.
 - **TypeScript Prop Validation:** Strict prop type checking (like the one caught for `organizationId`) helps maintain component contracts and prevent runtime errors.
+- **Scope Creep Management:** Clarifying whether related backend changes (like `createOrganization` permissions) are in scope for a UI task is important for accurate planning. In this case, it was explicitly included.

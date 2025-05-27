@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect, type ReactNode } from 'react';
 import { ThemeProvider as MuiThemeProvider, CssBaseline, useMediaQuery } from '@mui/material';
 import { ThemeContext } from '../hooks/useThemeMode';
-import type { PaletteMode } from '@mui/material';
+// import type { PaletteMode } from '@mui/material'; // Removed unused import
 import { createAppTheme } from '../theme';
 import type { ThemeColorScheme } from '../theme';
 

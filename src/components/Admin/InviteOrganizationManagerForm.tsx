@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react'; // Added useEffect
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { useAuth } from '../../hooks/useAuth';
 import type { CreateInvitationResponse, AppError } from '../../types';
@@ -8,14 +8,27 @@ import Button from '@mui/material/Button';
 import Box from '@mui/material/Box';
 import CircularProgress from '@mui/material/CircularProgress';
 import Alert from '@mui/material/Alert';
-import { Stack, Typography } from '@mui/material';
+import { Stack, Typography, FormControl, InputLabel, Select, MenuItem, OutlinedInput, Chip } from '@mui/material';
+import type { SelectChangeEvent } from '@mui/material'; // Type-only import
 import { PersonAdd } from '@mui/icons-material';
-import OrganizationSelector from './OrganizationSelector'; // To select the target organization
+// OrganizationSelector will not be used directly for multi-select. We'll fetch organizations here.
+import { db } from '../../firebaseConfig';
+import { collection, onSnapshot, query, QueryDocumentSnapshot } from 'firebase/firestore';
+import type { DocumentData } from 'firebase/firestore'; // Type-only import
+
+
+interface Organization {
+  id: string;
+  name: string;
+}
 
 const InviteOrganizationManagerForm: React.FC = () => {
   const [inviteeName, setInviteeName] = useState('');
   const [inviteeEmail, setInviteeEmail] = useState('');
-  const [selectedOrgId, setSelectedOrgId] = useState<string | null>(null);
+  const [selectedOrgIds, setSelectedOrgIds] = useState<string[]>([]); // Changed to array for multi-select
+  const [organizations, setOrganizations] = useState<Organization[]>([]);
+  const [orgLoading, setOrgLoading] = useState<boolean>(true);
+  const [orgError, setOrgError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -24,9 +37,41 @@ const InviteOrganizationManagerForm: React.FC = () => {
   const functions = getFunctions();
   const createInvitationFn = httpsCallable(functions, 'createInvitation');
 
-  const handleOrganizationChange = (orgId: string | null) => {
-    setSelectedOrgId(orgId);
-    setError(null); // Clear error when org changes
+  useEffect(() => {
+    setOrgLoading(true);
+    const organizationsCollection = collection(db, 'organizations');
+    const q = query(organizationsCollection);
+
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        const orgsData = snapshot.docs.map(
+          (doc: QueryDocumentSnapshot<DocumentData>) => ({
+            id: doc.id,
+            name: doc.data().name || 'Unnamed Organization',
+          })
+        );
+        setOrganizations(orgsData as Organization[]);
+        setOrgLoading(false);
+      },
+      (err) => {
+        console.error('Error fetching organizations:', err);
+        setOrgError('Failed to load organizations.');
+        setOrgLoading(false);
+      }
+    );
+    return () => unsubscribe();
+  }, []);
+
+  const handleOrganizationChange = (event: SelectChangeEvent<string[]>) => {
+    const {
+      target: { value },
+    } = event;
+    setSelectedOrgIds(
+      // On autofill we get a stringified value.
+      typeof value === 'string' ? value.split(',') : value,
+    );
+    setError(null); 
     setSuccess(null);
   };
 
@@ -40,13 +85,8 @@ const InviteOrganizationManagerForm: React.FC = () => {
       return;
     }
 
-    if (!selectedOrgId) {
-      setError(
-        'An Organization must be selected to invite an Organization Manager.'
-      );
-      return;
-    }
-
+    // Organization IDs are now optional for inviting an Organization Manager
+    
     if (!inviteeEmail || !inviteeName) {
       setError('Name and Email are required.');
       return;
@@ -55,23 +95,40 @@ const InviteOrganizationManagerForm: React.FC = () => {
     setLoading(true);
 
     try {
-      const result = await createInvitationFn({
+      const invitationPayload: {
+        inviteeEmail: string;
+        inviteeName: string;
+        organizationIds?: string[]; // Changed from organizationId to organizationIds
+        rolesToAssign: string[];
+        invitedByRole: string;
+      } = {
         inviteeEmail,
         inviteeName,
-        organizationId: selectedOrgId, // The organization they will manage initially
         rolesToAssign: ['organization_manager'],
         invitedByRole: 'admin',
-      });
+      };
+
+      // Only include organizationIds if some are selected
+      if (selectedOrgIds.length > 0) {
+        invitationPayload.organizationIds = selectedOrgIds;
+      }
+
+      const result = await createInvitationFn(invitationPayload);
 
       const responseData = result.data as CreateInvitationResponse;
 
       if (responseData?.success) {
-        setSuccess(
-          `Invitation sent successfully to ${inviteeEmail} to manage organization ${selectedOrgId}.`
-        );
+        let successMessage = `Invitation sent successfully to ${inviteeEmail}.`;
+        if (selectedOrgIds.length > 0) {
+          const orgNames = selectedOrgIds.map(id => organizations.find(o => o.id === id)?.name || id).join(', ');
+          successMessage += ` They have been invited to manage organization(s): ${orgNames}.`;
+        } else {
+          successMessage += ` They can be assigned to an organization later.`;
+        }
+        setSuccess(successMessage);
         setInviteeEmail('');
         setInviteeName('');
-        // Optionally reset selectedOrgId or keep it for next invite
+        setSelectedOrgIds([]); // Reset multi-select
       } else {
         setError(responseData?.message || 'Failed to send invitation.');
       }
@@ -94,20 +151,9 @@ const InviteOrganizationManagerForm: React.FC = () => {
 
   return (
     <Box component='form' onSubmit={handleSubmit} sx={{ mt: 2 }}>
-      <Typography variant='subtitle1' gutterBottom>
-        Select Organization for New Manager:
-      </Typography>
-      <OrganizationSelector
-        selectedOrganizationId={selectedOrgId}
-        onOrganizationChange={handleOrganizationChange}
-      />
-
-      <Box sx={{ mt: 2 }}>
-        <Typography variant='subtitle1' gutterBottom sx={{ mt: 2 }}>
-          Enter New Organization Manager's Details:
-        </Typography>
-        <Stack>
-
+      {/* "Enter New Organization Manager's Details:" Typography removed */}
+      
+      <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
         <TextField
           label='Organization Manager Name'
           value={inviteeName}
@@ -116,6 +162,7 @@ const InviteOrganizationManagerForm: React.FC = () => {
           required
           fullWidth
           disabled={loading}
+          sx={{ flexGrow: 1 }}
         />
         <TextField
           label='Organization Manager Email'
@@ -126,26 +173,63 @@ const InviteOrganizationManagerForm: React.FC = () => {
           required
           fullWidth
           disabled={loading}
+          sx={{ flexGrow: 1 }}
         />
+      </Stack>
+      
+      {/* "Select Organization for New Manager:" Typography removed */}
+      {/* OrganizationSelector moved below Name and Email, and is now optional */}
+      <Typography variant='subtitle2' gutterBottom sx={{ color: 'text.secondary', fontStyle: 'italic', mt: 2 }}>
+        Assign to Organization(s) (Optional):
+      </Typography>
+      {orgLoading && <CircularProgress size={24} />}
+      {orgError && <Alert severity="error">{orgError}</Alert>}
+      {!orgLoading && !orgError && (
+        <FormControl fullWidth margin="normal">
+          <InputLabel id="organization-multiselect-label">Organizations</InputLabel>
+          <Select
+            labelId="organization-multiselect-label"
+            id="organization-multiselect"
+            multiple
+            value={selectedOrgIds}
+            onChange={handleOrganizationChange}
+            input={<OutlinedInput id="select-multiple-chip" label="Organizations" />}
+            renderValue={(selected) => (
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                {(selected as string[]).map((value) => (
+                  <Chip key={value} label={organizations.find(org => org.id === value)?.name || value} />
+                ))}
+              </Box>
+            )}
+            // MenuProps can be used to style the dropdown if needed
+          >
+            {organizations.map((org) => (
+              <MenuItem
+                key={org.id}
+                value={org.id}
+                // style={getStyles(org.id, selectedOrgIds, theme)} // Optional: for custom styling of selected items
+              >
+                {org.name}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+      )}
 
-          
-        </Stack>
-
-        <Button
-          type='submit'
-          variant='contained'
-          color='primary'
-          disabled={loading}
-          startIcon={<PersonAdd />}
-          sx={{ mt: 2 }}
-        >
-          {loading ? (
-            <CircularProgress size={24} />
-          ) : (
-            'Invite Organization Manager'
-          )}
-        </Button>
-      </Box>
+      <Button
+        type='submit'
+        variant='contained'
+        color='primary'
+        disabled={loading}
+        startIcon={<PersonAdd />}
+        sx={{ mt: 3, mb: 2 }} // Adjusted margins
+      >
+        {loading ? (
+          <CircularProgress size={24} />
+        ) : (
+          'Invite Organization Manager'
+        )}
+      </Button>
 
       {error && (
         <Alert severity='error' sx={{ mt: 2 }}>

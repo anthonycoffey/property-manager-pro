@@ -1,9 +1,9 @@
-import type { ColorSystemOptions } from '@mui/material/styles';
+// import type { ColorSystemOptions } from '@mui/material/styles'; // Removed unused import
 import { themeConfig } from '../theme-config';
 import { varAlpha, createPaletteChannel, createSimplePaletteChannel } from '../utils';
 import type {
   ThemeColorScheme,
-  PaletteColorKey,
+  // PaletteColorKey, // Removed unused import
   PaletteColorWithChannels,
   CommonColorsWithChannels,
   GreyColorsWithChannels,
@@ -82,7 +82,8 @@ const lightPalette: FullyDefinedLightPalette = { // Use the specific type
 // --- Export Palette for Theme Creation ---
 // We are only defining a light palette for now, as per Option A for dark mode.
 // MUI will auto-generate dark mode from this light palette.
-export const palette: Partial<Record<ThemeColorScheme, ColorSystemOptions['palette']>> = {
+// Use FullyDefinedLightPalette to ensure the extended types are recognized.
+export const palette: Partial<Record<ThemeColorScheme, FullyDefinedLightPalette>> = {
   light: lightPalette,
   // dark: darkPalette, // Would be defined here if doing custom dark theme
 };

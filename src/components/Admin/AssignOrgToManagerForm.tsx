@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { getFunctions, httpsCallable } from 'firebase/functions';
+import { httpsCallable } from 'firebase/functions'; // Removed HttpsError
 import { useAuth } from '../../hooks/useAuth';
-import type { AppError } from '../../types'; // Assuming AppError is a general error type
+// import type { AppError } from '../../types'; // AppError is no longer used
 import { db, functions } from '../../firebaseConfig'; // functions already imported, db needed
 import { collectionGroup, query, where, getDocs, orderBy, type DocumentData } from 'firebase/firestore'; // type-only import
 
@@ -13,11 +13,19 @@ import { Typography, FormControl, InputLabel, Select, MenuItem, type SelectChang
 import OrganizationSelector from './OrganizationSelector';
 import { AssignmentInd } from '@mui/icons-material';
 
-// Define expected response type if specific, otherwise use a generic one
+// Define a specific type for user claims based on systemPatterns.md
+interface UserClaims {
+  roles: string[];
+  organizationId?: string;
+  organizationIds?: string[];
+  propertyId?: string;
+}
+
+// Define expected response type
 interface AssignOrgResponse {
   success: boolean;
   message: string;
-  updatedClaims?: any; // Or a more specific type for claims
+  updatedClaims?: UserClaims; 
 }
 
 interface OrgManager {
@@ -124,9 +132,12 @@ const AssignOrgToManagerForm: React.FC = () => {
       }
     } catch (err) {
       console.error('Error assigning organization:', err);
-      const appError = err as AppError; // Use HttpsError directly if preferred
-      if ((err as any).code && (err as any).message) { // Check if it's likely an HttpsError
-         setError(`Error: ${(err as any).message} (Code: ${(err as any).code})`);
+      // Check if the error is an object with code and message properties (like Firebase HttpsError)
+      if (typeof err === 'object' && err !== null && 'code' in err && 'message' in err) {
+        const firebaseError = err as { code: string; message: string }; // Type assertion
+        setError(`Error: ${firebaseError.message} (Code: ${firebaseError.code})`);
+      } else if (err instanceof Error) { // Fallback for generic JavaScript errors
+        setError(`Error: ${err.message}`);
       } else {
         setError('An unexpected error occurred.');
       }

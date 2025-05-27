@@ -77,16 +77,16 @@ export const addOrganizationToManager = onCall(async (request) => {
         message: `User ${userId} successfully assigned to organization ${newOrganizationId}.`,
         updatedClaims: newClaims,
       };
-    } else {
-      console.log(
-        `User ${userId} is already assigned to organization ${newOrganizationId}. No changes made.`
-      );
-      return {
-        success: true,
-        message: `User ${userId} is already assigned to organization ${newOrganizationId}.`,
-        updatedClaims: currentClaims, // Return current claims as no update occurred
-      };
     }
+    // If the user is already assigned, this code will now execute directly
+    console.log(
+      `User ${userId} is already assigned to organization ${newOrganizationId}. No changes made.`
+    );
+    return {
+      success: true,
+      message: `User ${userId} is already assigned to organization ${newOrganizationId}.`,
+      updatedClaims: currentClaims, // Return current claims as no update occurred
+    };
   } catch (error: unknown) {
     throw handleHttpsError(
       error,

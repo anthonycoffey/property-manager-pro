@@ -19,48 +19,64 @@ export function varAlpha(color: string, alpha: number): string {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
-interface PaletteColorSpec {
-  lighter?: string;
-  light: string;
-  main: string;
-  dark: string;
-  darker?: string;
-  contrastText: string;
-}
+// Import types from their source files
+import type { PaletteColorNoChannels } from '../theme-config';
+import type { PaletteColorWithChannels as ExportedPaletteColorWithChannels } from '../types';
 
-interface PaletteColorWithChannels extends PaletteColorSpec {
-  lighterChannel?: string;
-  lightChannel: string;
-  mainChannel: string;
-  darkChannel: string;
-  darkerChannel?: string;
-}
+// Helper function to convert a hex color string to an "R, G, B" string
+function hexToChannels(hexColor: string | undefined): string | undefined {
+  if (hexColor && hexColor.startsWith("#")) {
+    let hex = hexColor.replace("#", "");
+    // Expand 3-digit hex to 6-digit hex
+    if (hex.length === 3) {
+      hex = hex.split('').map(char => char + char).join('');
+    }
 
-// Takes a palette color specification and adds "Channel" versions (R,G,B string).
-export function createPaletteChannel(colorSpec: PaletteColorSpec): PaletteColorWithChannels {
-  const result: Partial<PaletteColorWithChannels> = { ...colorSpec };
-
-  const shades: (keyof PaletteColorSpec)[] = ["lighter", "light", "main", "dark", "darker"];
-
-  shades.forEach(shade => {
-    const hexColor = colorSpec[shade];
-    if (hexColor && hexColor.startsWith("#")) {
-      const hex = hexColor.replace("#", "");
+    if (hex.length === 6) {
       const r = parseInt(hex.substring(0, 2), 16);
       const g = parseInt(hex.substring(2, 4), 16);
       const b = parseInt(hex.substring(4, 6), 16);
-      (result as any)[`${shade}Channel`] = `${r}, ${g}, ${b}`;
+      if (!isNaN(r) && !isNaN(g) && !isNaN(b)) {
+        return `${r}, ${g}, ${b}`;
+      }
     }
-  });
-  // Ensure all required channel properties are present, even if undefined initially from colorSpec
-  if (!result.lighterChannel && result.lighter) result.lighterChannel = ""; // Or derive if possible
-  if (!result.lightChannel) result.lightChannel = "";
-  if (!result.mainChannel) result.mainChannel = "";
-  if (!result.darkChannel) result.darkChannel = "";
-  if (!result.darkerChannel && result.darker) result.darkerChannel = "";
+  }
+  return undefined;
+}
 
+// Takes a palette color specification (PaletteColorNoChannels)
+// and returns a new object conforming to PaletteColorWithChannels.
+export function createPaletteChannel(colorSpec: PaletteColorNoChannels): ExportedPaletteColorWithChannels {
+  const lightChannel = hexToChannels(colorSpec.light);
+  const mainChannel = hexToChannels(colorSpec.main);
+  const darkChannel = hexToChannels(colorSpec.dark);
 
-  return result as PaletteColorWithChannels;
+  // PaletteColorNoChannels requires light, main, dark to be strings.
+  // If they are not valid hex for some reason, hexToChannels will return undefined.
+  // The type PaletteColorWithChannels requires these channels to be strings.
+  if (lightChannel === undefined) {
+    throw new Error(`Could not derive lightChannel for color: ${JSON.stringify(colorSpec.light)}`);
+  }
+  if (mainChannel === undefined) {
+    throw new Error(`Could not derive mainChannel for color: ${JSON.stringify(colorSpec.main)}`);
+  }
+  if (darkChannel === undefined) {
+    throw new Error(`Could not derive darkChannel for color: ${JSON.stringify(colorSpec.dark)}`);
+  }
+
+  return {
+    // Spread the original color spec
+    ...colorSpec,
+    // Add channel properties
+    lighterChannel: hexToChannels(colorSpec.lighter),
+    lightChannel: lightChannel, // Ensured to be string
+    mainChannel: mainChannel,   // Ensured to be string
+    darkChannel: darkChannel,   // Ensured to be string
+    darkerChannel: hexToChannels(colorSpec.darker),
+    // contrastText is required in PaletteColorNoChannels.
+    // contrastTextChannel is optional in ExportedPaletteColorWithChannels.
+    contrastTextChannel: hexToChannels(colorSpec.contrastText),
+  };
 }
 
 // Specific for grey scale or common colors which might not have full light/main/dark structure
@@ -86,7 +102,8 @@ export function createSimplePaletteChannel<T extends SimpleColorSpec>(simpleColo
         const r = parseInt(hex.substring(0, 2), 16);
         const g = parseInt(hex.substring(2, 4), 16);
         const b = parseInt(hex.substring(4, 6), 16);
-        result[channelKey] = `${r}, ${g}, ${b}` as any; // Cast as any to assign to dynamic key
+        // @ts-expect-error: TypeScript expects the channelKey to be a valid key of SimpleColorWithChannels<T>
+        (result as SimpleColorWithChannels<T>)[channelKey as string] = `${r}, ${g}, ${b}`;
       }
     }
   }

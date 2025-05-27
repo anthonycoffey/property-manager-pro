@@ -32,8 +32,9 @@ declare module '@mui/material/styles' {
   }
 
   // Allow access through `theme.typography.fontSecondaryFamily` etc.
-  interface TypographyVariants extends TypographyCustom {}
-  interface TypographyVariantsOptions extends TypographyCustom {}
+  // These are removed as TypographyCustom is already merged at the ThemeOptions.typography and Theme.typography level in types.ts
+  // interface TypographyVariants extends TypographyCustom {}
+  // interface TypographyVariantsOptions extends TypographyCustom {}
 
 
   // Extend Palette and PaletteOptions for channel colors and neutral background
@@ -59,8 +60,24 @@ declare module '@mui/material/styles' {
 
   // Extend individual palette color types if direct access to channels is needed on them
   // e.g. theme.palette.primary.mainChannel
-  interface PaletteColor extends Partial<PaletteColorWithChannels> {} // Make channels optional on the base type
-  interface SimplePaletteColorOptions extends Partial<PaletteColorWithChannels> {} // And on options
+  interface PaletteColor {
+    // Add channel properties directly to MUI's PaletteColor
+    mainChannel: string;
+    lightChannel: string;
+    darkChannel: string;
+    contrastTextChannel?: string;
+    lighterChannel?: string;
+    darkerChannel?: string;
+  }
+  interface SimplePaletteColorOptions {
+    // Add channel properties directly to MUI's SimplePaletteColorOptions
+    mainChannel?: string;
+    lightChannel?: string;
+    darkChannel?: string;
+    contrastTextChannel?: string;
+    lighterChannel?: string;
+    darkerChannel?: string;
+  }
 
 
   // Extend TypeBackground for neutral color

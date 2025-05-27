@@ -1,4 +1,4 @@
-import type { Theme as MuiTheme, PaletteOptions as MuiPaletteOptions } from '@mui/material/styles';
+import type { Theme as MuiTheme } from '@mui/material/styles'; // Added MuiThemeOptions
 import { createTheme as createMuiThemeInternal, responsiveFontSizes } from '@mui/material/styles';
 
 import { themeConfig } from './theme-config';
@@ -7,8 +7,10 @@ import { typography as appTypography } from './core/typography';
 import { shadows as appShadows } from './core/shadows';
 import { customShadows as appCustomShadows } from './core/custom-shadows';
 import { components as appComponents } from './core/components';
+import { createPaletteChannel, createSimplePaletteChannel } from './utils/colorManipulator'; // Added createSimplePaletteChannel
 
-import type { ThemeOptions, ThemeColorScheme, PaletteColorNoChannels } from './types';
+// Ensure PaletteColorWithChannels is imported for dark mode casts
+import type { ThemeOptions, ThemeColorScheme } from './types';
 
 interface CreateAppThemeProps {
   mode?: ThemeColorScheme;
@@ -16,28 +18,33 @@ interface CreateAppThemeProps {
 }
 
 export function createAppTheme({ mode = 'light', themeOverrides = {} }: CreateAppThemeProps = {}): MuiTheme {
-  let paletteOptionsForMode: MuiPaletteOptions;
+  // Use the extended palette type from our ThemeOptions
+  let paletteOptionsForMode: ThemeOptions['palette']; 
 
   if (mode === 'light') {
     // For light mode, use our fully defined light palette.
     // appPalette.light is already typed as FullyDefinedLightPalette which extends MuiPaletteOptions.
     // Deep clone to prevent modification of the original appPalette.light
-    paletteOptionsForMode = JSON.parse(JSON.stringify(appPalette.light!));
-    paletteOptionsForMode.mode = 'light'; // Ensure mode is explicitly set
+    const lightPaletteParsed = JSON.parse(JSON.stringify(appPalette.light!));
+    paletteOptionsForMode = lightPaletteParsed;
+    if (paletteOptionsForMode) { // Check to satisfy TS that it's not undefined before assigning to .mode
+        paletteOptionsForMode.mode = 'light'; // Ensure mode is explicitly set
+    }
   } else {
     // For dark mode, provide a simpler palette structure based on themeConfig.
     // MUI's createTheme will use these to generate the full dark palette,
     // including appropriate text, background, and shades for primary/secondary etc.
     paletteOptionsForMode = {
       mode: 'dark',
-      primary: themeConfig.palette.primary as PaletteColorNoChannels, // Cast is okay, MUI expands this
-      secondary: themeConfig.palette.secondary as PaletteColorNoChannels,
-      info: themeConfig.palette.info as PaletteColorNoChannels,
-      success: themeConfig.palette.success as PaletteColorNoChannels,
-      warning: themeConfig.palette.warning as PaletteColorNoChannels,
-      error: themeConfig.palette.error as PaletteColorNoChannels,
-      common: themeConfig.palette.common, // MUI handles common colors
-      grey: themeConfig.palette.grey,     // MUI handles grey scale
+      // Use createPaletteChannel to generate full PaletteColorWithChannels objects
+      primary: createPaletteChannel(themeConfig.palette.primary),
+      secondary: createPaletteChannel(themeConfig.palette.secondary),
+      info: createPaletteChannel(themeConfig.palette.info),
+      success: createPaletteChannel(themeConfig.palette.success),
+      warning: createPaletteChannel(themeConfig.palette.warning),
+      error: createPaletteChannel(themeConfig.palette.error),
+      common: createSimplePaletteChannel(themeConfig.palette.common), // Process common colors
+      grey: createSimplePaletteChannel(themeConfig.palette.grey),       // Process grey scale
       // IMPORTANT: Do NOT provide text, background, divider, or action here for dark mode.
       // Let MUI generate them based on the mode and the primary/secondary/etc. colors.
       // contrastThreshold and tonalOffset are important for MUI's color calculations.
@@ -48,7 +55,7 @@ export function createAppTheme({ mode = 'light', themeOverrides = {} }: CreateAp
 
   // Construct the initial theme options using this mode-specific palette
   const initialThemeOptions: ThemeOptions = {
-    palette: paletteOptionsForMode,
+    palette: paletteOptionsForMode as ThemeOptions['palette'], // Assert type after conditional assignment
     typography: appTypography,
     shadows: appShadows.light, // For dark mode, MUI might adjust these based on the new dark palette.
                                // If specific dark shadows are needed, they'd be appShadows.dark
@@ -76,7 +83,8 @@ export function createAppTheme({ mode = 'light', themeOverrides = {} }: CreateAp
     delete (finalMergedOptions as Partial<ThemeOptions>).colorSchemes;
   }
 
-  let theme = createMuiThemeInternal(finalMergedOptions as any); // Cast to any for flexibility
+  // @ts-ignore
+  let theme = createMuiThemeInternal(finalMergedOptions as any); // Reverting cast to unknown
 
   // Apply responsive font sizes
   theme = responsiveFontSizes(theme);

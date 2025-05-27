@@ -1,4 +1,4 @@
-import type { PaletteColor as MuiPaletteColor, CommonColors as MuiCommonColors } from '@mui/material/styles';
+import type { CommonColors as MuiCommonColors } from '@mui/material/styles'; // Removed MuiPaletteColor
 
 // Helper types (can be moved to a central types.ts later if needed)
 // Adjusted to allow 'lighter' and 'darker' as they are used in the config

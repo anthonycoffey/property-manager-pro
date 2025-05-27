@@ -1,4 +1,4 @@
-import type { CSSObject, Breakpoint, TypographyVariantsOptions as MuiTypographyVariantsOptions } from '@mui/material/styles';
+import type { Breakpoint, TypographyVariantsOptions as MuiTypographyVariantsOptions } from '@mui/material/styles'; // Removed CSSObject
 import { createTheme as createMuiTheme } from '@mui/material/styles'; // For accessing breakpoints
 
 import { pxToRem, setFont } from '../utils';

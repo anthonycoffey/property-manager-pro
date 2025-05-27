@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Typography, Select, MenuItem, FormControl, InputLabel, Paper, Tabs, Tab } from '@mui/material';
+import { Box, Typography, Select, MenuItem, FormControl, InputLabel, Paper, Tabs, Tab, type SelectChangeEvent } from '@mui/material'; // Added type keyword for SelectChangeEvent
 import { useAuth } from '../../hooks/useAuth';
 import OrgScopedPropertyManagerManagement from '../OrganizationManager/OrgScopedPropertyManagerManagement'; // Import the new component
 
@@ -52,11 +52,11 @@ const OrganizationManagerDashboardPanel: React.FC<OrganizationManagerDashboardPa
     }
   }, [orgIds]);
 
-  const handleOrgChange = (event: any) => { // Type properly if using MUI SelectChangeEvent
+  const handleOrgChange = (event: SelectChangeEvent<string>) => { 
     setSelectedOrgId(event.target.value as string);
   };
 
-  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+  const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
   };
 

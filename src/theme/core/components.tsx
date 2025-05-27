@@ -1,5 +1,6 @@
 import type { Theme, Components } from '@mui/material/styles';
 import SvgIcon from '@mui/material/SvgIcon';
+import type { GreyColorsWithChannels } from '../types'; // Changed to GreyColorsWithChannels
 
 import { varAlpha } from '../utils';
 // Note: We are not directly importing palette, customShadows, etc. here.
@@ -13,9 +14,9 @@ const MuiBackdrop: Components<Theme>['MuiBackdrop'] = {
     root: ({ theme }) => ({
       // Accessing palette directly, not via theme.vars for standard ThemeProvider
       backgroundColor: varAlpha(
-        (theme.palette.grey as any)['900Channel'] || // Accessing our custom channel property
-        theme.palette.grey[900] || // Fallback to direct hex if channel somehow undefined
-        '20, 26, 33', // Absolute fallback if grey[900] is also undefined
+        (theme.palette.grey as GreyColorsWithChannels)['900Channel'] || 
+        theme.palette.grey[900] || 
+        '20, 26, 33', 
         0.8
       ),
     }),
@@ -71,7 +72,7 @@ const MuiCardHeader: Components<Theme>['MuiCardHeader'] = {
 const MuiOutlinedInput: Components<Theme>['MuiOutlinedInput'] = {
   styleOverrides: {
     notchedOutline: ({ theme }) => ({ // As in material-kit-react
-      borderColor: varAlpha((theme.palette.grey as any)['500Channel'] || '145, 158, 171', 0.2), // Fallback for channel
+      borderColor: varAlpha((theme.palette.grey as GreyColorsWithChannels)['500Channel'] || '145, 158, 171', 0.2), 
     }),
   },
 };
@@ -85,20 +86,23 @@ const MuiPaper: Components<Theme>['MuiPaper'] = {
       backgroundImage: 'none',
     },
     outlined: ({ theme }) => ({ // As in material-kit-react
-      borderColor: varAlpha((theme.palette.grey as any)['500Channel'] || '145, 158, 171', 0.16),
+      borderColor: varAlpha((theme.palette.grey as GreyColorsWithChannels)['500Channel'] || '145, 158, 171', 0.16),
     }),
   },
 };
 
 const MuiTableCell: Components<Theme>['MuiTableCell'] = {
   styleOverrides: {
-    head: ({ theme }) => ({ // As in material-kit-react
-      fontSize: theme.typography.pxToRem?.(14) || '0.875rem', // pxToRem might not be on theme.typography directly
-      color: theme.palette.text.secondary,
-      fontWeight: theme.typography.fontWeightSemiBold, // Custom addition
-      // Using a color that adapts better to dark mode for table headers
-      backgroundColor: theme.palette.mode === 'dark' ? theme.palette.grey[700] : theme.palette.grey[100], // Or theme.palette.action.hover
-    }),
+    head: ({ theme }) => {
+      const typography = theme.typography as typeof theme.typography & import('../types').TypographyCustom; // Explicit cast
+      return {
+        fontSize: typography.pxToRem?.(14) || '0.875rem', 
+        color: theme.palette.text.secondary,
+        fontWeight: typography.fontWeightSemiBold, // Custom addition
+        // Using a color that adapts better to dark mode for table headers
+        backgroundColor: theme.palette.mode === 'dark' ? theme.palette.grey[700] : theme.palette.grey[100], // Or theme.palette.action.hover
+      };
+    },
   },
 };
 

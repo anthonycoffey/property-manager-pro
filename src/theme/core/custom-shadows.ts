@@ -1,6 +1,12 @@
 import { varAlpha } from '../utils';
 import { palette } from './palette'; // To access specific color channels
-import type { CustomShadows as CustomShadowsInterface, ThemeColorScheme } from '../types';
+import type { 
+  CustomShadows as CustomShadowsInterface, 
+  ThemeColorScheme,
+  PaletteColorWithChannels, // Added
+  CommonColorsWithChannels, // Added
+  // We might also need GreyColorsWithChannels if we were to get channels from grey scale directly here
+} from '../types';
 
 // --- Helper to Create Shadow Color String ---
 function createShadowColor(colorChannel: string): string {
@@ -16,9 +22,15 @@ function createCustomShadowsSet(baseColorChannel: string): CustomShadowsInterfac
   const p = palette.light;
 
   // Helper to safely get a channel or fallback
-  const getChannel = (colorObj: any, channelName: string, fallbackHex: string): string => {
+  const getChannel = (
+    colorObj: Partial<PaletteColorWithChannels> | Partial<CommonColorsWithChannels> | undefined,
+    channelName: string, 
+    fallbackHex: string
+  ): string => {
     if (colorObj && typeof colorObj === 'object' && channelName in colorObj) {
-      return colorObj[channelName] as string;
+      // This type assertion is needed because TypeScript can't infer that channelName is a valid key 
+      // for the specific type within the union that colorObj currently represents.
+      return (colorObj as { [key: string]: string | undefined })[channelName] as string;
     }
     // If fallbackHex is a full hex, convert to channel. Otherwise, assume it's already a channel string or simple color.
     if (fallbackHex.startsWith('#')) {

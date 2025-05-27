@@ -4,7 +4,7 @@ import {
   Typography,
   Button,
   Box,
-  IconButton,
+  // IconButton, // Removed unused import
   Avatar,
   Switch, // Added Switch
   Stack, // Added Stack for layout

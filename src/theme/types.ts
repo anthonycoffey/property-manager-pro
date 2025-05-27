@@ -7,7 +7,7 @@ import type {
   TypeText as MuiTypeText,
   CommonColors as MuiCommonColors,
   Shadows as MuiShadows,
-  Components as MuiComponents,
+  // Components as MuiComponents, // Removed unused import
   TypographyVariantsOptions as MuiTypographyVariantsOptions,
   CSSObject,
 } from '@mui/material/styles';

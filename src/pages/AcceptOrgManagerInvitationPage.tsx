@@ -66,7 +66,8 @@ const AcceptOrgManagerInvitationPage: React.FC = () => {
       'getOrgManagerInvitationDetails'
     );
 
-    if (token) { // Only token is strictly required for OM invites
+    if (token) {
+      // Only token is strictly required for OM invites
       setInvitationToken(token);
 
       const fetchInviteDetails = async () => {
@@ -83,7 +84,10 @@ const AcceptOrgManagerInvitationPage: React.FC = () => {
             organizationIds: string[] | null; // Expected from backend
           };
 
-          if (details.email && details.rolesToAssign.includes('organization_manager')) {
+          if (
+            details.email &&
+            details.rolesToAssign.includes('organization_manager')
+          ) {
             setInvitedEmail(details.email);
             setEmail(details.email);
             // if (details.displayName) setDisplayName(details.displayName); // Optional: prefill display name
@@ -93,17 +97,32 @@ const AcceptOrgManagerInvitationPage: React.FC = () => {
             );
           }
         } catch (error: unknown) {
-          console.error('Error fetching organization manager invitation details:', error);
+          console.error(
+            'Error fetching organization manager invitation details:',
+            error
+          );
           let specificError =
             'Failed to load organization manager invitation. The link may be invalid, expired, or already used.';
 
           if (isAppError(error)) {
             specificError = `Failed to load invitation: ${error.message}`;
-            const firebaseError = error as AppError & { code?: string; details?: { code?: string } };
-            if (firebaseError.code === 'not-found' || firebaseError.details?.code === 'not-found') {
-              specificError = 'Organization Manager Invitation not found. Please check the link.';
-            } else if (firebaseError.code === 'failed-precondition' || firebaseError.details?.code === 'failed-precondition') {
-              specificError = firebaseError.message || 'Organization Manager Invitation is not valid (it may have been accepted, revoked, or expired).';
+            const firebaseError = error as AppError & {
+              code?: string;
+              details?: { code?: string };
+            };
+            if (
+              firebaseError.code === 'not-found' ||
+              firebaseError.details?.code === 'not-found'
+            ) {
+              specificError =
+                'Organization Manager Invitation not found. Please check the link.';
+            } else if (
+              firebaseError.code === 'failed-precondition' ||
+              firebaseError.details?.code === 'failed-precondition'
+            ) {
+              specificError =
+                firebaseError.message ||
+                'Organization Manager Invitation is not valid (it may have been accepted, revoked, or expired).';
             }
           } else if (error instanceof Error) {
             specificError = `Failed to load invitation: ${error.message}`;
@@ -128,10 +147,12 @@ const AcceptOrgManagerInvitationPage: React.FC = () => {
   );
 
   const handleAuthSuccess = (message: string) => {
-    setSuccess(message);
-    setTimeout(() => {
-      navigate('/login');
-    }, 3000);
+    setSuccess(message + ' Redirecting to dashboard...');
+    // Navigate directly to dashboard.
+    // The token refresh should ensure claims are fresh for ProtectedRoute.
+    // The useEffect watching currentUser should ideally handle the redirect to dashboard
+    // once the token is refreshed and useAuth provides the updated currentUser.
+    navigate('/dashboard');
   };
 
   const handleAuthError = (error: unknown, providerName: string) => {
@@ -147,7 +168,9 @@ const AcceptOrgManagerInvitationPage: React.FC = () => {
       }
     } else if (error instanceof Error) {
       const genericError = error as Error & { code?: string };
-      if (genericError.code === 'auth/account-exists-with-different-credential') {
+      if (
+        genericError.code === 'auth/account-exists-with-different-credential'
+      ) {
         errorMessage = `An account already exists with this email address using a different sign-in method. Please sign in with that method.`;
       } else {
         errorMessage = genericError.message;
@@ -177,9 +200,16 @@ const AcceptOrgManagerInvitationPage: React.FC = () => {
       return;
     }
 
-    console.log("Invited Email:", invitedEmail, "Social Email:", socialUser.email);
+    console.log(
+      'Invited Email:',
+      invitedEmail,
+      'Social Email:',
+      socialUser.email
+    );
     if (socialUser.email.toLowerCase() !== invitedEmail.toLowerCase()) {
-      console.error("EMAIL MISMATCH DETECTED. Error set. Attempting to return from processSocialSignUp.");
+      console.error(
+        'EMAIL MISMATCH DETECTED. Error set. Attempting to return from processSocialSignUp.'
+      );
       setError(
         `The email from ${providerName} (${socialUser.email}) does not match the invited email (${invitedEmail}). Please use the account associated with the invited email.`
       );
@@ -187,7 +217,9 @@ const AcceptOrgManagerInvitationPage: React.FC = () => {
       return;
     }
 
-    console.log("Proceeding to call backend (signUpWithOrgManagerInvitationFn) in processSocialSignUp.");
+    console.log(
+      'Proceeding to call backend (signUpWithOrgManagerInvitationFn) in processSocialSignUp.'
+    );
     setLoading(true);
     setSocialLoading(null);
 
@@ -203,6 +235,16 @@ const AcceptOrgManagerInvitationPage: React.FC = () => {
       const responseData = result.data as SignUpWithInvitationResponse; // Re-use type, but it's for OM now
 
       if (responseData?.success) {
+        // Attempt to get current user and refresh token
+        const user = auth.currentUser;
+        if (user) {
+          try {
+            await user.getIdToken(true); // Force refresh
+            console.log('Token refreshed after social OM sign-up.');
+          } catch (refreshError) {
+            console.error('Error refreshing token after social OM sign-up:', refreshError);
+          }
+        }
         handleAuthSuccess(
           responseData.message ||
             `Account created successfully with ${providerName}! You will be redirected.`
@@ -290,6 +332,16 @@ const AcceptOrgManagerInvitationPage: React.FC = () => {
       const responseData = result.data as SignUpWithInvitationResponse; // Re-use type, but it's for OM now
 
       if (responseData?.success) {
+        // Attempt to get current user and refresh token
+        const user = auth.currentUser;
+        if (user) {
+          try {
+            await user.getIdToken(true); // Force refresh
+            console.log('Token refreshed after email/password OM sign-up.');
+          } catch (refreshError) {
+            console.error('Error refreshing token after email/password OM sign-up:', refreshError);
+          }
+        }
         handleAuthSuccess(
           responseData.message ||
             'Account created successfully! You will be redirected to login.'
@@ -330,10 +382,7 @@ const AcceptOrgManagerInvitationPage: React.FC = () => {
   }
 
   // If critical error during fetch or missing token (and not yet successful)
-  if (
-    (!invitationToken || (error && !invitedEmail)) &&
-    !success
-  ) {
+  if ((!invitationToken || (error && !invitedEmail)) && !success) {
     return (
       <Container component='main' maxWidth='xs'>
         <Paper

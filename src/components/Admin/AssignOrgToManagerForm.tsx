@@ -1,19 +1,31 @@
 import React, { useState, useEffect } from 'react';
-import { httpsCallable } from 'firebase/functions'; // Removed HttpsError
+import { httpsCallable } from 'firebase/functions';
 import { useAuth } from '../../hooks/useAuth';
-// import type { AppError } from '../../types'; // AppError is no longer used
-import { db, functions } from '../../firebaseConfig'; // functions already imported, db needed
-import { collectionGroup, query, where, getDocs, orderBy, type DocumentData } from 'firebase/firestore'; // type-only import
+import { db, functions } from '../../firebaseConfig';
+import {
+  collectionGroup,
+  query,
+  where,
+  getDocs,
+  orderBy,
+  type DocumentData,
+} from 'firebase/firestore';
 
 import Button from '@mui/material/Button';
 import Box from '@mui/material/Box';
 import CircularProgress from '@mui/material/CircularProgress';
 import Alert from '@mui/material/Alert';
-import { Typography, FormControl, InputLabel, Select, MenuItem, type SelectChangeEvent } from '@mui/material'; // type-only import
+import {
+  Typography,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  type SelectChangeEvent,
+} from '@mui/material';
 import OrganizationSelector from './OrganizationSelector';
 import { AssignmentInd } from '@mui/icons-material';
 
-// Define a specific type for user claims based on systemPatterns.md
 interface UserClaims {
   roles: string[];
   organizationId?: string;
@@ -21,11 +33,10 @@ interface UserClaims {
   propertyId?: string;
 }
 
-// Define expected response type
 interface AssignOrgResponse {
   success: boolean;
   message: string;
-  updatedClaims?: UserClaims; 
+  updatedClaims?: UserClaims;
 }
 
 interface OrgManager {
@@ -35,39 +46,42 @@ interface OrgManager {
 }
 
 const AssignOrgToManagerForm: React.FC = () => {
-  const [targetUserId, setTargetUserId] = useState(''); // User ID of the Organization Manager
+  const [targetUserId, setTargetUserId] = useState('');
   const [newOrgId, setNewOrgId] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false); // For form submission
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const { currentUser, roles } = useAuth();
 
   const [orgManagers, setOrgManagers] = useState<OrgManager[]>([]);
   const [fetchingManagers, setFetchingManagers] = useState(false);
-  const [fetchManagersError, setFetchManagersError] = useState<string | null>(null);
+  const [fetchManagersError, setFetchManagersError] = useState<string | null>(
+    null
+  );
 
-  // const functions = getFunctions(); // Already imported from firebaseConfig
   const assignOrgFn = httpsCallable(functions, 'addOrganizationToManager');
 
   useEffect(() => {
     if (currentUser && roles.includes('admin')) {
       setFetchingManagers(true);
       setFetchManagersError(null);
+
       const fetchOrgManagers = async () => {
         try {
-          const usersCollectionGroup = collectionGroup(db, 'users');
+          const usersCollectionGroup = collectionGroup(db, 'admins');
           const q = query(
             usersCollectionGroup,
-            where('organizationRoles', 'array-contains', 'organization_manager'),
+            where(
+              'roles',
+              'array-contains',
+              'organization_manager'
+            ),
             orderBy('displayName', 'asc')
           );
           const querySnapshot = await getDocs(q);
           const managers: OrgManager[] = [];
           querySnapshot.forEach((doc: DocumentData) => {
-            // Deduplicate based on user ID, as a user might appear in multiple orgs' user lists
-            // if their profile was ever stored there, though claims are the source of truth for roles.
-            // For this dropdown, we only need unique users.
-            if (!managers.find(m => m.id === doc.id)) {
+            if (!managers.find((m) => m.id === doc.id)) {
               managers.push({
                 id: doc.id,
                 displayName: doc.data().displayName || 'N/A',
@@ -77,8 +91,10 @@ const AssignOrgToManagerForm: React.FC = () => {
           });
           setOrgManagers(managers);
         } catch (e) {
-          console.error("Error fetching organization managers: ", e);
-          setFetchManagersError("Failed to load organization managers. Ensure Firestore indexes are deployed.");
+          console.error('Error fetching organization managers: ', e);
+          setFetchManagersError(
+            'Failed to load organization managers. Ensure Firestore indexes are deployed.'
+          );
         } finally {
           setFetchingManagers(false);
         }
@@ -86,7 +102,6 @@ const AssignOrgToManagerForm: React.FC = () => {
       fetchOrgManagers();
     }
   }, [currentUser, roles]);
-
 
   const handleOrganizationChange = (orgId: string | null) => {
     setNewOrgId(orgId);
@@ -100,7 +115,9 @@ const AssignOrgToManagerForm: React.FC = () => {
     setSuccess(null);
 
     if (!currentUser || !roles.includes('admin')) {
-      setError('Permission denied. Only Super Administrators can perform this action.');
+      setError(
+        'Permission denied. Only Super Administrators can perform this action.'
+      );
       return;
     }
 
@@ -125,7 +142,10 @@ const AssignOrgToManagerForm: React.FC = () => {
       const responseData = result.data as AssignOrgResponse;
 
       if (responseData?.success) {
-        setSuccess(responseData.message || `Successfully assigned organization ${newOrgId} to user ${targetUserId}.`);
+        setSuccess(
+          responseData.message ||
+            `Successfully assigned organization ${newOrgId} to user ${targetUserId}.`
+        );
         // Optionally clear fields if needed, or update local state if displaying a list of managers/orgs
       } else {
         setError(responseData?.message || 'Failed to assign organization.');
@@ -133,10 +153,18 @@ const AssignOrgToManagerForm: React.FC = () => {
     } catch (err) {
       console.error('Error assigning organization:', err);
       // Check if the error is an object with code and message properties (like Firebase HttpsError)
-      if (typeof err === 'object' && err !== null && 'code' in err && 'message' in err) {
+      if (
+        typeof err === 'object' &&
+        err !== null &&
+        'code' in err &&
+        'message' in err
+      ) {
         const firebaseError = err as { code: string; message: string }; // Type assertion
-        setError(`Error: ${firebaseError.message} (Code: ${firebaseError.code})`);
-      } else if (err instanceof Error) { // Fallback for generic JavaScript errors
+        setError(
+          `Error: ${firebaseError.message} (Code: ${firebaseError.code})`
+        );
+      } else if (err instanceof Error) {
+        // Fallback for generic JavaScript errors
         setError(`Error: ${err.message}`);
       } else {
         setError('An unexpected error occurred.');
@@ -148,32 +176,53 @@ const AssignOrgToManagerForm: React.FC = () => {
 
   if (!currentUser || !roles.includes('admin')) {
     // This check is mainly for UI consistency, actual permission is enforced by the cloud function
-    return null; 
+    return null;
   }
 
   return (
     <Box component='form' onSubmit={handleSubmit} sx={{ mt: 2 }}>
-      <FormControl fullWidth margin="normal" required disabled={loading || fetchingManagers}>
-        <InputLabel id="org-manager-select-label">Select Organization Manager</InputLabel>
+      <FormControl
+        fullWidth
+        margin='normal'
+        required
+        disabled={loading || fetchingManagers}
+      >
+        <InputLabel id='org-manager-select-label'>
+          Select Organization Manager
+        </InputLabel>
         <Select
-          labelId="org-manager-select-label"
-          id="org-manager-select"
+          labelId='org-manager-select-label'
+          id='org-manager-select'
           value={targetUserId}
-          label="Select Organization Manager"
-          onChange={(e: SelectChangeEvent<string>) => setTargetUserId(e.target.value as string)}
+          label='Select Organization Manager'
+          onChange={(e: SelectChangeEvent<string>) =>
+            setTargetUserId(e.target.value as string)
+          }
         >
-          {fetchingManagers && <MenuItem value=""><CircularProgress size={20} sx={{mr:1}}/> Loading Managers...</MenuItem>}
-          {!fetchingManagers && orgManagers.length === 0 && <MenuItem value="" disabled>No Organization Managers found</MenuItem>}
+          {fetchingManagers && (
+            <MenuItem value=''>
+              <CircularProgress size={20} sx={{ mr: 1 }} /> Loading Managers...
+            </MenuItem>
+          )}
+          {!fetchingManagers && orgManagers.length === 0 && (
+            <MenuItem value='' disabled>
+              No Organization Managers found
+            </MenuItem>
+          )}
           {orgManagers.map((manager) => (
             <MenuItem key={manager.id} value={manager.id}>
               {manager.displayName} ({manager.email})
             </MenuItem>
           ))}
         </Select>
-        {fetchManagersError && <Alert severity="warning" sx={{mt:1}}>{fetchManagersError}</Alert>}
+        {fetchManagersError && (
+          <Alert severity='warning' sx={{ mt: 1 }}>
+            {fetchManagersError}
+          </Alert>
+        )}
       </FormControl>
 
-      <Typography variant='subtitle1' gutterBottom sx={{mt: 2}}>
+      <Typography variant='subtitle1' gutterBottom sx={{ mt: 2 }}>
         Select New Organization to Assign:
       </Typography>
       <OrganizationSelector
@@ -189,7 +238,11 @@ const AssignOrgToManagerForm: React.FC = () => {
         startIcon={<AssignmentInd />}
         sx={{ mt: 3 }}
       >
-        {loading ? <CircularProgress size={24} /> : 'Assign Organization to Manager'}
+        {loading ? (
+          <CircularProgress size={24} />
+        ) : (
+          'Assign Organization to Manager'
+        )}
       </Button>
 
       {error && (

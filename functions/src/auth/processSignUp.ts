@@ -56,32 +56,14 @@ export const processSignUp = functionsAuth
         );
       }
     } else {
-      // For non-admin users, check existing claims before setting defaults
-      try {
-        const existingUserRecord = await adminAuth.getUser(uid);
-        const currentClaims = existingUserRecord.customClaims;
-
-        // If user already has an organizationId or organizationIds, they were likely processed by invitation.
-        if (currentClaims && (currentClaims.organizationId || (currentClaims.organizationIds && currentClaims.organizationIds.length > 0))) {
-          console.log(
-            `User ${uid} (${email}) already has organizationId or organizationIds. Skipping default claim setting in processSignUp.`
-          );
-          return; // Do nothing, claims are presumed to be correctly set by invitation flow.
-        }
-
-        // If no such claims, proceed to set 'pending_association'
-        const defaultClaims = { roles: ['pending_association'] };
-        await adminAuth.setCustomUserClaims(uid, defaultClaims);
-        console.log(
-          `Default 'pending_association' claims set for user ${uid} (${email}) by processSignUp.`
-        );
-        // No Firestore document is created here for pending_association users.
-      } catch (error) {
-        console.error(
-          `Error in processSignUp for user ${uid} (${email}) while checking/setting claims:`,
-          error
-        );
-        // Potentially re-throw or handle as critical if claim setting fails
-      }
+      // For non-Super-Admin users.
+      // The specific invitation-handling callable functions (e.g., signUpWithOrgManagerInvitation, signUpWithInvitation)
+      // are responsible for setting their custom claims and creating appropriate Firestore profiles.
+      // processSignUp will not set any default claims for these users to avoid potential race conditions
+      // where it might overwrite claims set by the more specific invitation flows.
+      console.log(
+        `User ${uid} (${email}) is not a Super Admin. Claims and profile will be handled by the relevant invitation processing function if applicable.`
+      );
+      // No default claims are set here for non-Super-Admins.
     }
   });

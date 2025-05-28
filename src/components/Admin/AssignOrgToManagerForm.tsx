@@ -1,3 +1,15 @@
+/**
+ * @deprecated
+ * This component is deprecated and no longer in use.
+ *
+ * `AssignOrgToManagerForm` provides a form interface for administrators to assign an organization to an existing organization manager.
+ * It fetches eligible managers from Firestore, allows selection of a manager and organization, and calls a Firebase Cloud Function to perform the assignment.
+ *
+ * Permission checks are enforced both in the UI and in the backend.
+ *
+ * @remarks
+ * This component is retained for reference only and should not be used in new development.
+ */
 import React, { useState, useEffect } from 'react';
 import { httpsCallable } from 'firebase/functions';
 import { useAuth } from '../../hooks/useAuth';
@@ -67,14 +79,14 @@ const AssignOrgToManagerForm: React.FC = () => {
 
       const fetchOrgManagers = async () => {
         try {
-            const usersCollection = collection(db, 'admins');
-            const q = query(
+          const usersCollection = collection(db, 'admins');
+          const q = query(
             usersCollection,
             where('roles', 'array-contains', 'organization_manager'),
             orderBy('displayName', 'asc')
-            );
-            const querySnapshot = await getDocs(q);
-            const managers: OrgManager[] = [];
+          );
+          const querySnapshot = await getDocs(q);
+          const managers: OrgManager[] = [];
           querySnapshot.forEach((doc: DocumentData) => {
             if (!managers.find((m) => m.id === doc.id)) {
               managers.push({
@@ -216,7 +228,6 @@ const AssignOrgToManagerForm: React.FC = () => {
           </Alert>
         )}
       </FormControl>
-
 
       <OrganizationSelector
         selectedOrganizationId={newOrgId}

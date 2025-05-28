@@ -144,7 +144,7 @@ export const signUpWithOrgManagerInvitation = onCall(async (request) => {
     const adminProfileData = {
       ...baseProfileData, // Includes uid, email, displayName, createdAt, status, invitedBy
       roles: ['organization_manager'], // Explicitly set the role for the profile document
-      // organizationIds: invOrganizationIds || [], // Optionally, store initial orgs here too. For now, claims are primary.
+      assignedOrganizationIds: invOrganizationIds || [], // Store assigned org IDs for easier querying by admin panel
     };
     console.log(`Attempting to create/update profile in 'admins' collection for OM user ${uid} with data: ${JSON.stringify(adminProfileData)}`);
     await db.collection('admins').doc(uid).set(adminProfileData, { merge: true });

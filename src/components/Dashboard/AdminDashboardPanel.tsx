@@ -20,15 +20,17 @@ import PropertyManagerManagement from '../Admin/PropertyManagerManagement';
 import OrganizationManagementPanel from '../Admin/OrganizationManagementPanel';
 import AddOrganizationModal from '../Admin/AddOrganizationModal';
 import InviteOrganizationManagerForm from '../Admin/InviteOrganizationManagerForm';
-import AssignOrgToManagerForm from '../Admin/AssignOrgToManagerForm';
-// import PropertyManagerPropertiesList from '../PropertyManager/PropertyManagerPropertiesList'; // Replaced
+import OrganizationManagerAssignments from '../Admin/OrganizationManagerAssignments';
 import OrganizationPropertiesList from '../Admin/OrganizationPropertiesList';
 import CreatePropertyForm from '../PropertyManager/CreatePropertyForm';
 import EditPropertyModal from '../PropertyManager/EditPropertyModal';
-import PropertyResidentsTable from '../PropertyManager/PropertyResidentsTable'; // For resident listing
-import InviteResidentForm from '../PropertyManager/InviteResidentForm';     // For inviting residents
-import EditResidentModal from '../PropertyManager/EditResidentModal';       // For editing residents
-import type { Property as PropertyType, Resident as ResidentType } from '../../types';
+import PropertyResidentsTable from '../PropertyManager/PropertyResidentsTable';
+import InviteResidentForm from '../PropertyManager/InviteResidentForm';
+import EditResidentModal from '../PropertyManager/EditResidentModal';
+import type {
+  Property as PropertyType,
+  Resident as ResidentType,
+} from '../../types';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -66,14 +68,21 @@ const AdminDashboardPanel: React.FC = () => {
   );
   const [isAddOrgModalOpen, setIsAddOrgModalOpen] = useState(false);
   // Property Modals
-  const [isCreatePropertyModalOpen, setIsCreatePropertyModalOpen] = useState(false);
+  const [isCreatePropertyModalOpen, setIsCreatePropertyModalOpen] =
+    useState(false);
   const [isEditPropertyModalOpen, setIsEditPropertyModalOpen] = useState(false);
-  const [propertyToEdit, setPropertyToEdit] = useState<PropertyType | null>(null);
+  const [propertyToEdit, setPropertyToEdit] = useState<PropertyType | null>(
+    null
+  );
   // Residents Modals & State
-  const [isManageResidentsModalOpen, setIsManageResidentsModalOpen] = useState(false);
-  const [propertyForResidents, setPropertyForResidents] = useState<PropertyType | null>(null);
+  const [isManageResidentsModalOpen, setIsManageResidentsModalOpen] =
+    useState(false);
+  const [propertyForResidents, setPropertyForResidents] =
+    useState<PropertyType | null>(null);
   const [isEditResidentModalOpen, setIsEditResidentModalOpen] = useState(false);
-  const [residentToEdit, setResidentToEdit] = useState<ResidentType | null>(null);
+  const [residentToEdit, setResidentToEdit] = useState<ResidentType | null>(
+    null
+  );
   const [refreshResidentsListKey, setRefreshResidentsListKey] = useState(0);
 
   const [refreshOrgListKey, setRefreshOrgListKey] = useState(0);
@@ -109,7 +118,7 @@ const AdminDashboardPanel: React.FC = () => {
     setSnackbarSeverity('success');
     setSnackbarOpen(true);
     setIsCreatePropertyModalOpen(false);
-    setRefreshPropertiesListKey(prev => prev + 1); // Refresh list
+    setRefreshPropertiesListKey((prev) => prev + 1); // Refresh list
   };
 
   const handlePropertyUpdated = () => {
@@ -118,9 +127,9 @@ const AdminDashboardPanel: React.FC = () => {
     setSnackbarOpen(true);
     setIsEditPropertyModalOpen(false);
     setPropertyToEdit(null);
-    setRefreshPropertiesListKey(prev => prev + 1); // Refresh list
+    setRefreshPropertiesListKey((prev) => prev + 1); // Refresh list
   };
-  
+
   const handleOpenEditPropertyModal = (property: PropertyType) => {
     setPropertyToEdit(property);
     setIsEditPropertyModalOpen(true);
@@ -131,7 +140,8 @@ const AdminDashboardPanel: React.FC = () => {
     setIsEditPropertyModalOpen(false);
   };
 
-  const handleManageResidents = (property: PropertyType) => { // Changed to accept full property
+  const handleManageResidents = (property: PropertyType) => {
+    // Changed to accept full property
     setPropertyForResidents(property);
     setIsManageResidentsModalOpen(true);
   };
@@ -150,12 +160,12 @@ const AdminDashboardPanel: React.FC = () => {
     setResidentToEdit(null);
     setIsEditResidentModalOpen(false);
   };
-  
+
   const handleResidentInvited = () => {
     setSnackbarMessage('Resident invited successfully!');
     setSnackbarSeverity('success');
     setSnackbarOpen(true);
-    setRefreshResidentsListKey(prev => prev + 1); // Refresh resident list
+    setRefreshResidentsListKey((prev) => prev + 1); // Refresh resident list
     // Note: InviteResidentForm might need an onCancel to close a sub-modal if it's in one
   };
 
@@ -165,12 +175,12 @@ const AdminDashboardPanel: React.FC = () => {
     setSnackbarOpen(true);
     setIsEditResidentModalOpen(false);
     setResidentToEdit(null);
-    setRefreshResidentsListKey(prev => prev + 1); // Refresh resident list
+    setRefreshResidentsListKey((prev) => prev + 1); // Refresh resident list
   };
 
   const handlePropertiesUpdate = () => {
-    setRefreshPropertiesListKey(prev => prev + 1);
-  }
+    setRefreshPropertiesListKey((prev) => prev + 1);
+  };
 
   const handleOrganizationCreated = (orgId: string) => {
     setSnackbarMessage(`Organization created successfully with ID: ${orgId}`);
@@ -242,16 +252,13 @@ const AdminDashboardPanel: React.FC = () => {
         </TabPanel>
         <TabPanel value={adminTabValue} index={1}>
           <Typography variant='h6' gutterBottom>
-            Invite Organization Manager
+            Invite Organization Managers
           </Typography>
           <InviteOrganizationManagerForm />
 
           <Divider sx={{ my: 3 }} />
 
-          <Typography variant='h6' gutterBottom>
-            Assign Organization
-          </Typography>
-          <AssignOrgToManagerForm />
+          <OrganizationManagerAssignments />
         </TabPanel>
         <TabPanel value={adminTabValue} index={2}>
           <OrganizationSelector
@@ -305,7 +312,7 @@ const AdminDashboardPanel: React.FC = () => {
         />
 
         {selectedAdminOrgId && (
-          <AddOrganizationModal 
+          <AddOrganizationModal
             open={isCreatePropertyModalOpen}
             onClose={handleCloseCreatePropertyModal}
             title='Create New Property'
@@ -319,7 +326,7 @@ const AdminDashboardPanel: React.FC = () => {
         )}
 
         {propertyToEdit && selectedAdminOrgId && (
-           <EditPropertyModal
+          <EditPropertyModal
             propertyData={propertyToEdit} // Corrected prop name
             organizationId={selectedAdminOrgId}
             open={isEditPropertyModalOpen}
@@ -337,7 +344,9 @@ const AdminDashboardPanel: React.FC = () => {
             // maxWidth="lg" // Consider making it larger
           >
             <Box>
-              <Typography variant="h6" gutterBottom>Invite New Resident</Typography>
+              <Typography variant='h6' gutterBottom>
+                Invite New Resident
+              </Typography>
               <InviteResidentForm
                 organizationId={selectedAdminOrgId}
                 propertyId={propertyForResidents.id}
@@ -345,8 +354,10 @@ const AdminDashboardPanel: React.FC = () => {
                 onInvitationSent={handleResidentInvited} // Corrected prop name
                 // onCancel could be added if InviteResidentForm is complex enough to need its own cancel
               />
-              <Divider sx={{my: 2}} />
-              <Typography variant="h6" gutterBottom>Current Residents</Typography>
+              <Divider sx={{ my: 2 }} />
+              <Typography variant='h6' gutterBottom>
+                Current Residents
+              </Typography>
               <PropertyResidentsTable
                 key={refreshResidentsListKey}
                 organizationId={selectedAdminOrgId}

@@ -48,6 +48,17 @@ export const createOrganization = onCall(async (request) => {
           organizationIds: updatedOrgIds 
         });
         console.log(`Updated custom claims for Organization Manager ${callerUid} to include new organization ${newOrgId}.`);
+
+        // Also update their profile in the 'admins' collection
+        const adminProfileRef = db.collection('admins').doc(callerUid);
+        // Ensure the document exists or create it if it doesn't (though it should for an OM)
+        // We use update here assuming the OM profile in 'admins' was created during their initial setup.
+        // If there's a chance it might not exist, a .set({ assignedOrganizationIds: updatedOrgIds }, { merge: true }) might be safer.
+        // However, an OM should always have an /admins profile.
+        await adminProfileRef.update({
+          assignedOrganizationIds: updatedOrgIds,
+        });
+        console.log(`Updated 'admins' profile for Organization Manager ${callerUid} with new organization ${newOrgId}.`);
       }
 
       // Create user profile in the new organization

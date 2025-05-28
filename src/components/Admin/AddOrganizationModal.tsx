@@ -12,11 +12,19 @@ const createOrganizationCallable = httpsCallable(functions, 'createOrganization'
 interface AddOrganizationModalProps {
   open: boolean;
   onClose: () => void;
-  onOrganizationCreated: (orgId: string) => void; // Callback after successful creation
+  onOrganizationCreated?: (orgId: string) => void; // Callback after successful creation, now optional
+  title?: string; // Optional title
+  children?: React.ReactNode; // Optional children to render instead of the default form
 }
 
-const AddOrganizationModal: React.FC<AddOrganizationModalProps> = ({ open, onClose, onOrganizationCreated }) => {
-  const { currentUser } = useAuth(); // Still needed for createdBy logic if desired, or just auth check
+const AddOrganizationModal: React.FC<AddOrganizationModalProps> = ({
+  open,
+  onClose,
+  onOrganizationCreated,
+  title,
+  children,
+}) => {
+  const { currentUser } = useAuth();
   const [organizationName, setOrganizationName] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -25,11 +33,10 @@ const AddOrganizationModal: React.FC<AddOrganizationModalProps> = ({ open, onClo
   const resetForm = () => {
     setOrganizationName('');
     setError(null);
-    // Removed logo related resets
   };
 
   const handleCloseDialog = () => {
-    if (loading) return; // Prevent closing while loading
+    if (loading && !children) return; // Prevent closing while loading if it's the internal form
     resetForm();
     onClose();
   };
@@ -37,53 +44,73 @@ const AddOrganizationModal: React.FC<AddOrganizationModalProps> = ({ open, onClo
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!currentUser) {
-      setError("Authentication error. Please sign in again.");
+      setError('Authentication error. Please sign in again.');
       return;
     }
     if (!organizationName.trim()) {
-      setError("Organization name is required.");
+      setError('Organization name is required.');
       return;
     }
 
     setLoading(true);
     setError(null);
-    // Removed uploadProgress reset and tempLogoStoragePath
 
     try {
-      // Logo upload logic removed
-
       const result = await createOrganizationCallable({
         organizationName: organizationName.trim(),
-        // tempLogoStoragePath is no longer passed
       });
 
-      const resultData = result.data as { success: boolean; message: string; organizationId?: string }; // Ensure Cloud Function returns this structure
+      const resultData = result.data as {
+        success: boolean;
+        message: string;
+        organizationId?: string;
+      };
       if (resultData.success && resultData.organizationId) {
-        onOrganizationCreated(resultData.organizationId);
-        handleCloseDialog(); // Resets form and closes
+        if (onOrganizationCreated) {
+          onOrganizationCreated(resultData.organizationId);
+        }
+        handleCloseDialog();
       } else {
-        setError(resultData.message || "Failed to create organization.");
+        setError(resultData.message || 'Failed to create organization.');
       }
     } catch (err: unknown) {
-      console.error("Error creating organization:", err);
+      console.error('Error creating organization:', err);
       if (err instanceof Error) {
-        setError(err.message || "An unexpected error occurred.");
+        setError(err.message || 'An unexpected error occurred.');
       } else {
-        setError("An unexpected error occurred.");
+        setError('An unexpected error occurred.');
       }
     } finally {
       setLoading(false);
     }
   };
 
+  // If children are provided, render them directly within DialogContent.
+  // The children are expected to manage their own form submission and actions.
+  if (children) {
+    return (
+      <Dialog open={open} onClose={handleCloseDialog} aria-labelledby="form-dialog-title" maxWidth="md" fullWidth>
+        <DialogTitle id="form-dialog-title">{title || 'Modal'}</DialogTitle>
+        <DialogContent dividers>{children}</DialogContent>
+        {/* Actions are expected to be part of the children, or a generic close button could be added here if needed */}
+        {/* For now, assuming children like CreatePropertyForm include their own actions */}
+      </Dialog>
+    );
+  }
+
+  // Default behavior: Render the "Add New Organization" form
   return (
     <Dialog open={open} onClose={handleCloseDialog} aria-labelledby="form-dialog-title">
-      <DialogTitle id="form-dialog-title">Add New Organization</DialogTitle>
+      <DialogTitle id="form-dialog-title">{title || 'Add New Organization'}</DialogTitle>
       <DialogContent dividers>
-        <DialogContentText sx={{mb:2}}>
+        <DialogContentText sx={{ mb: 2 }}>
           Enter the details for the new organization.
         </DialogContentText>
-        {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+        {error && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {error}
+          </Alert>
+        )}
         <TextField
           autoFocus
           margin="dense"
@@ -97,14 +124,23 @@ const AddOrganizationModal: React.FC<AddOrganizationModalProps> = ({ open, onClo
           required
           disabled={loading}
         />
-      {/* Logo related UI removed */}
       </DialogContent>
       <DialogActions>
-        <Button onClick={handleCloseDialog} variant="outlined" color="error" disabled={loading}>
+        <Button
+          onClick={handleCloseDialog}
+          variant="outlined"
+          color="error"
+          disabled={loading}
+        >
           Cancel
         </Button>
-        <Button onClick={handleSubmit} color="primary" variant="contained" disabled={loading}>
-          {loading ? <CircularProgress size={24} /> : "Create Organization"}
+        <Button
+          onClick={handleSubmit}
+          color="primary"
+          variant="contained"
+          disabled={loading}
+        >
+          {loading ? <CircularProgress size={24} /> : 'Create Organization'}
         </Button>
       </DialogActions>
     </Dialog>

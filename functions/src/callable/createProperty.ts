@@ -27,6 +27,12 @@ export const createProperty = onCall(async (request) => {
       throw new HttpsError('permission-denied', 'Organization manager does not have permission for the target organization.');
     }
     operationOrgId = targetOrganizationId;
+  } else if (callerRoles.includes('admin')) {
+    if (!targetOrganizationId) {
+      throw new HttpsError('invalid-argument', 'Organization ID is required for admins to create properties.');
+    }
+    // Admins can operate on any organization, so no specific check against their own org list is needed.
+    operationOrgId = targetOrganizationId;
   } else {
     throw new HttpsError('permission-denied', 'User does not have permission to create properties.');
   }

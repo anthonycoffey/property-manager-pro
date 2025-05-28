@@ -67,6 +67,8 @@ export const deleteProperty = onCall(async (request) => {
     if (callerOrgIds.includes(organizationId)) {
       authorized = true;
     }
+  } else if (callerRoles.includes('admin')) {
+    authorized = true; // Admins are authorized for any organization
   }
 
   if (!authorized) {

@@ -156,6 +156,9 @@ The application employs a modern web architecture with a React-based frontend an
     *   Cloud Functions act as the primary backend API layer.
     *   Functions will be designed to be granular and secure, performing specific tasks (e.g., `createInvitation`, `processServiceRequest`, `importResidentsFromCSV`).
     *   `createOrganization` function now allows `organization_manager` role to create organizations and auto-assigns them.
+    *   **Organization Manager Assignment (Admin Functions):**
+        *   `assignOrganizationToManagerAdmin`: Callable function for Super Admins to assign an organization to an Organization Manager. Updates claims, denormalized `assignedOrganizationIds` in the OM's `admins` profile, and creates/updates the OM's profile in the target organization's `users` subcollection.
+        *   `unassignOrganizationFromManagerAdmin`: Callable function for Super Admins to unassign an organization from an Organization Manager. Updates claims, denormalized `assignedOrganizationIds` in the OM's `admins` profile, and deletes the OM's profile from the unassigned organization's `users` subcollection.
 *   **State Management Strategy:**
     *   **Global State (React Context):** For broadly shared, less frequently updated data (e.g., authenticated user object, theme settings).
         *   Theme settings (`mode`: 'light' or 'dark') are persisted to `localStorage` to remember user preference across sessions. The system preference (`prefers-color-scheme`) is used as a fallback if no `localStorage` value is set.

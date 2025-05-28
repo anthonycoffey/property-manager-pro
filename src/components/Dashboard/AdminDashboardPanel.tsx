@@ -137,7 +137,7 @@ const AdminDashboardPanel: React.FC = () => {
           >
             <Tab label='Organizations' {...a11yProps(0)} />
             <Tab label='Organization Managers' {...a11yProps(1)} />
-            <Tab label='Property Managers (by Org)' {...a11yProps(2)} />
+            <Tab label='Property Managers' {...a11yProps(2)} />
           </Tabs>
         </Box>
         <TabPanel value={adminTabValue} index={0}>

@@ -13,8 +13,10 @@ import {
   Alert,
   type SelectChangeEvent,
   Container,
+  Stack, // Added Stack
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
+import AdminPanelSettings from '@mui/icons-material/AdminPanelSettings'; // Changed to AdminPanelSettings
 import { useAuth } from '../../hooks/useAuth';
 import OrgScopedPropertyManagerManagement from '../OrganizationManager/OrgScopedPropertyManagerManagement';
 import AddOrganizationModal from '../Admin/AddOrganizationModal';
@@ -171,15 +173,20 @@ const OrganizationManagerDashboardPanel: React.FC<
             mb: organizations.length > 0 ? 0 : 2,
           }}
         >
-          <Typography
-            variant='h5'
-            gutterBottom
-            sx={{
-              mb: { xs: 1, sm: 0 },
-            }}
+          <Stack
+            direction='row'
+            alignItems='center'
+            sx={{ mb: { xs: 1, sm: 0 } }}
           >
-            Organization Manager Dashboard
-          </Typography>
+            <AdminPanelSettings
+              fontSize='large'
+              color='primary'
+              sx={{ mr: 1 }}
+            />
+            <Typography variant='h4' color='primary'>
+              Organization Dashboard
+            </Typography>
+          </Stack>
           <Button
             variant='contained'
             startIcon={<AddIcon />}

@@ -145,14 +145,14 @@ const AdminDashboardPanel: React.FC = () => {
         </TabPanel>
         <TabPanel value={adminTabValue} index={1}>
           <Typography variant='h6' gutterBottom>
-            Invite New Organization Manager
+            Invite Organization Manager
           </Typography>
           <InviteOrganizationManagerForm />
 
           <Divider sx={{ my: 3 }} />
 
           <Typography variant='h6' gutterBottom>
-            Assign Existing Organization Manager to Additional Organization
+            Assign Organization
           </Typography>
           <AssignOrgToManagerForm />
         </TabPanel>

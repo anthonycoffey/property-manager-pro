@@ -98,7 +98,7 @@ const OrganizationSelector: React.FC<OrganizationSelectorProps> = ({
   }
 
   return (
-    <Box sx={{ minWidth: 240, p: 1 /*, ...sx*/ }}>
+    <Box sx={{mt: 1 }}>
       <FormControl fullWidth>
         <InputLabel id='organization-select-label'>
           Select Organization

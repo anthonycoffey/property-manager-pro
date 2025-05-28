@@ -218,9 +218,7 @@ const AssignOrgToManagerForm: React.FC = () => {
         )}
       </FormControl>
 
-      <Typography variant='subtitle1' gutterBottom sx={{ mt: 2 }}>
-        Select New Organization to Assign:
-      </Typography>
+
       <OrganizationSelector
         selectedOrganizationId={newOrgId}
         onOrganizationChange={handleOrganizationChange}

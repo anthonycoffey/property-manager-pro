@@ -1,10 +1,10 @@
 {
   "indexes": [
     {
-      "collectionGroup": "users",
+      "collectionGroup": "admins",
       "queryScope": "COLLECTION_GROUP",
       "fields": [
-        { "fieldPath": "organizationRoles", "arrayConfig": "CONTAINS" },
+        { "fieldPath": "roles", "arrayConfig": "CONTAINS" },
         { "fieldPath": "displayName", "order": "ASCENDING" }
       ]
     }

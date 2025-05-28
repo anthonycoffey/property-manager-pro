@@ -62,7 +62,7 @@ export function createAppTheme({ mode = 'light', themeOverrides = {} }: CreateAp
     customShadows: appCustomShadows.light, // Custom shadows are not auto-adjusted by MUI for dark mode.
                                           // Define appCustomShadows.dark if needed.
     components: appComponents,
-    shape: { borderRadius: 8 },
+    shape: { borderRadius: 16 },
     cssVariables: themeConfig.cssVariables, // For potential CssVarsProvider use
   };
 

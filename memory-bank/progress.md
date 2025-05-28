@@ -21,15 +21,12 @@ The project has recently completed the implementation of the Admin Organization 
         *   Migrated from a blocking `beforeUserCreated` trigger to a non-blocking `functions.auth.user().onCreate` (1st gen) trigger.
         *   Implemented custom claims logic:
             *   For admin users (`*@24hrcarunlocking.com`): sets `roles: ['admin']` and creates a profile in `admins/{uid}`.
-            *   For other direct sign-ups: sets `roles: ['pending_association']`. **No Firestore document is created by `processSignUp` for these users.** The temporary profile creation in the root `users/{uid}` and the check for `organizationId` claim were removed.
-        *   (Previous TypeScript error resolutions and logger changes remain relevant to the function's history but are now within its modularized file).
     *   Updated `src/hooks/useAuth.ts` and `src/providers/AuthProvider.tsx` to fetch and expose custom claims, including `organizationIds` for multi-org roles.
 *   **RBAC Enhancement (Super Admin & Organization Manager - 2025-05-26):**
     *   Clarified existing `admin` role as "Super Admin" with global system access.
     *   Introduced new `organization_manager` role for managing one or more specific organizations.
         *   Custom claims: `roles: ['organization_manager']`, `organizationIds: ["orgId1", "orgId2", ...]`.
     *   Updated `functions/src/callable/createInvitation.ts` to allow Admins to invite `organization_manager`s.
-    *   Updated `functions/src/callable/signUpWithInvitation.ts` to correctly set claims and create profiles for `organization_manager`s.
     *   Created new `functions/src/callable/addOrganizationToManager.ts` Cloud Function for Admins to assign existing `organization_manager`s to additional organizations.
     *   Updated `functions/src/index.ts` to export the new Cloud Function.
     *   Created `docs/organizationManagerInvitation.json` email template.
@@ -53,12 +50,6 @@ The project has recently completed the implementation of the Admin Organization 
     *   Created `src/components/Admin` directory and `src/components/Admin/PropertyManagerManagement.tsx` component.
     *   Implemented `createPropertyManager`, `updatePropertyManager`, and `deletePropertyManager` Cloud Functions (now in `functions/src/callable/`).
     *   Integrated the "Add New Property Manager" form in `src/components/Admin/PropertyManagerManagement.tsx` to interact with the `createPropertyManager` Cloud Function.
-    *   Added `/admin/property-managers` route to `src/routes.tsx` protected by `ProtectedRoute`.
-*   **Resolved Firebase Admin SDK Initialization Error:** Changed `import * as admin from 'firebase-admin';` to `import admin from 'firebase-admin';` in `functions/src/firebaseAdmin.ts` (previously `functions/src/index.ts`) to resolve `TypeError: admin.initializeApp is not a function` during Firebase Functions deployment in an ES module environment.
-*   **Removed Token Refresh Mechanism from `processSignUp` (2025-05-23):**
-    *   The `processSignUp` function no longer contains any explicit server-side mechanism for signaling client-side token refresh.
-    *   Removed the security rules for the `userTokenRefreshFlags` collection from `firestore.rules`.
-    *   This simplifies the `processSignUp` function. The client is solely responsible for its token refresh strategy.
 *   **Resolved Authentication Race Condition (2025-05-23):**
     *   Successfully investigated and fixed a race condition in `src/providers/AuthProvider.tsx`.
     *   The fix involved refactoring `AuthProvider.tsx` to use a two-stage `useEffect` approach for robust management of loading and user authentication states.
@@ -71,7 +62,6 @@ The project has recently completed the implementation of the Admin Organization 
         *   Remains the authority for invited user sign-ups.
         *   Sets final custom claims (overwriting any defaults from `processSignUp`).
         *   Creates user profiles directly in the correct multi-tenant Firestore paths (e.g., `organizations/{orgId}/users/{uid}` or `organizations/{orgId}/properties/{propId}/residents/{uid}`).
-    *   **Resolved Custom Claim Overwrite (2025-05-24):** Modified `functions/src/auth/processSignUp.ts` to check for an existing `organizationId` claim before setting default `pending_association` claims. This prevents overwriting claims set by the invitation flow, ensuring roles like "resident" are correctly persisted.
 *   **Invitation System Implementation (Phase 1 - Backend & Core UI) (2025-05-23):**
     *   **Documented Plan:** Created `docs/03-invitation-system-plan.md`.
     *   **Documented Plan:** Created `docs/03-invitation-system-plan.md`.

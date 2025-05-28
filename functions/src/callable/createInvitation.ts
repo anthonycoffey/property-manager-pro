@@ -49,7 +49,7 @@ export const createInvitation = onCall(async (request) => {
     targetPropertyId,
   } = request.data as {
     inviteeEmail: string;
-    inviteeName: string | undefined; // Optional, can be undefined
+    inviteeName: string | undefined | null; // Optional, can be undefined
     organizationIds?: string[]; // Optional array
     rolesToAssign: string[];
     invitedByRole: string;

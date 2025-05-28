@@ -87,8 +87,8 @@ const InviteOrganizationManagerForm: React.FC = () => {
 
     // Organization IDs are now optional for inviting an Organization Manager
     
-    if (!inviteeEmail || !inviteeName) {
-      setError('Name and Email are required.');
+    if (!inviteeEmail) {
+      setError('Email is required.');
       return;
     }
 
@@ -97,7 +97,7 @@ const InviteOrganizationManagerForm: React.FC = () => {
     try {
       const invitationPayload: {
         inviteeEmail: string;
-        inviteeName: string;
+        inviteeName: string | null; // Made inviteeName optional
         organizationIds?: string[]; // Changed from organizationId to organizationIds
         rolesToAssign: string[];
         invitedByRole: string;
@@ -163,7 +163,6 @@ const InviteOrganizationManagerForm: React.FC = () => {
           value={inviteeName}
           onChange={(e) => setInviteeName(e.target.value)}
           margin='normal'
-          required
           fullWidth
           disabled={loading}
         />

@@ -456,13 +456,21 @@ const AcceptOrgManagerInvitationPage: React.FC = () => {
         <Button
           fullWidth
           variant='outlined'
-          color='primary'
           startIcon={<GoogleIcon />}
           onClick={handleGoogleSignUp}
           disabled={
             loading || !!socialLoading || isFetchingInvite || !invitedEmail
           }
-          sx={{ mt: 1, mb: 1 }}
+          sx={{
+            mt: 1,
+            mb: 1,
+            borderColor: '#db4437',
+            color: '#db4437',
+            '&:hover': {
+              borderColor: '#db4437',
+              backgroundColor: 'rgba(219, 68, 55, 0.04)',
+            },
+          }}
         >
           {socialLoading === 'google' ? (
             <CircularProgress size={24} />
@@ -473,13 +481,21 @@ const AcceptOrgManagerInvitationPage: React.FC = () => {
         <Button
           fullWidth
           variant='outlined'
-          color='primary'
           startIcon={<AccountCircleIcon />}
           onClick={handleMicrosoftSignUp}
           disabled={
             loading || !!socialLoading || isFetchingInvite || !invitedEmail
           }
-          sx={{ mt: 1, mb: 2 }}
+          sx={{
+            mt: 1,
+            mb: 2,
+            borderColor: '#0078D4',
+            color: '#0078D4',
+            '&:hover': {
+              borderColor: '#0078D4',
+              backgroundColor: 'rgba(0, 120, 212, 0.04)',
+            },
+          }}
         >
           {socialLoading === 'microsoft' ? (
             <CircularProgress size={24} />

@@ -64,6 +64,13 @@ The current focus is on refactoring UI components for better maintainability and
     - Resolved TypeScript `no-explicit-any` errors in `OrganizationManagerAssignments.tsx` by using the `isAppError` type guard.
   - **Documentation:**
     - Updated `memory-bank/systemPatterns.md` to document the new `assignedOrganizationIds` field in the `admins` collection data model, the new admin callable functions, and the preferred error handling pattern using `isAppError`.
+- **Lost Password Functionality (2025-05-28):**
+  - Created `src/pages/LostPasswordPage.tsx` to allow users to request a password reset email.
+    - The page replicates the styling of `LoginForm.tsx`.
+    - It uses `sendPasswordResetEmail` from Firebase auth.
+    - Provides success and error feedback to the user.
+  - Added a route `/lost-password` in `src/routes.tsx` for the new page.
+  - Added a "Forgot password?" link on `src/components/LoginForm.tsx` navigating to the new page.
 
 ## 3. Next Steps
 

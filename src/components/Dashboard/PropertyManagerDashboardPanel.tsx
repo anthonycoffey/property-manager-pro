@@ -12,9 +12,11 @@ import {
   DialogContent,
   IconButton,
   Container,
+  Stack, // Added Stack
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import CloseIcon from '@mui/icons-material/Close';
+import DomainAddIcon from '@mui/icons-material/DomainAdd'; // Added DomainAddIcon
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../../firebaseConfig';
 import type { Property as PropertyType, Resident } from '../../types'; // Added Resident
@@ -174,9 +176,16 @@ const PropertyManagerDashboardPanel: React.FC<
             mb: 2,
           }}
         >
-          <Typography variant='h4' color='primary'>
-            {organizationName || 'Property Manager Dashboard'}
-          </Typography>
+          <Stack direction='row' alignItems='center'>
+            <DomainAddIcon
+              fontSize='large'
+              color='primary'
+              sx={{ mr: 1 }}
+            />
+            <Typography variant='h4' color='primary'>
+              Property Manager Dashboard
+            </Typography>
+          </Stack>
           <Button
             variant='contained'
             startIcon={<AddIcon />}

@@ -7,8 +7,10 @@ import {
   Tabs,
   Tab,
   Divider,
+  Stack, // Added Stack
 } from '@mui/material'; // Added Divider, Removed Grid
 import { useAuth } from '../../hooks/useAuth';
+import AccountCircleIcon from '@mui/icons-material/AccountCircle'; // Added AccountCircleIcon
 import ApartmentIcon from '@mui/icons-material/Apartment';
 import PersonIcon from '@mui/icons-material/Person';
 import BuildIcon from '@mui/icons-material/Build';
@@ -61,14 +63,16 @@ const ResidentDashboard: React.FC = () => {
   return (
     <Container component='main' maxWidth='lg'>
       <Paper sx={{ p: 2, display: 'flex', flexDirection: 'column' }} elevation={6}>
-        <Typography
-          variant='h4'
-          gutterBottom
-          component='div'
-          sx={{ mb: 2 }}
-        >
-          Welcome, {currentUser.displayName || 'Resident'}!
-        </Typography>
+        <Stack direction='row' alignItems='center' sx={{ mb: 2 }}>
+          <AccountCircleIcon
+            fontSize='large'
+            color='primary'
+            sx={{ mr: 1 }}
+          />
+          <Typography variant='h4' color='primary'>
+            Resident Dashboard
+          </Typography>
+        </Stack>
         <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
           <Tabs
             value={tabValue}

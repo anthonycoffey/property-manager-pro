@@ -114,7 +114,14 @@ const InviteResidentForm: React.FC<InviteResidentFormProps> = ({
           {success}
         </Alert>
       )}
-      <Box sx={{ display: 'flex', gap: 2 }}>
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: { xs: 'column', sm: 'row' },
+          gap: 2,
+          alignItems: { xs: 'stretch', sm: 'center' },
+        }}
+      >
         <TextField
           label='Enter Resident Email'
           type='email'

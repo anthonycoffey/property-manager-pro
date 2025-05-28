@@ -111,7 +111,7 @@ const LoginForm: React.FC = () => {
         elevation={6}
         sx={{
           mt: 8,
-          p: 4,
+          p: 2,
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',

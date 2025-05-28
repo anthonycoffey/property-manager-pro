@@ -4,7 +4,7 @@
 
 The project has recently completed the implementation of the Admin Organization Management Panel, a significant refactoring of all Firebase Cloud Functions, the integration of Google Places API for address autocompletion, and a major RBAC enhancement introducing the Organization Manager role.
 
-*   **Date of this update:** 2025-05-26
+*   **Date of this update:** 2025-05-28
 
 ## 2. What Works / Completed
 
@@ -62,7 +62,6 @@ The project has recently completed the implementation of the Admin Organization 
         *   Sets final custom claims (overwriting any defaults from `processSignUp`).
         *   Creates user profiles directly in the correct multi-tenant Firestore paths (e.g., `organizations/{orgId}/users/{uid}` or `organizations/{orgId}/properties/{propId}/residents/{uid}`).
 *   **Invitation System Implementation (Phase 1 - Backend & Core UI) (2025-05-23):**
-    *   **Documented Plan:** Created `docs/03-invitation-system-plan.md`.
     *   **Documented Plan:** Created `docs/03-invitation-system-plan.md`.
     *   **Cloud Functions (now in `functions/src/callable/`):**
         *   `createInvitation.ts`
@@ -169,6 +168,9 @@ The project has recently completed the implementation of the Admin Organization 
     *   Updated `src/providers/ThemeProvider.tsx` to save the current theme mode (light/dark) to `localStorage`.
     *   The theme now initializes by reading from `localStorage` first, then falling back to system preference if no stored value is found.
     *   User's explicit toggle of the theme mode overrides system preference and is persisted.
+*   **Organization Manager Dashboard Panel Refactor (2025-05-28):**
+    *   Combined the two main `Paper` components in `src/components/Dashboard/OrganizationManagerDashboardPanel.tsx` into a single `Paper` component.
+    *   The `OrgScopedPropertyManagerManagement` component is now rendered within the main `Paper` component, maintaining visual spacing with a `Box` and `marginTop`.
 
 ## 3. What's Left to Build (High-Level from `projectRoadmap.md`)
 
@@ -218,7 +220,6 @@ The remaining application functionality includes:
 
 *   **MUI Grid TypeScript Errors:** Lingering TypeScript errors related to MUI `Grid` component props in `CreatePropertyForm.tsx` might indicate a deeper type configuration issue or linter quirk. Functionality is expected to be unaffected. (No change)
 *   **Placeholder `appName`:** The `appName` in `functions/src/index.ts` (now within `createInvitation.ts`) for email templates is currently a hardcoded placeholder ("Property Manager Pro"). This should ideally be configurable. (No change)
-*   **Placeholder `propertyId` in `InviteResidentForm`:** This has been resolved. The form now uses a dynamic `propertyId` selected by the Property Manager.
 *   **None at this stage.** The "Can't determine Firebase Database URL" error in `processSignUp` has been resolved. The TypeScript error related to `functions.auth` was previously resolved. (No change)
 
 ## 5. Evolution of Project Decisions

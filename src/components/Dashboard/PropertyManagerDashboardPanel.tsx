@@ -164,12 +164,13 @@ const PropertyManagerDashboardPanel: React.FC<
 
   return (
     <Container component='main' maxWidth='lg'>
-      <Paper elevation={3} sx={{ mb: 4, p: 2 }}>
+      <Paper elevation={6} sx={{ mb: 4, p: 2 }}>
         <Box
           sx={{
             display: 'flex',
+            flexDirection: { xs: 'column', sm: 'row' },
             justifyContent: 'space-between',
-            alignItems: 'center',
+            alignItems: { xs: 'flex-start', sm: 'center' },
             mb: 2,
           }}
         >
@@ -180,6 +181,10 @@ const PropertyManagerDashboardPanel: React.FC<
             variant='contained'
             startIcon={<AddIcon />}
             onClick={handleOpenCreatePropertyModal}
+            sx={{
+              width: { xs: '100%', sm: 'auto' },
+              mt: { xs: 2, sm: 0 },
+            }}
           >
             Add Property
           </Button>
@@ -189,6 +194,9 @@ const PropertyManagerDashboardPanel: React.FC<
             value={pmTabValue}
             onChange={handlePmTabChange}
             aria-label='property manager actions tabs'
+            variant='scrollable'
+            scrollButtons='auto'
+            allowScrollButtonsMobile
           >
             <Tab label='Properties' {...a11yProps(0)} />
             <Tab label='Residents' {...a11yProps(1)} />

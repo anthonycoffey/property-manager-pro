@@ -15,14 +15,14 @@ import {
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import { collection, query, getDocs, orderBy, limit, startAfter, type DocumentData, type QueryDocumentSnapshot, Timestamp } from 'firebase/firestore';
-import { db as firestore } from '../../firebaseConfig'; // Assuming db is exported as firestore
+import { db as firestore } from '../../firebaseConfig';
 import type { Resident } from '../../types';
 
 interface PropertyResidentsTableProps {
   organizationId: string;
   propertyId: string | null;
   onEditResident: (resident: Resident) => void;
-  refreshKey?: number; // To allow parent to trigger refresh
+  refreshKey?: number;
 }
 
 const PropertyResidentsTable: React.FC<PropertyResidentsTableProps> = ({ organizationId, propertyId, onEditResident, refreshKey }) => {
@@ -70,28 +70,13 @@ const PropertyResidentsTable: React.FC<PropertyResidentsTableProps> = ({ organiz
       } else if (direction === 'next' && lastVisible) {
         q = query(residentsRef, orderBy('displayName'), startAfter(lastVisible), limit(newRowsPerPage));
       } else if (direction === 'prev' && firstVisible) {
-        // Firestore doesn't directly support "previous page" with startAfter.
-        // A more complex solution or fetching and slicing might be needed for true previous page.
-        // For simplicity, we'll refetch from the beginning of the current effective page.
-        // This is not ideal for performance with large datasets.
-        // A better approach might involve caching or more complex cursor management.
-        const tempCount = await fetchResidentsCount(); // Recalculate total in case it changed
+        const tempCount = await fetchResidentsCount();
         setTotalResidents(tempCount);
-
-        // To go to previous, we effectively re-fetch up to the start of the current page
-        // and then take the last `newRowsPerPage` items. This is inefficient.
-        // A simpler approach for now: reset to page 0 if going back from page 1,
-        // otherwise, this pagination model with startAfter is forward-only.
-        // For this example, we will reset to first page if trying to go back from a page > 0
-        // or rely on the user to use the "first page" button.
-        // This part needs a more robust solution for real-world applications.
-        // For now, we'll just re-fetch the current page based on page number.
         const itemsToSkip = newPage * newRowsPerPage;
         const tempQuery = query(residentsRef, orderBy('displayName'), limit(itemsToSkip + newRowsPerPage));
         const documentSnapshots = await getDocs(tempQuery);
         const allFetchedResidents = documentSnapshots.docs.map(doc => ({ id: doc.id, ...doc.data() } as Resident));
         const pageResidents = allFetchedResidents.slice(itemsToSkip, itemsToSkip + newRowsPerPage);
-        
         setResidents(pageResidents);
         if (documentSnapshots.docs.length > 0) {
             setFirstVisible(documentSnapshots.docs[0]);
@@ -102,14 +87,11 @@ const PropertyResidentsTable: React.FC<PropertyResidentsTableProps> = ({ organiz
         }
         setLoading(false);
         return;
-
       } else {
-         // Fallback to first page if cursors are missing
         const count = await fetchResidentsCount();
         setTotalResidents(count);
         q = query(residentsRef, orderBy('displayName'), limit(newRowsPerPage));
       }
-
 
       const documentSnapshots = await getDocs(q);
       const fetchedResidents = documentSnapshots.docs.map(doc => ({ id: doc.id, ...doc.data() } as Resident));
@@ -135,21 +117,16 @@ const PropertyResidentsTable: React.FC<PropertyResidentsTableProps> = ({ organiz
   }, [organizationId, propertyId, lastVisible, firstVisible, fetchResidentsCount]);
 
   useEffect(() => {
-    setPage(0); // Reset page when propertyId or refreshKey changes
+    setPage(0);
     setLastVisible(null);
     setFirstVisible(null);
     fetchResidents(0, rowsPerPage, 'first');
   }, [propertyId, organizationId, rowsPerPage, fetchResidents, refreshKey]);
 
-
   const handleChangePage = (_event: unknown, newPage: number) => {
     const direction = newPage > page ? 'next' : 'prev';
     setPage(newPage);
-    // Note: True cursor-based pagination for 'prev' is complex.
-    // This implementation will re-fetch based on page number for 'prev' or reset.
     if (direction === 'prev' && newPage < page) {
-         // For simplicity, if going back, we reset to page 0 or fetch the specific page.
-         // True previous page with cursors is harder.
          fetchResidents(newPage, rowsPerPage, newPage === 0 ? 'first' : 'prev');
     } else {
         fetchResidents(newPage, rowsPerPage, direction);

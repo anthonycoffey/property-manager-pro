@@ -2,7 +2,7 @@
 
 ## 1. Current Work Focus
 
-The current focus is on refactoring UI components for better maintainability and readability, starting with the main Dashboard.
+The current focus is on refactoring UI components for better maintainability and readability.
 
 ## 2. Recent Changes & Activities
 
@@ -44,6 +44,9 @@ The current focus is on refactoring UI components for better maintainability and
   - Updated `src/providers/ThemeProvider.tsx` to save and retrieve the selected theme mode (dark/light) from `localStorage`.
   - The theme now initializes from `localStorage` if a preference exists, otherwise defaults to system preference.
   - User's explicit theme choice via the toggle now overrides system preference and is persisted.
+- **Organization Manager Dashboard Panel Refactor (2025-05-28):**
+  - Combined the two main `Paper` components in `src/components/Dashboard/OrganizationManagerDashboardPanel.tsx` into a single `Paper` component.
+  - The `OrgScopedPropertyManagerManagement` component is now rendered within the main `Paper` component, maintaining visual spacing with a `Box` and `marginTop`.
 
 ## 3. Next Steps
 

@@ -167,7 +167,7 @@ const ServiceRequestList: React.FC = () => {
   }
 
   return (
-    <Paper elevation={0} sx={{ mt: 2 }}>
+    <Paper elevation={1} sx={{ mt: 2 }}>
       <Typography variant="h6" gutterBottom>
         Your Service Requests
       </Typography>

@@ -129,20 +129,6 @@ const OrganizationManagementPanel: React.FC = () => {
     fetchOrganizations();
   }, [fetchOrganizations]);
 
-  // Add Modal open/close handlers are removed as it's managed by Dashboard
-  // const handleOpenAddModal = () => {
-  // setIsAddModalOpen(true);
-  // };
-
-  // const handleCloseAddModal = () => {
-  // setIsAddModalOpen(false);
-  // };
-
-  // useImperativeHandle for openAddModal is removed
-  // useImperativeHandle(ref, () => ({
-  // openAddModal: handleOpenAddModal,
-  // }));
-
   const handleOpenEditModal = (org: Organization) => {
     setEditingOrganization(org);
     setIsEditModalOpen(true);
@@ -152,13 +138,6 @@ const OrganizationManagementPanel: React.FC = () => {
     setIsEditModalOpen(false);
     setEditingOrganization(null);
   };
-
-  // const handleOrganizationCreated = (orgId: string) => {
-  //   setSnackbarMessage(`Organization created successfully with ID: ${orgId}`);
-  //   setSnackbarSeverity('success');
-  //   setSnackbarOpen(true);
-  //   fetchOrganizations();
-  // };
 
   const handleOrganizationUpdated = (updatedOrgData: Partial<Organization>) => {
     setSnackbarMessage(
@@ -171,11 +150,6 @@ const OrganizationManagementPanel: React.FC = () => {
     fetchOrganizations();
     handleCloseEditModal();
   };
-
-  // Public method to allow parent to trigger refresh
-  // This might be needed if Dashboard handles creation and needs to tell this panel to update.
-  // For now, we assume a key prop change on this component from Dashboard will handle refresh.
-  // If a more direct refresh is needed, useImperativeHandle could be re-added for this.
 
   const handleDeleteOrganization = async (orgId: string, orgName: string) => {
     if (
@@ -197,9 +171,7 @@ const OrganizationManagementPanel: React.FC = () => {
           setSnackbarSeverity('success');
           fetchOrganizations();
         } else {
-          setSnackbarMessage(
-            data.message || `Failed to delete ${orgName}.`
-          );
+          setSnackbarMessage(data.message || `Failed to delete ${orgName}.`);
           setSnackbarSeverity('error');
         }
       } catch (err: unknown) {
@@ -231,7 +203,6 @@ const OrganizationManagementPanel: React.FC = () => {
 
   return (
     <Box>
-
       {loading && (
         <Box sx={{ display: 'flex', justifyContent: 'center', my: 3 }}>
           <CircularProgress />

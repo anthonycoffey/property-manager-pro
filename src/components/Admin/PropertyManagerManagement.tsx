@@ -532,8 +532,8 @@ const PropertyManagerManagement: React.FC<PropertyManagerManagementProps> = ({
       </Dialog>
       {/* Update PM Dialog */}
       <Dialog open={updatePmDialogOpen} onClose={handleCloseUpdatePmDialog}>
-        <DialogTitle>Update Property Manager</DialogTitle>
-        <DialogContent>
+        <DialogTitle>Edit Property Manager</DialogTitle>
+        <DialogContent dividers>
           <DialogContentText sx={{ mb: 1 }}>
             Modify the details for{' '}
             {selectedPmForUpdate?.displayName || 'this Property Manager'}.
@@ -547,7 +547,7 @@ const PropertyManagerManagement: React.FC<PropertyManagerManagementProps> = ({
             label='Display Name'
             type='text'
             fullWidth
-            variant='standard'
+            variant='outlined'
             value={updatePmForm.displayName}
             onChange={handleUpdatePmFormChange}
             required
@@ -559,7 +559,7 @@ const PropertyManagerManagement: React.FC<PropertyManagerManagementProps> = ({
             label='Email Address'
             type='email'
             fullWidth
-            variant='standard'
+            variant='outlined'
             value={updatePmForm.email}
             onChange={handleUpdatePmFormChange}
             required
@@ -569,10 +569,17 @@ const PropertyManagerManagement: React.FC<PropertyManagerManagementProps> = ({
           <Button
             onClick={handleCloseUpdatePmDialog}
             disabled={updatePmLoading}
+            variant="outlined"
+            color="error"
           >
             Cancel
           </Button>
-          <Button onClick={handleConfirmUpdatePm} disabled={updatePmLoading}>
+          <Button
+            onClick={handleConfirmUpdatePm}
+            disabled={updatePmLoading}
+            variant="contained"
+            color="primary"
+          >
             {updatePmLoading ? <CircularProgress size={20} /> : 'Update'}
           </Button>
         </DialogActions>

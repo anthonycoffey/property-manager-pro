@@ -54,6 +54,9 @@ export const createServiceRequest = createServiceRequestFunction;
 import { updateResidentDetailsByPm as updateResidentDetailsByPmFunction } from './callable/updateResidentDetailsByPm.js';
 export const updateResidentDetailsByPm = updateResidentDetailsByPmFunction;
 
+import { updateResidentDetails as updateResidentDetailsFunction } from './callable/updateResidentDetails.js'; // New export
+export const updateResidentDetails = updateResidentDetailsFunction; // New export
+
 import { addOrganizationToManager as addOrganizationToManagerFunction } from './callable/addOrganizationToManager.js';
 export const addOrganizationToManager = addOrganizationToManagerFunction;
 

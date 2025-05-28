@@ -18,12 +18,14 @@ import {
   InputLabel,
   Stack,
 } from '@mui/material';
-import parse from 'autosuggest-highlight/parse';
+import parse from 'autosuggest-highlight/parse'; // Not used if MUI Autocomplete handles rendering
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import { debounce } from '@mui/material/utils';
 
 export interface CreatePropertyFormProps {
+  organizationId: string; // Now required
   onSuccess?: () => void;
+  onCancel?: () => void; // New prop
 }
 
 interface PropertyAddress {
@@ -36,7 +38,9 @@ interface PropertyAddress {
 const LIBRARIES_PLACES: 'places'[] = ['places'];
 
 const CreatePropertyForm: React.FC<CreatePropertyFormProps> = ({
+  organizationId, // Use this prop
   onSuccess,
+  onCancel, // Use this prop
 }) => {
   const [propertyName, setPropertyName] = useState('');
   const [propertyType, setPropertyType] = useState('');
@@ -57,14 +61,10 @@ const CreatePropertyForm: React.FC<CreatePropertyFormProps> = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const {
-    currentUser,
-    roles: userRoles,
-    organizationId: userOrgId,
-  } = useAuth();
+  const { currentUser } = useAuth(); // Removed roles and userOrgId, will use passed prop
 
-  const functions = getFunctions();
-  const createPropertyFn = httpsCallable(functions, 'createProperty');
+  const functionsInstance = getFunctions(); // Renamed to avoid conflict with firebase.functions
+  const createPropertyFn = httpsCallable(functionsInstance, 'createProperty');
   const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
 
   const { isLoaded, loadError } = useJsApiLoader({
@@ -219,8 +219,15 @@ const CreatePropertyForm: React.FC<CreatePropertyFormProps> = ({
     setError(null);
     setSuccess(null);
 
-    if (!currentUser || !userRoles.includes('property_manager') || !userOrgId) {
-      setError('Permission denied or organization information missing.');
+    // Permission check might be handled by the parent component (Admin/PM panel)
+    // Or, if this form is also used by PMs directly, we might need to check roles.
+    // For now, assume the parent (Admin panel) ensures the user has rights for the given organizationId.
+    if (!currentUser) {
+      setError('Authentication required.');
+      return;
+    }
+    if (!organizationId) {
+      setError('Organization ID is missing.');
       return;
     }
 
@@ -245,12 +252,12 @@ const CreatePropertyForm: React.FC<CreatePropertyFormProps> = ({
         propertyName,
         propertyType,
         address: {
-          // Send full address object
           street: address.street,
           city: address.city,
           state: address.state,
           zip: address.zip,
         },
+        organizationId: organizationId, // Pass the organizationId to the Cloud Function
       });
 
       const responseData = result.data as CreatePropertyResponse;
@@ -277,13 +284,9 @@ const CreatePropertyForm: React.FC<CreatePropertyFormProps> = ({
     }
   };
 
-  if (!currentUser || !userRoles.includes('property_manager')) {
-    return (
-      <Alert severity='error'>
-        You do not have permission to access this feature.
-      </Alert>
-    );
-  }
+  // Removed the direct permission check based on userRoles.includes('property_manager')
+  // This form will now rely on the parent component to ensure it's rendered for authorized users
+  // and with a valid organizationId.
 
   if (loadError) {
     console.error('Google Maps API load error:', loadError);
@@ -306,7 +309,7 @@ const CreatePropertyForm: React.FC<CreatePropertyFormProps> = ({
   }
 
   return (
-    <Box component='form' onSubmit={handleSubmit} sx={{ maxWidth: '600px' }}>
+    <Box component='form' onSubmit={handleSubmit}>
       {error && (
         <Alert severity='error' sx={{ mb: 2 }}>
           {error}
@@ -477,16 +480,27 @@ const CreatePropertyForm: React.FC<CreatePropertyFormProps> = ({
         </Box>
       )}
 
-      <Stack>
+      <Stack direction="row" spacing={2} sx={{ mt: 3 }}>
         <Button
           type='submit'
           variant='contained'
           color='primary'
           disabled={loading || !isLoaded}
-          sx={{ mt: 3 }}
+          // sx={{ mt: 3, mr: 1 }} // Adjusted by Stack spacing
         >
           {loading ? <CircularProgress size={24} /> : 'Add Property'}
         </Button>
+        {onCancel && (
+          <Button
+            variant='outlined'
+            color='error'
+            onClick={onCancel}
+            disabled={loading}
+            // sx={{ mt: 3 }} // Adjusted by Stack spacing
+          >
+            Cancel
+          </Button>
+        )}
       </Stack>
     </Box>
   );

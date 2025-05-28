@@ -38,6 +38,7 @@ interface EditPropertyModalProps {
   onClose: () => void;
   propertyData: Property | null;
   onSuccess: () => void;
+  organizationId?: string; // Optional: for Admin/OM to specify target org
 }
 
 interface PlaceType {
@@ -60,8 +61,9 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
   onClose,
   propertyData,
   onSuccess,
+  organizationId: propOrganizationId, // New prop
 }) => {
-  const { currentUser, organizationId: userOrganizationId } = useAuth();
+  const { currentUser, organizationId: authUserOrganizationId } = useAuth(); // Auth org for PM fallback
   const [name, setName] = useState('');
   const [propertyType, setPropertyType] = useState('');
   const [address, setAddress] = useState<FullPropertyAddress>({
@@ -274,9 +276,11 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
     event.preventDefault();
     setError(null);
 
-    if (!propertyData || !currentUser || !userOrganizationId) {
-      setError('Property data or user information is missing.');
-      setSnackbarMessage('Property data or user information is missing.');
+    const targetOrganizationId = propOrganizationId || authUserOrganizationId;
+
+    if (!propertyData || !currentUser || !targetOrganizationId) {
+      setError('Property data, user, or organization information is missing.');
+      setSnackbarMessage('Property data, user, or organization information is missing.');
       setSnackbarSeverity('error');
       setSnackbarOpen(true);
       return;
@@ -333,7 +337,7 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
     const updatePropertyFunction = httpsCallable(functions, 'updateProperty');
     try {
       await updatePropertyFunction({
-        organizationId: userOrganizationId,
+        organizationId: targetOrganizationId, // Use determined targetOrganizationId
         propertyId: propertyData.id,
         updatedData: updatedPropertyDetails,
       });

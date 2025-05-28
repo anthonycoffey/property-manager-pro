@@ -15,12 +15,14 @@ export interface InviteResidentFormProps {
   propertyId: string;
   propertyName?: string;
   organizationId: string;
+  onInvitationSent?: () => void; // New callback
 }
 
 const InviteResidentForm: React.FC<InviteResidentFormProps> = ({
   propertyId,
   propertyName,
   organizationId,
+  onInvitationSent, // New callback
 }) => {
   const [inviteeEmail, setInviteeEmail] = useState('');
   const [loading, setLoading] = useState(false);
@@ -36,12 +38,17 @@ const InviteResidentForm: React.FC<InviteResidentFormProps> = ({
     setError(null);
     setSuccess(null);
 
-    if (
-      !currentUser ||
-      !userRoles.includes('property_manager') ||
-      !organizationId
-    ) {
-      setError('Permission denied or organization context missing.');
+    let inviterRole = '';
+    if (userRoles.includes('admin')) {
+      inviterRole = 'admin';
+    } else if (userRoles.includes('organization_manager')) {
+      inviterRole = 'organization_manager';
+    } else if (userRoles.includes('property_manager')) {
+      inviterRole = 'property_manager';
+    }
+
+    if (!currentUser || !inviterRole || !organizationId) {
+      setError('Permission denied, unrecognized role, or organization context missing.');
       return;
     }
 
@@ -59,19 +66,23 @@ const InviteResidentForm: React.FC<InviteResidentFormProps> = ({
     try {
       const result = await createInvitationFn({
         inviteeEmail,
-        organizationIds: [organizationId],
+        organizationIds: [organizationId], // For residents, this is the org they belong to
         rolesToAssign: ['resident'],
-        invitedByRole: 'property_manager',
+        invitedByRole: inviterRole, // Dynamic role
         targetPropertyId: propertyId,
+        // No need to pass inviterName explicitly if the template can use auth user's display name
       });
 
       const responseData = result.data as CreateInvitationResponse;
 
       if (responseData?.success) {
         setSuccess(
-          `Invitation sent successfully to ${inviteeEmail} for ${propertyName}.`
+          `Invitation sent successfully to ${inviteeEmail} for ${propertyName || 'the selected property'}.`
         );
         setInviteeEmail('');
+        if (onInvitationSent) {
+          onInvitationSent(); // Call the callback
+        }
       } else {
         setError(responseData?.message || 'Failed to send invitation.');
       }
@@ -84,10 +95,12 @@ const InviteResidentForm: React.FC<InviteResidentFormProps> = ({
     }
   };
 
-  if (!currentUser || !userRoles.includes('property_manager')) {
+  const canInvite = userRoles.includes('property_manager') || userRoles.includes('organization_manager') || userRoles.includes('admin');
+
+  if (!currentUser || !canInvite) {
     return (
       <Alert severity='error'>
-        You do not have permission to access this feature.
+        You do not have permission to invite residents.
       </Alert>
     );
   }

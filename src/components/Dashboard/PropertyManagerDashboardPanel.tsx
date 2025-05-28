@@ -177,11 +177,7 @@ const PropertyManagerDashboardPanel: React.FC<
           }}
         >
           <Stack direction='row' alignItems='center'>
-            <DomainAddIcon
-              fontSize='large'
-              color='primary'
-              sx={{ mr: 1 }}
-            />
+            <DomainAddIcon fontSize='large' color='primary' sx={{ mr: 1 }} />
             <Typography variant='h4' color='primary'>
               {organizationName} Dashboard
             </Typography>
@@ -283,7 +279,12 @@ const PropertyManagerDashboardPanel: React.FC<
             </IconButton>
           </DialogTitle>
           <DialogContent dividers>
-            <CreatePropertyForm onSuccess={handlePropertyCreated} />
+            {organizationId && (
+              <CreatePropertyForm
+                onSuccess={handlePropertyCreated}
+                organizationId={organizationId}
+              />
+            )}
           </DialogContent>
         </Dialog>
 

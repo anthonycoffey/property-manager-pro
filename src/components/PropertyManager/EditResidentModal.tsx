@@ -228,7 +228,7 @@ const EditResidentModal: React.FC<EditResidentModalProps> = ({
 
     const updateResidentFunction = httpsCallable(
       functions,
-      'updateResidentDetailsByPm'
+      'updateResidentDetails' // Call the new general function
     );
     try {
       await updateResidentFunction({

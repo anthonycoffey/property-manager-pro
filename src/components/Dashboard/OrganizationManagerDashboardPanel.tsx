@@ -13,16 +13,54 @@ import {
   Alert,
   type SelectChangeEvent,
   Container,
-  Stack, // Added Stack
+  Stack,
+  Tabs, // Added Tabs
+  Tab,  // Added Tab
+  Divider, // Added Divider
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
-import AdminPanelSettings from '@mui/icons-material/AdminPanelSettings'; // Changed to AdminPanelSettings
+import AdminPanelSettings from '@mui/icons-material/AdminPanelSettings';
 import { useAuth } from '../../hooks/useAuth';
 import OrgScopedPropertyManagerManagement from '../OrganizationManager/OrgScopedPropertyManagerManagement';
 import AddOrganizationModal from '../Admin/AddOrganizationModal';
+import OrganizationPropertiesList from '../Admin/OrganizationPropertiesList';
+import CreatePropertyForm from '../PropertyManager/CreatePropertyForm';
+import EditPropertyModal from '../PropertyManager/EditPropertyModal';
+import PropertyResidentsTable from '../PropertyManager/PropertyResidentsTable'; // Added
+import InviteResidentForm from '../PropertyManager/InviteResidentForm';     // Added
+import EditResidentModal from '../PropertyManager/EditResidentModal';       // Added
 import { db } from '../../firebaseConfig';
 import { collection, query, where, getDocs } from 'firebase/firestore';
-import type { Organization, AppError } from '../../types';
+import type { Organization, AppError, Property as PropertyType, Resident as ResidentType } from '../../types'; // Added ResidentType
+
+interface TabPanelProps {
+  children?: React.ReactNode;
+  index: number;
+  value: number;
+}
+
+function TabPanel(props: TabPanelProps) {
+  const { children, value, index, ...other } = props;
+
+  return (
+    <div
+      role="tabpanel"
+      hidden={value !== index}
+      id={`om-tabpanel-${index}`}
+      aria-labelledby={`om-tab-${index}`}
+      {...other}
+    >
+      {value === index && <Box sx={{ p: 3 }}>{children}</Box>}
+    </div>
+  );
+}
+
+function a11yProps(index: number) {
+  return {
+    id: `om-tab-${index}`,
+    'aria-controls': `om-tabpanel-${index}`,
+  };
+}
 
 interface OrganizationManagerDashboardPanelProps {
   orgIds: string[] | null | undefined;
@@ -36,7 +74,22 @@ const OrganizationManagerDashboardPanel: React.FC<
   const [selectedOrgId, setSelectedOrgId] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<AppError | null>(null);
+  
   const [isAddOrgModalOpen, setIsAddOrgModalOpen] = useState(false);
+  // Property Modals
+  const [isCreatePropertyModalOpen, setIsCreatePropertyModalOpen] = useState(false);
+  const [isEditPropertyModalOpen, setIsEditPropertyModalOpen] = useState(false);
+  const [propertyToEdit, setPropertyToEdit] = useState<PropertyType | null>(null);
+  // Residents Modals & State
+  const [isManageResidentsModalOpen, setIsManageResidentsModalOpen] = useState(false);
+  const [propertyForResidents, setPropertyForResidents] = useState<PropertyType | null>(null);
+  const [isEditResidentModalOpen, setIsEditResidentModalOpen] = useState(false);
+  const [residentToEdit, setResidentToEdit] = useState<ResidentType | null>(null);
+  const [refreshResidentsListKey, setRefreshResidentsListKey] = useState(0);
+  
+  const [refreshPropertiesListKey, setRefreshPropertiesListKey] = useState(0);
+  const [tabValue, setTabValue] = useState(0); 
+
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error'>(
@@ -116,12 +169,92 @@ const OrganizationManagerDashboardPanel: React.FC<
   const handleOpenAddOrgModal = () => setIsAddOrgModalOpen(true);
   const handleCloseAddOrgModal = () => setIsAddOrgModalOpen(false);
 
+  const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
+    setTabValue(newValue);
+  };
+
+  const handleOpenCreatePropertyModal = () => {
+    setIsCreatePropertyModalOpen(true);
+  };
+
+  const handleCloseCreatePropertyModal = () => {
+    setIsCreatePropertyModalOpen(false);
+  };
+
+  const handlePropertyCreated = () => {
+    setSnackbarMessage('Property created successfully!');
+    setSnackbarSeverity('success');
+    setSnackbarOpen(true);
+    setIsCreatePropertyModalOpen(false);
+    setRefreshPropertiesListKey(prev => prev + 1);
+  };
+
+  const handleOpenEditPropertyModal = (property: PropertyType) => {
+    setPropertyToEdit(property);
+    setIsEditPropertyModalOpen(true);
+  };
+
+  const handleCloseEditPropertyModal = () => {
+    setPropertyToEdit(null);
+    setIsEditPropertyModalOpen(false);
+  };
+
+  const handlePropertyUpdated = () => {
+    setSnackbarMessage('Property updated successfully!');
+    setSnackbarSeverity('success');
+    setSnackbarOpen(true);
+    setIsEditPropertyModalOpen(false);
+    setPropertyToEdit(null);
+    setRefreshPropertiesListKey(prev => prev + 1);
+  };
+
+  // Resident Management Handlers (similar to AdminDashboardPanel)
+  const handleManageResidents = (property: PropertyType) => {
+    setPropertyForResidents(property);
+    setIsManageResidentsModalOpen(true);
+  };
+
+  const handleCloseManageResidentsModal = () => {
+    setIsManageResidentsModalOpen(false);
+    setPropertyForResidents(null);
+  };
+
+  const handleOpenEditResidentModal = (resident: ResidentType) => {
+    setResidentToEdit(resident);
+    setIsEditResidentModalOpen(true);
+  };
+
+  const handleCloseEditResidentModal = () => {
+    setResidentToEdit(null);
+    setIsEditResidentModalOpen(false);
+  };
+  
+  const handleResidentInvited = () => {
+    setSnackbarMessage('Resident invited successfully!');
+    setSnackbarSeverity('success');
+    setSnackbarOpen(true);
+    setRefreshResidentsListKey(prev => prev + 1);
+  };
+
+  const handleResidentUpdated = () => {
+    setSnackbarMessage('Resident updated successfully!');
+    setSnackbarSeverity('success');
+    setSnackbarOpen(true);
+    setIsEditResidentModalOpen(false);
+    setResidentToEdit(null);
+    setRefreshResidentsListKey(prev => prev + 1);
+  };
+
+  const handlePropertiesUpdate = () => {
+    setRefreshPropertiesListKey(prev => prev + 1);
+  };
+
   const handleAddOrgSuccess = () => {
     handleCloseAddOrgModal();
     setSnackbarMessage('Organization created successfully!');
     setSnackbarSeverity('success');
     setSnackbarOpen(true);
-    fetchOrganizations(); // Re-fetch organizations to include the new one
+    fetchOrganizations(); 
   };
 
   const handleSnackbarClose = (
@@ -163,7 +296,7 @@ const OrganizationManagerDashboardPanel: React.FC<
 
   return (
     <Container component='main' maxWidth='lg'>
-      <Paper sx={{ p: 2 }} elevation={6}>
+      <Paper sx={{ p: 2, mb: 4 }} elevation={6}>
         <Box
           sx={{
             display: 'flex',
@@ -221,18 +354,59 @@ const OrganizationManagerDashboardPanel: React.FC<
           </FormControl>
         )}
         {selectedOrganization && (
-          <Alert severity='info' sx={{ mt: 1 }}>
+          <Alert severity='info' sx={{ mt: 1, mb: 2 }}>
             Managing Organization: {selectedOrganization.name}
           </Alert>
         )}
 
         {selectedOrgId && selectedOrganization && (
-          <Box sx={{ marginTop: 2 }}>
-            <OrgScopedPropertyManagerManagement
-              organizationId={selectedOrgId}
-              organizationCreatedBy={selectedOrganization?.createdBy || null}
-            />
-          </Box>
+          <>
+            <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
+              <Tabs
+                value={tabValue}
+                onChange={handleTabChange}
+                aria-label="organization manager actions tabs"
+                variant="scrollable"
+                scrollButtons="auto"
+                allowScrollButtonsMobile
+              >
+                <Tab label="Property Managers" {...a11yProps(0)} />
+                <Tab label="Properties & Residents" {...a11yProps(1)} />
+              </Tabs>
+            </Box>
+            <TabPanel value={tabValue} index={0}>
+              <OrgScopedPropertyManagerManagement
+                organizationId={selectedOrgId}
+                organizationCreatedBy={selectedOrganization?.createdBy || null}
+              />
+            </TabPanel>
+            <TabPanel value={tabValue} index={1}>
+              <Button
+                variant="contained"
+                startIcon={<AddIcon />}
+                onClick={handleOpenCreatePropertyModal}
+                sx={{ mb: 2 }}
+                disabled={!selectedOrgId}
+              >
+                Create Property
+              </Button>
+              <OrganizationPropertiesList
+                key={refreshPropertiesListKey}
+                organizationId={selectedOrgId}
+                onEditProperty={handleOpenEditPropertyModal}
+                onManageResidents={handleManageResidents} // Should now align as handleManageResidents expects PropertyType
+                onPropertiesUpdate={handlePropertiesUpdate}
+              />
+            </TabPanel>
+          </>
+        )}
+         {!selectedOrgId && organizations.length > 0 && (
+          <Typography sx={{p:2}}>Please select an organization to manage.</Typography>
+        )}
+        {organizations.length === 0 && !loading && (
+            <Typography sx={{p:2}}>
+                You are not currently managing any organizations. You can create one using the "Add Organization" button.
+            </Typography>
         )}
       </Paper>
 
@@ -241,6 +415,70 @@ const OrganizationManagerDashboardPanel: React.FC<
         onClose={handleCloseAddOrgModal}
         onOrganizationCreated={handleAddOrgSuccess}
       />
+
+      {selectedOrgId && (
+        <AddOrganizationModal
+          open={isCreatePropertyModalOpen}
+          onClose={handleCloseCreatePropertyModal}
+          title="Create New Property"
+        >
+          <CreatePropertyForm
+            organizationId={selectedOrgId}
+            onSuccess={handlePropertyCreated}
+            onCancel={handleCloseCreatePropertyModal}
+          />
+        </AddOrganizationModal>
+      )}
+
+      {propertyToEdit && selectedOrgId && (
+        <EditPropertyModal
+          propertyData={propertyToEdit}
+          organizationId={selectedOrgId} // Pass organizationId
+          open={isEditPropertyModalOpen}
+          onClose={handleCloseEditPropertyModal}
+          onSuccess={handlePropertyUpdated}
+        />
+      )}
+
+      {/* Modal for Managing Residents for OM */}
+      {propertyForResidents && selectedOrgId && (
+        <AddOrganizationModal
+          open={isManageResidentsModalOpen}
+          onClose={handleCloseManageResidentsModal}
+          title={`Residents for Property: ${propertyForResidents.name}`}
+        >
+          <Box>
+            <Typography variant="h6" gutterBottom>Invite New Resident</Typography>
+            <InviteResidentForm
+              organizationId={selectedOrgId}
+              propertyId={propertyForResidents.id}
+              propertyName={propertyForResidents.name}
+              onInvitationSent={handleResidentInvited}
+            />
+            <Divider sx={{my: 2}} />
+            <Typography variant="h6" gutterBottom>Current Residents</Typography>
+            <PropertyResidentsTable
+              key={refreshResidentsListKey}
+              organizationId={selectedOrgId}
+              propertyId={propertyForResidents.id}
+              onEditResident={handleOpenEditResidentModal}
+              refreshKey={refreshResidentsListKey}
+            />
+          </Box>
+        </AddOrganizationModal>
+      )}
+
+      {residentToEdit && selectedOrgId && propertyForResidents && (
+        <EditResidentModal
+          open={isEditResidentModalOpen}
+          onClose={handleCloseEditResidentModal}
+          residentData={residentToEdit}
+          organizationId={selectedOrgId}
+          propertyId={propertyForResidents.id}
+          onSuccess={handleResidentUpdated}
+        />
+      )}
+
       <Snackbar
         open={snackbarOpen}
         autoHideDuration={6000}

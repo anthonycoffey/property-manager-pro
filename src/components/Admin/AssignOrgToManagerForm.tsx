@@ -3,7 +3,7 @@ import { httpsCallable } from 'firebase/functions';
 import { useAuth } from '../../hooks/useAuth';
 import { db, functions } from '../../firebaseConfig';
 import {
-  collectionGroup,
+  collection,
   query,
   where,
   getDocs,
@@ -68,18 +68,14 @@ const AssignOrgToManagerForm: React.FC = () => {
 
       const fetchOrgManagers = async () => {
         try {
-          const usersCollectionGroup = collectionGroup(db, 'admins');
-          const q = query(
-            usersCollectionGroup,
-            where(
-              'roles',
-              'array-contains',
-              'organization_manager'
-            ),
+            const usersCollection = collection(db, 'admins');
+            const q = query(
+            usersCollection,
+            where('roles', 'array-contains', 'organization_manager'),
             orderBy('displayName', 'asc')
-          );
-          const querySnapshot = await getDocs(q);
-          const managers: OrgManager[] = [];
+            );
+            const querySnapshot = await getDocs(q);
+            const managers: OrgManager[] = [];
           querySnapshot.forEach((doc: DocumentData) => {
             if (!managers.find((m) => m.id === doc.id)) {
               managers.push({

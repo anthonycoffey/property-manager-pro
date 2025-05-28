@@ -59,7 +59,7 @@ const InviteResidentForm: React.FC<InviteResidentFormProps> = ({
     try {
       const result = await createInvitationFn({
         inviteeEmail,
-        organizationId: organizationId,
+        organizationIds: [organizationId],
         rolesToAssign: ['resident'],
         invitedByRole: 'property_manager',
         targetPropertyId: propertyId,

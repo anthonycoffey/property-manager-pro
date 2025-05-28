@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Button } from '@mui/material';
+import { IconButton } from '@mui/material';
+import LogoutIcon from '@mui/icons-material/Logout';
 import { signOut } from 'firebase/auth';
 import { auth } from '../firebaseConfig'; // Assuming firebaseConfig.ts exports 'auth'
 import { isAppError } from '../utils/errorUtils';
@@ -28,17 +29,12 @@ const LogoutButton: React.FC = () => {
   };
 
   return (
-    <Button
-      variant="contained"
-      color="secondary"
-      onClick={handleLogout}
-      disabled={loading}
-    >
-      Logout
+    <IconButton color="inherit" onClick={handleLogout} disabled={loading} aria-label="logout">
+      <LogoutIcon />
       {error && (
-        <span style={{ marginLeft: '8px', color: 'red' }}>{error}</span>
+        <span style={{ marginLeft: '8px', color: 'red' }}>{error}</span> 
       )}
-    </Button>
+    </IconButton>
   );
 };
 

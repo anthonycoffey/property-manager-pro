@@ -64,11 +64,11 @@ export const themeConfig: ThemeConfigValues = {
       contrastText: '#FFFFFF',
     },
     secondary: {
-      lighter: '#EFD6FF',
-      light: '#C684FF',
-      main: '#8E33FF',
-      dark: '#5119B7',
-      darker: '#27097A',
+      lighter: '#CFD8DC', 
+      light: '#90A4AE',   
+      main: '#607D8B',    
+      dark: '#455A64',    
+      darker: '#263238',  
       contrastText: '#FFFFFF',
     },
     info: {

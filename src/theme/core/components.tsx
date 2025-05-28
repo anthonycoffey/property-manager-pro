@@ -53,7 +53,7 @@ const MuiCard: Components<Theme>['MuiCard'] = {
       position: 'relative', // material-kit-react
       // theme.customShadows should be available if types are augmented correctly
       boxShadow: theme.customShadows?.card || 'none', // Fallback for customShadows
-      borderRadius: theme.shape.borderRadius * 2, // material-kit-react
+      borderRadius: theme.shape.borderRadius, // Reduced from * 2
     }),
   },
 };

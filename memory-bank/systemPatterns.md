@@ -45,14 +45,14 @@ The application employs a modern web architecture with a React-based frontend an
     *   A new root `globalInvitations` collection is introduced for Organization Manager invitations. These invitations can specify multiple organizations, a single organization, or no organizations for initial assignment.
 
     *   **1. `admins` (Root Collection)**
-        *   Purpose: Stores profile data for Super Administrators (distinct from their Firebase Auth record).
-        *   Document ID: `{adminAuthUid}` (Firebase Auth UID)
+        *   Purpose: Stores primary profile data for Super Administrators (e.g., `roles: ["admin"]`) and Organization Managers (e.g., `roles: ["organization_manager"]`). These profiles are distinct from their Firebase Auth record and are used for system-level identification of these roles, for instance, when listing all Organization Managers for assignment.
+        *   Document ID: `{userAuthUid}` (Firebase Auth UID of the admin or organization_manager)
         *   Fields:
             *   `displayName: string`
             *   `email: string` (matches auth email)
-            *   `roles: ["admin"]` (string array, mirrors claim for consistency)
+            *   `roles: string[]` (e.g., `["admin"]` or `["organization_manager"]`, mirrors claim for consistency)
             *   `createdAt: timestamp`
-            *   *(Other super_admin specific profile data)*
+            *   *(Other role-specific profile data)*
 
     *   **2. `organizations` (Root Collection)**
         *   Purpose: Represents each tenant (e.g., a Property Management company). Can be created by `admin` or `organization_manager`.

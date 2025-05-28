@@ -23,6 +23,7 @@ import {
 } from '@mui/material';
 // AddOrganizationModal will be handled by the parent (Dashboard)
 import EditOrganizationModal from './EditOrganizationModal';
+import DeleteOrganizationDialog from './DeleteOrganizationDialog'; // Added import
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import {
@@ -61,6 +62,8 @@ const OrganizationManagementPanel: React.FC = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingOrganization, setEditingOrganization] =
     useState<Organization | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false); // Added state
+  const [deletingOrgInfo, setDeletingOrgInfo] = useState<{ id: string; name: string } | null>(null); // Added state
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [loading, setLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState<Record<string, boolean>>(
@@ -151,43 +154,51 @@ const OrganizationManagementPanel: React.FC = () => {
     handleCloseEditModal();
   };
 
-  const handleDeleteOrganization = async (orgId: string, orgName: string) => {
-    if (
-      window.confirm(
-        `Are you sure you want to DELETE organization "${orgName}"? This action is permanent and cannot be undone.`
-      )
-    ) {
-      setActionLoading((prev) => ({ ...prev, [orgId]: true }));
-      setError(null);
-      try {
-        const result = await deleteOrganizationCallable({
-          organizationId: orgId,
-        });
-        const data = result.data as { success: boolean; message: string };
-        if (data.success) {
-          setSnackbarMessage(
-            data.message || `Organization ${orgName} deleted successfully.`
-          );
-          setSnackbarSeverity('success');
-          fetchOrganizations();
-        } else {
-          setSnackbarMessage(data.message || `Failed to delete ${orgName}.`);
-          setSnackbarSeverity('error');
-        }
-      } catch (err: unknown) {
-        console.error('Error deleting organization:', err);
-        if (err instanceof Error) {
-          setSnackbarMessage(err.message || `Failed to delete ${orgName}.`);
-        } else {
-          setSnackbarMessage(
-            `An unexpected error occurred while deleting ${orgName}.`
-          );
-        }
+  const handleOpenDeleteDialog = (orgId: string, orgName: string) => {
+    setDeletingOrgInfo({ id: orgId, name: orgName });
+    setIsDeleteDialogOpen(true);
+  };
+
+  const executeDeleteOrganization = async () => {
+    if (!deletingOrgInfo) return;
+
+    setActionLoading((prev) => ({ ...prev, [deletingOrgInfo.id]: true }));
+    setError(null);
+    try {
+      const result = await deleteOrganizationCallable({
+        organizationId: deletingOrgInfo.id,
+      });
+      const data = result.data as { success: boolean; message: string };
+      if (data.success) {
+        setSnackbarMessage(
+          data.message ||
+            `Organization ${deletingOrgInfo.name} deleted successfully.`
+        );
+        setSnackbarSeverity('success');
+        fetchOrganizations();
+      } else {
+        setSnackbarMessage(
+          data.message || `Failed to delete ${deletingOrgInfo.name}.`
+        );
         setSnackbarSeverity('error');
-      } finally {
-        setActionLoading((prev) => ({ ...prev, [orgId]: false }));
-        setSnackbarOpen(true);
       }
+    } catch (err: unknown) {
+      console.error('Error deleting organization:', err);
+      if (err instanceof Error) {
+        setSnackbarMessage(
+          err.message || `Failed to delete ${deletingOrgInfo.name}.`
+        );
+      } else {
+        setSnackbarMessage(
+          `An unexpected error occurred while deleting ${deletingOrgInfo.name}.`
+        );
+      }
+      setSnackbarSeverity('error');
+    } finally {
+      setActionLoading((prev) => ({ ...prev, [deletingOrgInfo.id]: false }));
+      setSnackbarOpen(true);
+      setIsDeleteDialogOpen(false);
+      setDeletingOrgInfo(null);
     }
   };
 
@@ -279,7 +290,7 @@ const OrganizationManagementPanel: React.FC = () => {
                       <EditIcon />
                     </IconButton>
                     <IconButton
-                      onClick={() => handleDeleteOrganization(org.id, org.name)}
+                      onClick={() => handleOpenDeleteDialog(org.id, org.name)}
                       color='error'
                       disabled={actionLoading[org.id]}
                     >
@@ -309,6 +320,18 @@ const OrganizationManagementPanel: React.FC = () => {
           onClose={handleCloseEditModal}
           organization={editingOrganization}
           onOrganizationUpdated={handleOrganizationUpdated}
+        />
+      )}
+
+      {deletingOrgInfo && (
+        <DeleteOrganizationDialog
+          open={isDeleteDialogOpen}
+          onClose={() => {
+            setIsDeleteDialogOpen(false);
+            setDeletingOrgInfo(null);
+          }}
+          onConfirm={executeDeleteOrganization}
+          organizationName={deletingOrgInfo.name}
         />
       )}
 

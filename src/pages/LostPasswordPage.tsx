@@ -8,7 +8,7 @@ import {
   Paper,
   Avatar,
 } from '@mui/material';
-import { useNavigate, Link as RouterLink } from 'react-router-dom';
+import { Link as RouterLink } from 'react-router-dom';
 import PMPLogo from '/property-manager-pro.svg';
 import PMPLogoLight from '/property-manager-pro-light.svg';
 import { useThemeMode } from '../hooks/useThemeMode';
@@ -21,7 +21,6 @@ const LostPasswordPage: React.FC = () => {
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
   const { mode } = useThemeMode();
 
   const handlePasswordReset = async (e: React.FormEvent) => {

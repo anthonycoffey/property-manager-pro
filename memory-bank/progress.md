@@ -165,6 +165,10 @@ The project has recently completed the implementation of the Admin Organization 
     *   Resolved a TypeScript error related to the `organizationId` prop in `Dashboard.tsx`.
 *   **Firestore Rules Update (2025-05-25):**
     *   Modified `firestore.rules` to allow residents to read the specific property document (`/organizations/{orgId}/properties/{propId}`) they are associated with, based on their custom claims.
+*   **Theme Persistence in localStorage (2025-05-27):**
+    *   Updated `src/providers/ThemeProvider.tsx` to save the current theme mode (light/dark) to `localStorage`.
+    *   The theme now initializes by reading from `localStorage` first, then falling back to system preference if no stored value is found.
+    *   User's explicit toggle of the theme mode overrides system preference and is persisted.
 
 ## 3. What's Left to Build (High-Level from `projectRoadmap.md`)
 

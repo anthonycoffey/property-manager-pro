@@ -40,6 +40,10 @@ The current focus is on refactoring UI components for better maintainability and
 - **Firestore Rules Update (2025-05-25):**
   - Modified `firestore.rules` to allow residents to read the specific property document they belong to.
   - Added `allow read: if isResident() && isPropertyResident(organizationId, propertyId);` to the `match /organizations/{organizationId}/properties/{propertyId}` rule block.
+- **Theme Persistence (2025-05-27):**
+  - Updated `src/providers/ThemeProvider.tsx` to save and retrieve the selected theme mode (dark/light) from `localStorage`.
+  - The theme now initializes from `localStorage` if a preference exists, otherwise defaults to system preference.
+  - User's explicit theme choice via the toggle now overrides system preference and is persisted.
 
 ## 3. Next Steps
 

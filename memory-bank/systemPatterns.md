@@ -157,6 +157,7 @@ The application employs a modern web architecture with a React-based frontend an
     *   `createOrganization` function now allows `organization_manager` role to create organizations and auto-assigns them.
 *   **State Management Strategy:**
     *   **Global State (React Context):** For broadly shared, less frequently updated data (e.g., authenticated user object, theme settings).
+        *   Theme settings (`mode`: 'light' or 'dark') are persisted to `localStorage` to remember user preference across sessions. The system preference (`prefers-color-scheme`) is used as a fallback if no `localStorage` value is set.
     *   **Local/Feature State (React Hooks):** For more complex, dynamic, or localized state within specific features or component trees.
 *   **Data Fetching:**
     *   **Client-Side:** Primarily using the standard Fetch API

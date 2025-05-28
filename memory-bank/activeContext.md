@@ -16,17 +16,11 @@ The current focus is on refactoring UI components for better maintainability and
     - Parsed `place.addressComponents` to populate form state for street, city, state (short code), and zip.
   - Ensured the `VITE_GOOGLE_MAPS_API_KEY` environment variable is used and its importance documented.
   - Addressed TypeScript errors related to the new API and potential null values.
-- **Create Property Form Simplification (2025-05-25):**
-  - Modified `src/components/PropertyManager/CreatePropertyForm.tsx`:
-    - Removed City, State, and Zip Code fields from the form.
-    - Renamed the "Street Address" label to "Address".
-    - The `PropertyAddress` interface and state now only manage the `street` field.
-    - The Google Places Autocomplete (`PlaceAutocompleteElement`) is still used for address input, but the form now only captures and sends the full street address.
-  - Updated `functions/src/callable/createProperty.ts`:
-    - The Cloud Function now expects an `address` object containing only `{ street: string }`.
-    - Validation updated to reflect this.
-    - The property document in Firestore will now store `address: { street: "..." }`, simplifying the stored address structure for new properties. This is a change to the previously defined data model in `systemPatterns.md`.
-  - Updated `memory-bank/systemPatterns.md` to reflect the change in the property's `address` object structure in Firestore.
+- **Property Address Creation Fix (2025-05-27):**
+  - Corrected an issue where new properties were saved with `undefined` city, state, and zip.
+  - The `functions/src/callable/createProperty.ts` Cloud Function was updated to correctly process and store the full address object (`street`, `city`, `state`, `zip`) sent by `src/components/PropertyManager/CreatePropertyForm.tsx`.
+  - This ensures consistency in address data between property creation and editing.
+  - The `memory-bank/systemPatterns.md` already reflected the correct full address structure, so no changes were needed there.
 - **Google Places Autocomplete Styling and UX (2025-05-25):**
   - Improved the input styling of the `PlaceAutocompleteElement` in `src/components/PropertyManager/CreatePropertyForm.tsx` and `src/components/PropertyManager/EditPropertyModal.tsx` to more closely match standard MUI `TextField` components, using `theme` variables for consistency.
   - Addressed the z-index issue of the autocomplete suggestions dropdown (`.pac-container`) by adding a global style in `src/index.css` to ensure it appears above MUI modals.
@@ -60,10 +54,8 @@ The current focus is on refactoring UI components for better maintainability and
 
 ## 4. Active Decisions & Considerations
 
-- **Property Address Data Model Change (New Decision 2025-05-25):**
-  - The `CreatePropertyForm.tsx` has been simplified to only capture the street address.
-  - Consequently, the `createProperty.ts` Cloud Function now only expects and stores the `street` in the `address` object for new properties in Firestore (`address: { street: "..." }`).
-  - This simplifies the address data for properties but means city, state, and zip are no longer stored for newly created properties. This change has been documented in `systemPatterns.md`.
+- **Property Address Data Consistency (Decision 2025-05-27):**
+  - Ensured that the `createProperty.ts` Cloud Function saves the full address (street, city, state, zip) as provided by the `CreatePropertyForm.tsx`. This aligns creation logic with edit logic and resolves issues with incomplete address data for new properties.
 - **Google Places Autocomplete Styling (New Decision 2025-05-25):**
   - The input field for the `PlaceAutocompleteElement` in property forms will be styled using `theme` variables to align its appearance (font, padding, colors, borders) with standard MUI `TextFields`.
   - The suggestions dropdown (`.pac-container`) will have its `z-index` globally increased via `src/index.css` to ensure it displays correctly over modal dialogs.

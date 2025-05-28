@@ -31,14 +31,17 @@ export const createProperty = onCall(async (request) => {
     throw new HttpsError('permission-denied', 'User does not have permission to create properties.');
   }
 
-  // Address is now expected to be an object like { street: "123 Main St" }
+  // Address is expected to be an object like { street: "123 Main St", city: "Anytown", state: "CA", zip: "90210" }
   if (
     !propertyName ||
     !propertyType ||
     !address ||
-    typeof address.street !== 'string' || !address.street
+    typeof address.street !== 'string' || !address.street ||
+    typeof address.city !== 'string' || !address.city ||
+    typeof address.state !== 'string' || !address.state ||
+    typeof address.zip !== 'string' || !address.zip
   ) {
-    throw new HttpsError('invalid-argument', 'Missing required fields: propertyName, propertyType, and a valid address object with street.');
+    throw new HttpsError('invalid-argument', 'Missing required fields: propertyName, propertyType, and a valid address object with street, city, state, and zip.');
   }
 
   try {
@@ -48,8 +51,11 @@ export const createProperty = onCall(async (request) => {
     const propertyData = {
       id: newPropertyRef.id,
       name: propertyName,
-      address: { // Storing only the street address
+      address: {
         street: address.street,
+        city: address.city,
+        state: address.state,
+        zip: address.zip,
       },
       type: propertyType,
       organizationId: operationOrgId,

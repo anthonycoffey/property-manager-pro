@@ -129,7 +129,7 @@ const DemoPage: React.FC = () => {
             <Typography gutterBottom>Slider</Typography>
             <Slider
               value={sliderValue}
-              onChange={(e, newValue) => setSliderValue(newValue as number)}
+              onChange={(_event, newValue) => setSliderValue(newValue as number)}
               aria-labelledby="input-slider"
               valueLabelDisplay="auto"
             />
@@ -149,7 +149,7 @@ const DemoPage: React.FC = () => {
             <Rating
               name="simple-controlled"
               value={ratingValue}
-              onChange={(event, newValue) => {
+              onChange={(_event, newValue) => {
                 setRatingValue(newValue);
               }}
               emptyIcon={<StarIcon style={{ opacity: 0.55 }} fontSize="inherit" />}

@@ -17,10 +17,9 @@ The project has recently completed the implementation of the Admin Organization 
 *   **Phase 1: Firebase Project Setup & Initial Firestore Structure:**
     *   Confirmed Firebase project initialization and Firestore enablement.
 *   **Phase 2: Firebase Authentication & Custom Claims:**
-    *   **Updated `processSignUp` Cloud Function (`functions/src/auth/processSignUp.ts`):**
-        *   Migrated from a blocking `beforeUserCreated` trigger to a non-blocking `functions.auth.user().onCreate` (1st gen) trigger.
-        *   Implemented custom claims logic:
-            *   For admin users (`*@24hrcarunlocking.com`): sets `roles: ['admin']` and creates a profile in `admins/{uid}`.
+    *   **Updated `processSignUp` Cloud Function (`functions/src/auth/processSignUp.ts`) (Behavior Clarified 2025-05-27):**
+        *   This `onCreate` auth trigger correctly identifies Super Admin users (based on email domain/list), sets their `roles: ['admin']` custom claim, and creates their profile in the `admins` Firestore collection.
+        *   For all other non-Super-Admin users, this function *intentionally does not* set any default custom claims or create Firestore profiles. It defers all claim-setting and profile creation for invited users to the specific callable invitation functions to prevent race conditions. This supersedes previous notes about it setting `pending_association` roles.
     *   Updated `src/hooks/useAuth.ts` and `src/providers/AuthProvider.tsx` to fetch and expose custom claims, including `organizationIds` for multi-org roles.
 *   **RBAC Enhancement (Super Admin & Organization Manager - 2025-05-26):**
     *   Clarified existing `admin` role as "Super Admin" with global system access.
@@ -55,11 +54,11 @@ The project has recently completed the implementation of the Admin Organization 
     *   The fix involved refactoring `AuthProvider.tsx` to use a two-stage `useEffect` approach for robust management of loading and user authentication states.
     *   `ProtectedRoute.tsx` was restored to its full functionality.
 *   **Multi-Tenancy Sign-Up Logic Refined (2025-05-24):**
-    *   **`processSignUp` Cloud Function (`functions/src/auth/processSignUp.ts`):**
-        *   Admin users (`*@24hrcarunlocking.com`) get `admin` roles and profiles in `admins/{uid}`.
-        *   Other direct sign-ups get `pending_association` roles; **no Firestore profile is created by this function.**
+    *   **`processSignUp` Cloud Function (`functions/src/auth/processSignUp.ts`) (Behavior Clarified 2025-05-27):**
+        *   Super Admin users (`*@24hrcarunlocking.com` or specific emails) get `admin` roles and profiles in `admins/{uid}`.
+        *   For all other users (including direct sign-ups not matching admin criteria), **no Firestore profile is created by this function, and no default claims are set.** This task is deferred to invitation-specific functions.
     *   **`signUpWithInvitation` HTTPS Callable Cloud Function (`functions/src/callable/signUpWithInvitation.ts`):**
-        *   Remains the authority for invited user sign-ups.
+        *   Remains the authority for invited user sign-ups (PM, Resident, and can handle OM if called by generic page).
         *   Sets final custom claims (overwriting any defaults from `processSignUp`).
         *   Creates user profiles directly in the correct multi-tenant Firestore paths (e.g., `organizations/{orgId}/users/{uid}` or `organizations/{orgId}/properties/{propId}/residents/{uid}`).
 *   **Invitation System Implementation (Phase 1 - Backend & Core UI) (2025-05-23):**
@@ -229,20 +228,17 @@ The remaining application functionality includes:
 *   **2025-05-23:** Switched `processSignUp` to non-blocking `onCreate`, removed token refresh, replaced logger.
 *   **2025-05-23 (Auth Race Condition):** Fixed in `AuthProvider.tsx`.
 *   **2025-05-24 (User Onboarding Logic Refinement):**
-    *   **`processSignUp.ts` (`auth.onCreate` trigger):**
-        *   Handles admin user creation (`*@24hrcarunlocking.com`): sets `admin` role, creates profile in `admins/{uid}`.
-        *   Handles other direct sign-ups: sets `pending_association` role. **No Firestore document is created by this function for these users.**
-        *   The check for `organizationId` claim was removed as it was ineffective due to execution order.
-    *   **`signUpWithInvitation.ts` (callable function):**
-        *   Manages all invited user sign-ups (email/password and social).
-        *   Sets final custom claims (e.g., `property_manager`, `resident`, `organizationId`, `propertyId`), overwriting any defaults from `processSignUp`.
-        *   Creates user profiles directly in the correct multi-tenant Firestore paths.
+    *   **`processSignUp.ts` (`auth.onCreate` trigger) (Behavior Clarified 2025-05-27):**
+        *   Handles Super Admin user creation (`*@24hrcarunlocking.com` or specific emails): sets `admin` role, creates profile in `admins/{uid}`.
+        *   For all other users (including direct sign-ups not matching admin criteria): **No default claims are set, and no Firestore document is created by this function.** This is to ensure invitation-specific functions are the source of truth for claims and profiles for invited users, preventing race conditions.
+        *   Previous notes about `processSignUp.ts` setting `pending_association` roles or checking for `organizationId` claims to prevent overwrites are now superseded by its current simpler, deferring behavior for non-admins.
+    *   **`signUpWithInvitation.ts` and `signUpWithOrgManagerInvitation.ts` (callable functions):**
+        *   These functions manage all invited user sign-ups (email/password and social).
+        *   They set the final, definitive custom claims (e.g., `property_manager`, `resident`, `organization_manager`, and associated `organizationId(s)`, `propertyId`).
+        *   They create user profiles directly in the correct multi-tenant Firestore paths (and `admins` collection for OMs via `signUpWithOrgManagerInvitation.ts`).
     *   **Firestore Rules (`firestore.rules`):**
-        *   Removed rules for the root `/users` collection as it's no longer used.
-    *   This addresses the issue where invited Property Managers were incorrectly getting `pending_association` roles due to the execution order of the `onCreate` trigger and the callable invitation function.
-*   **2025-05-24 (Custom Claim Overwrite Prevention):**
-    *   Modified `processSignUp.ts` to check for an existing `organizationId` custom claim on a user before applying its default `pending_association` claim.
-    *   If `organizationId` is present, `processSignUp.ts` will not modify the user's claims, preserving claims set by `signUpWithInvitation.ts`. This resolves the issue where invitation-specific claims (e.g., for residents) were being overwritten.
+        *   Rules for the root `/users` collection were previously removed as it's no longer used for pending profiles. This remains correct.
+    *   This refined understanding clarifies that the invitation callable functions are solely responsible for setting up non-Super-Admin users, and `processSignUp.ts` only handles Super Admins, simplifying the logic and avoiding claim conflicts.
 *   **2025-05-24 (Admin PM Management Overhaul):** Implemented as per `docs/04-admin-pm-management-plan.md`.
 *   **2025-05-25 (Create Property Form Simplification):**
     *   Removed City, State, Zip from `CreatePropertyForm.tsx`.
@@ -284,6 +280,11 @@ The remaining application functionality includes:
     *   **`createOrganization.ts` Cloud Function:**
         *   Now allows users with the `organization_manager` role to create organizations.
         *   If an OM creates an organization, they are auto-assigned: claims updated with new org ID, and their profile is created in the new organization's `users` subcollection.
+*   **Clarification of Invitation Sign-Up Cloud Functions (2025-05-27):**
+    *   Analyzed `functions/src/callable/signUpWithInvitation.ts` and `functions/src/callable/signUpWithOrgManagerInvitation.ts`.
+    *   Confirmed that `signUpWithInvitation.ts` is a general handler. While it can process Organization Manager invitations from `globalInvitations` (setting claims and creating profiles in `organizations/{orgId}/users/`), it crucially does *not* create the OM's profile in the root `admins` collection.
+    *   Confirmed that `signUpWithOrgManagerInvitation.ts` is specific to Organization Manager invitations and its key distinct function is creating/merging the OM's profile in the root `admins/{uid}` collection, which is essential for Super Admin management. It also handles org-specific profiles if initial organizations are assigned.
+    *   This reinforces that both functions serve distinct, necessary purposes, with `signUpWithOrgManagerInvitation.ts` being vital for the complete OM onboarding process, including their `admins` profile. The frontend likely uses `AcceptOrgManagerInvitationPage.tsx` to call this specific function.
 
 ## 6. Immediate Next Steps
 

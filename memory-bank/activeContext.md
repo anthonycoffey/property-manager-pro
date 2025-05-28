@@ -105,3 +105,16 @@ The current focus is on refactoring UI components for better maintainability and
   - Clarified that Organization Manager profiles (users with `roles: ["organization_manager"]`) are stored in the root `admins` collection, alongside Super Admins, not in `organizations/{orgId}/users/` as previously assumed for their primary listing.
   - The Firestore query in `src/components/Admin/AssignOrgToManagerForm.tsx` to list these managers was successfully fixed by changing `collectionGroup(db, 'admins')` to `collection(db, 'admins')`. This more specific query against the root collection resolved the "no matching allow statements" error, working correctly with existing security rules and indexes.
   - `memory-bank/systemPatterns.md` has been updated to reflect this data model for Organization Managers.
+
+- **Clarification of Invitation Sign-Up Cloud Functions (2025-05-27):**
+  - Analyzed `functions/src/callable/signUpWithInvitation.ts` and `functions/src/callable/signUpWithOrgManagerInvitation.ts`.
+  - `signUpWithInvitation.ts` is a general handler for various roles. It can process Organization Manager invitations from `globalInvitations` and set claims/create profiles in `organizations/{orgId}/users/`. However, it does *not* create a profile for the OM in the root `admins` collection.
+  - `signUpWithOrgManagerInvitation.ts` is specific to Organization Manager invitations. Its key distinct function is creating/merging the OM's profile in the root `admins/{uid}` collection, which is essential for Super Admin management. It also creates profiles in `organizations/{orgId}/users/` if initial organizations are assigned.
+  - This confirms both functions serve distinct purposes, with `signUpWithOrgManagerInvitation.ts` being critical for the complete OM onboarding process including their `admins` profile. The frontend likely uses `AcceptOrgManagerInvitationPage.tsx` to call this specific function.
+
+- **Analysis of `processSignUp.ts` Auth Trigger (2025-05-27):**
+  - Reviewed `functions/src/auth/processSignUp.ts`.
+  - This `onCreate` Firebase Auth trigger correctly identifies Super Admin users (based on email domain/list) and sets their `roles: ['admin']` custom claim and creates their profile in the `admins` Firestore collection.
+  - Crucially, for all other non-Super-Admin users, this function *intentionally does not* set any default custom claims (like `pending_association`) or create any Firestore profiles.
+  - It defers all claim-setting and profile creation for invited users (Organization Managers, Property Managers, Residents) to the specific callable invitation functions (`signUpWithInvitation.ts`, `signUpWithOrgManagerInvitation.ts`). This is a deliberate design to prevent race conditions and ensure the invitation flows are the source of truth for these users' setup.
+  - This clarifies that any previous understanding of `processSignUp.ts` setting default roles like `pending_association` for non-admin direct sign-ups is outdated by the current implementation.

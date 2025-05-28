@@ -68,9 +68,28 @@ export const addOrganizationToManager = onCall(async (request) => {
         `User ${userId} (${userRecord.email}) assigned to new organization ${newOrganizationId}. New claims: ${JSON.stringify(newClaims)}`
       );
 
-      // Optionally, create a reference in the new organization's user list if desired,
-      // but the claim is the source of truth for access.
-      // For now, we rely on the claim.
+      // Update the admins collection as well for denormalization
+      const adminProfileRef = db.collection('admins').doc(userId);
+      await adminProfileRef.update({
+        assignedOrganizationIds: updatedOrganizationIds,
+      });
+      console.log(
+        `Admin profile for user ${userId} updated with new organization ${newOrganizationId}.`
+      );
+      
+      // Create/update the user's profile in the specific organization's users subcollection
+      const orgUserProfileRef = db.doc(`organizations/${newOrganizationId}/users/${userId}`);
+      await orgUserProfileRef.set({
+        uid: userId,
+        email: userRecord.email,
+        displayName: userRecord.displayName || '',
+        organizationId: newOrganizationId,
+        organizationRoles: ['organization_manager'],
+        status: 'active',
+        // createdAt: FieldValue.serverTimestamp(), // Consider if this should be set only on first creation
+      }, { merge: true });
+      console.log(`User profile for ${userId} created/updated in organizations/${newOrganizationId}/users.`);
+
 
       return {
         success: true,

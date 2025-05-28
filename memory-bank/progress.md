@@ -171,6 +171,22 @@ The project has recently completed the implementation of the Admin Organization 
 *   **Organization Manager Dashboard Panel Refactor (2025-05-28):**
     *   Combined the two main `Paper` components in `src/components/Dashboard/OrganizationManagerDashboardPanel.tsx` into a single `Paper` component.
     *   The `OrgScopedPropertyManagerManagement` component is now rendered within the main `Paper` component, maintaining visual spacing with a `Box` and `marginTop`.
+*   **Admin Organization Manager Assignment Feature (2025-05-28):**
+    *   **Backend Cloud Functions:**
+        *   Updated `signUpWithOrgManagerInvitation.ts`, `addOrganizationToManager.ts`, and `createOrganization.ts` to denormalize and store an `assignedOrganizationIds: string[]` field in the Organization Manager's profile within the root `admins` collection. This array mirrors their custom claims.
+        *   Created `assignOrganizationToManagerAdmin.ts`: Callable function for Super Admins to assign an organization to an OM. Updates claims, the `admins` profile (`assignedOrganizationIds`), and the OM's profile in the target organization's `users` subcollection. Includes admin role verification.
+        *   Created `unassignOrganizationFromManagerAdmin.ts`: Callable function for Super Admins to unassign an organization from an OM. Updates claims, the `admins` profile (`assignedOrganizationIds`), and deletes the OM's profile from the unassigned organization's `users` subcollection. Includes admin role verification.
+        *   Exported these new functions in `index.ts`.
+        *   Resolved `no-else-return` ESLint issues in the new Cloud Functions.
+    *   **Frontend UI (`src/components/Admin/OrganizationManagerAssignments.tsx`):**
+        *   Created a new component to display a table of Organization Managers.
+        *   Shows managed organizations as deletable MUI Chips (triggers `unassignOrganizationFromManagerAdmin`).
+        *   Provides a button to open a modal for assigning new organizations (triggers `assignOrganizationToManagerAdmin`).
+        *   Integrated this component into the "Organization Managers" tab of `AdminDashboardPanel.tsx`.
+        *   Addressed TypeScript `no-explicit-any` errors using the `isAppError` type guard.
+    *   **Memory Bank Documentation:**
+        *   Updated `systemPatterns.md` to include the `assignedOrganizationIds` field in the `admins` data model, details of the new admin callable functions, and the established error handling pattern (`isAppError`).
+        *   Updated `activeContext.md` with these changes.
 
 ## 3. What's Left to Build (High-Level from `projectRoadmap.md`)
 
@@ -181,8 +197,8 @@ The remaining application functionality includes:
     *   Organization Management (CRUD - Add, List, Edit, Deactivate implemented).
     *   Organization Managers Management:
         *   Invite new `organization_manager` (Initial form `InviteOrganizationManagerForm` implemented).
-        *   Assign existing `organization_manager` to additional organizations (Initial UI `AssignOrgToManagerForm` implemented; backend function `addOrganizationToManager` created. User selector in form is a TODO for enhancement).
-        *   View/List `organization_manager` users (Pending).
+        *   Assign existing `organization_manager` to additional organizations (Initial UI `AssignOrgToManagerForm` implemented; backend function `addOrganizationToManager` created and updated for denormalization. User selector in form is a TODO for enhancement).
+        *   View/List `organization_manager` users and manage their specific organization assignments (Implemented via `OrganizationManagerAssignments.tsx`).
     *   Property Managers Management (by selected Org - Core UI for listing, editing, deleting, and revoking invites is complete).
     *   Properties Management (by selected Org - CRUD - Pending).
     *   Residents Management (by selected Org - View, Edit, Delete for support - Pending).

@@ -52,6 +52,7 @@ The application employs a modern web architecture with a React-based frontend an
             *   `email: string` (matches auth email)
             *   `roles: string[]` (e.g., `["admin"]` or `["organization_manager"]`, mirrors claim for consistency)
             *   `createdAt: timestamp`
+            *   `assignedOrganizationIds?: string[]` (For OMs, denormalized list of org IDs they manage, mirrors claims)
             *   *(Other role-specific profile data)*
 
     *   **2. `organizations` (Root Collection)**
@@ -222,3 +223,49 @@ The application employs a modern web architecture with a React-based frontend an
 *   **Modular Design:** Separating concerns between frontend components, backend functions, and database rules promotes maintainability.
 *   **Server Components:** Help manage complexity by co-locating data fetching with rendering logic for certain views.
 *   **Clear Data Models:** A well-defined Firestore schema is crucial for long-term maintainability.
+
+## 5. Error Handling Patterns
+
+*   **Standardized Error Object:**
+    *   The `AppError` interface, defined in `src/types/index.ts`, provides a standard structure for error objects within the application:
+        ```typescript
+        export interface AppError {
+          message: string;
+          code?: string; // Firebase errors often have a 'code' property
+        }
+        ```
+    *   This promotes consistency in how errors are represented and handled. Firebase `HttpsError` instances generally conform to this by providing `message` and `code` properties.
+
+*   **Type-Safe Error Catching:**
+    *   To safely handle errors of `unknown` type in `catch` blocks and access their properties (like `message`), the `isAppError` type guard from `src/utils/errorUtils.ts` is used.
+        ```typescript
+        // src/utils/errorUtils.ts
+        import type { AppError } from '../types';
+
+        export function isAppError(error: unknown): error is AppError {
+          return (
+            typeof error === 'object' &&
+            error !== null &&
+            'message' in error &&
+            typeof (error as AppError).message === 'string'
+          );
+        }
+        ```
+    *   **Usage Example:**
+        ```typescript
+        import { isAppError } from '../../utils/errorUtils'; // Adjust path as needed
+
+        try {
+          // Code that might throw an error
+        } catch (err: unknown) {
+          console.error("Operation failed:", err);
+          let errorMessage = "An unexpected error occurred.";
+          if (isAppError(err)) {
+            errorMessage = err.message; 
+            // Optionally use err.code if needed
+          }
+          // Display errorMessage to the user (e.g., via Snackbar)
+          // setSnackbar({ message: errorMessage, severity: 'error' });
+        }
+        ```
+    *   This pattern ensures that `err.message` is accessed only when `err` is confirmed to be an `AppError`, preventing runtime errors and satisfying TypeScript's type checking, particularly the `@typescript-eslint/no-explicit-any` rule.

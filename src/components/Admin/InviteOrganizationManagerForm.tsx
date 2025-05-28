@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'; // Added useEffect
+import React, { useState, useEffect } from 'react';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { useAuth } from '../../hooks/useAuth';
 import type { CreateInvitationResponse, AppError } from '../../types';
@@ -8,14 +8,25 @@ import Button from '@mui/material/Button';
 import Box from '@mui/material/Box';
 import CircularProgress from '@mui/material/CircularProgress';
 import Alert from '@mui/material/Alert';
-import { Stack, Typography, FormControl, InputLabel, Select, MenuItem, OutlinedInput, Chip } from '@mui/material';
-import type { SelectChangeEvent } from '@mui/material'; // Type-only import
+import {
+  Stack,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  OutlinedInput,
+  Chip,
+} from '@mui/material';
+import type { SelectChangeEvent } from '@mui/material';
 import { PersonAdd } from '@mui/icons-material';
-// OrganizationSelector will not be used directly for multi-select. We'll fetch organizations here.
 import { db } from '../../firebaseConfig';
-import { collection, onSnapshot, query, QueryDocumentSnapshot } from 'firebase/firestore';
-import type { DocumentData } from 'firebase/firestore'; // Type-only import
-
+import {
+  collection,
+  onSnapshot,
+  query,
+  QueryDocumentSnapshot,
+} from 'firebase/firestore';
+import type { DocumentData } from 'firebase/firestore';
 
 interface Organization {
   id: string;
@@ -25,7 +36,7 @@ interface Organization {
 const InviteOrganizationManagerForm: React.FC = () => {
   const [inviteeName, setInviteeName] = useState('');
   const [inviteeEmail, setInviteeEmail] = useState('');
-  const [selectedOrgIds, setSelectedOrgIds] = useState<string[]>([]); // Changed to array for multi-select
+  const [selectedOrgIds, setSelectedOrgIds] = useState<string[]>([]);
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [orgLoading, setOrgLoading] = useState<boolean>(true);
   const [orgError, setOrgError] = useState<string | null>(null);
@@ -69,9 +80,9 @@ const InviteOrganizationManagerForm: React.FC = () => {
     } = event;
     setSelectedOrgIds(
       // On autofill we get a stringified value.
-      typeof value === 'string' ? value.split(',') : value,
+      typeof value === 'string' ? value.split(',') : value
     );
-    setError(null); 
+    setError(null);
     setSuccess(null);
   };
 
@@ -86,7 +97,7 @@ const InviteOrganizationManagerForm: React.FC = () => {
     }
 
     // Organization IDs are now optional for inviting an Organization Manager
-    
+
     if (!inviteeEmail) {
       setError('Email is required.');
       return;
@@ -120,7 +131,9 @@ const InviteOrganizationManagerForm: React.FC = () => {
       if (responseData?.success) {
         let successMessage = `Invitation sent successfully to ${inviteeEmail}.`;
         if (selectedOrgIds.length > 0) {
-          const orgNames = selectedOrgIds.map(id => organizations.find(o => o.id === id)?.name || id).join(', ');
+          const orgNames = selectedOrgIds
+            .map((id) => organizations.find((o) => o.id === id)?.name || id)
+            .join(', ');
           successMessage += ` They have been invited to manage organization(s): ${orgNames}.`;
         } else {
           successMessage += ` They can be assigned to an organization later.`;
@@ -151,13 +164,7 @@ const InviteOrganizationManagerForm: React.FC = () => {
 
   return (
     <Box component='form' onSubmit={handleSubmit} sx={{ mt: 2 }}>
-      {/* "Enter New Organization Manager's Details:" Typography removed */}
-      
-      <Stack
-        direction={{ xs: 'column', sm: 'row' }}
-        spacing={2}
-        sx={{ mb: 2 }}
-      >
+      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
         <TextField
           label='Organization Manager Name'
           value={inviteeName}
@@ -177,28 +184,33 @@ const InviteOrganizationManagerForm: React.FC = () => {
           disabled={loading}
         />
       </Stack>
-      
-      {/* "Select Organization for New Manager:" Typography removed */}
-      {/* OrganizationSelector moved below Name and Email, and is now optional */}
-      <Typography variant='subtitle2' gutterBottom sx={{ color: 'text.secondary', fontStyle: 'italic', mt: 2 }}>
-        Assign to Organization(s) (Optional):
-      </Typography>
+
       {orgLoading && <CircularProgress size={24} />}
-      {orgError && <Alert severity="error">{orgError}</Alert>}
+      {orgError && <Alert severity='error'>{orgError}</Alert>}
       {!orgLoading && !orgError && (
-        <FormControl fullWidth margin="normal">
-          <InputLabel id="organization-multiselect-label">Organizations</InputLabel>
+        <FormControl fullWidth margin='normal'>
+          <InputLabel id='organization-multiselect-label'>
+            Organizations
+          </InputLabel>
           <Select
-            labelId="organization-multiselect-label"
-            id="organization-multiselect"
+            labelId='organization-multiselect-label'
+            id='organization-multiselect'
             multiple
             value={selectedOrgIds}
             onChange={handleOrganizationChange}
-            input={<OutlinedInput id="select-multiple-chip" label="Organizations" />}
+            input={
+              <OutlinedInput id='select-multiple-chip' label='Organizations' />
+            }
             renderValue={(selected) => (
               <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
                 {(selected as string[]).map((value) => (
-                  <Chip key={value} label={organizations.find(org => org.id === value)?.name || value} />
+                  <Chip
+                    key={value}
+                    label={
+                      organizations.find((org) => org.id === value)?.name ||
+                      value
+                    }
+                  />
                 ))}
               </Box>
             )}

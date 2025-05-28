@@ -67,5 +67,11 @@ export const getOrgManagerInvitationDetails = getOrgManagerInvitationDetailsFunc
 import { signUpWithOrgManagerInvitation as signUpWithOrgManagerInvitationFunction } from './callable/signUpWithOrgManagerInvitation.js';
 export const signUpWithOrgManagerInvitation = signUpWithOrgManagerInvitationFunction;
 
+import { assignOrganizationToManagerAdmin as assignOrganizationToManagerAdminFunction } from './callable/assignOrganizationToManagerAdmin.js';
+export const assignOrganizationToManagerAdmin = assignOrganizationToManagerAdminFunction;
+
+import { unassignOrganizationFromManagerAdmin as unassignOrganizationFromManagerAdminFunction } from './callable/unassignOrganizationFromManagerAdmin.js';
+export const unassignOrganizationFromManagerAdmin = unassignOrganizationFromManagerAdminFunction;
+
 // Note: The firebaseAdmin.ts and handleHttpsError.ts are not directly exported
 // as they are internal modules used by the functions themselves.

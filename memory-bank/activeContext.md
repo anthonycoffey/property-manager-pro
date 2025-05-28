@@ -47,6 +47,23 @@ The current focus is on refactoring UI components for better maintainability and
 - **Organization Manager Dashboard Panel Refactor (2025-05-28):**
   - Combined the two main `Paper` components in `src/components/Dashboard/OrganizationManagerDashboardPanel.tsx` into a single `Paper` component.
   - The `OrgScopedPropertyManagerManagement` component is now rendered within the main `Paper` component, maintaining visual spacing with a `Box` and `marginTop`.
+- **Admin Organization Manager Assignment Feature (2025-05-28):**
+  - **Backend:**
+    - Updated `functions/src/callable/signUpWithOrgManagerInvitation.ts`, `addOrganizationToManager.ts`, and `createOrganization.ts` to denormalize and store an `assignedOrganizationIds: string[]` field in the Organization Manager's profile within the root `admins` collection. This array mirrors their custom claims and facilitates easier querying for the admin panel.
+    - Created `functions/src/callable/assignOrganizationToManagerAdmin.ts`: Allows Super Admins to assign an organization to an OM. Updates claims, the `admins` profile (`assignedOrganizationIds`), and the OM's profile in the target organization's `users` subcollection.
+    - Created `functions/src/callable/unassignOrganizationFromManagerAdmin.ts`: Allows Super Admins to unassign an organization from an OM. Updates claims, the `admins` profile (`assignedOrganizationIds`), and deletes the OM's profile from the unassigned organization's `users` subcollection.
+    - Both new functions include admin role verification.
+    - Exported new functions in `functions/src/index.ts`.
+    - Resolved `no-else-return` ESLint issues in these new functions.
+  - **Frontend:**
+    - Created `src/components/Admin/OrganizationManagerAssignments.tsx`:
+      - Displays a table of OMs with their managed organizations (as chips).
+      - Allows unassigning orgs via chip delete action (calls `unassignOrganizationFromManagerAdmin`).
+      - Allows assigning orgs via a modal (calls `assignOrganizationToManagerAdmin`).
+    - Integrated this component into `src/components/Dashboard/AdminDashboardPanel.tsx`.
+    - Resolved TypeScript `no-explicit-any` errors in `OrganizationManagerAssignments.tsx` by using the `isAppError` type guard.
+  - **Documentation:**
+    - Updated `memory-bank/systemPatterns.md` to document the new `assignedOrganizationIds` field in the `admins` collection data model, the new admin callable functions, and the preferred error handling pattern using `isAppError`.
 
 ## 3. Next Steps
 
@@ -91,11 +108,20 @@ The current focus is on refactoring UI components for better maintainability and
     - Updated to fetch `organization_manager` invitations from `globalInvitations`.
     - Sets the `organizationIds` custom claim based on the `organizationIds` array from the invitation (or an empty array if none).
     - Creates user profiles in each specified organization if `organizationIds` were provided in the invitation.
+    - **Denormalization:** Ensures `assignedOrganizationIds` in the OM's `admins` profile is updated.
   - **`createOrganization` Cloud Function (`functions/src/callable/createOrganization.ts`):**
     - Permissions updated to allow users with the `organization_manager` role (in addition to `admin`) to create new organizations.
     - If an `organization_manager` creates an organization, they are automatically assigned to it:
         - Their `organizationIds` custom claim is updated with the new organization's ID.
         - Their user profile is created within the new organization's `users` subcollection.
+        - **Denormalization:** Ensures `assignedOrganizationIds` in the OM's `admins` profile is updated.
+  - **`addOrganizationToManager` Cloud Function (`functions/src/callable/addOrganizationToManager.ts`):**
+    - When an admin assigns an existing OM to an organization, this function updates their claims.
+    - **Denormalization:** Ensures `assignedOrganizationIds` in the OM's `admins` profile is updated, and their profile is created/updated in the target organization's `users` subcollection.
+- **Error Handling Pattern (New Decision 2025-05-28):**
+  - Use `catch (err: unknown)` for error handling.
+  - Employ the `isAppError` type guard (from `src/utils/errorUtils.ts`) along with the `AppError` interface (`src/types/index.ts`) to safely access error messages and codes.
+  - This pattern is documented in `memory-bank/systemPatterns.md`.
 
 ## 5. ImportantPatterns & Preferences
 

@@ -183,7 +183,7 @@ const PropertyManagerDashboardPanel: React.FC<
               sx={{ mr: 1 }}
             />
             <Typography variant='h4' color='primary'>
-              Property Manager Dashboard
+              {organizationName} Dashboard
             </Typography>
           </Stack>
           <Button

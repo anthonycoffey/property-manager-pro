@@ -229,6 +229,13 @@ const LoginForm: React.FC = () => {
             </Typography>
           </RouterLink>
         </Typography>
+        <Typography variant='body2' sx={{ mt: 1, textAlign: 'center' }}>
+          <RouterLink to='/lost-password' style={{ textDecoration: 'none' }}>
+            <Typography component='span' color='primary'>
+              Forgot password?
+            </Typography>
+          </RouterLink>
+        </Typography>
       </Paper>
     </Container>
   );

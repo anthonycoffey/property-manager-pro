@@ -187,6 +187,10 @@ The project has recently completed the implementation of the Admin Organization 
     *   **Memory Bank Documentation:**
         *   Updated `systemPatterns.md` to include the `assignedOrganizationIds` field in the `admins` data model, details of the new admin callable functions, and the established error handling pattern (`isAppError`).
         *   Updated `activeContext.md` with these changes.
+*   **Lost Password Functionality (2025-05-28):**
+    *   Created `src/pages/LostPasswordPage.tsx` with a form to send a password reset email via Firebase.
+    *   Added a route `/lost-password` in `src/routes.tsx`.
+    *   Added a "Forgot password?" link to `src/components/LoginForm.tsx`.
 
 ## 3. What's Left to Build (High-Level from `projectRoadmap.md`)
 

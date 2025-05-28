@@ -9,7 +9,6 @@ export default [
   ...tseslint.configs.recommended,
   {
     linterOptions: {
-      noInlineConfig: true,
       reportUnusedDisableDirectives: "warn",
     },
     rules: {

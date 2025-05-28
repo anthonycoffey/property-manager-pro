@@ -102,7 +102,7 @@ const EditOrganizationModal: React.FC<EditOrganizationModalProps> = ({ open, onC
   return (
     <Dialog open={open} onClose={handleCloseDialog} aria-labelledby="edit-organization-dialog-title">
       <DialogTitle id="edit-organization-dialog-title">Edit Organization</DialogTitle>
-      <DialogContent>
+      <DialogContent dividers>
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
         <TextField
           autoFocus
@@ -137,7 +137,7 @@ const EditOrganizationModal: React.FC<EditOrganizationModalProps> = ({ open, onC
         </FormControl>
       </DialogContent>
       <DialogActions>
-        <Button onClick={handleCloseDialog} color="inherit" disabled={loading}>
+        <Button onClick={handleCloseDialog} variant="outlined" color="error" disabled={loading}>
           Cancel
         </Button>
         <Button onClick={handleSubmit} color="primary" variant="contained" disabled={loading}>

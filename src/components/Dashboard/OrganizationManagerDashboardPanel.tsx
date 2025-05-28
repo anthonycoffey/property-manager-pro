@@ -13,8 +13,10 @@ import {
   Alert,
   type SelectChangeEvent,
   Container,
+  Stack, // Added Stack
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
+import AdminPanelSettings from '@mui/icons-material/AdminPanelSettings'; // Changed to AdminPanelSettings
 import { useAuth } from '../../hooks/useAuth';
 import OrgScopedPropertyManagerManagement from '../OrganizationManager/OrgScopedPropertyManagerManagement';
 import AddOrganizationModal from '../Admin/AddOrganizationModal';
@@ -149,36 +151,8 @@ const OrganizationManagerDashboardPanel: React.FC<
 
   if (error) {
     return (
-      <Paper sx={{ p: 2, margin: 2 }}>
+      <Paper sx={{ p: 2 }}>
         <Alert severity='error'>{error.message}</Alert>
-      </Paper>
-    );
-  }
-
-  if (organizations.length === 0) {
-    return (
-      <Paper sx={{ p: 2, margin: 2 }}>
-        <Box
-          sx={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            mb: 2,
-          }}
-        >
-          <Typography variant='h6'>Organization Manager Dashboard</Typography>
-          <Button
-            variant='contained'
-            startIcon={<AddIcon />}
-            onClick={handleOpenAddOrgModal}
-          >
-            Add Organization
-          </Button>
-        </Box>
-        <Typography sx={{ mb: 2 }}>
-          You are not currently assigned to manage any organizations. Please
-          contact an administrator or create a new one using the button above.
-        </Typography>
       </Paper>
     );
   }
@@ -189,22 +163,38 @@ const OrganizationManagerDashboardPanel: React.FC<
 
   return (
     <Container component='main' maxWidth='lg'>
-      <Paper sx={{ p: 2, margin: 2 }}>
+      <Paper sx={{ p: 2 }} elevation={6}>
         <Box
           sx={{
             display: 'flex',
+            flexDirection: { xs: 'column', sm: 'row' },
             justifyContent: 'space-between',
-            alignItems: 'center',
+            alignItems: { xs: 'flex-start', sm: 'center' },
             mb: organizations.length > 0 ? 0 : 2,
           }}
         >
-          <Typography variant='h5' gutterBottom sx={{ mb: 0 }}>
-            Organization Manager Dashboard
-          </Typography>
+          <Stack
+            direction='row'
+            alignItems='center'
+            sx={{ mb: { xs: 1, sm: 0 } }}
+          >
+            <AdminPanelSettings
+              fontSize='large'
+              color='primary'
+              sx={{ mr: 1 }}
+            />
+            <Typography variant='h4' color='primary'>
+              Organization Dashboard
+            </Typography>
+          </Stack>
           <Button
             variant='contained'
             startIcon={<AddIcon />}
             onClick={handleOpenAddOrgModal}
+            sx={{
+              width: { xs: '100%', sm: 'auto' },
+              mt: { xs: 1, sm: 0 },
+            }}
           >
             Add Organization
           </Button>
@@ -235,16 +225,17 @@ const OrganizationManagerDashboardPanel: React.FC<
             Managing Organization: {selectedOrganization.name}
           </Alert>
         )}
+
+        {selectedOrgId && selectedOrganization && (
+          <Box sx={{ marginTop: 2 }}>
+            <OrgScopedPropertyManagerManagement
+              organizationId={selectedOrgId}
+              organizationCreatedBy={selectedOrganization?.createdBy || null}
+            />
+          </Box>
+        )}
       </Paper>
 
-      {selectedOrgId && selectedOrganization && (
-        <Paper sx={{ p: 3, marginX: 2, marginTop: 2 }}>
-          <OrgScopedPropertyManagerManagement
-            organizationId={selectedOrgId}
-            organizationCreatedBy={selectedOrganization?.createdBy || null}
-          />
-        </Paper>
-      )}
       <AddOrganizationModal
         open={isAddOrgModalOpen}
         onClose={handleCloseAddOrgModal}

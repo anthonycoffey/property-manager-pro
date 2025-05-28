@@ -26,10 +26,11 @@ const InvitePropertyManagerForm: React.FC<InvitePropertyManagerFormProps> = ({
   const { currentUser, roles, organizationIds } = useAuth(); // Destructure organizationIds
 
   // Determine if the current user has permission to send invitations
-  const canSendInvitation = currentUser && (
-    roles.includes('admin') ||
-    (roles.includes('organization_manager') && organizationIds?.includes(selectedOrganizationId || ''))
-  );
+  const canSendInvitation =
+    currentUser &&
+    (roles.includes('admin') ||
+      (roles.includes('organization_manager') &&
+        organizationIds?.includes(selectedOrganizationId || '')));
 
   useEffect(() => {
     // Clear any previous errors/success messages when organizationId changes or permissions change
@@ -46,7 +47,9 @@ const InvitePropertyManagerForm: React.FC<InvitePropertyManagerFormProps> = ({
     setSuccess(null);
 
     if (!canSendInvitation) {
-      setError('Permission denied. You do not have the necessary role or organization access to send invitations.');
+      setError(
+        'Permission denied. You do not have the necessary role or organization access to send invitations.'
+      );
       return;
     }
 
@@ -70,7 +73,9 @@ const InvitePropertyManagerForm: React.FC<InvitePropertyManagerFormProps> = ({
         inviteeName,
         organizationIds: [selectedOrganizationId],
         rolesToAssign: ['property_manager'],
-        invitedByRole: roles.includes('admin') ? 'admin' : 'organization_manager',
+        invitedByRole: roles.includes('admin')
+          ? 'admin'
+          : 'organization_manager',
       });
 
       const responseData = result.data as CreateInvitationResponse;
@@ -94,7 +99,8 @@ const InvitePropertyManagerForm: React.FC<InvitePropertyManagerFormProps> = ({
   if (!canSendInvitation) {
     return (
       <Alert severity='error'>
-        You do not have permission to access property manager invitations. Only administrators or assigned organization managers can send invitations.
+        You do not have permission to access property manager invitations. Only
+        administrators or assigned organization managers can send invitations.
       </Alert>
     );
   }
@@ -102,7 +108,7 @@ const InvitePropertyManagerForm: React.FC<InvitePropertyManagerFormProps> = ({
   return (
     <Box component='form' onSubmit={handleSubmit}>
       <Typography variant='h6' gutterBottom>
-        Send Invite Email
+        Invite Property Manager
       </Typography>
 
       {error && (
@@ -115,13 +121,19 @@ const InvitePropertyManagerForm: React.FC<InvitePropertyManagerFormProps> = ({
           {success}
         </Alert>
       )}
-      <Box sx={{ display: 'flex', gap: 2 }}>
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: { xs: 'column', sm: 'row' },
+          gap: 2,
+          alignItems: { xs: 'stretch', sm: 'center' },
+        }}
+      >
         <TextField
           label='Property Manager Name'
           value={inviteeName}
           onChange={(e) => setInviteeName(e.target.value)}
           margin='none'
-          required
           disabled={loading}
           sx={{ flexGrow: 1 }}
         />
@@ -141,10 +153,13 @@ const InvitePropertyManagerForm: React.FC<InvitePropertyManagerFormProps> = ({
           variant='contained'
           color='primary'
           disabled={loading}
-          sx={{ flexGrow: 1 }}
+          sx={{
+            flexGrow: 1,
+            minWidth: { xs: '100%', sm: 'auto' },
+          }}
           startIcon={<PersonAdd />}
         >
-          {loading ? <CircularProgress size={24} /> : 'Invite Property Manager'}
+          {loading ? <CircularProgress size={24} /> : 'Invite Manager'}
         </Button>
       </Box>
     </Box>

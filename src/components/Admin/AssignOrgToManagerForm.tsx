@@ -16,7 +16,6 @@ import Box from '@mui/material/Box';
 import CircularProgress from '@mui/material/CircularProgress';
 import Alert from '@mui/material/Alert';
 import {
-  Typography,
   FormControl,
   InputLabel,
   Select,
@@ -218,9 +217,7 @@ const AssignOrgToManagerForm: React.FC = () => {
         )}
       </FormControl>
 
-      <Typography variant='subtitle1' gutterBottom sx={{ mt: 2 }}>
-        Select New Organization to Assign:
-      </Typography>
+
       <OrganizationSelector
         selectedOrganizationId={newOrgId}
         onOrganizationChange={handleOrganizationChange}

@@ -60,8 +60,13 @@ const ResidentDashboard: React.FC = () => {
 
   return (
     <Container component='main' maxWidth='lg'>
-      <Paper sx={{ p: 3, display: 'flex', flexDirection: 'column' }}>
-        <Typography variant='h4' gutterBottom component='div' sx={{ mb: 2 }}>
+      <Paper sx={{ p: 2, display: 'flex', flexDirection: 'column' }} elevation={6}>
+        <Typography
+          variant='h4'
+          gutterBottom
+          component='div'
+          sx={{ mb: 2 }}
+        >
           Welcome, {currentUser.displayName || 'Resident'}!
         </Typography>
         <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
@@ -69,6 +74,9 @@ const ResidentDashboard: React.FC = () => {
             value={tabValue}
             onChange={handleChangeTab}
             aria-label='resident dashboard tabs'
+            variant='scrollable'
+            scrollButtons='auto'
+            allowScrollButtonsMobile
           >
             <Tab
               icon={<ApartmentIcon />}

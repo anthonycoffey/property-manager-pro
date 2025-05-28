@@ -79,7 +79,7 @@ const AddOrganizationModal: React.FC<AddOrganizationModalProps> = ({ open, onClo
   return (
     <Dialog open={open} onClose={handleCloseDialog} aria-labelledby="form-dialog-title">
       <DialogTitle id="form-dialog-title">Add New Organization</DialogTitle>
-      <DialogContent>
+      <DialogContent dividers>
         <DialogContentText sx={{mb:2}}>
           Enter the details for the new organization.
         </DialogContentText>
@@ -97,10 +97,10 @@ const AddOrganizationModal: React.FC<AddOrganizationModalProps> = ({ open, onClo
           required
           disabled={loading}
         />
-        {/* Logo related UI removed */}
+      {/* Logo related UI removed */}
       </DialogContent>
       <DialogActions>
-        <Button onClick={handleCloseDialog} color="primary" disabled={loading}>
+        <Button onClick={handleCloseDialog} variant="outlined" color="error" disabled={loading}>
           Cancel
         </Button>
         <Button onClick={handleSubmit} color="primary" variant="contained" disabled={loading}>

@@ -153,7 +153,11 @@ const InviteOrganizationManagerForm: React.FC = () => {
     <Box component='form' onSubmit={handleSubmit} sx={{ mt: 2 }}>
       {/* "Enter New Organization Manager's Details:" Typography removed */}
       
-      <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
+      <Stack
+        direction={{ xs: 'column', sm: 'row' }}
+        spacing={2}
+        sx={{ mb: 2 }}
+      >
         <TextField
           label='Organization Manager Name'
           value={inviteeName}
@@ -162,7 +166,6 @@ const InviteOrganizationManagerForm: React.FC = () => {
           required
           fullWidth
           disabled={loading}
-          sx={{ flexGrow: 1 }}
         />
         <TextField
           label='Organization Manager Email'
@@ -173,7 +176,6 @@ const InviteOrganizationManagerForm: React.FC = () => {
           required
           fullWidth
           disabled={loading}
-          sx={{ flexGrow: 1 }}
         />
       </Stack>
       

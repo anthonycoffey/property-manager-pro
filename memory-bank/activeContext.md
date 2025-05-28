@@ -2,7 +2,7 @@
 
 ## 1. Current Work Focus
 
-The current focus is on refactoring UI components for better maintainability and readability, starting with the main Dashboard.
+The current focus is on refactoring UI components for better maintainability and readability.
 
 ## 2. Recent Changes & Activities
 
@@ -40,6 +40,13 @@ The current focus is on refactoring UI components for better maintainability and
 - **Firestore Rules Update (2025-05-25):**
   - Modified `firestore.rules` to allow residents to read the specific property document they belong to.
   - Added `allow read: if isResident() && isPropertyResident(organizationId, propertyId);` to the `match /organizations/{organizationId}/properties/{propertyId}` rule block.
+- **Theme Persistence (2025-05-27):**
+  - Updated `src/providers/ThemeProvider.tsx` to save and retrieve the selected theme mode (dark/light) from `localStorage`.
+  - The theme now initializes from `localStorage` if a preference exists, otherwise defaults to system preference.
+  - User's explicit theme choice via the toggle now overrides system preference and is persisted.
+- **Organization Manager Dashboard Panel Refactor (2025-05-28):**
+  - Combined the two main `Paper` components in `src/components/Dashboard/OrganizationManagerDashboardPanel.tsx` into a single `Paper` component.
+  - The `OrgScopedPropertyManagerManagement` component is now rendered within the main `Paper` component, maintaining visual spacing with a `Box` and `marginTop`.
 
 ## 3. Next Steps
 
@@ -95,14 +102,31 @@ The current focus is on refactoring UI components for better maintainability and
 - **Modular Component Design:** Favor breaking down large components into smaller, more focused ones.
 - **Clear Code Over Comments:** Strive for self-documenting code, reducing the need for explanatory comments, especially for straightforward UI logic.
 - **Explicit Handling of Optionality:** When a previously required field (like `organizationId` for OM invites) becomes optional, ensure backend, frontend, and data models are consistently updated to reflect this.
+- **Standard Dialog Styling (New Preference 2025-05-28):**
+    - **Title Border:** Use the `dividers` prop on the `<DialogContent>` component to create a visual separation below the `<DialogTitle>`.
+    - **Input Fields (`TextField`):** Default to `variant="outlined"`.
+    - **Primary Action Button (e.g., "Save", "Update", "Create"):** Style with `variant="contained"` and `color="primary"`.
+    - **Cancel Button:** Style with `variant="outlined"` and `color="error"`.
 
 ## 6. Learnings & Project Insights
 
 - **Refactoring Impact:** Breaking down large components significantly improves the clarity of the main component and makes individual role-based functionalities easier to manage and understand.
 - **Prop Drilling vs. Context:** While refactoring, it's important to consider if props are being passed down too many levels. For the current Dashboard refactor, direct prop passing was manageable. For more deeply nested structures, React Context or state management libraries might be considered.
 - **TypeScript Prop Validation:** Strict prop type checking (like the one caught for `organizationId`) helps maintain component contracts and prevent runtime errors.
-- **Scope Creep Management:** Clarifying whether related backend changes (like `createOrganization` permissions) are in scope for a UI task is important for accurate planning. In this case, it was explicitly included.
 - **Organization Manager Data Model & Query (New Learning 2025-05-27):**
   - Clarified that Organization Manager profiles (users with `roles: ["organization_manager"]`) are stored in the root `admins` collection, alongside Super Admins, not in `organizations/{orgId}/users/` as previously assumed for their primary listing.
   - The Firestore query in `src/components/Admin/AssignOrgToManagerForm.tsx` to list these managers was successfully fixed by changing `collectionGroup(db, 'admins')` to `collection(db, 'admins')`. This more specific query against the root collection resolved the "no matching allow statements" error, working correctly with existing security rules and indexes.
   - `memory-bank/systemPatterns.md` has been updated to reflect this data model for Organization Managers.
+
+- **Clarification of Invitation Sign-Up Cloud Functions (2025-05-27):**
+  - Analyzed `functions/src/callable/signUpWithInvitation.ts` and `functions/src/callable/signUpWithOrgManagerInvitation.ts`.
+  - `signUpWithInvitation.ts` is a general handler for various roles. It can process Organization Manager invitations from `globalInvitations` and set claims/create profiles in `organizations/{orgId}/users/`. However, it does *not* create a profile for the OM in the root `admins` collection.
+  - `signUpWithOrgManagerInvitation.ts` is specific to Organization Manager invitations. Its key distinct function is creating/merging the OM's profile in the root `admins/{uid}` collection, which is essential for Super Admin management. It also creates profiles in `organizations/{orgId}/users/` if initial organizations are assigned.
+  - This confirms both functions serve distinct purposes, with `signUpWithOrgManagerInvitation.ts` being critical for the complete OM onboarding process including their `admins` profile. The frontend likely uses `AcceptOrgManagerInvitationPage.tsx` to call this specific function.
+
+- **Analysis of `processSignUp.ts` Auth Trigger (2025-05-27):**
+  - Reviewed `functions/src/auth/processSignUp.ts`.
+  - This `onCreate` Firebase Auth trigger correctly identifies Super Admin users (based on email domain/list) and sets their `roles: ['admin']` custom claim and creates their profile in the `admins` Firestore collection.
+  - Crucially, for all other non-Super-Admin users, this function *intentionally does not* set any default custom claims (like `pending_association`) or create any Firestore profiles.
+  - It defers all claim-setting and profile creation for invited users (Organization Managers, Property Managers, Residents) to the specific callable invitation functions (`signUpWithInvitation.ts`, `signUpWithOrgManagerInvitation.ts`). This is a deliberate design to prevent race conditions and ensure the invitation flows are the source of truth for these users' setup.
+  - This clarifies that any previous understanding of `processSignUp.ts` setting default roles like `pending_association` for non-admin direct sign-ups is outdated by the current implementation.

@@ -486,7 +486,7 @@ const OrgScopedPropertyManagerManagement: React.FC<
       {/* Dialogs and Snackbar */}
       <Dialog open={revokeDialogOpen} onClose={handleCloseRevokeDialog}>
         <DialogTitle>Revoke Invitation?</DialogTitle>
-        <DialogContent>
+        <DialogContent dividers>
           <DialogContentText>
             Are you sure you want to revoke the invitation for{' '}
             {selectedInvitationForRevoke?.inviteeEmail}? This action cannot be
@@ -494,11 +494,12 @@ const OrgScopedPropertyManagerManagement: React.FC<
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseRevokeDialog} disabled={revokeLoading}>
+          <Button onClick={handleCloseRevokeDialog} variant="outlined" color="error" disabled={revokeLoading}>
             Cancel
           </Button>
           <Button
             onClick={handleConfirmRevoke}
+            variant="contained"
             color='error'
             disabled={revokeLoading}
             autoFocus
@@ -508,8 +509,8 @@ const OrgScopedPropertyManagerManagement: React.FC<
         </DialogActions>
       </Dialog>
       <Dialog open={updatePmDialogOpen} onClose={handleCloseUpdatePmDialog}>
-        <DialogTitle>Update Property Manager</DialogTitle>
-        <DialogContent>
+        <DialogTitle>Edit Property Manager</DialogTitle>
+        <DialogContent dividers>
           <DialogContentText sx={{ mb: 1 }}>
             Modify the details for{' '}
             {selectedPmForUpdate?.displayName || 'this Property Manager'}.
@@ -523,7 +524,7 @@ const OrgScopedPropertyManagerManagement: React.FC<
             label='Display Name'
             type='text'
             fullWidth
-            variant='standard'
+            variant='outlined'
             value={updatePmForm.displayName}
             onChange={handleUpdatePmFormChange}
             required
@@ -535,7 +536,7 @@ const OrgScopedPropertyManagerManagement: React.FC<
             label='Email Address'
             type='email'
             fullWidth
-            variant='standard'
+            variant='outlined'
             value={updatePmForm.email}
             onChange={handleUpdatePmFormChange}
             required
@@ -545,17 +546,24 @@ const OrgScopedPropertyManagerManagement: React.FC<
           <Button
             onClick={handleCloseUpdatePmDialog}
             disabled={updatePmLoading}
+            variant="outlined"
+            color="error"
           >
             Cancel
           </Button>
-          <Button onClick={handleConfirmUpdatePm} disabled={updatePmLoading}>
+          <Button
+            onClick={handleConfirmUpdatePm}
+            disabled={updatePmLoading}
+            variant="contained"
+            color="primary"
+          >
             {updatePmLoading ? <CircularProgress size={20} /> : 'Update'}
           </Button>
         </DialogActions>
       </Dialog>
       <Dialog open={deletePmDialogOpen} onClose={handleCloseDeletePmDialog}>
         <DialogTitle>Delete Property Manager?</DialogTitle>
-        <DialogContent>
+        <DialogContent dividers>
           <DialogContentText>
             Are you sure you want to delete the property manager{' '}
             {selectedPmForDelete?.displayName} ({selectedPmForDelete?.email})?
@@ -566,12 +574,15 @@ const OrgScopedPropertyManagerManagement: React.FC<
         <DialogActions>
           <Button
             onClick={handleCloseDeletePmDialog}
+            variant="outlined"
+            color="error"
             disabled={deletePmLoading}
           >
             Cancel
           </Button>
           <Button
             onClick={handleConfirmDeletePm}
+            variant="contained"
             color='error'
             disabled={deletePmLoading}
             autoFocus

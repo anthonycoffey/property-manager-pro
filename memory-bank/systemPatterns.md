@@ -142,6 +142,9 @@ The application employs a modern web architecture with a React-based frontend an
             *   `createdAt: timestamp`
             *   `expiresAt: timestamp`
             *   `invitationType: "organization_manager"`
+        *   **Processing:**
+            *   Organization Manager invitations stored here are primarily processed by `functions/src/callable/signUpWithOrgManagerInvitation.ts`. This function is crucial as it not only sets the necessary custom claims (`roles: ["organization_manager"]`, `organizationIds`) and creates profiles in `organizations/{orgId}/users/{uid}` (if applicable) but also **creates/updates the Organization Manager's profile in the root `admins/{uid}` collection**. This `admins` profile is essential for Super Admins to list and manage Organization Managers.
+            *   The more general `functions/src/callable/signUpWithInvitation.ts` can also process these invitations if called (e.g., by a generic acceptance page), setting claims and org-specific profiles, but it **does not** create the profile in the `admins` collection. Thus, for full Organization Manager onboarding, `signUpWithOrgManagerInvitation.ts` (likely triggered by a specific page like `AcceptOrgManagerInvitationPage.tsx`) is the designated function.
 
 *   **Hybrid Rendering Strategy (React 19):**
     *   **Client Components:** Default for most UI, especially interactive parts.
@@ -154,6 +157,7 @@ The application employs a modern web architecture with a React-based frontend an
     *   `createOrganization` function now allows `organization_manager` role to create organizations and auto-assigns them.
 *   **State Management Strategy:**
     *   **Global State (React Context):** For broadly shared, less frequently updated data (e.g., authenticated user object, theme settings).
+        *   Theme settings (`mode`: 'light' or 'dark') are persisted to `localStorage` to remember user preference across sessions. The system preference (`prefers-color-scheme`) is used as a fallback if no `localStorage` value is set.
     *   **Local/Feature State (React Hooks):** For more complex, dynamic, or localized state within specific features or component trees.
 *   **Data Fetching:**
     *   **Client-Side:** Primarily using the standard Fetch API
@@ -187,10 +191,16 @@ The application employs a modern web architecture with a React-based frontend an
 
 *   **Authentication Flow:**
     1.  User interacts with Login/Signup Form (Client Component).
-    2.  Credentials sent to Firebase Authentication.
-    3.  On successful authentication, a Cloud Function (triggered on user creation/login) sets a custom role claim.
-    4.  Firebase Auth ID token (with role claim) is available to the client.
-    5.  Client-side routing and UI adapt based on the role.
+    2.  Credentials sent to Firebase Authentication. User record is created.
+    3.  The `functions/src/auth/processSignUp.ts` Cloud Function (an `onCreate` auth trigger) executes:
+        *   If the user is a Super Admin (based on email), it sets `roles: ['admin']` custom claim and creates a profile in `admins/{uid}`.
+        *   For **all other users**, it does nothing further, intentionally deferring claim and profile setup to specific invitation-handling callable functions to avoid race conditions.
+    4.  If the sign-up is via an invitation, a callable function like `signUpWithInvitation.ts` or `signUpWithOrgManagerInvitation.ts` is then invoked by the frontend. This function:
+        *   Validates the invitation.
+        *   Sets the appropriate custom claims (e.g., `organization_manager`, `property_manager`, `resident` and associated `organizationId(s)`, `propertyId`). These claims will overwrite any (though none are set by `processSignUp` for non-admins) or establish the primary claims for the user.
+        *   Creates the necessary user profile(s) in Firestore (e.g., in `organizations/{orgId}/users/{uid}`, `organizations/{orgId}/properties/{propId}/residents/{uid}`, and for `signUpWithOrgManagerInvitation.ts`, also in `admins/{uid}`).
+    5.  Firebase Auth ID token (with the final, correct role claims) is available to the client.
+    6.  Client-side routing and UI adapt based on the role.
     6.  Firestore Security Rules validate the role claim for data operations.
 
 *   **Data Display (e.g., Property List for Property Manager):**

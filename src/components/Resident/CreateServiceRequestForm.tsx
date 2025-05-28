@@ -13,13 +13,15 @@ import {
   type SelectChangeEvent,
   Snackbar,
   Stack,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns'; // Changed from AdapterDateFnsV3
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 import { useAuth } from '../../hooks/useAuth';
 import { httpsCallable } from 'firebase/functions';
-import { functions } from '../../firebaseConfig'; // db import removed as not used here directly
+import { functions } from '../../firebaseConfig';
 
 interface CreateServiceRequestFormProps {
   onServiceRequestSubmitted: () => void;
@@ -31,7 +33,6 @@ interface CreateServiceRequestCallableResponse {
   serviceRequestId?: string;
 }
 
-// User-updated service types for roadside assistance
 const roadsideServiceTypes = [
   'Flat Tire Change',
   'Battery Jump Start',
@@ -46,17 +47,15 @@ const CreateServiceRequestForm: React.FC<CreateServiceRequestFormProps> = ({
   onServiceRequestSubmitted,
 }) => {
   const { currentUser, organizationId, propertyId } = useAuth();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
-  const [residentName, setResidentName] = useState(
-    currentUser?.displayName || ''
-  );
+  const [residentName, setResidentName] = useState(currentUser?.displayName || '');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState(currentUser?.email || '');
   const [serviceLocation, setServiceLocation] = useState('');
   const [requestType, setRequestType] = useState<string>('');
-  const [serviceDateTime, setServiceDateTime] = useState<Date | null>(
-    new Date()
-  );
+  const [serviceDateTime, setServiceDateTime] = useState<Date | null>(new Date());
   const [residentNotes, setResidentNotes] = useState<string>('');
 
   const [submitting, setSubmitting] = useState<boolean>(false);
@@ -100,14 +99,11 @@ const CreateServiceRequestForm: React.FC<CreateServiceRequestFormProps> = ({
       serviceDateTime: serviceDateTime ? serviceDateTime.toISOString() : null,
       phone: phone.trim(),
       serviceLocation: serviceLocation.trim(),
-      description: '', // Sending empty description as per new form structure
+      description: '',
     };
 
     try {
-      const createServiceRequest = httpsCallable(
-        functions,
-        'createServiceRequest'
-      );
+      const createServiceRequest = httpsCallable(functions, 'createServiceRequest');
       const result = await createServiceRequest(dataToSubmit);
       const responseData = result.data as CreateServiceRequestCallableResponse;
 
@@ -125,7 +121,6 @@ const CreateServiceRequestForm: React.FC<CreateServiceRequestFormProps> = ({
         setError(responseData.message || 'Failed to submit service request.');
       }
     } catch (err: unknown) {
-      // Changed from any to unknown
       console.error('Error submitting service request:', err);
       if (err instanceof Error) {
         setError(
@@ -141,7 +136,16 @@ const CreateServiceRequestForm: React.FC<CreateServiceRequestFormProps> = ({
 
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
-      <Box component='form' onSubmit={handleSubmit} noValidate>
+      <Box
+        component='form'
+        onSubmit={handleSubmit}
+        noValidate
+        sx={{
+          width: '100%',
+          mx: 'auto',
+          p: { xs: 1, sm: 2 },
+        }}
+      >
         <Typography variant='h5' gutterBottom sx={{ mb: 2 }}>
           Service Request Form
         </Typography>
@@ -153,26 +157,39 @@ const CreateServiceRequestForm: React.FC<CreateServiceRequestFormProps> = ({
         )}
 
         <Stack spacing={2}>
-          <Box sx={{ display: 'flex', gap: 2 }}>
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: isMobile ? 'column' : 'row',
+              gap: 2,
+            }}
+          >
             <TextField
               label='Name'
               value={residentName}
               fullWidth
-              InputProps={{
-                readOnly: true,
+              slotProps={{
+                input: { readOnly: true },
               }}
             />
             <TextField
               label='Email'
               value={email}
               fullWidth
-              InputProps={{
-                readOnly: true,
+              slotProps={{
+                input: { readOnly: true },
               }}
+              sx={isMobile ? { mt: 2 } : {}}
             />
           </Box>
 
-          <Box sx={{ display: 'flex', gap: 2 }}>
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: isMobile ? 'column' : 'row',
+              gap: 2,
+            }}
+          >
             <TextField
               label='Contact Phone'
               name='phone'
@@ -240,7 +257,7 @@ const CreateServiceRequestForm: React.FC<CreateServiceRequestFormProps> = ({
             variant='contained'
             disabled={submitting}
             fullWidth
-            sx={{ mt: 1 }} // Adjusted margin top
+            sx={{ mt: 1 }}
           >
             {submitting ? <CircularProgress size={24} /> : 'Submit Request'}
           </Button>

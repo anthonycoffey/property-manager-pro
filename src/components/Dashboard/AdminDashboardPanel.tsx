@@ -93,12 +93,13 @@ const AdminDashboardPanel: React.FC = () => {
 
   return (
     <Container component='main' maxWidth='lg'>
-      <Paper elevation={3} sx={{ mb: 4, p: 2 }}>
+      <Paper elevation={6} sx={{ mb: 4, p: 2 }}>
         <Box
           sx={{
             display: 'flex',
+            flexDirection: { xs: 'column', sm: 'row' },
             justifyContent: 'space-between',
-            alignItems: 'center',
+            alignItems: { xs: 'flex-start', sm: 'center' },
             mb: 2,
           }}
         >
@@ -116,7 +117,10 @@ const AdminDashboardPanel: React.FC = () => {
             variant='contained'
             startIcon={<AddIcon />}
             onClick={handleOpenAddOrgModal}
-            sx={{ float: 'right' }}
+            sx={{
+              width: { xs: '100%', sm: 'auto' },
+              mt: { xs: 2, sm: 0 },
+            }}
           >
             Add Organization
           </Button>
@@ -127,6 +131,9 @@ const AdminDashboardPanel: React.FC = () => {
             value={adminTabValue}
             onChange={handleAdminTabChange}
             aria-label='admin actions tabs'
+            variant='scrollable'
+            scrollButtons='auto'
+            allowScrollButtonsMobile
           >
             <Tab label='Organizations' {...a11yProps(0)} />
             <Tab label='Organization Managers' {...a11yProps(1)} />
@@ -138,14 +145,14 @@ const AdminDashboardPanel: React.FC = () => {
         </TabPanel>
         <TabPanel value={adminTabValue} index={1}>
           <Typography variant='h6' gutterBottom>
-            Invite New Organization Manager
+            Invite Organization Manager
           </Typography>
           <InviteOrganizationManagerForm />
 
           <Divider sx={{ my: 3 }} />
 
           <Typography variant='h6' gutterBottom>
-            Assign Existing Organization Manager to Additional Organization
+            Assign Organization
           </Typography>
           <AssignOrgToManagerForm />
         </TabPanel>

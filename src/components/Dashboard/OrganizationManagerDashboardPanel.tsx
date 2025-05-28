@@ -12,6 +12,7 @@ import {
   Snackbar,
   Alert,
   type SelectChangeEvent,
+  Container,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import { useAuth } from '../../hooks/useAuth';
@@ -187,7 +188,7 @@ const OrganizationManagerDashboardPanel: React.FC<
   );
 
   return (
-    <Box sx={{ width: '100%' }}>
+    <Container component='main' maxWidth='lg'>
       <Paper sx={{ p: 2, margin: 2 }}>
         <Box
           sx={{
@@ -262,7 +263,7 @@ const OrganizationManagerDashboardPanel: React.FC<
           {snackbarMessage}
         </Alert>
       </Snackbar>
-    </Box>
+    </Container>
   );
 };
 

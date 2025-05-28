@@ -6,6 +6,7 @@ import Dashboard from './components/Dashboard';
 import ProtectedRoute from './components/ProtectedRoute';
 import AcceptInvitationPage from './pages/AcceptInvitationPage';
 import AcceptOrgManagerInvitationPage from './pages/AcceptOrgManagerInvitationPage';
+import DemoPage from './pages/DemoPage'; // Added import for DemoPage
 
 const AppRoutes: React.FC = () => {
   return (
@@ -22,6 +23,7 @@ const AppRoutes: React.FC = () => {
       />
       <Route path="/accept-invitation" element={<AcceptInvitationPage />} />
       <Route path="/accept-org-manager-invitation" element={<AcceptOrgManagerInvitationPage />} />
+      <Route path="/demo" element={<DemoPage />} /> {/* Added public demo route */}
       {/* Placeholder for unauthorized access */}
       <Route path="/unauthorized" element={<div>You are not authorized to view this page.</div>} />
       {/* Add more public and protected routes as needed */}

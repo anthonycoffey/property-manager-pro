@@ -173,7 +173,7 @@ const PropertyManagerDashboardPanel: React.FC<
             mb: 2,
           }}
         >
-          <Typography variant='h4' color='secondary'>
+          <Typography variant='h4' color='primary'>
             {organizationName || 'Property Manager Dashboard'}
           </Typography>
           <Button

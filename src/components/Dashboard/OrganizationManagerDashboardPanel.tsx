@@ -1,5 +1,18 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Box, Typography, Select, MenuItem, FormControl, InputLabel, Paper, Button, CircularProgress, Snackbar, Alert, type SelectChangeEvent, Stack } from '@mui/material';
+import {
+  Box,
+  Typography,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  Paper,
+  Button,
+  CircularProgress,
+  Snackbar,
+  Alert,
+  type SelectChangeEvent,
+} from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import { useAuth } from '../../hooks/useAuth';
 import OrgScopedPropertyManagerManagement from '../OrganizationManager/OrgScopedPropertyManagerManagement';
@@ -12,7 +25,9 @@ interface OrganizationManagerDashboardPanelProps {
   orgIds: string[] | null | undefined;
 }
 
-const OrganizationManagerDashboardPanel: React.FC<OrganizationManagerDashboardPanelProps> = ({ orgIds }) => {
+const OrganizationManagerDashboardPanel: React.FC<
+  OrganizationManagerDashboardPanelProps
+> = ({ orgIds }) => {
   const { currentUser } = useAuth();
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [selectedOrgId, setSelectedOrgId] = useState<string>('');
@@ -21,7 +36,9 @@ const OrganizationManagerDashboardPanel: React.FC<OrganizationManagerDashboardPa
   const [isAddOrgModalOpen, setIsAddOrgModalOpen] = useState(false);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
-  const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error'>('success');
+  const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error'>(
+    'success'
+  );
 
   const fetchOrganizations = useCallback(async () => {
     if (!currentUser?.uid) {
@@ -104,7 +121,10 @@ const OrganizationManagerDashboardPanel: React.FC<OrganizationManagerDashboardPa
     fetchOrganizations(); // Re-fetch organizations to include the new one
   };
 
-  const handleSnackbarClose = (_event?: React.SyntheticEvent | Event, reason?: string) => {
+  const handleSnackbarClose = (
+    _event?: React.SyntheticEvent | Event,
+    reason?: string
+  ) => {
     if (reason === 'clickaway') {
       return;
     }
@@ -113,7 +133,14 @@ const OrganizationManagerDashboardPanel: React.FC<OrganizationManagerDashboardPa
 
   if (loading) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh' }}>
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          height: '80vh',
+        }}
+      >
         <CircularProgress />
       </Box>
     );
@@ -122,7 +149,7 @@ const OrganizationManagerDashboardPanel: React.FC<OrganizationManagerDashboardPa
   if (error) {
     return (
       <Paper sx={{ p: 2, margin: 2 }}>
-        <Alert severity="error">{error.message}</Alert>
+        <Alert severity='error'>{error.message}</Alert>
       </Paper>
     );
   }
@@ -130,30 +157,51 @@ const OrganizationManagerDashboardPanel: React.FC<OrganizationManagerDashboardPa
   if (organizations.length === 0) {
     return (
       <Paper sx={{ p: 2, margin: 2 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-          <Typography variant="h6">Organization Manager Dashboard</Typography>
-          <Button variant="contained" startIcon={<AddIcon />} onClick={handleOpenAddOrgModal}>
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            mb: 2,
+          }}
+        >
+          <Typography variant='h6'>Organization Manager Dashboard</Typography>
+          <Button
+            variant='contained'
+            startIcon={<AddIcon />}
+            onClick={handleOpenAddOrgModal}
+          >
             Add Organization
           </Button>
         </Box>
         <Typography sx={{ mb: 2 }}>
-          You are not currently assigned to manage any organizations. Please contact an administrator or create a new one using the button above.
+          You are not currently assigned to manage any organizations. Please
+          contact an administrator or create a new one using the button above.
         </Typography>
       </Paper>
     );
   }
 
-  const selectedOrganization = organizations.find(org => org.id === selectedOrgId);
+  const selectedOrganization = organizations.find(
+    (org) => org.id === selectedOrgId
+  );
 
   return (
     <Box sx={{ width: '100%' }}>
       <Paper sx={{ p: 2, margin: 2 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: organizations.length > 0 ? 0 : 2 }}>
-          <Typography variant="h5" gutterBottom sx={{ mb: 0 }}>
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            mb: organizations.length > 0 ? 0 : 2,
+          }}
+        >
+          <Typography variant='h5' gutterBottom sx={{ mb: 0 }}>
             Organization Manager Dashboard
           </Typography>
           <Button
-            variant="contained"
+            variant='contained'
             startIcon={<AddIcon />}
             onClick={handleOpenAddOrgModal}
           >
@@ -162,13 +210,15 @@ const OrganizationManagerDashboardPanel: React.FC<OrganizationManagerDashboardPa
         </Box>
 
         {organizations.length > 0 && (
-          <FormControl fullWidth margin="normal" sx={{ mt: 2 }}>
-            <InputLabel id="om-org-selector-label">Select Organization</InputLabel>
+          <FormControl fullWidth margin='normal' sx={{ mt: 2 }}>
+            <InputLabel id='om-org-selector-label'>
+              Select Organization
+            </InputLabel>
             <Select
-              labelId="om-org-selector-label"
-              id="om-org-selector"
+              labelId='om-org-selector-label'
+              id='om-org-selector'
               value={selectedOrgId}
-              label="Select Organization"
+              label='Select Organization'
               onChange={handleOrgChange}
             >
               {organizations.map((org) => (
@@ -180,7 +230,7 @@ const OrganizationManagerDashboardPanel: React.FC<OrganizationManagerDashboardPa
           </FormControl>
         )}
         {selectedOrganization && (
-          <Alert severity="info" sx={{ mt: 1 }}>
+          <Alert severity='info' sx={{ mt: 1 }}>
             Managing Organization: {selectedOrganization.name}
           </Alert>
         )}
@@ -199,8 +249,16 @@ const OrganizationManagerDashboardPanel: React.FC<OrganizationManagerDashboardPa
         onClose={handleCloseAddOrgModal}
         onOrganizationCreated={handleAddOrgSuccess}
       />
-      <Snackbar open={snackbarOpen} autoHideDuration={6000} onClose={handleSnackbarClose}>
-        <Alert onClose={handleSnackbarClose} severity={snackbarSeverity} sx={{ width: '100%' }}>
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={6000}
+        onClose={handleSnackbarClose}
+      >
+        <Alert
+          onClose={handleSnackbarClose}
+          severity={snackbarSeverity}
+          sx={{ width: '100%' }}
+        >
           {snackbarMessage}
         </Alert>
       </Snackbar>

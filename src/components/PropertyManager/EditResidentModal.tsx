@@ -456,7 +456,7 @@ const EditResidentModal: React.FC<EditResidentModalProps> = ({
             </Box>
           </DialogContent>
           <DialogActions sx={{ p: '16px 24px' }}>
-            <Button onClick={onClose} color='inherit' disabled={loading}>
+            <Button onClick={onClose} variant="outlined" color="error" disabled={loading}>
               Cancel
             </Button>
             <Button type='submit' variant='contained' disabled={loading}>

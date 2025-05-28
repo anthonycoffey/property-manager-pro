@@ -509,7 +509,7 @@ const PropertyManagerManagement: React.FC<PropertyManagerManagementProps> = ({
         aria-describedby='revoke-dialog-description'
       >
         <DialogTitle id='revoke-dialog-title'>Revoke Invitation?</DialogTitle>
-        <DialogContent>
+        <DialogContent dividers>
           <DialogContentText id='revoke-dialog-description'>
             Are you sure you want to revoke the invitation for{' '}
             {selectedInvitationForRevoke?.inviteeEmail}? This action cannot be
@@ -517,11 +517,12 @@ const PropertyManagerManagement: React.FC<PropertyManagerManagementProps> = ({
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseRevokeDialog} disabled={revokeLoading}>
+          <Button onClick={handleCloseRevokeDialog} variant="outlined" color="error" disabled={revokeLoading}>
             Cancel
           </Button>
           <Button
             onClick={handleConfirmRevoke}
+            variant="contained"
             color='error'
             disabled={revokeLoading}
             autoFocus
@@ -594,7 +595,7 @@ const PropertyManagerManagement: React.FC<PropertyManagerManagementProps> = ({
         <DialogTitle id='delete-pm-dialog-title'>
           Delete Property Manager?
         </DialogTitle>
-        <DialogContent>
+        <DialogContent dividers>
           <DialogContentText id='delete-pm-dialog-description'>
             Are you sure you want to delete the property manager{' '}
             {selectedPmForDelete?.displayName} ({selectedPmForDelete?.email})?
@@ -605,12 +606,15 @@ const PropertyManagerManagement: React.FC<PropertyManagerManagementProps> = ({
         <DialogActions>
           <Button
             onClick={handleCloseDeletePmDialog}
+            variant="outlined"
+            color="error"
             disabled={deletePmLoading}
           >
             Cancel
           </Button>
           <Button
             onClick={handleConfirmDeletePm}
+            variant="contained"
             color='error'
             disabled={deletePmLoading}
             autoFocus

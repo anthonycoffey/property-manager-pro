@@ -564,7 +564,7 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
             />
           </DialogContent>
           <DialogActions sx={{ p: '16px 24px' }}>
-            <Button onClick={onClose} color='inherit'>
+            <Button onClick={onClose} variant="outlined" color="error">
               Cancel
             </Button>
             <Button

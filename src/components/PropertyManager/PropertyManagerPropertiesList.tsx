@@ -233,18 +233,18 @@ const PropertyManagerPropertiesList: React.FC<PropertyManagerPropertiesListProps
         <DialogTitle id="alert-dialog-title">
           {"Confirm Delete Property"}
         </DialogTitle>
-        <DialogContent>
+        <DialogContent dividers>
           <DialogContentText id="alert-dialog-description">
             Are you sure you want to delete the property "{propertyToDelete?.name || ''}"? 
             This action will also delete all associated residents and cannot be undone.
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseDeleteDialog} color="inherit">
+          <Button onClick={handleCloseDeleteDialog} variant="outlined" color="error" disabled={deleteLoading}>
             Cancel
           </Button>
-          <Button onClick={handleConfirmDelete} color="error" autoFocus disabled={deleteLoading}>
-            {deleteLoading ? <CircularProgress size={20} color="inherit" /> : "Delete"}
+          <Button onClick={handleConfirmDelete} variant="contained" color="error" autoFocus disabled={deleteLoading}>
+            {deleteLoading ? <CircularProgress size={20} /> : "Delete"}
           </Button>
         </DialogActions>
       </MuiDialog>

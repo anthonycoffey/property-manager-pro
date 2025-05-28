@@ -102,6 +102,11 @@ The current focus is on refactoring UI components for better maintainability and
 - **Modular Component Design:** Favor breaking down large components into smaller, more focused ones.
 - **Clear Code Over Comments:** Strive for self-documenting code, reducing the need for explanatory comments, especially for straightforward UI logic.
 - **Explicit Handling of Optionality:** When a previously required field (like `organizationId` for OM invites) becomes optional, ensure backend, frontend, and data models are consistently updated to reflect this.
+- **Standard Dialog Styling (New Preference 2025-05-28):**
+    - **Title Border:** Use the `dividers` prop on the `<DialogContent>` component to create a visual separation below the `<DialogTitle>`.
+    - **Input Fields (`TextField`):** Default to `variant="outlined"`.
+    - **Primary Action Button (e.g., "Save", "Update", "Create"):** Style with `variant="contained"` and `color="primary"`.
+    - **Cancel Button:** Style with `variant="outlined"` and `color="error"`.
 
 ## 6. Learnings & Project Insights
 

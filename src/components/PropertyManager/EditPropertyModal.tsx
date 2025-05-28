@@ -371,7 +371,9 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
           </IconButton>
         </DialogTitle>
         <form onSubmit={handleSubmit}>
-          <DialogContent sx={{ pt: 1 }} dividers> {/* Added dividers to match create modal style */}
+          <DialogContent sx={{ pt: 1 }} dividers>
+            {' '}
+            {/* Added dividers to match create modal style */}
             {error && (
               <Alert severity='error' sx={{ mb: 2 }}>
                 {error}
@@ -390,11 +392,9 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
                 </Typography>
               </Box>
             )}
-
             <Typography variant='subtitle1' sx={{ mt: 2 }}>
               Property Details
             </Typography>
-
             <TextField
               label='Property Name'
               value={name}
@@ -423,9 +423,7 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
                 <MenuItem value='Commercial'>Commercial</MenuItem>
               </Select>
             </FormControl>
-
             <Divider sx={{ my: 2 }} />
-
             <Typography variant='subtitle1' sx={{ mt: 2 }}>
               Property Address
             </Typography>
@@ -466,7 +464,6 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
                     {...params}
                     label='Search Full Address'
                     fullWidth
-                    required
                     margin='dense'
                     disabled={loading}
                   />
@@ -521,7 +518,6 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
                 }}
               />
             )}
-
             <TextField
               label='Street'
               value={address.street}

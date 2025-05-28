@@ -49,7 +49,7 @@ export const createInvitation = onCall(async (request) => {
     targetPropertyId,
   } = request.data as {
     inviteeEmail: string;
-    inviteeName: string;
+    inviteeName: string | undefined; // Optional, can be undefined
     organizationIds?: string[]; // Optional array
     rolesToAssign: string[];
     invitedByRole: string;
@@ -239,21 +239,6 @@ export const createInvitation = onCall(async (request) => {
           ? organizationIds
           : null
         : null,
-      // We need a field for the *target* org for non-OM invites. Let's add `targetOrganizationId` to InvitationData
-      // For OM invites, `organizationIds` holds the list. For others, `targetOrganizationId` holds the single org.
-      // This is getting complex. Let's simplify.
-      // `InvitationData.organizationIds` will store the array for OM.
-      // For other roles, `InvitationData.organizationId` (singular) will store the target org.
-      // This requires changing InvitationData interface.
-      //
-      // Revised plan for InvitationData:
-      // organizationId: string | null; // For single-org target (PM, Resident)
-      // organizationIds: string[] | null; // For multi-org target (OM)
-      //
-      // Let's stick to the new interface: `organizationIds: string[] | null;`
-      // If it's an OM invite, this field gets the `organizationIds` array from request (or null if empty/undefined).
-      // If it's a non-OM invite, this field will be `null` in the DB, and the `singleOrgIdForInvite` is implied by the path.
-      // This means `signUpWithInvitation` needs to get the orgId from the path for non-OM.
       rolesToAssign: rolesToAssign,
       status: 'pending',
       createdBy: callerUid,
@@ -276,12 +261,6 @@ export const createInvitation = onCall(async (request) => {
       invitationData.organizationIds =
         organizationIds && organizationIds.length > 0 ? organizationIds : null;
     } else {
-      // For non-OM invites, the path `organizations/${singleOrgIdForInvite}/...` defines the target org.
-      // We might still want to store this singleOrgIdForInvite in the doc for easier querying or if the model evolves.
-      // For now, let's assume `invitationData.organizationIds` is only for OM.
-      // To be consistent, if it's a single org invite, we can store it as `[singleOrgIdForInvite]` in `organizationIds`
-      // This simplifies `signUpWithInvitation` as it always looks at `invitationData.organizationIds`.
-      // Let's adopt this:
       if (singleOrgIdForInvite) {
         invitationData.organizationIds = [singleOrgIdForInvite];
       } else {

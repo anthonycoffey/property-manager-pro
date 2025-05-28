@@ -134,7 +134,6 @@ const InvitePropertyManagerForm: React.FC<InvitePropertyManagerFormProps> = ({
           value={inviteeName}
           onChange={(e) => setInviteeName(e.target.value)}
           margin='none'
-          required
           disabled={loading}
           sx={{ flexGrow: 1 }}
         />

@@ -1,7 +1,6 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { db } from '../firebaseAdmin.js';
 import { Timestamp } from 'firebase-admin/firestore';
-import { handleHttpsError } from '../helpers/handleHttpsError.js';
 import type { Resident, AppError } from '../types.js';
 
 interface UpdateResidentData {

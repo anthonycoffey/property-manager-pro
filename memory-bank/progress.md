@@ -9,7 +9,7 @@ The project has recently completed the implementation of the Admin Organization 
 ## 2. What Works / Completed
 
 *   **Project Definition:**
-    *   `projectRoadmap.md` has been reviewed and serves as the primary guide for development.
+    *   `projectRoadmap.md` has been reviewed and serves as the primary guide for development. (Note: Current version of `projectRoadmap.md` details up to Admin Dashboard features).
 *   **Core Memory Bank Documentation Established:**
     *   `projectbrief.md`, `productContext.md`, `systemPatterns.md`, `techContext.md`, `activeContext.md`, `progress.md` are established and updated.
 *   **Authentication Redirection Implemented:** Configured `src/components/LoginForm.tsx` and `src/components/SignupForm.tsx` to redirect users to the `/dashboard` page upon successful login or registration.
@@ -191,50 +191,33 @@ The project has recently completed the implementation of the Admin Organization 
     *   Created `src/pages/LostPasswordPage.tsx` with a form to send a password reset email via Firebase.
     *   Added a route `/lost-password` in `src/routes.tsx`.
     *   Added a "Forgot password?" link to `src/components/LoginForm.tsx`.
+*   **Invitation System (Phase 3 - Refinement & Testing) Completed (2025-05-28):**
+    *   All invitation flows thoroughly tested and verified:
+        *   Admin invites / manages Organization Managers (with and without initial organization).
+        *   Admin can also invite/manage Property Managers, Properties and their Residents.
+        *   Organization Manager accepts global invitation.
+        *   Organization Manager invites other users (e.g., Property Managers, Residents) within their assigned organizations.
+        *   Property Manager creates a property and invites residents.
+    *   Email content and links for all scenarios verified.
+    *   Email templates from `docs/` seeded to Firestore `templates` collection using `seedTemplates.js`.
+*   **Admin Dashboard - Properties Management Completed (2025-05-28):**
+    *   Implementation of property CRUD operations for Admins completed and verified.
+*   **Organization Manager Dashboard - Organization Creation UI Completed (2025-05-28):**
+    *   UI for Organization Managers to use their ability to create organizations (if they don't have one or wish to create more) implemented and verified.
+*   **Role-Based Management Capabilities Verified (2025-05-28):**
+    *   Admins can manage organization managers, property managers, properties, and residents.
+    *   Organization managers can manage property managers, properties, and residents for assigned organizations.
+    *   Property managers can manage properties and residents for their organization.
 
 ## 3. What's Left to Build (High-Level from `projectRoadmap.md`)
 
-The remaining application functionality includes:
+The remaining application functionality, based on the current `projectRoadmap.md` (which details up to Admin Dashboard features), includes:
 
-*   **A. Authentication & Authorization:** (Core setup significantly enhanced with Super Admin/Org Manager distinction, ongoing refinement).
 *   **B. Admin Dashboard (Super Admin View):**
-    *   Organization Management (CRUD - Add, List, Edit, Deactivate implemented).
-    *   Organization Managers Management:
-        *   Invite new `organization_manager` (Initial form `InviteOrganizationManagerForm` implemented).
-        *   Assign existing `organization_manager` to additional organizations (Initial UI `AssignOrgToManagerForm` implemented; backend function `addOrganizationToManager` created and updated for denormalization. User selector in form is a TODO for enhancement).
-        *   View/List `organization_manager` users and manage their specific organization assignments (Implemented via `OrganizationManagerAssignments.tsx`).
-    *   Property Managers Management (by selected Org - Core UI for listing, editing, deleting, and revoking invites is complete).
-    *   Properties Management (by selected Org - CRUD - Pending).
-    *   Residents Management (by selected Org - View, Edit, Delete for support - Pending).
-*   **C. Organization Manager Dashboard (New - Scoped to Assigned Orgs):**
-    *   Organization Selector (if managing multiple orgs - Implemented).
-    *   Property Managers Management (within selected org - Initial implementation with `OrgScopedPropertyManagerManagement.tsx` complete).
-    *   Properties Management (within selected org - Pending).
-    *   Residents Management (within selected org - Pending).
-    *   Invitation Management (for PMs, Staff, Residents within selected org - Pending).
-*   **D. Property Manager Dashboard:**
-    *   **Property Creation:** (Implemented via "Create Property" button and modal with `CreatePropertyForm.tsx`).
-    *   **View Assigned Properties:** (Implemented in "My Properties" tab via table-based `PropertyManagerPropertiesList`, showing Name and Address).
-    *   **Invite Residents:**
-        *   Select property for invitation (Implemented in "Invite Resident" tab via new `PropertySelectorDropdown.tsx`, showing Name and Address).
-        *   Use `InviteResidentForm` with selected property (Implemented).
-    *   Manage residents for their properties (e.g., view list, edit details - Pending).
-    *   Manage invitations (beyond the initial invite form, e.g., view status, revoke - Pending).
-    *   Track service requests (Pending).
-*   **E. Resident Dashboard:**
-    *   View property details.
-    *   Manage profile (vehicle info).
-    *   Submit and track service requests.
-*   **F. Core Systems & Features:**
-    *   **Data Models in Firestore:** (Initial implementation complete, ongoing refinement as features are built).
-    *   **Invitation System:**
-        *   Thorough end-to-end testing of all invitation flows (Admin invites PM, Admin invites Org Manager, PM creates Property, PM invites Resident with dynamic property selection, invitee accepts via email/password and social sign-on).
-        *   Created `organizationManagerInvitation.json` email template (needs seeding to Firestore).
-        *   Manually add email templates from `docs/` to Firestore `templates` collection.
-        *   The `InviteResidentForm.tsx` in `Dashboard.tsx` now uses a dynamic `propertyId`.
-    *   **Service Request System:** (Full implementation pending).
-    *   **Firebase Cloud Functions for:** CRM Integration, Email Sending (beyond invitations), CSV Processing, QR Code Generation, Subscription Management (all pending).
-    *   **Firebase Cloud Functions Structure:** All functions are now modularized.
+    *   Property Managers Management (CRUD): Further refinement or specific sub-tasks if not fully covered by general management capabilities.
+    *   (Note: Other items previously listed here like Organization Management, Properties Management, and Residents Management for Admins are now considered complete based on recent verifications).
+
+(Further features beyond the Admin Dashboard, such as Organization Manager, Property Manager, and Resident Dashboards, and core systems like Service Requests, are planned but not yet detailed in the current version of `projectRoadmap.md`.)
 
 ## 4. Known Issues & Blockers
 
@@ -310,18 +293,24 @@ The remaining application functionality includes:
     *   Confirmed that `signUpWithInvitation.ts` is a general handler. While it can process Organization Manager invitations from `globalInvitations` (setting claims and creating profiles in `organizations/{orgId}/users/`), it crucially does *not* create the OM's profile in the root `admins` collection.
     *   Confirmed that `signUpWithOrgManagerInvitation.ts` is specific to Organization Manager invitations and its key distinct function is creating/merging the OM's profile in the root `admins/{uid}` collection, which is essential for Super Admin management. It also handles org-specific profiles if initial organizations are assigned.
     *   This reinforces that both functions serve distinct, necessary purposes, with `signUpWithOrgManagerInvitation.ts` being vital for the complete OM onboarding process, including their `admins` profile. The frontend likely uses `AcceptOrgManagerInvitationPage.tsx` to call this specific function.
+*   **2025-05-28: Major Feature Completions & Next Steps Definition:**
+    *   Completed and verified: Invitation System (Phase 3), Admin Dashboard Properties Management (CRUD), Organization Manager Dashboard Organization Creation UI.
+    *   Verified comprehensive role-based management capabilities for Admins, OMs, and PMs.
+    *   Defined new "Immediate Next Steps" focusing on Phoenix Integration, CSV Import, GPTChat Integration, and Dashboard Visualizations.
 
 ## 6. Immediate Next Steps
 
-1.  **Invitation System (Phase 3 - Refinement & Testing):**
-    *   Thoroughly test all invitation flows, including:
-        *   Admin invites Organization Manager (with and without initial organization).
-        *   Organization Manager accepts global invitation.
-        *   Organization Manager (who created an org or was assigned one) invites other users (e.g., Property Managers, Residents - if this flow is enabled for them).
-    *   Verify email content and links for all scenarios.
-    *   Seed email templates from `docs/` to Firestore `templates` collection using the enhanced `seedTemplates.js` script.
-2.  **Admin Dashboard - Properties Management:**
-    *   Begin implementation of property CRUD operations for Admins.
-3.  **Organization Manager Dashboard - Organization Creation UI (New Task):**
-    *   Implement UI for Organization Managers to use their new ability to create organizations (if they don't have one or wish to create more).
-4.  **Continue with Project Roadmap:** Proceed with other features as prioritized.
+1.  **Phoenix Integration:**
+    *   Implement job querying by Resident, Property, and Organization (attaching metadata from property manager app to jobs/form submissions).
+    *   Implement service request dispatch, pushing service requests directly into the Phoenix jobs table.
+    *   Implement services querying from Phoenix for the service request form's "services" list.
+2.  **CSV Import for Residents:**
+    *   Develop functionality for bulk resident import (primarily for Property Managers, with consideration for Admin/Organization Manager access).
+3.  **Custom GPTChat Model Integration:**
+    *   Integrate existing GPT chatbot from "lovable" into a tab within the Resident dashboard.
+    *   Evaluate and potentially implement access for Property Managers to the service request form and chatbot.
+4.  **Dashboard Data Visualizations & Statistics:**
+    *   Implement specified metrics for Admin, Organization Manager, Property Manager, and Resident dashboards using Highcharts. Expected metrics include:
+        *   **Admins & Organization Managers:** Total OMs, total Orgs, PMs/Org, Properties/Org, Residents/Property.
+        *   **Property Managers:** Signed-up residents, initiated service requests.
+        *   **Residents:** Personal service history.

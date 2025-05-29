@@ -2,9 +2,15 @@
 
 ## 1. Current Work Focus
 
-The current focus is on refactoring UI components for better maintainability and readability.
+Actively working on Phoenix integration (job querying, service request dispatch, services querying), CSV import for residents, GPTChat model integration for residents, and implementing initial dashboard data visualizations.
 
 ## 2. Recent Changes & Activities
+
+- **Major Feature Completions (2025-05-28):**
+    - **Invitation System (Phase 3 - Refinement & Testing):** All invitation flows (Admin, OM, PM roles) thoroughly tested and verified, including email content/links and template seeding.
+    - **Admin Dashboard - Properties Management:** CRUD operations for Admins to manage properties implemented and verified.
+    - **Organization Manager Dashboard - Organization Creation UI:** UI enabling Organization Managers to create new organizations implemented and verified.
+    - **Role-Based Management Capabilities Verified:** Confirmed that Admins can manage OMs, PMs, Properties, and Residents; OMs can manage PMs, Properties, and Residents for their assigned orgs; PMs can manage Properties and Residents for their org.
 
 - **Google Places API Autocomplete Refactor (2025-05-25):**
   - Refactored address autocompletion in property forms to use the recommended `google.maps.places.PlaceAutocompleteElement` (Web Component) instead of the legacy `google.maps.places.Autocomplete`.
@@ -74,14 +80,21 @@ The current focus is on refactoring UI components for better maintainability and
 
 ## 3. Next Steps
 
-- **Continue UI Refinements:** Identify other large components or sections that could benefit from similar refactoring to enhance modularity.
-- **Invitation System (Phase 3 - Refinement & Testing):**
-  - Thoroughly test all invitation flows: Admin invites PM, PM creates Property, PM invites Resident (including the new dynamic property selection), invitee accepts and signs up (email/password and social).
-  - Verify email content and links.
-  - Manually add email templates from `docs/` to Firestore `templates` collection if not already done (can use the enhanced `seedTemplates.js` script for this).
-- **Admin Dashboard - Properties Management:**
-  - Begin implementation of property CRUD operations for Admins as per project roadmap.
-- **Continue with Project Roadmap:** Proceed with other features outlined in `projectRoadmap.md`.
+1.  **Phoenix Integration:**
+    *   Implement job querying by Resident, Property, and Organization (attaching metadata from property manager app to jobs/form submissions).
+    *   Implement service request dispatch, pushing service requests directly into the Phoenix jobs table.
+    *   Implement services querying from Phoenix for the service request form's "services" list.
+2.  **CSV Import for Residents:**
+    *   Develop functionality for bulk resident import (primarily for Property Managers, with consideration for Admin/Organization Manager access).
+3.  **Custom GPTChat Model Integration:**
+    *   Integrate existing GPT chatbot from "lovable" into a tab within the Resident dashboard.
+    *   Evaluate and potentially implement access for Property Managers to the service request form and chatbot.
+4.  **Dashboard Data Visualizations & Statistics:**
+    *   Implement specified metrics for Admin, Organization Manager, Property Manager, and Resident dashboards using Highcharts. Expected metrics include:
+        *   **Admins & Organization Managers:** Total OMs, total Orgs, PMs/Org, Properties/Org, Residents/Property.
+        *   **Property Managers:** Signed-up residents, initiated service requests.
+        *   **Residents:** Personal service history.
+5.  **Extend `projectRoadmap.md`:** Document detailed plans for Organization Manager, Property Manager, and Resident dashboards, as well as core systems like Phoenix Integration, CSV Import, GPTChat, and advanced visualizations.
 
 ## 4. Active Decisions & Considerations
 

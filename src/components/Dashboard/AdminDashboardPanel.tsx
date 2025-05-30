@@ -27,6 +27,7 @@ import EditPropertyModal from '../PropertyManager/EditPropertyModal';
 import PropertyResidentsTable from '../PropertyManager/PropertyResidentsTable';
 import InviteResidentForm from '../PropertyManager/InviteResidentForm';
 import EditResidentModal from '../PropertyManager/EditResidentModal';
+import AdminCampaignsView from '../Admin/Campaigns/AdminCampaignsView'; // Added
 import type {
   Property as PropertyType,
   Resident as ResidentType,
@@ -245,6 +246,7 @@ const AdminDashboardPanel: React.FC = () => {
             <Tab label='Organization Managers' {...a11yProps(1)} />
             <Tab label='Property Managers' {...a11yProps(2)} />
             <Tab label='Properties & Residents' {...a11yProps(3)} />
+            <Tab label='Campaigns' {...a11yProps(4)} />
           </Tabs>
         </Box>
         <TabPanel value={adminTabValue} index={0}>
@@ -303,6 +305,9 @@ const AdminDashboardPanel: React.FC = () => {
               Select an organization to manage its properties and residents.
             </Typography>
           )}
+        </TabPanel>
+        <TabPanel value={adminTabValue} index={4}>
+          <AdminCampaignsView />
         </TabPanel>
 
         <AddOrganizationModal

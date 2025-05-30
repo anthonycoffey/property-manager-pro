@@ -35,8 +35,14 @@
 *   **IDE:** Visual Studio Code recommended, or any editor with good JavaScript/TypeScript support.
 *   **Version Control:** Git (repository to be set up on a platform like GitHub, GitLab, or Bitbucket).
 *   **Local Emulation:** Firebase Local Emulator Suite will be crucial for testing Authentication, Firestore, and Cloud Functions locally before deployment.
-*   **API Keys:**
-    *   `VITE_GOOGLE_MAPS_API_KEY`: Environment variable for Google Maps API key, used for Places Autocomplete. Stored in `.env` (gitignored).
+*   **API Keys & Firebase Function Configuration:**
+    *   `VITE_GOOGLE_MAPS_API_KEY`: Client-side environment variable for Google Maps API key, used for Places Autocomplete. Stored in `.env` (gitignored).
+    *   **Firebase Function Environment Variables (set via Firebase CLI `functions:config:set`):**
+        *   `app.domain`: This configuration is used by the `handleCampaignSignUpLink` HTTP function to determine the base URL for redirecting users to the frontend application (e.g., `http://localhost:5173` for emulator, `https://phoenix-property-manager-pro.web.app` for production). It's crucial for production that this is set to your actual frontend application domain.
+        *   The `createCampaign` callable function constructs `accessUrl`s for public campaigns to directly invoke the `handleCampaignSignUpLink` HTTP function. The base URL for this HTTP function is determined by the environment:
+            *   **Emulator:** `http://localhost:{emulators.functions.port}/{GCLOUD_PROJECT}/{region}/handleCampaignSignUpLink` (e.g., `http://localhost:5001/phoenix-property-manager-pro/us-central1/handleCampaignSignUpLink`)
+            *   **Production:** `https://{region}-{GCLOUD_PROJECT}.cloudfunctions.net/handleCampaignSignUpLink` (e.g., `https://us-central1-phoenix-property-manager-pro.cloudfunctions.net/handleCampaignSignUpLink`)
+            *   The `GCLOUD_PROJECT` environment variable is typically available in deployed functions; `phoenix-property-manager-pro` is used as a fallback in the code. The `region` (`us-central1`) is taken from `firebase.json`.
 
 ## 3. Technical Constraints & Considerations
 

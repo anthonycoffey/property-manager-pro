@@ -209,11 +209,20 @@ export const createCampaign = v1Https.onCall(
 
     // Type-specific setup
     if (campaignParams.campaignType === 'public_link') {
-      // Use campaignParams
-      // Generate accessUrl (simple example, ensure uniqueness in a real scenario if needed)
-      // The actual URL will depend on your frontend routing for /join?campaign={id}
-      const appDomain = functions.config().app?.domain || 'app.example.com'; // Configure your app domain
-      accessUrl = `https://${appDomain}/join?campaign=${campaignRef.id}`;
+      let httpFunctionBaseUrl;
+      const projectId = process.env.GCLOUD_PROJECT || 'phoenix-property-manager-pro'; // Use provided project ID as fallback
+      const region = 'us-central1'; // As defined in firebase.json hosting.frameworksBackend.region
+
+      if (process.env.FUNCTIONS_EMULATOR === 'true') {
+        // For emulator, direct function invocation URL structure
+        const functionsPort = functions.config().emulators?.functions?.port || 5001; // Get port from config or default
+        httpFunctionBaseUrl = `http://localhost:${functionsPort}/${projectId}/${region}`;
+      } else {
+        // Production direct function invocation URL structure
+        httpFunctionBaseUrl = `https://${region}-${projectId}.cloudfunctions.net`;
+      }
+      // The accessUrl points to the HTTP trigger function
+      accessUrl = `${httpFunctionBaseUrl}/handleCampaignSignUpLink?campaign=${campaignRef.id}`;
       newCampaignData.accessUrl = accessUrl;
     } else if (campaignParams.campaignType === 'csv_import') {
       // Use campaignParams

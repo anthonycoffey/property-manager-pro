@@ -106,11 +106,34 @@ export const handleCampaignSignUpLink = v1Https.onRequest(
       );
 
       // Redirect to AcceptInvitationPage
-      // Ensure this domain is correctly configured (e.g., via Firebase Hosting or custom domain)
-      const appDomain = functions.config().app?.domain || 'app.example.com'; // Configure your app domain
-      const acceptUrl = `https://${appDomain}/accept-invitation?invitationId=${invitationRef.id}`;
+      let baseUrl: string;
+      if (process.env.FUNCTIONS_EMULATOR === 'true') {
+        const configuredDomain = functions.config().app?.domain;
+        if (configuredDomain) {
+          if (configuredDomain.toLowerCase() === "localhost") {
+            baseUrl = 'http://localhost:5173';
+          } else {
+            baseUrl = configuredDomain.startsWith('http') ? configuredDomain : `https://${configuredDomain}`;
+          }
+        } else {
+          baseUrl = 'http://localhost:5173';
+        }
+      } else {
+        const prodDomain = functions.config().app?.domain;
+        if (!prodDomain) {
+          functions.logger.error(
+            "CRITICAL: functions.config().app.domain is not set for production environment! Public campaign links will use hardcoded fallback. This MUST be configured."
+          );
+          baseUrl = 'https://phoenix-property-manager-pro.web.app';
+        } else {
+          baseUrl = `https://${prodDomain}`;
+        }
+      }
+      
+      // Pass invitationId, campaignId, and organizationId to the frontend page
+      const joinUrl = `${baseUrl}/join-campaign?invitationId=${invitationRef.id}&campaignId=${campaignDoc.id}&organizationId=${campaignData.organizationId}`;
 
-      res.redirect(302, acceptUrl);
+      res.redirect(302, joinUrl);
     } catch (error) {
       functions.logger.error(
         `Error in handleCampaignSignUpLink for campaignId ${campaignId}:`,

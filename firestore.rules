@@ -23,6 +23,19 @@ service cloud.firestore {
       return hasRole('organization_manager');
     }
 
+    function isCampaignCreator(resourceData, auth) {
+      return auth != null && auth.uid == resourceData.createdBy;
+    }
+
+    function isPropertyManagerForCampaignOrg(orgId, auth) {
+      // Assumes PM has single orgId in claim from context.auth.token.organizationId
+      return auth != null && auth.token.roles.hasAny(['property_manager']) && auth.token.organizationId == orgId;
+    }
+
+    function isOrgManagerForCampaignOrg(orgId, auth) { // Renamed from existing to take auth and check roles
+      return auth != null && auth.token.roles.hasAny(['organization_manager']) && auth.token.organizationIds.hasAny([orgId]);
+    }
+
     // function isPropertyStaff() {
     //   return hasRole('property_staff');
     // }
@@ -44,6 +57,87 @@ service cloud.firestore {
              request.auth.token.organizationId == orgId &&
              request.auth.token.propertyId == propId;
     }
+
+    // Helper function for campaign creation validation
+    function hasRequiredCampaignCreateFields(data) {
+      // Validates data provided by the client for campaign creation
+      // Server will set: createdBy, createdAt, status, totalAccepted, accessUrl (for public_link), totalInvitedFromCsv (for csv_import)
+      return (
+        data.campaignName is string && data.campaignName.size() > 0 &&
+        data.campaignType is string && (data.campaignType == 'csv_import' || data.campaignType == 'public_link') &&
+        // targetPropertyId and organizationId are validated by path segments in the rule itself
+        data.rolesToAssign is list && data.rolesToAssign.size() > 0 && data.rolesToAssign[0] == 'resident' && // Assuming only resident roles for now
+        // Ensure client does not attempt to set server-controlled fields during creation
+        !('status' in data) &&
+        !('createdBy' in data) &&
+        !('createdAt' in data) &&
+        !('totalAccepted' in data) &&
+        !('accessUrl' in data) && // Server generates this for public_link
+        !('totalInvitedFromCsv' in data) && // Server calculates this for csv_import
+        (data.maxUses == null || (data.maxUses is number && data.maxUses >= 0)) && // maxUses can be 0 to effectively disable
+        (data.expiresAt == null || data.expiresAt is timestamp) &&
+        // Type-specific field validations
+        (
+          (data.campaignType == 'csv_import' &&
+            data.storageFilePath is string && data.storageFilePath.size() > 0 &&
+            data.sourceFileName is string && data.sourceFileName.size() > 0
+          ) ||
+          (data.campaignType == 'public_link' &&
+            !('storageFilePath' in data) && // Should not be present for public_link
+            !('sourceFileName' in data)     // Should not be present for public_link
+          )
+        )
+      );
+    }
+
+    // Helper function for campaign update validation
+    // function canUpdateCampaignFields(requestData, resourceData) {
+    //   // requestData is request.resource.data (new state), resourceData is resource.data (old state)
+    //   // Allowed to change by client: campaignName, status (to active, inactive, expired), maxUses, expiresAt, errorDetails
+    //   return requestData.campaignType == resourceData.campaignType &&
+    //          requestData.targetPropertyId == resourceData.targetPropertyId &&
+    //          requestData.organizationId == resourceData.organizationId &&
+    //          requestData.createdBy == resourceData.createdBy &&
+    //          requestData.createdAt == resourceData.createdAt &&
+    //          requestData.totalAccepted == resourceData.totalAccepted && // Client cannot change this
+    //          requestData.rolesToAssign == resourceData.rolesToAssign &&
+    //          // Type specific immutable fields (must match old state if they exist)
+    //          (resourceData.campaignType != 'public_link' || requestData.accessUrl == resourceData.accessUrl) &&
+    //          (resourceData.campaignType != 'csv_import' || (requestData.storageFilePath == resourceData.storageFilePath &&
+    //                                                           requestData.sourceFileName == resourceData.sourceFileName &&
+    //                                                           requestData.totalInvitedFromCsv == resourceData.totalInvitedFromCsv)) &&
+    //          // Validate mutable fields in the new state (requestData)
+    //          (requestData.campaignName is string && requestData.campaignName.size() > 0) &&
+    //          (requestData.status is string && (requestData.status == 'active' || requestData.status == 'inactive' || requestData.status == 'expired')) &&
+    //          (requestData.maxUses == null || (requestData.maxUses is number && requestData.maxUses >= 0)) &&
+    //          (requestData.expiresAt == null || requestData.expiresAt is timestamp) &&
+    //          (requestData.errorDetails == null || requestData.errorDetails is string) &&
+    //          // Ensure no other fields are added that weren't in resource.data or are not the explicitly mutable ones.
+    //          // All keys in the new document must have existed in the old document OR be one of the allowed mutable fields.
+    //          requestData.keys().hasOnly(resource.data.keys().toSet().union(['campaignName', 'status', 'maxUses', 'expiresAt', 'errorDetails']));
+    // }
+
+    function areImmutableCampaignFieldsUnchanged(requestData, resourceData) {
+      // Checks that fields that should never change after creation are indeed unchanged.
+      // Note: organizationId and propertyId are part of the path and implicitly constant for the doc.
+      // If client sends them in request body, they must match the existing resource.
+      return requestData.campaignType == resourceData.campaignType &&
+             requestData.createdBy == resourceData.createdBy &&
+             requestData.createdAt.toMillis() == resourceData.createdAt.toMillis() && // Compare millis for timestamps
+             requestData.totalAccepted == resourceData.totalAccepted && // Client cannot change this
+             requestData.rolesToAssign.size() == resourceData.rolesToAssign.size() && // Simple list check for now
+             requestData.rolesToAssign[0] == resourceData.rolesToAssign[0] && // Assuming single role in list
+             // Immutable optional fields: if they exist in old data, they must exist in new and be same, or not exist in new.
+             // If they didn't exist in old, they cannot be added by client.
+             (requestData.accessUrl == resourceData.accessUrl) && // Handles null vs. value vs. field not present consistently
+             (requestData.storageFilePath == resourceData.storageFilePath) &&
+             (requestData.sourceFileName == resourceData.sourceFileName) &&
+             (requestData.totalInvitedFromCsv == resourceData.totalInvitedFromCsv) &&
+             // Ensure orgId and propId from body (if sent) match resource, reinforcing path consistency
+             requestData.organizationId == resourceData.organizationId &&
+             requestData.propertyId == resourceData.propertyId;
+    }
+
 
     // Rules for top-level collections
     match /mail/{document=**} {
@@ -131,8 +225,74 @@ service cloud.firestore {
                            (request.resource.data.unitNumber == resource.data.unitNumber || resource.data.unitNumber == null) && // unitNumber might be set by PM
                            (request.resource.data.leaseStartDate == resource.data.leaseStartDate || resource.data.leaseStartDate == null) &&
                            (request.resource.data.leaseEndDate == resource.data.leaseEndDate || resource.data.leaseEndDate == null);
-        }
-      }
+        } // End of residents subcollection
+
+        // Subcollection: campaigns
+        // Path: /organizations/{organizationId}/properties/{propertyId}/campaigns/{campaignId}
+        match /campaigns/{campaignId} {
+          // CREATE
+          allow create: if (isAdmin() ||
+                           isOrgManagerForOrg(organizationId) ||
+                           (isPropertyManager() && isOrgUser(organizationId))) &&
+                           // Common validations for all creators
+                           request.resource.data.organizationId == organizationId &&
+                           request.resource.data.propertyId == propertyId &&
+                           // createdBy will be set by Cloud Function, not validated against request.auth.uid here
+                           // as the function uses admin SDK. Instead, ensure it's not set by client.
+                           // createdAt will be set by Cloud Function.
+                           hasRequiredCampaignCreateFields(request.resource.data);
+
+          // READ
+          allow read: if isAdmin() ||
+                         isOrgManagerForOrg(organizationId) ||
+                         (isPropertyManager() && isOrgUser(organizationId));
+                         // Public access to specific campaign data for /join?campaign={id} link
+                         // is handled by a Cloud Function, not direct read rules here.
+
+          // UPDATE
+          allow update: if
+            // Common check: immutable fields must not change
+            areImmutableCampaignFieldsUnchanged(request.resource.data, resource.data) &&
+            (
+              // Case 1: Editing campaignName, maxUses, expiresAt
+              (
+                // Permissions for edit: Admin OR OM for org OR (PM for org AND creator)
+                (isAdmin() || isOrgManagerForCampaignOrg(resource.data.organizationId, request.auth) || (isPropertyManagerForCampaignOrg(resource.data.organizationId, request.auth) && isCampaignCreator(resource.data, request.auth))) &&
+                // Ensure only allowed fields are being modified for an edit operation
+                // Client must send the full document, so all other fields must match resource.data
+                request.resource.data.keys().hasOnly(resource.data.keys().toSet().union(['campaignName', 'maxUses', 'expiresAt'].toSet())) &&
+                // Validate types and constraints of fields being changed (if they are present in request)
+                (!('campaignName' in request.resource.data) || (request.resource.data.campaignName is string && request.resource.data.campaignName.size() >= 3 && request.resource.data.campaignName.size() <= 100)) &&
+                (!('maxUses' in request.resource.data) || request.resource.data.maxUses == null || (request.resource.data.maxUses is number && request.resource.data.maxUses >= 1 && request.resource.data.maxUses <= 10000)) &&
+                (!('expiresAt' in request.resource.data) || request.resource.data.expiresAt == null || (request.resource.data.expiresAt is timestamp && request.resource.data.expiresAt > request.time)) &&
+                // Campaign must be in an editable state (not completed, expired, error, processing)
+                !(resource.data.status in ['completed', 'expired', 'error', 'processing']) &&
+                // Status must not be changed during this type of edit (deactivation is separate)
+                request.resource.data.status == resource.data.status
+              ) ||
+              // Case 2: Deactivating (setting status to 'inactive')
+              (
+                // Permissions for deactivate: Admin OR OM for org OR PM for org
+                (isAdmin() || isOrgManagerForCampaignOrg(resource.data.organizationId, request.auth) || isPropertyManagerForCampaignOrg(resource.data.organizationId, request.auth)) &&
+                request.resource.data.status == 'inactive' && // New status must be inactive
+                resource.data.status != 'inactive' &&         // Can only set to inactive if not already
+                // Ensure only status is changing for deactivation, all other fields must match resource.data
+                request.resource.data.keys().hasOnly(resource.data.keys().toSet().union(['status'].toSet())) &&
+                // Campaign must not be in a terminal state already (completed, expired, error)
+                !(resource.data.status in ['completed', 'expired', 'error'])
+              )
+            );
+
+          // DELETE
+          allow delete: if
+            resource.data.status == 'inactive' && // CRITICAL: Campaign must be inactive to be deleted
+            ( // Permissions for delete: Admin OR OM for org OR (PM for org AND creator)
+              isAdmin() ||
+              isOrgManagerForCampaignOrg(resource.data.organizationId, request.auth) ||
+              (isPropertyManagerForCampaignOrg(resource.data.organizationId, request.auth) && isCampaignCreator(resource.data, request.auth))
+            );
+        } // End of campaigns subcollection
+      } // End of properties subcollection
 
       // Subcollection: invitations
       match /invitations/{invitationId} {

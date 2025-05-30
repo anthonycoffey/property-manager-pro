@@ -22,9 +22,12 @@ To develop a multi-tenant ERP-style web application for property management. The
     *   Property Managers (and Organization Managers) can invite and manage residents for their properties.
     *   Super Admins can manage all residents across all organizations for support purposes.
 *   **Service Request Management:** Residents can request services, and these requests can be tracked and managed.
-*   **Invitation System:** Property Managers can generate referral codes (email/QR) to invite new residents.
-*   **Data Storage:** Utilize a scalable and secure NoSQL database (Cloud Firestore) for all application data.
-*   **Backend Logic:** Implement server-side logic using cloud functions for tasks like API integrations, email sending, CSV processing, and business rule enforcement.
+*   **Invitation System:** Enhanced system for inviting residents, including:
+    *   Individual email invitations.
+    *   "Campaigns" feature allowing bulk resident import via CSV.
+    *   "Campaigns" feature for generating shareable public links/QR codes with optional usage limits and expiration dates.
+*   **Data Storage:** Utilize a scalable and secure NoSQL database (Cloud Firestore) for all application data. Firebase Storage for file uploads (e.g., CSVs for bulk import).
+*   **Backend Logic:** Implement server-side logic using cloud functions for tasks like API integrations, email sending, CSV processing (from Firebase Storage), dynamic invitation generation, and business rule enforcement. Includes scheduled functions for data cleanup.
 *   **Frontend Interface:** Develop a responsive and user-friendly interface using React, Material UI, and Material Icons.
 
 ## 3. Key Technologies

@@ -46,6 +46,10 @@ The application will follow a hybrid rendering approach, combining Client-Side R
     * **CSV Processing:** Handling bulk resident imports securely and efficiently.
     * **QR Code Generation:** Generating QR codes on the server for security and consistency.
     * **Subscription Management:** Potentially integrating with a payment gateway (e.g., Stripe via Firebase Extensions).
+    * **Resident Invitation Campaigns:**
+        *   Bulk CSV imports.
+        *   Public shareable links/QR codes.
+        *   Campaign status management (active, inactive, completed, etc.), including deactivation and reactivation.
 
 ---
 

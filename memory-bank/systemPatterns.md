@@ -115,7 +115,32 @@ The application employs a modern web architecture with a React-based frontend an
                     *   `createdBy: string` (Auth UID of an org user)
                     *   `createdAt: timestamp`
                     *   `expiresAt: timestamp`
+                    *   `campaignId?: string` (NEW: Links to a campaign if this invitation originated from one)
             
+            *   **`campaigns`** (NEW Subcollection: `organizations/{organizationId}/properties/{propertyId}/campaigns`)
+                *   Purpose: Manages resident invitation campaigns (CSV bulk import, Public Link/QR code).
+                *   Document ID: `{campaignId}` (auto-generated)
+                *   Fields:
+                    *   `campaignName: string`
+                    *   `campaignType: "csv_import" | "public_link"`
+                    *   `status: "active" | "inactive" | "completed" | "expired" | "processing" | "error"`
+                    *   `rolesToAssign: string[]` (e.g., `["resident"]`)
+                    *   `createdBy: string` (UID of the user who created the campaign)
+                    *   `createdAt: timestamp`
+                    *   `organizationId: string` (Denormalized for rules/queries)
+                    *   `propertyId: string` (Denormalized for rules/queries)
+                    *   `maxUses?: number | null`
+                    *   `totalAccepted: number` (default 0)
+                    *   `expiresAt?: timestamp | null`
+                    *   `// CSV Import Specific`
+                    *   `storageFilePath?: string` (Path to CSV in Firebase Storage)
+                    *   `sourceFileName?: string` (Original name of the uploaded CSV)
+                    *   `totalInvitedFromCsv?: number`
+                    *   `// Public Link Specific`
+                    *   `accessUrl?: string` (Shareable URL for public link campaigns)
+                    *   `// Common`
+                    *   `errorDetails?: string`
+
             *   **`services`** (Subcollection: `organizations/{organizationId}/services`)
                 *   Purpose: Tracks service requests for properties within this organization.
                 *   Document ID: `{serviceId}` (e.g., auto-generated unique ID)
@@ -154,11 +179,42 @@ The application employs a modern web architecture with a React-based frontend an
         *   **Use Cases:** Initial rendering of dashboards (Admin, Property Manager), data-heavy lists (properties, residents), reports. Server Components can directly interact with Firebase Admin SDK or call Cloud Functions.
 *   **API Design (Cloud Functions):**
     *   Cloud Functions act as the primary backend API layer.
-    *   Functions will be designed to be granular and secure, performing specific tasks (e.g., `createInvitation`, `processServiceRequest`, `importResidentsFromCSV`).
+    *   Functions will be designed to be granular and secure, performing specific tasks.
+    *   **Invitation Campaign Functions (New):**
+        *   **`createCampaign` (v1 Callable):**
+            *   Purpose: Allows authorized users (PM, OM, Admin) to create new resident invitation campaigns.
+            *   Inputs: `organizationId`, `propertyId`, `campaignName`, `campaignType` (`csv_import` or `public_link`), `rolesToAssign`, `maxUses?`, `expiresAt?`. If `csv_import`, also `storageFilePath` (path to CSV in Firebase Storage) and `sourceFileName`.
+            *   Logic: Creates a `campaigns` document.
+                *   For `csv_import`: Downloads and parses CSV from `storageFilePath`, creates individual `invitations` (linked with `campaignId`), sends emails via `firestore-send-email` extension, updates campaign with `totalInvitedFromCsv`, moves processed CSV in Storage.
+                *   For `public_link`: Generates and stores a unique `accessUrl` for the campaign.
+            *   Output: `{ campaignId, accessUrl? }`.
+        *   **`handleCampaignSignUpLink` (v1 HTTP):**
+            *   Purpose: Handles incoming requests from `public_link` campaign URLs.
+            *   Trigger: HTTP GET request to a specific URL (e.g., `/join?campaign={campaignId}`).
+            *   Logic: Validates the `campaignId` (active, not expired, within limits). If valid, dynamically creates an `invitations` document (linked to the `campaignId`) and redirects the user to the standard `AcceptInvitationPage` with the new invitation ID.
+        *   **`signUpWithInvitation` (v2 Callable - Updated):**
+            *   Existing function updated to check if an accepted invitation has a `campaignId`.
+            *   If so, it atomically increments `totalAccepted` on the linked campaign document and updates the campaign's `status` (e.g., to "completed" or "expired") if `maxUses` or `expiresAt` conditions are met.
+        *   **`cleanupProcessedCampaignCSVs` (v2 Scheduled):**
+            *   Purpose: Periodically cleans up old CSV files from Firebase Storage.
+            *   Trigger: Runs on a schedule (e.g., daily).
+            *   Logic: Deletes files from `campaign_csvs_processed` and `campaign_csvs_failed` folders in Storage that are older than a defined retention period (e.g., 30 days).
+        *   **`activateCampaign` (v1 Callable - New):**
+            *   Purpose: Allows authorized users (PM, OM, Admin) to reactivate an 'inactive' campaign.
+            *   Inputs: `organizationId`, `propertyId`, `campaignId`.
+            *   Logic: Sets the campaign `status` to 'active'. Does not re-process or re-send invitations.
+            *   Output: `{ success: boolean, message?: string }`.
     *   `createOrganization` function now allows `organization_manager` role to create organizations and auto-assigns them.
     *   **Organization Manager Assignment (Admin Functions):**
         *   `assignOrganizationToManagerAdmin`: Callable function for Super Admins to assign an organization to an Organization Manager. Updates claims, denormalized `assignedOrganizationIds` in the OM's `admins` profile, and creates/updates the OM's profile in the target organization's `users` subcollection.
         *   `unassignOrganizationFromManagerAdmin`: Callable function for Super Admins to unassign an organization from an Organization Manager. Updates claims, denormalized `assignedOrganizationIds` in the OM's `admins` profile, and deletes the OM's profile from the unassigned organization's `users` subcollection.
+*   **Firebase Storage Usage (New Section):**
+    *   Firebase Storage is used for managing CSV files for bulk resident imports via campaigns.
+    *   **Folders:**
+        *   `campaign_csvs_pending/`: Frontend uploads new CSVs here.
+        *   `campaign_csvs_processed/`: `createCampaign` function moves successfully processed CSVs here.
+        *   `campaign_csvs_failed/`: `createCampaign` function may move CSVs here if processing fails irrecoverably.
+    *   **Cleanup:** The `cleanupProcessedCampaignCSVs` scheduled function manages the deletion of old files from `_processed` and `_failed` folders.
 *   **State Management Strategy:**
     *   **Global State (React Context):** For broadly shared, less frequently updated data (e.g., authenticated user object, theme settings).
         *   Theme settings (`mode`: 'light' or 'dark') are persisted to `localStorage` to remember user preference across sessions. The system preference (`prefers-color-scheme`) is used as a fallback if no `localStorage` value is set.
@@ -205,7 +261,39 @@ The application employs a modern web architecture with a React-based frontend an
         *   Creates the necessary user profile(s) in Firestore (e.g., in `organizations/{orgId}/users/{uid}`, `organizations/{orgId}/properties/{propId}/residents/{uid}`, and for `signUpWithOrgManagerInvitation.ts`, also in `admins/{uid}`).
     5.  Firebase Auth ID token (with the final, correct role claims) is available to the client.
     6.  Client-side routing and UI adapt based on the role.
-    6.  Firestore Security Rules validate the role claim for data operations.
+    7.  Firestore Security Rules validate the role claim for data operations.
+
+*   **Invitation Campaign Flow (CSV Import - New):**
+    1.  PM/OM/Admin uses frontend UI (`CreateCampaignModal`) to define a "csv_import" campaign (name, limits, expiry) and uploads a CSV file.
+    2.  Frontend uploads CSV to Firebase Storage (`campaign_csvs_pending/`).
+    3.  Frontend calls `createCampaign` Cloud Function with campaign details and `storageFilePath`.
+    4.  `createCampaign` function:
+        a.  Creates `campaigns/{campaignId}` document in Firestore.
+        b.  Downloads and parses CSV from Storage.
+        c.  For each valid row, creates an `invitations/{invitationId}` document (linked to `campaignId`). This triggers an email via `firestore-send-email`.
+        d.  Updates campaign with `totalInvitedFromCsv` and status.
+        e.  Moves processed CSV to `campaign_csvs_processed/` in Storage.
+    5.  Resident receives email, clicks link to `AcceptInvitationPage`.
+    6.  Resident signs up. `signUpWithInvitation` function is called.
+    7.  `signUpWithInvitation` processes user creation, updates invitation status, and updates the linked campaign's `totalAccepted` and `status`.
+    8.  PM/OM/Admin can view campaign status and list in `CampaignsTable`.
+
+*   **Invitation Campaign Flow (Public Link/QR Code - New):**
+    1.  PM/OM/Admin uses frontend UI (`CreateCampaignModal`) to define a "public_link" campaign (name, limits, expiry).
+    2.  Frontend calls `createCampaign` Cloud Function.
+    3.  `createCampaign` function:
+        a.  Creates `campaigns/{campaignId}` document.
+        b.  Generates and stores an `accessUrl` (e.g., `app.com/join?campaign={campaignId}`).
+        c.  Returns `campaignId` and `accessUrl` to frontend.
+    4.  Frontend displays `accessUrl` and generates/displays a QR code from it.
+    5.  User clicks the public link or scans QR code, hitting the `accessUrl`.
+    6.  `handleCampaignSignUpLink` HTTP function is triggered:
+        a.  Validates the campaign.
+        b.  Dynamically creates an `invitations/{invitationId}` document (linked to `campaignId`).
+        c.  Redirects user to `AcceptInvitationPage` with the new `invitationId`.
+    7.  Resident signs up. `signUpWithInvitation` function is called.
+    8.  `signUpWithInvitation` processes user creation, updates invitation status, and updates the linked campaign's `totalAccepted` and `status`.
+    9.  PM/OM/Admin can view campaign status and list in `CampaignsTable`.
 
 *   **Data Display (e.g., Property List for Property Manager):**
     1.  Property Manager navigates to the "My Properties" page.

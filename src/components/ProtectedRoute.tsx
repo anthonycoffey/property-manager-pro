@@ -1,5 +1,5 @@
 import React, { type ReactNode } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { CircularProgress, Container, Box } from '@mui/material';
 
@@ -16,6 +16,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   requiredOrgId,
   requiredPropertyId,
 }) => {
+  const location = useLocation(); // Get current location
   const {
     currentUser,
     loading,
@@ -41,30 +42,30 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   }
 
   if (!currentUser && (!organizationId || !organizationIds)) {
-    return <Navigate to='/login' replace />;
+    return <Navigate to='/login' replace state={{ from: location, ...location.state }} />;
   }
 
   if (allowedRoles && allowedRoles.length > 0) {
     const hasRequiredRole = roles.some((role) => allowedRoles.includes(role));
     if (!hasRequiredRole) {
-      return <Navigate to='/unauthorized' replace />;
+      return <Navigate to='/unauthorized' replace state={{ from: location, ...location.state }} />;
     }
   }
 
   if (requiredOrgId) {
     if (roles.includes('organization_manager')) {
       if (!organizationIds || !organizationIds.includes(requiredOrgId)) {
-        return <Navigate to='/unauthorized' replace />;
+        return <Navigate to='/unauthorized' replace state={{ from: location, ...location.state }} />;
       }
     } else {
       if (organizationId !== requiredOrgId) {
-        return <Navigate to='/unauthorized' replace />;
+        return <Navigate to='/unauthorized' replace state={{ from: location, ...location.state }} />;
       }
     }
   }
 
   if (requiredPropertyId && propertyId !== requiredPropertyId) {
-    return <Navigate to='/unauthorized' replace />;
+    return <Navigate to='/unauthorized' replace state={{ from: location, ...location.state }} />;
   }
 
   return <>{children}</>;

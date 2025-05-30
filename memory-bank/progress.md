@@ -2,12 +2,38 @@
 
 ## 1. Current Status: RBAC & Firestore Implementation (As of 2025-05-23)
 
-The project has recently completed the implementation of the Admin Organization Management Panel, a significant refactoring of all Firebase Cloud Functions, the integration of Google Places API for address autocompletion, and a major RBAC enhancement introducing the Organization Manager role.
+The project has recently completed the backend and initial frontend (for Property Managers) of the "Resident Invitation Campaigns" feature. This includes CSV bulk import, public link/QR code generation, and associated Cloud Functions and Firestore structures.
 
-*   **Date of this update:** 2025-05-28
+*   **Date of this update:** 2025-05-29
 
 ## 2. What Works / Completed
 
+*   **Resident Invitation Campaigns (Backend & Initial Frontend for PMs) - 2025-05-29:**
+    *   **Concept:** "Campaigns" system for CSV bulk imports and Public Link/QR code resident invitations, with usage limits and expiry.
+    *   **Backend:**
+        *   Firestore rules for `campaigns` subcollection.
+        *   `createCampaign` (v1 Callable): Creates campaigns, processes CSVs from Firebase Storage, generates public links.
+        *   `handleCampaignSignUpLink` (v1 HTTP): Dynamically creates invitations for public link campaigns.
+        *   `signUpWithInvitation` (v2 Callable): Updated to increment campaign counters and update status.
+        *   `cleanupProcessedCampaignCSVs` (v2 Scheduled): Daily cleanup of old CSVs from Firebase Storage (`campaign_csvs_processed/`, `campaign_csvs_failed/`).
+    *   **Frontend (Property Manager Scope):**
+        *   Type definitions: `Campaign`, `CampaignStatus`, `CampaignType` in `src/types/index.ts`.
+        *   `CreateCampaignModal.tsx`: Modal for PMs to create campaigns (CSV or Public Link), handles CSV upload to Storage, calls `createCampaign` function, displays QR/link.
+        *   `CampaignsTable.tsx`: Displays list of campaigns for a property with real-time updates.
+        *   `PropertyCampaignsView.tsx`: Container for campaign creation and table.
+    *   Integrated into `PropertyManagerDashboardPanel.tsx` via a new "Campaigns" tab with property selection.
+    *   **Dependencies:** `csv-parse` (functions), `@types/express` (functions), `qrcode.react` (frontend).
+*   **Campaign Reactivation Feature - 2025-05-29:**
+    *   **Backend:** Created `activateCampaign` Cloud Function (`functions/src/callable/activateCampaign.ts`) to change an 'inactive' campaign's status to 'active'. Includes permission checks similar to `deactivateCampaign`. Exported in `functions/src/index.ts`.
+    *   **Frontend:**
+        *   Added `ActivateCampaignData` type to `src/types/index.ts` and `functions/src/types.ts`.
+        *   Created `src/components/PropertyManager/Campaigns/ConfirmActivateCampaignDialog.tsx` for user confirmation.
+        *   Updated `src/components/PropertyManager/Campaigns/CampaignsTable.tsx`:
+            *   Added a "Reactivate" button/menu item for inactive campaigns.
+            *   Integrated the `ConfirmActivateCampaignDialog`.
+            *   Calls the `activateCampaign` Cloud Function.
+            *   Implemented Snackbar notifications for actions.
+        *   Updated the confirmation text in `src/components/PropertyManager/Campaigns/ConfirmDeactivateCampaignDialog.tsx` to reflect that deactivation is reversible.
 *   **Project Definition:**
     *   `projectRoadmap.md` has been reviewed and serves as the primary guide for development. (Note: Current version of `projectRoadmap.md` details up to Admin Dashboard features).
 *   **Core Memory Bank Documentation Established:**
@@ -216,14 +242,35 @@ The remaining application functionality, based on the current `projectRoadmap.md
 *   **B. Admin Dashboard (Super Admin View):**
     *   Property Managers Management (CRUD): Further refinement or specific sub-tasks if not fully covered by general management capabilities.
     *   (Note: Other items previously listed here like Organization Management, Properties Management, and Residents Management for Admins are now considered complete based on recent verifications).
+*   (The old "Invitation System (Phase 3)" is now superseded by the "Resident Invitation Campaigns" feature for resident invites.)
 
 (Further features beyond the Admin Dashboard, such as Organization Manager, Property Manager, and Resident Dashboards, and core systems like Service Requests, are planned but not yet detailed in the current version of `projectRoadmap.md`.)
 
+## 3. Immediate Next Steps (Updated from activeContext.md)
+
+1.  **Resident Invitation Campaigns - Enhancements & Broader Rollout:**
+    *   Implement Campaign Management UI for Organization Managers.
+    *   Implement Campaign Management UI for Admins.
+    *   Add advanced campaign actions (edit, deactivate/activate, view detailed stats/accepted users).
+    *   Implement the frontend page/route for handling public campaign links (`/join?campaign={campaignId}`).
+    *   Conduct thorough end-to-end testing of all campaign flows.
+2.  **Phoenix Integration:** (Ongoing)
+    *   Implement job querying by Resident, Property, and Organization.
+    *   Implement service request dispatch to Phoenix.
+    *   Implement services querying from Phoenix.
+3.  **Custom GPTChat Model Integration:** (Ongoing)
+    *   Integrate chatbot into Resident dashboard.
+    *   Evaluate PM access.
+4.  **Dashboard Data Visualizations & Statistics:** (Ongoing)
+    *   Implement metrics for all roles using Highcharts, including campaign performance data.
+5.  **Extend `projectRoadmap.md`:** Document detailed plans for the remaining dashboard features and core systems, including the full scope of Invitation Campaigns.
+
+
 ## 4. Known Issues & Blockers
 
-*   **MUI Grid TypeScript Errors:** Lingering TypeScript errors related to MUI `Grid` component props in `CreatePropertyForm.tsx` might indicate a deeper type configuration issue or linter quirk. Functionality is expected to be unaffected. (No change)
-*   **Placeholder `appName`:** The `appName` in `functions/src/index.ts` (now within `createInvitation.ts`) for email templates is currently a hardcoded placeholder ("Property Manager Pro"). This should ideally be configurable. (No change)
-*   **None at this stage.** The "Can't determine Firebase Database URL" error in `processSignUp` has been resolved. The TypeScript error related to `functions.auth` was previously resolved. (No change)
+*   **TypeScript v1/v2 Firebase Functions Typing:** Persistent TypeScript type resolution issues were encountered in the local dev environment when mixing v1 and v2 Firebase Function types/signatures (e.g., for `onCall`, `onRequest`, `CallableContext`, `EventContext`, `Response`). While workarounds (explicit v1 type imports, `write_to_file` fallback, using v2 `onSchedule`) were used, this indicates a potential sensitivity in the project's TypeScript setup that needs monitoring. Deployed functions may work correctly if Firebase CLI interprets them as intended.
+*   **MUI Grid TypeScript Errors:** Lingering TypeScript errors related to MUI `Grid` component props in `CreatePropertyForm.tsx` might indicate a deeper type configuration issue or linter quirk. Functionality is expected to be unaffected.
+*   **Placeholder `appName` & `appDomain`:** The `appName` (in `createInvitation.ts`) and `appDomain` (in `createCampaign.ts` and `handleCampaignSignUpLink.ts`) for email templates and generated URLs are currently hardcoded placeholders (e.g., "Property Manager Pro", "app.example.com"). These should ideally be configurable via Firebase environment configuration.
 
 ## 5. Evolution of Project Decisions
 
@@ -296,21 +343,10 @@ The remaining application functionality, based on the current `projectRoadmap.md
 *   **2025-05-28: Major Feature Completions & Next Steps Definition:**
     *   Completed and verified: Invitation System (Phase 3), Admin Dashboard Properties Management (CRUD), Organization Manager Dashboard Organization Creation UI.
     *   Verified comprehensive role-based management capabilities for Admins, OMs, and PMs.
-    *   Defined new "Immediate Next Steps" focusing on Phoenix Integration, CSV Import, GPTChat Integration, and Dashboard Visualizations.
-
-## 6. Immediate Next Steps
-
-1.  **Phoenix Integration:**
-    *   Implement job querying by Resident, Property, and Organization (attaching metadata from property manager app to jobs/form submissions).
-    *   Implement service request dispatch, pushing service requests directly into the Phoenix jobs table.
-    *   Implement services querying from Phoenix for the service request form's "services" list.
-2.  **CSV Import for Residents:**
-    *   Develop functionality for bulk resident import (primarily for Property Managers, with consideration for Admin/Organization Manager access).
-3.  **Custom GPTChat Model Integration:**
-    *   Integrate existing GPT chatbot from "lovable" into a tab within the Resident dashboard.
-    *   Evaluate and potentially implement access for Property Managers to the service request form and chatbot.
-4.  **Dashboard Data Visualizations & Statistics:**
-    *   Implement specified metrics for Admin, Organization Manager, Property Manager, and Resident dashboards using Highcharts. Expected metrics include:
-        *   **Admins & Organization Managers:** Total OMs, total Orgs, PMs/Org, Properties/Org, Residents/Property.
-        *   **Property Managers:** Signed-up residents, initiated service requests.
-        *   **Residents:** Personal service history.
+    *   Defined new "Immediate Next Steps" focusing on Phoenix Integration, CSV Import, GPTChat Integration, and Dashboard Visualizations. (This is now updated above in section 3)
+*   **2025-05-29 (Resident Invitation Campaigns):**
+    *   Adopted "Campaigns" concept for CSV and Public Link/QR invitations.
+    *   Implemented backend (Firestore rules, `createCampaign` v1 callable, `handleCampaignSignUpLink` v1 HTTP, `signUpWithInvitation` v2 callable update, `cleanupProcessedCampaignCSVs` v2 scheduled).
+    *   Implemented initial frontend for Property Managers (`CreateCampaignModal`, `CampaignsTable`, `PropertyCampaignsView` integrated into dashboard).
+    *   Utilized Firebase Storage for CSVs with a scheduled cleanup strategy.
+    *   Noted and navigated TypeScript v1/v2 type resolution challenges.

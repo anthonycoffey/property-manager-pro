@@ -1,5 +1,5 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
-import { adminAuth, db, FieldValue } from '../firebaseAdmin.js';
+import { adminAuth, db, FieldValue } from '../firebaseAdmin.js'; // Already using firebaseAdmin exports
 import { handleHttpsError } from '../helpers/handleHttpsError.js';
 
 // Define a more specific type for userProfileData
@@ -244,6 +244,55 @@ export const signUpWithInvitation = onCall(async (request) => {
       acceptedAt: FieldValue.serverTimestamp(),
     });
     console.log(`Invitation ${invitationId} at ${actualInvitationPath} status updated to 'accepted' by ${uid}.`);
+
+    // 7.5 Update Campaign Counters if applicable
+    if (invitationData.campaignId && rolesToAssign.includes('resident')) {
+      const campaignId = invitationData.campaignId as string;
+      // For residents, invOrganizationIds should be an array with one ID.
+      const campaignOrgId = (invOrganizationIds && invOrganizationIds.length === 1) ? invOrganizationIds[0] : null;
+      const campaignPropertyId = targetPropertyId;
+
+      if (campaignOrgId && campaignPropertyId) {
+        const campaignRef = db.doc(`organizations/${campaignOrgId}/properties/${campaignPropertyId}/campaigns/${campaignId}`);
+        try {
+          await db.runTransaction(async (transaction) => {
+            const campaignDocSnap = await transaction.get(campaignRef);
+            if (!campaignDocSnap.exists) {
+              console.error(`Campaign ${campaignId} not found for update.`);
+              return; // Don't fail the whole signup, just log error
+            }
+            const campaign = campaignDocSnap.data();
+            if (!campaign) {
+                console.error(`Campaign data missing for ${campaignId}.`);
+                return;
+            }
+
+            const newTotalAccepted = (campaign.totalAccepted || 0) + 1;
+            const updates: { totalAccepted: number; status?: string } = {
+              totalAccepted: newTotalAccepted,
+            };
+
+            if (campaign.expiresAt && campaign.expiresAt.toMillis() < Date.now()) {
+              updates.status = 'expired';
+            } else if (campaign.maxUses && newTotalAccepted >= campaign.maxUses) {
+              updates.status = 'completed';
+            }
+            // Only update status if it's not already expired and a new status is determined
+            if (campaign.status !== 'expired' && updates.status && campaign.status !== updates.status) {
+                 transaction.update(campaignRef, updates);
+            } else { // just update totalAccepted if status isn't changing or already expired
+                 transaction.update(campaignRef, { totalAccepted: newTotalAccepted });
+            }
+            console.log(`Campaign ${campaignId} updated. New totalAccepted: ${newTotalAccepted}, Status: ${updates.status || campaign.status}`);
+          });
+        } catch (campaignError) {
+          console.error(`Error updating campaign ${campaignId}:`, campaignError);
+          // Log error but do not fail the main sign-up process
+        }
+      } else {
+        console.warn(`Could not determine campaign path for campaignId ${campaignId} due to missing org/property from invitation.`);
+      }
+    }
 
     // 8. Return Success
     return {

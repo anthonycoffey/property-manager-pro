@@ -8,6 +8,7 @@ import AcceptInvitationPage from './pages/AcceptInvitationPage';
 import AcceptOrgManagerInvitationPage from './pages/AcceptOrgManagerInvitationPage';
 import DemoPage from './pages/DemoPage'; // Added import for DemoPage
 import LostPasswordPage from './pages/LostPasswordPage'; // Added import for LostPasswordPage
+import CampaignDetailsPage from './pages/CampaignDetailsPage'; 
 
 const AppRoutes: React.FC = () => {
   return (
@@ -21,6 +22,14 @@ const AppRoutes: React.FC = () => {
             <Dashboard />
           </ProtectedRoute>
         }
+      />
+      <Route 
+        path="/campaigns/:campaignId"
+        element={
+          <ProtectedRoute>
+            <CampaignDetailsPage />
+          </ProtectedRoute>
+        } 
       />
       <Route path="/accept-invitation" element={<AcceptInvitationPage />} />
       <Route path="/accept-org-manager-invitation" element={<AcceptOrgManagerInvitationPage />} />

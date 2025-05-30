@@ -1,14 +1,16 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { QRCodeSVG } from 'qrcode.react';
-import { functions } from '../firebaseConfig';
+import { functions, db } from '../firebaseConfig'; // Added db
+import { doc, getDoc } from 'firebase/firestore'; // Added doc, getDoc
 import { httpsCallable } from 'firebase/functions';
-import type { Campaign, Invitation } from '../types';
+import type { Campaign, Invitation, Property } from '../types'; // Added Property
 import { useAuth } from '../hooks/useAuth';
 import { isAppError } from '../utils/errorUtils';
 import { 
   Box, CircularProgress, Typography, Paper, Button, Divider, Alert, Stack,
-  List, ListItem, ListItemIcon, ListItemText, Chip, TextField, InputAdornment, IconButton, Snackbar
+  List, ListItem, ListItemIcon, ListItemText, Chip, TextField, InputAdornment, IconButton, Snackbar,
+  Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TablePagination
 } from '@mui/material';
 import InfoIcon from '@mui/icons-material/Info';
 import CategoryIcon from '@mui/icons-material/Category';
@@ -26,9 +28,9 @@ import DownloadIcon from '@mui/icons-material/Download';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import AssignmentIcon from '@mui/icons-material/Assignment'; // For CSV import specific
 import PublicIcon from '@mui/icons-material/Public'; // For Public Link specific
-import BusinessIcon from '@mui/icons-material/Business'; // For Organization ID
 import HomeWorkIcon from '@mui/icons-material/HomeWork'; // For Property ID
 import VpnKeyIcon from '@mui/icons-material/VpnKey'; // For Campaign ID
+import LabelIcon from '@mui/icons-material/Label'; // For Campaign Name
 
 interface CampaignDetailsResult {
   campaign: Campaign;
@@ -52,6 +54,9 @@ const CampaignDetailsPage: React.FC = () => {
 
   const [campaignDetails, setCampaignDetails] = useState<Campaign | null>(null); // For full details from function
   const [invitations, setInvitations] = useState<Invitation[]>([]);
+  const [propertyName, setPropertyName] = useState<string | null>(null); // Added state for property name
+  const [page, setPage] = useState(0); // Added for pagination
+  const [rowsPerPage, setRowsPerPage] = useState(5); // Added for pagination
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
@@ -135,8 +140,27 @@ const CampaignDetailsPage: React.FC = () => {
         console.log('[CampaignDetailsPage] Calling getCampaignDetails with params:', paramsForFunction);
 
         const result = await getDetails(paramsForFunction);
-        setCampaignDetails(result.data.campaign);
+        const fetchedCampaign = result.data.campaign;
+        setCampaignDetails(fetchedCampaign);
         setInvitations(result.data.invitations);
+
+        // Fetch property name if campaign details are available
+        if (fetchedCampaign && fetchedCampaign.organizationId && fetchedCampaign.propertyId) {
+          try {
+            const propertyRef = doc(db, 'organizations', fetchedCampaign.organizationId, 'properties', fetchedCampaign.propertyId);
+            const propertySnap = await getDoc(propertyRef);
+            if (propertySnap.exists()) {
+              setPropertyName((propertySnap.data() as Property).name);
+            } else {
+              console.warn(`Property not found: ${fetchedCampaign.propertyId}`);
+              setPropertyName('N/A');
+            }
+          } catch (propError) {
+            console.error('Error fetching property name:', propError);
+            setPropertyName('Error loading name');
+          }
+        }
+
       } catch (err: unknown) {
         console.error('Error fetching campaign details:', err);
         if (isAppError(err)) {
@@ -165,13 +189,35 @@ const CampaignDetailsPage: React.FC = () => {
     return <Typography sx={{ margin: 2 }}>Campaign data not available or not found.</Typography>;
   }
 
+  // Helper function to format timestamps robustly
+  const formatTimestamp = (timestamp: any): string => {
+    if (!timestamp) return 'N/A';
+    // Firestore client SDK Timestamp has .seconds, but data might arrive with ._seconds
+    const seconds = timestamp.seconds ?? (timestamp as any)._seconds; 
+    if (typeof seconds === 'number') {
+      return new Date(seconds * 1000).toLocaleString();
+    }
+    return 'Invalid Date';
+  };
+
+  const handleChangePage = (event: unknown, newPage: number) => {
+    setPage(newPage);
+  };
+
+  const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
+
+  const emptyRows = page > 0 ? Math.max(0, (1 + page) * rowsPerPage - invitations.length) : 0;
+
   return (
     <Paper sx={{ padding: 3, margin: 2 }}>
       <Button variant="outlined" onClick={() => navigate(-1)} sx={{ marginBottom: 2 }}>
         Go Back
       </Button>
       <Typography variant="h4" gutterBottom>
-        Campaign Details: {campaignDetails.campaignName}
+        Campaign Details
       </Typography>
       
       <Stack direction={{ xs: 'column', md: 'row' }} spacing={3} sx={{ marginBottom: 3 }} divider={<Divider orientation="vertical" flexItem />}>
@@ -180,6 +226,10 @@ const CampaignDetailsPage: React.FC = () => {
             <InfoIcon sx={{ mr: 1 }} /> Settings
           </Typography>
           <List dense>
+            <ListItem>
+              <ListItemIcon><LabelIcon /></ListItemIcon>
+              <ListItemText primary="Campaign Name" secondary={campaignDetails.campaignName} />
+            </ListItem>
             <ListItem>
               <ListItemIcon><VpnKeyIcon /></ListItemIcon>
               <ListItemText primary="Campaign ID" secondary={campaignDetails.id} />
@@ -198,12 +248,16 @@ const CampaignDetailsPage: React.FC = () => {
                 {campaignDetails.status === 'expired' && <EventBusyIcon color="warning" />}
                 {['processing', 'error'].includes(campaignDetails.status) && <HourglassEmptyIcon color="action" />}
               </ListItemIcon>
-              <ListItemText primary="Status" secondary={<Chip label={campaignDetails.status.charAt(0).toUpperCase() + campaignDetails.status.slice(1)} size="small" color={
-                campaignDetails.status === 'active' ? 'success' :
-                campaignDetails.status === 'inactive' ? 'error' :
-                campaignDetails.status === 'completed' ? 'primary' :
-                campaignDetails.status === 'expired' ? 'warning' : 'default'
-              } />} />
+              <ListItemText 
+                primary="Status" 
+                secondary={<Chip label={campaignDetails.status.charAt(0).toUpperCase() + campaignDetails.status.slice(1)} size="small" color={
+                  campaignDetails.status === 'active' ? 'success' :
+                  campaignDetails.status === 'inactive' ? 'error' :
+                  campaignDetails.status === 'completed' ? 'primary' :
+                  campaignDetails.status === 'expired' ? 'warning' : 'default'
+                } />} 
+                secondaryTypographyProps={{ component: 'span' }} // Added this line
+              />
             </ListItem>
             <ListItem>
               <ListItemIcon><PersonIcon /></ListItemIcon>
@@ -211,12 +265,12 @@ const CampaignDetailsPage: React.FC = () => {
             </ListItem>
             <ListItem>
               <ListItemIcon><CalendarTodayIcon /></ListItemIcon>
-              <ListItemText primary="Created At" secondary={new Date(campaignDetails.createdAt.seconds * 1000).toLocaleString()} />
+              <ListItemText primary="Created At" secondary={formatTimestamp(campaignDetails.createdAt)} />
             </ListItem>
             {campaignDetails.expiresAt && (
               <ListItem>
                 <ListItemIcon><EventBusyIcon /></ListItemIcon>
-                <ListItemText primary="Expires At" secondary={new Date(campaignDetails.expiresAt.seconds * 1000).toLocaleString()} />
+                <ListItemText primary="Expires At" secondary={formatTimestamp(campaignDetails.expiresAt)} />
               </ListItem>
             )}
             <ListItem>
@@ -306,14 +360,10 @@ const CampaignDetailsPage: React.FC = () => {
             </Typography>
             <List dense>
                 <ListItem>
-                    <ListItemIcon><BusinessIcon /></ListItemIcon>
-                    <ListItemText primary="Organization ID" secondary={campaignDetails.organizationId} />
-                </ListItem>
-                <ListItem>
                     <ListItemIcon><HomeWorkIcon /></ListItemIcon>
-                    <ListItemText primary="Property ID" secondary={campaignDetails.propertyId} />
+                    <ListItemText primary="Property Name" secondary={propertyName || campaignDetails.propertyId} />
                 </ListItem>
-                {/* TODO: Fetch and display Organization Name and Property Name */}
+            
             </List>
         </Box>
       </Stack>
@@ -324,27 +374,44 @@ const CampaignDetailsPage: React.FC = () => {
         <GroupAddIcon sx={{ mr: 1 }} /> Invitations ({invitations.length})
       </Typography>
       {invitations.length > 0 ? (
-        <List>
-          {invitations.map(inv => (
-            <ListItem key={inv.id} sx={{ 
-              border: (theme) => `1px solid ${theme.palette.divider}`, 
-              borderRadius: 1, 
-              mb: 1,
-              flexDirection: 'column',
-              alignItems: 'flex-start'
-            }}>
-              <ListItemText 
-                primary={inv.email} 
-                secondary={`Status: ${inv.status}`} 
-                primaryTypographyProps={{ fontWeight: 'medium' }}
-              />
-              <ListItemText 
-                secondary={`Invited: ${new Date(inv.createdAt.seconds * 1000).toLocaleString()}${inv.expiresAt ? ` | Expires: ${new Date(inv.expiresAt.seconds * 1000).toLocaleString()}` : ''}`} 
-                secondaryTypographyProps={{ variant: 'body2', color: 'text.secondary' }}
-              />
-            </ListItem>
-          ))}
-        </List>
+        <TableContainer component={Paper} sx={{ mt: 2 }}>
+          <Table aria-label="invitations table">
+            <TableHead>
+              <TableRow>
+                <TableCell>Email</TableCell>
+                <TableCell>Status</TableCell>
+                <TableCell>Invited At</TableCell>
+                <TableCell>Expires At</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {invitations.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((inv) => (
+                <TableRow key={inv.id}>
+                  <TableCell component="th" scope="row">
+                    {inv.email}
+                  </TableCell>
+                  <TableCell>{inv.status.charAt(0).toUpperCase() + inv.status.slice(1)}</TableCell>
+                  <TableCell>{formatTimestamp(inv.createdAt)}</TableCell>
+                  <TableCell>{inv.expiresAt ? formatTimestamp(inv.expiresAt) : 'N/A'}</TableCell>
+                </TableRow>
+              ))}
+              {emptyRows > 0 && (
+                <TableRow style={{ height: 53 * emptyRows }}>
+                  <TableCell colSpan={4} />
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+          <TablePagination
+            rowsPerPageOptions={[5, 10, 25]}
+            component="div"
+            count={invitations.length}
+            rowsPerPage={rowsPerPage}
+            page={page}
+            onPageChange={handleChangePage}
+            onRowsPerPageChange={handleChangeRowsPerPage}
+          />
+        </TableContainer>
       ) : (
         <Alert severity="info" sx={{ mt: 2 }}>No invitations found for this campaign.</Alert>
       )}

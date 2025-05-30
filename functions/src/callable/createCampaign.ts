@@ -28,10 +28,48 @@ interface CreateCampaignParams {
   sourceFileName?: string;
 }
 
-interface CSVRow {
-  Email?: string;
-  DisplayName?: string;
-  UnitNumber?: string;
+// Interface for defining how known CSV fields are processed
+interface FieldConfig {
+  canonicalName: 'email' | 'displayName' | 'unitNumber' | string; // Core fields + allows future string keys
+  expectedCsvHeaders: string[]; // Possible CSV header names (after normalization)
+  isRequired?: boolean;
+}
+
+// Configuration for known CSV fields
+const KNOWN_FIELDS_CONFIG: FieldConfig[] = [
+  {
+    canonicalName: 'email',
+    expectedCsvHeaders: ['email', 'e_mail', 'emailaddress', 'email_address'],
+    isRequired: true,
+  },
+  {
+    canonicalName: 'displayName',
+    expectedCsvHeaders: ['displayname', 'display_name', 'name', 'fullname', 'full_name'],
+  },
+  {
+    canonicalName: 'unitNumber',
+    expectedCsvHeaders: [
+      'unitnumber',
+      'unit_number',
+      'unit',
+      'unitno',
+      'apt',
+      'apartmentnumber',
+      'unit_no',
+      'apt_number',
+      'apt_no',
+    ],
+  },
+];
+
+// Helper function to normalize CSV headers for matching
+// Converts to lowercase, replaces spaces and hyphens with underscores, removes other non-alphanumeric characters (except underscore)
+function normalizeHeader(header: string): string {
+  if (!header || typeof header !== 'string') return '';
+  return header
+    .toLowerCase()
+    .replace(/[\s-]+/g, '_')
+    .replace(/[^a-z0-9_]/g, '');
 }
 
 export const createCampaign = v1Https.onCall(
@@ -207,8 +245,9 @@ export const createCampaign = v1Https.onCall(
 
       try {
         const [fileBuffer] = await file.download();
-        const records: CSVRow[] = parse(fileBuffer, {
-          columns: true,
+        // Parse CSV. `columns: true` makes each record an object keyed by header names.
+        const rawRecords: Record<string, string>[] = parse(fileBuffer, {
+          columns: true, // Headers become keys
           skip_empty_lines: true,
           trim: true,
         });
@@ -216,43 +255,99 @@ export const createCampaign = v1Https.onCall(
         let invitedCount = 0;
         const batch = db.batch();
 
-        for (const record of records) {
-          if (
-            !record.Email ||
-            typeof record.Email !== 'string' ||
-            record.Email.trim() === ''
-          ) {
+        for (const rawRecord of rawRecords) {
+          const processedData: { [key: string]: string | null } = {};
+          const additionalCsvData: { [key: string]: string | null } = {};
+
+          // Get all headers from the current raw record
+          const originalCsvHeaders = Object.keys(rawRecord);
+          const remainingNormalizedHeaders: { [key: string]: string } = {};
+          originalCsvHeaders.forEach(header => {
+            remainingNormalizedHeaders[normalizeHeader(header)] = header;
+          });
+
+          let skipRecord = false;
+
+          // Populate processedData based on KNOWN_FIELDS_CONFIG
+          for (const fieldConfig of KNOWN_FIELDS_CONFIG) {
+            let foundValue: string | null = null;
+            let matchedNormalizedHeaderKey: string | undefined = undefined;
+
+            for (const expectedNormalizedHeader of fieldConfig.expectedCsvHeaders) {
+              if (
+                remainingNormalizedHeaders[expectedNormalizedHeader] &&
+                rawRecord[remainingNormalizedHeaders[expectedNormalizedHeader]] !== undefined
+              ) {
+                foundValue = rawRecord[remainingNormalizedHeaders[expectedNormalizedHeader]]?.trim() || null;
+                matchedNormalizedHeaderKey = expectedNormalizedHeader;
+                break;
+              }
+            }
+
+            if (foundValue) {
+              processedData[fieldConfig.canonicalName] = foundValue;
+              if (matchedNormalizedHeaderKey) {
+                delete remainingNormalizedHeaders[matchedNormalizedHeaderKey]; // Remove processed header
+              }
+            } else if (fieldConfig.isRequired) {
+              functions.logger.warn(
+                `Skipping record for campaign ${campaignRef.id}. Required field '${fieldConfig.canonicalName}' not found or empty. Original record:`,
+                rawRecord
+              );
+              skipRecord = true;
+              break; // Stop processing this record
+            }
+          }
+
+          if (skipRecord) {
+            continue; // Move to the next rawRecord
+          }
+
+          // Check for email specifically after attempting to map it via KNOWN_FIELDS_CONFIG
+          const emailValue = processedData['email'];
+          if (!emailValue || typeof emailValue !== 'string' || emailValue.trim() === '') {
             functions.logger.warn(
-              `Skipping record due to missing or invalid email in campaign ${campaignRef.id}:`,
-              record
+              `Skipping record due to missing or invalid email after mapping for campaign ${campaignRef.id}:`,
+              rawRecord
             );
             continue;
+          }
+          
+          // Populate additionalCsvData with remaining columns
+          for (const normalizedHeaderKey in remainingNormalizedHeaders) {
+            const originalHeader = remainingNormalizedHeaders[normalizedHeaderKey];
+            additionalCsvData[originalHeader] = rawRecord[originalHeader]?.trim() || null;
           }
 
           const invitationRef = db
             .collection('organizations')
-            .doc(campaignParams.organizationId) // Use campaignParams
+            .doc(campaignParams.organizationId)
             .collection('invitations')
-            .doc(); // Auto-generate ID
+            .doc();
 
           const invitationData = {
-            email: record.Email.trim(),
-            displayName: record.DisplayName?.trim() || null,
-            unitNumber: record.UnitNumber?.trim() || null,
-            rolesToAssign: campaignParams.rolesToAssign, // Use campaignParams
-            organizationId: campaignParams.organizationId, // Use campaignParams
-            targetPropertyId: campaignParams.propertyId, // Use campaignParams
+            email: emailValue.trim(), // Already validated
+            displayName: (processedData['displayName'] as string)?.trim() || null,
+            unitNumber: (processedData['unitNumber'] as string)?.trim() || null,
+            rolesToAssign: campaignParams.rolesToAssign,
+            organizationId: campaignParams.organizationId,
+            targetPropertyId: campaignParams.propertyId,
             status: 'pending',
-            createdBy: authUid, // The user who initiated the campaign
-            createdAt: FieldValue.serverTimestamp(), // Correct use of FieldValue
-            expiresAt: newCampaignData.expiresAt, // From campaign
-            campaignId: campaignRef.id, // Link to the campaign
+            createdBy: authUid,
+            createdAt: FieldValue.serverTimestamp(),
+            expiresAt: newCampaignData.expiresAt,
+            campaignId: campaignRef.id,
+            additionalCsvData: Object.keys(additionalCsvData).length > 0 ? additionalCsvData : null, // Add if not empty
           };
           batch.set(invitationRef, invitationData);
           invitedCount++;
         }
 
-        await batch.commit();
+        if (invitedCount > 0) {
+          await batch.commit();
+        } else {
+          functions.logger.info(`No valid records found to process for campaign ${campaignRef.id}.`);
+        }
         functions.logger.info(
           `Processed ${invitedCount} invitations for campaign ${campaignRef.id}.`
         );

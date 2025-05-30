@@ -31,7 +31,7 @@ const ConfirmDeactivateCampaignDialog: React.FC<ConfirmDeactivateCampaignDialogP
         <DialogContentText>
           Are you sure you want to deactivate this campaign? 
           Deactivating will prevent new sign-ups and cancel any pending invitations associated with it. 
-          This action can be reversed if needed (feature to be implemented).
+          This action can be reversed if needed.
         </DialogContentText>
       </DialogContent>
       <DialogActions>

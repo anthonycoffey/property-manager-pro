@@ -199,6 +199,11 @@ The application employs a modern web architecture with a React-based frontend an
             *   Purpose: Periodically cleans up old CSV files from Firebase Storage.
             *   Trigger: Runs on a schedule (e.g., daily).
             *   Logic: Deletes files from `campaign_csvs_processed` and `campaign_csvs_failed` folders in Storage that are older than a defined retention period (e.g., 30 days).
+        *   **`activateCampaign` (v1 Callable - New):**
+            *   Purpose: Allows authorized users (PM, OM, Admin) to reactivate an 'inactive' campaign.
+            *   Inputs: `organizationId`, `propertyId`, `campaignId`.
+            *   Logic: Sets the campaign `status` to 'active'. Does not re-process or re-send invitations.
+            *   Output: `{ success: boolean, message?: string }`.
     *   `createOrganization` function now allows `organization_manager` role to create organizations and auto-assigns them.
     *   **Organization Manager Assignment (Admin Functions):**
         *   `assignOrganizationToManagerAdmin`: Callable function for Super Admins to assign an organization to an Organization Manager. Updates claims, denormalized `assignedOrganizationIds` in the OM's `admins` profile, and creates/updates the OM's profile in the target organization's `users` subcollection.

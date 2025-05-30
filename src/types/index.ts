@@ -171,6 +171,12 @@ export interface DeactivateCampaignData {
   propertyId: string;
 }
 
+export interface ActivateCampaignData {
+  campaignId: string;
+  organizationId: string;
+  propertyId: string;
+}
+
 export interface DeleteCampaignData {
   campaignId: string;
   organizationId: string;

@@ -88,6 +88,9 @@ export const deactivateCampaign = deactivateCampaignFunction;
 import { deleteCampaign as deleteCampaignFunction } from './callable/deleteCampaign.js';
 export const deleteCampaign = deleteCampaignFunction;
 
+import { activateCampaign as activateCampaignFunction } from './callable/activateCampaign.js';
+export const activateCampaign = activateCampaignFunction;
+
 // HTTP Functions
 import { handleCampaignSignUpLink as handleCampaignSignUpLinkFunction } from './http/handleCampaignSignUpLink.js';
 export const handleCampaignSignUpLink = handleCampaignSignUpLinkFunction;

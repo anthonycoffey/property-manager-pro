@@ -91,31 +91,31 @@ service cloud.firestore {
     }
 
     // Helper function for campaign update validation
-    function canUpdateCampaignFields(requestData, resourceData) {
-      // requestData is request.resource.data (new state), resourceData is resource.data (old state)
-      // Allowed to change by client: campaignName, status (to active, inactive, expired), maxUses, expiresAt, errorDetails
-      return requestData.campaignType == resourceData.campaignType &&
-             requestData.targetPropertyId == resourceData.targetPropertyId &&
-             requestData.organizationId == resourceData.organizationId &&
-             requestData.createdBy == resourceData.createdBy &&
-             requestData.createdAt == resourceData.createdAt &&
-             requestData.totalAccepted == resourceData.totalAccepted && // Client cannot change this
-             requestData.rolesToAssign == resourceData.rolesToAssign &&
-             // Type specific immutable fields (must match old state if they exist)
-             (resourceData.campaignType != 'public_link' || requestData.accessUrl == resourceData.accessUrl) &&
-             (resourceData.campaignType != 'csv_import' || (requestData.storageFilePath == resourceData.storageFilePath &&
-                                                              requestData.sourceFileName == resourceData.sourceFileName &&
-                                                              requestData.totalInvitedFromCsv == resourceData.totalInvitedFromCsv)) &&
-             // Validate mutable fields in the new state (requestData)
-             (requestData.campaignName is string && requestData.campaignName.size() > 0) &&
-             (requestData.status is string && (requestData.status == 'active' || requestData.status == 'inactive' || requestData.status == 'expired')) &&
-             (requestData.maxUses == null || (requestData.maxUses is number && requestData.maxUses >= 0)) &&
-             (requestData.expiresAt == null || requestData.expiresAt is timestamp) &&
-             (requestData.errorDetails == null || requestData.errorDetails is string) &&
-             // Ensure no other fields are added that weren't in resource.data or are not the explicitly mutable ones.
-             // All keys in the new document must have existed in the old document OR be one of the allowed mutable fields.
-             requestData.keys().hasOnly(resourceData.keys().toSet().union(['campaignName', 'status', 'maxUses', 'expiresAt', 'errorDetails']));
-    }
+    // function canUpdateCampaignFields(requestData, resourceData) {
+    //   // requestData is request.resource.data (new state), resourceData is resource.data (old state)
+    //   // Allowed to change by client: campaignName, status (to active, inactive, expired), maxUses, expiresAt, errorDetails
+    //   return requestData.campaignType == resourceData.campaignType &&
+    //          requestData.targetPropertyId == resourceData.targetPropertyId &&
+    //          requestData.organizationId == resourceData.organizationId &&
+    //          requestData.createdBy == resourceData.createdBy &&
+    //          requestData.createdAt == resourceData.createdAt &&
+    //          requestData.totalAccepted == resourceData.totalAccepted && // Client cannot change this
+    //          requestData.rolesToAssign == resourceData.rolesToAssign &&
+    //          // Type specific immutable fields (must match old state if they exist)
+    //          (resourceData.campaignType != 'public_link' || requestData.accessUrl == resourceData.accessUrl) &&
+    //          (resourceData.campaignType != 'csv_import' || (requestData.storageFilePath == resourceData.storageFilePath &&
+    //                                                           requestData.sourceFileName == resourceData.sourceFileName &&
+    //                                                           requestData.totalInvitedFromCsv == resourceData.totalInvitedFromCsv)) &&
+    //          // Validate mutable fields in the new state (requestData)
+    //          (requestData.campaignName is string && requestData.campaignName.size() > 0) &&
+    //          (requestData.status is string && (requestData.status == 'active' || requestData.status == 'inactive' || requestData.status == 'expired')) &&
+    //          (requestData.maxUses == null || (requestData.maxUses is number && requestData.maxUses >= 0)) &&
+    //          (requestData.expiresAt == null || requestData.expiresAt is timestamp) &&
+    //          (requestData.errorDetails == null || requestData.errorDetails is string) &&
+    //          // Ensure no other fields are added that weren't in resource.data or are not the explicitly mutable ones.
+    //          // All keys in the new document must have existed in the old document OR be one of the allowed mutable fields.
+    //          requestData.keys().hasOnly(resource.data.keys().toSet().union(['campaignName', 'status', 'maxUses', 'expiresAt', 'errorDetails']));
+    // }
 
     function areImmutableCampaignFieldsUnchanged(requestData, resourceData) {
       // Checks that fields that should never change after creation are indeed unchanged.
@@ -260,11 +260,11 @@ service cloud.firestore {
                 (isAdmin() || isOrgManagerForCampaignOrg(resource.data.organizationId, request.auth) || (isPropertyManagerForCampaignOrg(resource.data.organizationId, request.auth) && isCampaignCreator(resource.data, request.auth))) &&
                 // Ensure only allowed fields are being modified for an edit operation
                 // Client must send the full document, so all other fields must match resource.data
-                request.resource.data.keys().hasOnly(resource.data.keys().toSet().union(['campaignName', 'maxUses', 'expiresAt'])) &&
+                request.resource.data.keys().hasOnly(resource.data.keys().toSet().union(['campaignName', 'maxUses', 'expiresAt'].toSet())) &&
                 // Validate types and constraints of fields being changed (if they are present in request)
-                (!request.resource.data.containsKey('campaignName') || (request.resource.data.campaignName is string && request.resource.data.campaignName.size() >= 3 && request.resource.data.campaignName.size() <= 100)) &&
-                (!request.resource.data.containsKey('maxUses') || request.resource.data.maxUses == null || (request.resource.data.maxUses is number && request.resource.data.maxUses >= 1 && request.resource.data.maxUses <= 10000)) &&
-                (!request.resource.data.containsKey('expiresAt') || request.resource.data.expiresAt == null || (request.resource.data.expiresAt is timestamp && request.resource.data.expiresAt > request.time)) &&
+                (!('campaignName' in request.resource.data) || (request.resource.data.campaignName is string && request.resource.data.campaignName.size() >= 3 && request.resource.data.campaignName.size() <= 100)) &&
+                (!('maxUses' in request.resource.data) || request.resource.data.maxUses == null || (request.resource.data.maxUses is number && request.resource.data.maxUses >= 1 && request.resource.data.maxUses <= 10000)) &&
+                (!('expiresAt' in request.resource.data) || request.resource.data.expiresAt == null || (request.resource.data.expiresAt is timestamp && request.resource.data.expiresAt > request.time)) &&
                 // Campaign must be in an editable state (not completed, expired, error, processing)
                 !(resource.data.status in ['completed', 'expired', 'error', 'processing']) &&
                 // Status must not be changed during this type of edit (deactivation is separate)
@@ -277,7 +277,7 @@ service cloud.firestore {
                 request.resource.data.status == 'inactive' && // New status must be inactive
                 resource.data.status != 'inactive' &&         // Can only set to inactive if not already
                 // Ensure only status is changing for deactivation, all other fields must match resource.data
-                request.resource.data.keys().hasOnly(resource.data.keys().toSet().union(['status'])) &&
+                request.resource.data.keys().hasOnly(resource.data.keys().toSet().union(['status'].toSet())) &&
                 // Campaign must not be in a terminal state already (completed, expired, error)
                 !(resource.data.status in ['completed', 'expired', 'error'])
               )

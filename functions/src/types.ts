@@ -92,6 +92,12 @@ export interface DeleteCampaignData {
   propertyId: string;
 }
 
+export interface ActivateCampaignData {
+  campaignId: string;
+  organizationId: string;
+  propertyId: string;
+}
+
 export interface CampaignActionResult {
   success: boolean;
   message?: string;

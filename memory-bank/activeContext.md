@@ -7,6 +7,11 @@
     - Adding advanced campaign management features (edit, deactivate/activate, view detailed stats).
     - Implementing the frontend page for public campaign links (`/join?campaign={id}`).
     - Thorough end-to-end testing of all campaign flows.
+- **Campaign Reactivation Feature (Completed 2025-05-29):**
+    - Added `activateCampaign` Cloud Function to set an inactive campaign's status to 'active'.
+    - Implemented UI in `CampaignsTable.tsx` with a "Reactivate" button and confirmation dialog (`ConfirmActivateCampaignDialog.tsx`).
+    - Updated text in `ConfirmDeactivateCampaignDialog.tsx` to reflect that reversal is now possible.
+    - Ensured type definitions for `ActivateCampaignData` are present in both `functions/src/types.ts` and `src/types/index.ts`.
 - **Phoenix Integration:** (Ongoing) Job querying, service request dispatch, services querying.
 - **Custom GPTChat Model Integration:** (Ongoing) For residents.
 - **Dashboard Data Visualizations & Statistics:** (Ongoing) Initial implementations.

@@ -21,9 +21,19 @@ The project has recently completed the backend and initial frontend (for Propert
         *   `CreateCampaignModal.tsx`: Modal for PMs to create campaigns (CSV or Public Link), handles CSV upload to Storage, calls `createCampaign` function, displays QR/link.
         *   `CampaignsTable.tsx`: Displays list of campaigns for a property with real-time updates.
         *   `PropertyCampaignsView.tsx`: Container for campaign creation and table.
-        *   Integrated into `PropertyManagerDashboardPanel.tsx` via a new "Campaigns" tab with property selection.
+    *   Integrated into `PropertyManagerDashboardPanel.tsx` via a new "Campaigns" tab with property selection.
     *   **Dependencies:** `csv-parse` (functions), `@types/express` (functions), `qrcode.react` (frontend).
-
+*   **Campaign Reactivation Feature - 2025-05-29:**
+    *   **Backend:** Created `activateCampaign` Cloud Function (`functions/src/callable/activateCampaign.ts`) to change an 'inactive' campaign's status to 'active'. Includes permission checks similar to `deactivateCampaign`. Exported in `functions/src/index.ts`.
+    *   **Frontend:**
+        *   Added `ActivateCampaignData` type to `src/types/index.ts` and `functions/src/types.ts`.
+        *   Created `src/components/PropertyManager/Campaigns/ConfirmActivateCampaignDialog.tsx` for user confirmation.
+        *   Updated `src/components/PropertyManager/Campaigns/CampaignsTable.tsx`:
+            *   Added a "Reactivate" button/menu item for inactive campaigns.
+            *   Integrated the `ConfirmActivateCampaignDialog`.
+            *   Calls the `activateCampaign` Cloud Function.
+            *   Implemented Snackbar notifications for actions.
+        *   Updated the confirmation text in `src/components/PropertyManager/Campaigns/ConfirmDeactivateCampaignDialog.tsx` to reflect that deactivation is reversible.
 *   **Project Definition:**
     *   `projectRoadmap.md` has been reviewed and serves as the primary guide for development. (Note: Current version of `projectRoadmap.md` details up to Admin Dashboard features).
 *   **Core Memory Bank Documentation Established:**

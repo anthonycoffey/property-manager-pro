@@ -2,9 +2,9 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { QRCodeSVG } from 'qrcode.react';
 import { functions, db } from '../firebaseConfig'; // Added db
-import { doc, getDoc } from 'firebase/firestore'; // Added doc, getDoc
+import { doc, getDoc, Timestamp } from 'firebase/firestore'; // Added doc, getDoc, Timestamp
 import { httpsCallable } from 'firebase/functions';
-import type { Campaign, Invitation, Property } from '../types'; // Added Property
+import type { Campaign, Invitation, Property } from '../types'; // Property type is used
 import { useAuth } from '../hooks/useAuth';
 import { isAppError } from '../utils/errorUtils';
 import { 
@@ -31,6 +31,8 @@ import PublicIcon from '@mui/icons-material/Public'; // For Public Link specific
 import HomeWorkIcon from '@mui/icons-material/HomeWork'; // For Property ID
 import VpnKeyIcon from '@mui/icons-material/VpnKey'; // For Campaign ID
 import LabelIcon from '@mui/icons-material/Label'; // For Campaign Name
+import CampaignIcon from '@mui/icons-material/Campaign'; // For page header
+import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos'; // For Go Back button
 
 interface CampaignDetailsResult {
   campaign: Campaign;
@@ -85,43 +87,16 @@ const CampaignDetailsPage: React.FC = () => {
         return;
     }
 
-    // Step 1: Fetch the campaign document directly to get its orgId and propId
-    // This assumes campaigns are globally unique by ID or the path structure is known
-    // For this project, campaigns are under organizations/{orgId}/properties/{propId}/campaigns/{campaignId}
-    // This is problematic if we don't know orgId/propId upfront.
-    // The Cloud Function `getCampaignDetails` expects orgId and propId.
-    // This page needs a way to get those.
-    // Option: Pass orgId/propId via route state from where this page is linked (CampaignsTable).
-    // Option: If campaignId is globally unique, have a root collection `campaignMetadata/{campaignId}` storing orgId/propId. (Not current structure)
-    // For now, let's assume we need to find the campaign. This is inefficient.
-    // A better approach: The component linking to this page (e.g., CampaignsTable) should pass
-    // campaign.organizationId and campaign.propertyId via route state.
-
-    // SIMPLIFICATION for now: Assume `getCampaignDetails` can find it with just campaignId,
-    // or that the user's current context (orgId from PM/OM) is sufficient.
-    // The Cloud Function `getCampaignDetails` was designed to take orgId and propId.
-    // This page needs them. Let's assume they are passed via route state or fetched.
-
-    // Placeholder: This logic needs to be robust. For now, we'll try to get it from initialCampaignData if set,
-    // otherwise, this page won't work correctly without orgId and propId.
-    // This is a common challenge with deeply nested data.
-
-    // Let's assume for now that the `CampaignsTable` will pass `organizationId` and `propertyId`
-    // in the navigation state.
-    // For this iteration, I will simulate this by trying to fetch the campaign doc
-    // if initialCampaignData is not set (which it won't be initially).
-    // This is NOT ideal for production.
-
     const fetchAndSetDetails = async () => {
       try {
-        const routeState = location.state as CampaignRouteState | null; // Use location.state
+        const routeState = location.state as CampaignRouteState | null; 
 
         const stateOrgId = routeState?.organizationId;
         const statePropId = routeState?.propertyId;
 
         console.log('[CampaignDetailsPage] Route state orgId:', stateOrgId, 'propId:', statePropId);
 
-        const orgIdToUse = stateOrgId || currentUser?.customClaims?.organizationId || 'ERROR_NO_ORG_ID'; // Keep fallback logic for now
+        const orgIdToUse = stateOrgId || currentUser?.customClaims?.organizationId || 'ERROR_NO_ORG_ID'; 
         const propIdToUse = statePropId || 'ERROR_NO_PROP_ID'; 
 
         if (orgIdToUse === 'ERROR_NO_ORG_ID' || propIdToUse === 'ERROR_NO_PROP_ID') {
@@ -144,7 +119,6 @@ const CampaignDetailsPage: React.FC = () => {
         setCampaignDetails(fetchedCampaign);
         setInvitations(result.data.invitations);
 
-        // Fetch property name if campaign details are available
         if (fetchedCampaign && fetchedCampaign.organizationId && fetchedCampaign.propertyId) {
           try {
             const propertyRef = doc(db, 'organizations', fetchedCampaign.organizationId, 'properties', fetchedCampaign.propertyId);
@@ -175,7 +149,7 @@ const CampaignDetailsPage: React.FC = () => {
 
     fetchAndSetDetails();
 
-  }, [campaignId, currentUser, location.state]); // Use location.state in dependency array
+  }, [campaignId, currentUser, location.state]); 
 
   if (loading) {
     return <CircularProgress sx={{ display: 'block', margin: 'auto', marginTop: 5 }} />;
@@ -189,18 +163,28 @@ const CampaignDetailsPage: React.FC = () => {
     return <Typography sx={{ margin: 2 }}>Campaign data not available or not found.</Typography>;
   }
 
-  // Helper function to format timestamps robustly
-  const formatTimestamp = (timestamp: any): string => {
-    if (!timestamp) return 'N/A';
-    // Firestore client SDK Timestamp has .seconds, but data might arrive with ._seconds
-    const seconds = timestamp.seconds ?? (timestamp as any)._seconds; 
-    if (typeof seconds === 'number') {
-      return new Date(seconds * 1000).toLocaleString();
+  const formatTimestamp = (timestampInput: Timestamp | null | undefined): string => {
+    if (!timestampInput) return 'N/A';
+    
+    let secondsValue: number | undefined = undefined;
+
+    if (timestampInput && typeof (timestampInput as Timestamp).seconds === 'number') {
+      secondsValue = (timestampInput as Timestamp).seconds;
+    } else {
+      const potentiallyPlainObject = timestampInput as unknown as { _seconds?: number };
+      if (typeof potentiallyPlainObject._seconds === 'number') {
+        secondsValue = potentiallyPlainObject._seconds;
+      }
     }
+
+    if (typeof secondsValue === 'number') {
+      return new Date(secondsValue * 1000).toLocaleString();
+    }
+    
     return 'Invalid Date';
   };
 
-  const handleChangePage = (event: unknown, newPage: number) => {
+  const handleChangePage = (_event: unknown, newPage: number) => {
     setPage(newPage);
   };
 
@@ -213,21 +197,21 @@ const CampaignDetailsPage: React.FC = () => {
 
   return (
     <Paper sx={{ padding: 3, margin: 2 }}>
-      <Button variant="outlined" onClick={() => navigate(-1)} sx={{ marginBottom: 2 }}>
-        Go Back
-      </Button>
-      <Typography variant="h4" gutterBottom>
-        Campaign Details
-      </Typography>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 }}>
+        <Typography variant="h4" gutterBottom sx={{ display: 'flex', alignItems: 'center', color: 'primary.main', mb: 0 /* Remove bottom margin from Typography as Box handles it */ }}>
+          <CampaignIcon sx={{ mr: 1.5, fontSize: '2.2rem' }} /> Campaign Details
+        </Typography>
+        <Button variant="outlined" onClick={() => navigate(-1)} startIcon={<ArrowBackIosIcon />}>
+          Go Back
+        </Button>
+      </Box>
       
       <Stack direction={{ xs: 'column', md: 'row' }} spacing={3} sx={{ marginBottom: 3 }} divider={<Divider orientation="vertical" flexItem />}>
         <Box sx={{ flex: 1 }}>
-          <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center' }}>
-            <InfoIcon sx={{ mr: 1 }} /> Settings
-          </Typography>
+        
           <List dense>
             <ListItem>
-              <ListItemIcon><LabelIcon /></ListItemIcon>
+              <ListItemIcon><AssignmentIcon /></ListItemIcon>
               <ListItemText primary="Campaign Name" secondary={campaignDetails.campaignName} />
             </ListItem>
             <ListItem>
@@ -235,9 +219,7 @@ const CampaignDetailsPage: React.FC = () => {
               <ListItemText primary="Campaign ID" secondary={campaignDetails.id} />
             </ListItem>
             <ListItem>
-              <ListItemIcon>
-                {campaignDetails.campaignType === 'csv_import' ? <AssignmentIcon /> : <PublicIcon />}
-              </ListItemIcon>
+              <ListItemIcon><LabelIcon /></ListItemIcon>
               <ListItemText primary="Type" secondary={campaignDetails.campaignType === 'csv_import' ? 'CSV Import' : 'Public Link'} />
             </ListItem>
             <ListItem>
@@ -256,7 +238,7 @@ const CampaignDetailsPage: React.FC = () => {
                   campaignDetails.status === 'completed' ? 'primary' :
                   campaignDetails.status === 'expired' ? 'warning' : 'default'
                 } />} 
-                secondaryTypographyProps={{ component: 'span' }} // Added this line
+                secondaryTypographyProps={{ component: 'span' }}
               />
             </ListItem>
             <ListItem>

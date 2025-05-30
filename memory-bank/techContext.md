@@ -19,8 +19,9 @@
 ### Backend
 *   **Firebase:**
     *   **Firebase Authentication:** User management, RBAC via custom claims.
-    *   **Cloud Firestore:** NoSQL database (data: users, properties, residents, services, invitations). Real-time updates. Firestore Security Rules for access control.
-    *   **Firebase Cloud Functions:** Server-side logic, API (Node.js runtime).
+    *   **Cloud Firestore:** NoSQL database (data: users, properties, residents, services, invitations, campaigns). Real-time updates. Firestore Security Rules for access control.
+    *   **Firebase Cloud Functions:** Server-side logic, API (Node.js runtime for v1 and v2 functions). Includes callable, HTTP-triggered, and scheduled functions.
+    *   **Firebase Storage:** Used for file uploads, such as CSV files for bulk resident imports.
     *   **Firebase Hosting:** Static asset hosting, CDN.
     *   **`firestore-send-email` Extension:** For sending templated emails. This involves:
         *   `mail` collection: Documents written to this collection trigger email sending.
@@ -47,6 +48,7 @@
     *   Relatively new technology; best practices are still evolving.
     *   Will be hosted on Firebase App Hosting, which may have specific requirements or limitations.
 *   **Vendor Lock-in:** Heavy reliance on Firebase means a degree of vendor lock-in. This is a trade-off for the integrated services and development speed.
+*   **Mixed v1/v2 Firebase Functions Typing:** Observed challenges with TypeScript type resolution in the local development environment when v1 and v2 Firebase Function types are used side-by-side. Explicit type imports (e.g., for `CallableContext`, `EventContext` from v1 paths) and careful attention to function signatures are necessary. Sometimes, `write_to_file` was used as a fallback if `replace_in_file` repeatedly failed due to these subtle type issues that might not affect deployment.
 
 ## 4. Key Dependencies (Conceptual)
 
@@ -55,13 +57,17 @@
     *   `@mui/material`, `@emotion/react`, `@emotion/styled` (for MUI)
     *   `@mui/icons-material`
     *   `@react-google-maps/api` (used for `LoadScript` to load Google Maps API)
+    *   `qrcode.react` (for generating QR codes for public campaign links)
     *   Routing library (e.g., `react-router-dom`) - *Not explicitly mentioned but essential for a multi-page app.*
 *   **Backend (Cloud Functions - Node.js example):**
     *   `firebase-admin` (for server-side Firebase access)
-    *   `firebase-functions` (for writing Cloud Functions)
-    *   Potentially other NPM packages for specific integrations (e.g., CRM SDK, email libraries like Nodemailer, CSV parsing libraries).
+    *   `firebase-functions` (for writing Cloud Functions - v1 and v2)
+    *   `csv-parse` (for parsing CSV files in Cloud Functions)
+    *   Potentially other NPM packages for specific integrations (e.g., CRM SDK, email libraries like Nodemailer).
 *   **Development:**
     *   `firebase-tools` (Firebase CLI)
+    *   `@types/express` (for v1 HTTP Cloud Function request/response types)
+    *   `@types/qrcode.react` (type definitions for qrcode.react)
     *   Linters (ESLint), Prettier, TypeScript (optional but recommended for larger projects).
 
 ## 5. Tool Usage Patterns

@@ -102,3 +102,77 @@ export interface ServiceRequest {
   }>;
   // Add other relevant fields like priority, images, etc.
 }
+
+export type CampaignStatus = 
+  | 'active' 
+  | 'inactive' 
+  | 'completed' 
+  | 'expired' 
+  | 'processing' 
+  | 'error';
+
+export type CampaignType = 'csv_import' | 'public_link';
+
+export interface Campaign {
+  id: string; // Firestore document ID
+  organizationId: string;
+  propertyId: string;
+  campaignName: string;
+  campaignType: CampaignType;
+  status: CampaignStatus;
+  rolesToAssign: string[]; // Typically ['resident']
+  createdBy: string; // UID of the creator
+  createdAt: Timestamp; // Firestore Timestamp for consistency with backend
+  maxUses?: number | null;
+  totalAccepted: number;
+  totalInvitedFromCsv?: number; // Only for csv_import type
+  expiresAt?: Timestamp | null; // Firestore Timestamp
+  accessUrl?: string; // Only for public_link type
+  storageFilePath?: string; // Only for csv_import type
+  sourceFileName?: string; // Only for csv_import type
+  errorDetails?: string;
+}
+
+export type InvitationStatus = 'pending' | 'accepted' | 'expired' | 'cancelled';
+
+export interface Invitation {
+  id: string; // Firestore document ID
+  email: string;
+  rolesToAssign: string[];
+  organizationId: string; 
+  targetPropertyId?: string; // If for a resident
+  status: InvitationStatus;
+  createdBy: string; // UID of the creator
+  createdAt: Timestamp; // Firestore Timestamp
+  expiresAt: Timestamp; // Firestore Timestamp
+  campaignId?: string; // Links to a campaign if originated from one
+  // Add other relevant fields if any, e.g. name of invitee if collected
+}
+
+export interface CampaignActionResult {
+  success: boolean;
+  message?: string;
+}
+
+// --- Cloud Function Data Payloads (mirrored from functions/src/types.ts for frontend use) ---
+
+export interface UpdateCampaignData {
+  campaignId: string;
+  organizationId: string;
+  propertyId: string;
+  campaignName?: string;
+  maxUses?: number | null;
+  expiresAt?: Timestamp | null; // Frontend might send Date, Cloud Function converts to Timestamp
+}
+
+export interface DeactivateCampaignData {
+  campaignId: string;
+  organizationId: string;
+  propertyId: string;
+}
+
+export interface DeleteCampaignData {
+  campaignId: string;
+  organizationId: string;
+  propertyId: string;
+}

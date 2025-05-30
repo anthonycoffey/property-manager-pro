@@ -16,6 +16,7 @@ export default [
       "no-unused-vars": ["warn", { "argsIgnorePattern": "^_" }],
       "eqeqeq": ["error", "always"],
       "no-else-return": "error",
+      "@typescript-eslint/no-explicit-any": "warn",
     }
   }
 ];

@@ -73,5 +73,28 @@ export const assignOrganizationToManagerAdmin = assignOrganizationToManagerAdmin
 import { unassignOrganizationFromManagerAdmin as unassignOrganizationFromManagerAdminFunction } from './callable/unassignOrganizationFromManagerAdmin.js';
 export const unassignOrganizationFromManagerAdmin = unassignOrganizationFromManagerAdminFunction;
 
+import { createCampaign as createCampaignFunction } from './callable/createCampaign.js';
+export const createCampaign = createCampaignFunction;
+
+import { getCampaignDetails as getCampaignDetailsFunction } from './callable/getCampaignDetails.js';
+export const getCampaignDetails = getCampaignDetailsFunction;
+
+import { updateCampaign as updateCampaignFunction } from './callable/updateCampaign.js';
+export const updateCampaign = updateCampaignFunction;
+
+import { deactivateCampaign as deactivateCampaignFunction } from './callable/deactivateCampaign.js';
+export const deactivateCampaign = deactivateCampaignFunction;
+
+import { deleteCampaign as deleteCampaignFunction } from './callable/deleteCampaign.js';
+export const deleteCampaign = deleteCampaignFunction;
+
+// HTTP Functions
+import { handleCampaignSignUpLink as handleCampaignSignUpLinkFunction } from './http/handleCampaignSignUpLink.js';
+export const handleCampaignSignUpLink = handleCampaignSignUpLinkFunction;
+
+// Scheduled Functions
+import { cleanupProcessedCampaignCSVs as cleanupProcessedCampaignCSVsFunction } from './scheduled/cleanupProcessedCampaignCSVs.js';
+export const cleanupProcessedCampaignCSVs = cleanupProcessedCampaignCSVsFunction;
+
 // Note: The firebaseAdmin.ts and handleHttpsError.ts are not directly exported
 // as they are internal modules used by the functions themselves.

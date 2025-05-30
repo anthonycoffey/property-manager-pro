@@ -28,6 +28,7 @@ import PropertySelectorDropdown from '../PropertyManager/PropertySelectorDropdow
 import EditPropertyModal from '../PropertyManager/EditPropertyModal';
 import EditResidentModal from '../PropertyManager/EditResidentModal'; // Import EditResidentModal
 import PropertyResidentsTable from '../PropertyManager/PropertyResidentsTable';
+import PropertyCampaignsView from '../PropertyManager/Campaigns/PropertyCampaignsView'; // Import Campaigns View
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -205,6 +206,7 @@ const PropertyManagerDashboardPanel: React.FC<
           >
             <Tab label='Properties' {...a11yProps(0)} />
             <Tab label='Residents' {...a11yProps(1)} />
+            <Tab label='Campaigns' {...a11yProps(2)} />
           </Tabs>
         </Box>
         <TabPanel value={pmTabValue} index={0}>
@@ -253,6 +255,26 @@ const PropertyManagerDashboardPanel: React.FC<
             <Alert severity='info' sx={{ mt: 2 }}>
               Please select a property from the dropdown above to invite a
               resident or view current residents.
+            </Alert>
+          )}
+        </TabPanel>
+        <TabPanel value={pmTabValue} index={2}>
+          <Typography variant='h6' gutterBottom sx={{ mb: 2 }}>
+            Manage Invitation Campaigns
+          </Typography>
+          <PropertySelectorDropdown
+            selectedPropertyId={selectedPropertyId}
+            onPropertyChange={handlePropertySelect}
+          />
+          {selectedPropertyId && organizationId ? (
+            <PropertyCampaignsView
+              organizationId={organizationId}
+              propertyId={selectedPropertyId}
+              propertyName={selectedPropertyName}
+            />
+          ) : (
+            <Alert severity='info' sx={{ mt: 2 }}>
+              Please select a property from the dropdown above to manage invitation campaigns.
             </Alert>
           )}
         </TabPanel>

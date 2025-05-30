@@ -2,12 +2,45 @@
 
 ## 1. Current Work Focus
 
-Actively working on Phoenix integration (job querying, service request dispatch, services querying), CSV import for residents, GPTChat model integration for residents, and implementing initial dashboard data visualizations.
+- **Resident Invitation Campaigns:**
+    - Implementing UI for Organization Managers and Admins.
+    - Adding advanced campaign management features (edit, deactivate/activate, view detailed stats).
+    - Implementing the frontend page for public campaign links (`/join?campaign={id}`).
+    - Thorough end-to-end testing of all campaign flows.
+- **Phoenix Integration:** (Ongoing) Job querying, service request dispatch, services querying.
+- **Custom GPTChat Model Integration:** (Ongoing) For residents.
+- **Dashboard Data Visualizations & Statistics:** (Ongoing) Initial implementations.
 
 ## 2. Recent Changes & Activities
 
+- **Resident Invitation Campaigns Feature (Backend & Initial Frontend - 2025-05-29):**
+    - **Concept:** Introduced "Campaigns" as a unified system for resident invitations, supporting bulk CSV imports and shareable public links/QR codes with usage limits and expiration dates.
+    - **Backend Implementation:**
+        - **Firestore Rules:** Added security rules for the new `organizations/{orgId}/properties/{propId}/campaigns/{campaignId}` subcollection, including helper functions for validation.
+        - **`createCampaign` (v1 Callable Function):**
+            - Handles creation of `csv_import` and `public_link` campaigns.
+            - For CSVs: Processes files uploaded to Firebase Storage (`campaign_csvs_pending/`), creates individual `invitations` linked to the campaign (triggering emails), and moves processed CSVs to `campaign_csvs_processed/`.
+            - For Public Links: Generates a unique `accessUrl`.
+        - **`handleCampaignSignUpLink` (v1 HTTP Function):**
+            - Triggered by the `accessUrl` of a public link campaign.
+            - Validates the campaign and dynamically creates an `invitations` document, then redirects to the `AcceptInvitationPage`.
+        - **`signUpWithInvitation` (v2 Callable Function - Updated):**
+            - Modified to check for a `campaignId` on accepted invitations.
+            - If present, atomically increments `totalAccepted` on the campaign document and updates its status (e.g., "completed", "expired") based on `maxUses` or `expiresAt`.
+        - **`cleanupProcessedCampaignCSVs` (v2 Scheduled Function):**
+            - Runs daily to delete CSV files older than 30 days from `campaign_csvs_processed/` and `campaign_csvs_failed/` folders in Firebase Storage.
+        - **Dependencies:** Added `csv-parse` (functions) and `@types/express` (functions).
+    - **Frontend Implementation (Property Manager Scope):**
+        - **Dependency:** Added `qrcode.react` (root project).
+        - **Type Definitions (`src/types/index.ts`):** Added `Campaign`, `CampaignStatus`, and `CampaignType` interfaces/types.
+        - **`CreateCampaignModal.tsx`:** New modal for PMs to create campaigns. Includes form fields for name, type, max uses, expiry. Handles CSV upload to Firebase Storage, calls `createCampaign` function, and displays `accessUrl`/QR code for public links.
+        - **`CampaignsTable.tsx`:** New component to display a list of campaigns for a selected property, showing key details and status with real-time updates from Firestore.
+        - **`PropertyCampaignsView.tsx`:** New container component integrating the creation modal button and the campaigns table.
+        - **`PropertyManagerDashboardPanel.tsx` Integration:** Added a new "Campaigns" tab, utilizing `PropertySelectorDropdown` and embedding `PropertyCampaignsView` for campaign management per property.
+    - **Development Note:** Encountered and worked through TypeScript type resolution challenges, particularly with v1 vs. v2 Firebase Function signatures (`CallableContext`, `EventContext`, `onCall`, `onRequest`, `Response`). Strategies included explicit v1 type imports and, as a last resort for `createCampaign.ts` and `handleCampaignSignUpLink.ts`, using `write_to_file` to ensure semantically correct v1 code despite persistent local type errors. The scheduled function `cleanupProcessedCampaignCSVs` was implemented using v2 `onSchedule` syntax to resolve type issues.
+
 - **Major Feature Completions (2025-05-28):**
-    - **Invitation System (Phase 3 - Refinement & Testing):** All invitation flows (Admin, OM, PM roles) thoroughly tested and verified, including email content/links and template seeding.
+    - **Invitation System (Phase 3 - Refinement & Testing):** All invitation flows (Admin, OM, PM roles) thoroughly tested and verified, including email content/links and template seeding. (This is now superseded by the more advanced Campaign system for residents).
     - **Admin Dashboard - Properties Management:** CRUD operations for Admins to manage properties implemented and verified.
     - **Organization Manager Dashboard - Organization Creation UI:** UI enabling Organization Managers to create new organizations implemented and verified.
     - **Role-Based Management Capabilities Verified:** Confirmed that Admins can manage OMs, PMs, Properties, and Residents; OMs can manage PMs, Properties, and Residents for their assigned orgs; PMs can manage Properties and Residents for their org.
@@ -80,24 +113,33 @@ Actively working on Phoenix integration (job querying, service request dispatch,
 
 ## 3. Next Steps
 
-1.  **Phoenix Integration:**
-    *   Implement job querying by Resident, Property, and Organization (attaching metadata from property manager app to jobs/form submissions).
-    *   Implement service request dispatch, pushing service requests directly into the Phoenix jobs table.
-    *   Implement services querying from Phoenix for the service request form's "services" list.
-2.  **CSV Import for Residents:**
-    *   Develop functionality for bulk resident import (primarily for Property Managers, with consideration for Admin/Organization Manager access).
-3.  **Custom GPTChat Model Integration:**
-    *   Integrate existing GPT chatbot from "lovable" into a tab within the Resident dashboard.
-    *   Evaluate and potentially implement access for Property Managers to the service request form and chatbot.
-4.  **Dashboard Data Visualizations & Statistics:**
-    *   Implement specified metrics for Admin, Organization Manager, Property Manager, and Resident dashboards using Highcharts. Expected metrics include:
-        *   **Admins & Organization Managers:** Total OMs, total Orgs, PMs/Org, Properties/Org, Residents/Property.
-        *   **Property Managers:** Signed-up residents, initiated service requests.
-        *   **Residents:** Personal service history.
-5.  **Extend `projectRoadmap.md`:** Document detailed plans for Organization Manager, Property Manager, and Resident dashboards, as well as core systems like Phoenix Integration, CSV Import, GPTChat, and advanced visualizations.
+1.  **Resident Invitation Campaigns - Enhancements & Broader Rollout:**
+    *   Implement Campaign Management UI for Organization Managers (similar to PMs, with org/property selection).
+    *   Implement Campaign Management UI for Admins (global view/management capabilities).
+    *   Add advanced campaign actions to `CampaignsTable.tsx` (e.g., Deactivate/Activate campaign, Edit campaign details like name/expiry/maxUses, View detailed list of accepted residents).
+    *   Implement the frontend page/route for handling public campaign links (`/join?campaign={campaignId}`) which will be served by the `handleCampaignSignUpLink` HTTP function.
+    *   Conduct thorough end-to-end testing of all campaign creation, invitation, sign-up, and tracking flows.
+2.  **Phoenix Integration:** (Ongoing)
+    *   Implement job querying by Resident, Property, and Organization.
+    *   Implement service request dispatch to Phoenix.
+    *   Implement services querying from Phoenix.
+3.  **Custom GPTChat Model Integration:** (Ongoing)
+    *   Integrate chatbot into Resident dashboard.
+    *   Evaluate PM access.
+4.  **Dashboard Data Visualizations & Statistics:** (Ongoing)
+    *   Implement metrics for all roles using Highcharts, including campaign performance data.
+5.  **Extend `projectRoadmap.md`:** Document detailed plans for the remaining dashboard features and core systems, including the full scope of Invitation Campaigns.
 
 ## 4. Active Decisions & Considerations
 
+- **Campaigns as a Unified Invitation Mechanism (Decision 2025-05-29):**
+    - Adopted "Campaigns" as the central concept for managing various resident invitation methods.
+    - Campaign types defined: `csv_import` (for bulk uploads) and `public_link` (for shareable URLs/QR codes).
+    - Campaigns support parameters like `maxUses` and `expiresAt`.
+- **Firebase Storage for CSVs with Scheduled Cleanup (Decision 2025-05-29):**
+    - CSV files for `csv_import` campaigns are uploaded to Firebase Storage (`campaign_csvs_pending/`).
+    - The `createCampaign` function processes these files and moves them to a `campaign_csvs_processed/` (or `campaign_csvs_failed/`) folder.
+    - A daily scheduled Cloud Function (`cleanupProcessedCampaignCSVs`) will delete files older than 30 days from the processed/failed folders.
 - **Property Address Data Consistency (Decision 2025-05-27):**
   - Ensured that the `createProperty.ts` Cloud Function saves the full address (street, city, state, zip) as provided by the `CreatePropertyForm.tsx`. This aligns creation logic with edit logic and resolves issues with incomplete address data for new properties.
 - **Google Places Autocomplete Styling (New Decision 2025-05-25):**
@@ -176,3 +218,15 @@ Actively working on Phoenix integration (job querying, service request dispatch,
   - Crucially, for all other non-Super-Admin users, this function *intentionally does not* set any default custom claims (like `pending_association`) or create any Firestore profiles.
   - It defers all claim-setting and profile creation for invited users (Organization Managers, Property Managers, Residents) to the specific callable invitation functions (`signUpWithInvitation.ts`, `signUpWithOrgManagerInvitation.ts`). This is a deliberate design to prevent race conditions and ensure the invitation flows are the source of truth for these users' setup.
   - This clarifies that any previous understanding of `processSignUp.ts` setting default roles like `pending_association` for non-admin direct sign-ups is outdated by the current implementation.
+- **TypeScript Type Challenges with Mixed Firebase Functions Versions (Learning 2025-05-29):**
+  - Encountered persistent TypeScript type resolution issues when using v1 Firebase Function constructs (e.g., `functions.https.onCall`, `functions.pubsub.schedule`, `CallableContext`, `EventContext`, `functions.Response`) alongside v2 constructs or in an environment where v2 types might be preferentially inferred.
+  - Required explicit v1 type imports (e.g., `import { CallableContext } from 'firebase-functions/v1/https';`) and careful attention to function signatures.
+  - In some cases, `write_to_file` was used as a fallback for Cloud Function implementation if `replace_in_file` repeatedly failed due to these subtle type errors that might not affect actual deployment but hindered local type checking.
+    - One scheduled function (`cleanupProcessedCampaignCSVs`) was implemented using the v2 `onSchedule` syntax to bypass v1 type resolution problems for `functions.pubsub.schedule`. This highlights the need for vigilance when mixing v1/v2 function patterns.
+
+- **Timestamp Error in `createCampaign` Function (Fix 2025-05-29):**
+    - Resolved a `TypeError: Cannot read properties of undefined (reading 'Timestamp')` in `functions/src/callable/createCampaign.ts`.
+    - The error was due to using an uninitialized `admin.firestore.Timestamp`.
+    - **Fix:**
+        - Modified `functions/src/firebaseAdmin.ts` to export `Timestamp` from the initialized `firebase-admin/firestore`.
+        - Updated `functions/src/callable/createCampaign.ts` to import `Timestamp` from `../firebaseAdmin.js` and use this imported `Timestamp` for all timestamp operations and type definitions, removing the direct uninitialized `import * as admin from 'firebase-admin';`.

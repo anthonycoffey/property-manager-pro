@@ -11,4 +11,4 @@ if (getApps().length === 0) {
 export const adminAuth = getAuth();
 export const db = getFirestore();
 export const storage = getStorage();
-export { FieldValue } from 'firebase-admin/firestore'; // Re-export FieldValue for convenience
+export { FieldValue, FieldPath, Timestamp } from 'firebase-admin/firestore'; // Re-export FieldValue, FieldPath, and Timestamp

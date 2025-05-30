@@ -9,6 +9,96 @@
 // Firebase Admin SDK typically uses its own Timestamp type.
 import { Timestamp } from 'firebase-admin/firestore'; // Firebase Admin SDK Timestamp
 
+// --- Campaign Types (mirrored from /src/types.ts) ---
+export type CampaignStatus =
+  | 'active'
+  | 'inactive'
+  | 'completed'
+  | 'expired'
+  | 'processing'
+  | 'error';
+
+export type CampaignType = 'csv_import' | 'public_link';
+
+export interface Campaign {
+  id: string; // Firestore document ID
+  organizationId: string;
+  propertyId: string;
+  campaignName: string;
+  campaignType: CampaignType;
+  status: CampaignStatus;
+  rolesToAssign: string[]; // Typically ['resident']
+  createdBy: string; // UID of the creator
+  createdAt: Timestamp;
+  maxUses?: number | null;
+  totalAccepted: number;
+  totalInvitedFromCsv?: number; // Only for csv_import type
+  expiresAt?: Timestamp | null;
+  accessUrl?: string; // Only for public_link type
+  storageFilePath?: string; // Only for csv_import type
+  sourceFileName?: string; // Only for csv_import type
+  errorDetails?: string;
+}
+
+// --- Invitation Type (based on systemPatterns.md) ---
+export type InvitationStatus = 'pending' | 'accepted' | 'expired' | 'cancelled';
+
+export interface Invitation {
+  id: string; // Firestore document ID
+  email: string;
+  rolesToAssign: string[];
+  organizationId: string; // ID of the organization this invitation belongs to
+  targetPropertyId?: string; // If for a resident
+  status: InvitationStatus;
+  createdBy: string; // UID of the creator
+  createdAt: Timestamp;
+  expiresAt: Timestamp;
+  campaignId?: string; // Links to a campaign if originated from one
+  // Add other relevant fields if any, e.g. name of invitee if collected
+}
+
+
+// --- Cloud Function Request/Response Types ---
+
+export interface GetCampaignDetailsData {
+  campaignId: string;
+  organizationId: string;
+  propertyId: string;
+}
+
+export interface GetCampaignDetailsResult {
+  campaign: Campaign;
+  invitations: Invitation[];
+}
+
+export interface UpdateCampaignData {
+  campaignId: string;
+  organizationId: string;
+  propertyId: string;
+  campaignName?: string;
+  maxUses?: number | null;
+  expiresAt?: Timestamp | null;
+}
+
+export interface DeactivateCampaignData {
+  campaignId: string;
+  organizationId: string;
+  propertyId: string;
+}
+
+export interface DeleteCampaignData {
+  campaignId: string;
+  organizationId: string;
+  propertyId: string;
+}
+
+export interface CampaignActionResult {
+  success: boolean;
+  message?: string;
+}
+
+
+// --- Existing Types ---
 export interface AppError {
   message: string;
   code?: string;

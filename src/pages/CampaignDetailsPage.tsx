@@ -1,10 +1,10 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { QRCodeSVG } from 'qrcode.react';
-import { functions, db } from '../firebaseConfig'; // Added db
-import { doc, getDoc, Timestamp } from 'firebase/firestore'; // Added doc, getDoc, Timestamp
+import { functions, db } from '../firebaseConfig';
+import { doc, getDoc, Timestamp } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
-import type { Campaign, Invitation, Property } from '../types'; // Property type is used
+import type { Campaign, Invitation, Property } from '../types';
 import { useAuth } from '../hooks/useAuth';
 import { isAppError } from '../utils/errorUtils';
 import { 
@@ -12,7 +12,6 @@ import {
   List, ListItem, ListItemIcon, ListItemText, Chip, TextField, InputAdornment, IconButton, Snackbar,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TablePagination
 } from '@mui/material';
-import InfoIcon from '@mui/icons-material/Info';
 import CategoryIcon from '@mui/icons-material/Category';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
@@ -26,13 +25,12 @@ import LinkIcon from '@mui/icons-material/Link';
 import QrCode2Icon from '@mui/icons-material/QrCode2';
 import DownloadIcon from '@mui/icons-material/Download';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
-import AssignmentIcon from '@mui/icons-material/Assignment'; // For CSV import specific
-import PublicIcon from '@mui/icons-material/Public'; // For Public Link specific
-import HomeWorkIcon from '@mui/icons-material/HomeWork'; // For Property ID
-import VpnKeyIcon from '@mui/icons-material/VpnKey'; // For Campaign ID
-import LabelIcon from '@mui/icons-material/Label'; // For Campaign Name
-import CampaignIcon from '@mui/icons-material/Campaign'; // For page header
-import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos'; // For Go Back button
+import AssignmentIcon from '@mui/icons-material/Assignment';
+import HomeWorkIcon from '@mui/icons-material/HomeWork';
+import VpnKeyIcon from '@mui/icons-material/VpnKey';
+import LabelIcon from '@mui/icons-material/Label';
+import CampaignIcon from '@mui/icons-material/Campaign';
+import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
 
 interface CampaignDetailsResult {
   campaign: Campaign;

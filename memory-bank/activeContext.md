@@ -19,9 +19,11 @@
     - Implemented permission checks for enabling/disabling these menu items based on user role and campaign ownership/status.
     - Added Snackbar notifications for success/failure of these operations.
     - Corresponding Cloud Functions (`updateCampaign`, `deactivateCampaign`, `deleteCampaign`) are implemented.
-- **Public Campaign Link Flow Refinement (Backend - 2025-05-30):**
-    - Updated `functions/src/callable/createCampaign.ts` to generate `accessUrl`s for "public_link" campaigns that correctly point to the `handleCampaignSignUpLink` HTTP function endpoint for both production and emulator environments. This uses the project ID `phoenix-property-manager-pro` and region `us-central1`.
-    - Updated `functions/src/http/handleCampaignSignUpLink.ts` to redirect to `/join-campaign` (instead of `/accept-invitation`) and to include `campaignId` and `organizationId` as query parameters in the redirect URL, ensuring the frontend page receives all necessary information. The base URL for this redirect correctly uses `functions.config().app.domain` or environment-specific fallbacks (`http://localhost:5173` for emulator, `https://phoenix-property-manager-pro.web.app` for production if config is missing).
+- **Public Campaign Link Flow Rearchitected (Frontend URL - 2025-05-30):**
+    - Modified `functions/src/callable/createCampaign.ts` to generate `accessUrl`s for "public_link" campaigns that point to a new frontend route (`/join-public-campaign?campaign={campaignId}`). The base URL for this link uses `functions.config().app.domain`.
+    - Created a new callable Cloud Function `functions/src/callable/processPublicCampaignLink.ts` to handle validation of the campaign and creation of the invitation document when triggered by the new frontend handler page.
+    - Created a new frontend page `src/pages/PublicCampaignHandlerPage.tsx` at the `/join-public-campaign` route. This page calls `processPublicCampaignLink` and then navigates the user to `/join-campaign` with the necessary parameters.
+    - Decommissioned the `functions/src/http/handleCampaignSignUpLink.ts` HTTP function for this flow (export removed, file deleted).
 - **Phoenix Integration:** (Ongoing) Job querying, service request dispatch, services querying.
 - **Custom GPTChat Model Integration:** (Ongoing) For residents.
 - **Dashboard Data Visualizations & Statistics:** (Ongoing) Initial implementations.
@@ -36,9 +38,11 @@
             - Handles creation of `csv_import` and `public_link` campaigns.
             - For CSVs: Processes files uploaded to Firebase Storage (`campaign_csvs_pending/`), creates individual `invitations` linked to the campaign (triggering emails), and moves processed CSVs to `campaign_csvs_processed/`.
             - For Public Links: Generates a unique `accessUrl`.
-        - **`handleCampaignSignUpLink` (v1 HTTP Function):**
-            - Triggered by the `accessUrl` of a public link campaign.
-            - Validates the campaign and dynamically creates an `invitations` document, then redirects to the `AcceptInvitationPage`.
+        - **`processPublicCampaignLink` (v1 Callable Function - New):**
+            - Called by the new `PublicCampaignHandlerPage.tsx`.
+            - Validates the campaign (from `campaignId`) and dynamically creates an `invitations` document. Returns invitation details to the frontend.
+        - **`handleCampaignSignUpLink` (v1 HTTP Function - Decommissioned for this flow):**
+            - Previously triggered by `accessUrl`. Its functionality is now handled by `processPublicCampaignLink` (callable) and the frontend handler page.
         - **`signUpWithInvitation` (v2 Callable Function - Updated):**
             - Modified to check for a `campaignId` on accepted invitations.
             - If present, atomically increments `totalAccepted` on the campaign document and updates its status (e.g., "completed", "expired") based on `maxUses` or `expiresAt`.
@@ -131,8 +135,8 @@
 1.  **Resident Invitation Campaigns - Enhancements & Broader Rollout:**
     *   Implement Campaign Management UI for Organization Managers (similar to PMs, with org/property selection).
     *   Implement Campaign Management UI for Admins (global view/management capabilities).
-    *   Implement the frontend page/route for handling public campaign links (`/join-campaign?invitationId=...&campaignId=...&organizationId=...`) which is the target of the redirect from `handleCampaignSignUpLink` HTTP function. (This page, `JoinCampaignPage.tsx`, and its route `/join-campaign` have been created).
-    *   Conduct thorough end-to-end testing of all campaign creation, invitation, sign-up, and tracking flows (especially after OM/Admin UI integration and `accessUrl` fixes).
+    *   Ensure the new public campaign link flow (frontend URL -> `PublicCampaignHandlerPage.tsx` -> `processPublicCampaignLink` callable -> `JoinCampaignPage.tsx`) is fully integrated and functional.
+    *   Conduct thorough end-to-end testing of all campaign creation (verifying new `accessUrl` format), public link usage, invitation, sign-up, and tracking flows.
 2.  **Phoenix Integration:** (Ongoing)
     *   Implement job querying by Resident, Property, and Organization.
     *   Implement service request dispatch to Phoenix.
@@ -154,11 +158,15 @@
     - CSV files for `csv_import` campaigns are uploaded to Firebase Storage (`campaign_csvs_pending/`).
     - The `createCampaign` function processes these files and moves them to a `campaign_csvs_processed/` (or `campaign_csvs_failed/`) folder.
     - A daily scheduled Cloud Function (`cleanupProcessedCampaignCSVs`) will delete files older than 30 days from the processed/failed folders.
-- **Public Campaign URL Generation and Handling (Decision 2025-05-30):**
-    - The `accessUrl` for "public_link" campaigns generated by `createCampaign.ts` now directly points to the `handleCampaignSignUpLink` HTTP Cloud Function endpoint.
-        - Emulator URL: `http://localhost:5001/phoenix-property-manager-pro/us-central1/handleCampaignSignUpLink?campaign={campaignId}`
-        - Production URL: `https://us-central1-phoenix-property-manager-pro.cloudfunctions.net/handleCampaignSignUpLink?campaign={campaignId}`
-    - The `handleCampaignSignUpLink.ts` HTTP function, upon successful validation and invitation creation, redirects to the frontend path `/join-campaign` with `invitationId`, `campaignId`, and `organizationId` as query parameters. The base URL for this redirect uses `functions.config().app.domain` or environment-specific fallbacks.
+- **Public Campaign URL Generation and Handling Rearchitected (Decision 2025-05-30):**
+    - The `accessUrl` for "public_link" campaigns generated by `createCampaign.ts` now points to a frontend route (e.g., `/join-public-campaign?campaign={campaignId}`). The base URL for this link uses `functions.config().app.domain`.
+        - Emulator Example: `http://localhost:5173/join-public-campaign?campaign={campaignId}`
+        - Production Example: `https://phoenix-property-manager-pro.web.app/join-public-campaign?campaign={campaignId}`
+    - A new frontend page, `PublicCampaignHandlerPage.tsx` (at `/join-public-campaign`), handles this initial link.
+    - This page calls a new callable Cloud Function, `processPublicCampaignLink.ts`.
+    - `processPublicCampaignLink.ts` validates the campaign, creates an invitation document, and returns details (like `invitationId`, `campaignId`, `organizationId`) to the `PublicCampaignHandlerPage.tsx`.
+    - `PublicCampaignHandlerPage.tsx` then programmatically navigates the user to the existing `/join-campaign` frontend path, passing the necessary parameters.
+    - The `handleCampaignSignUpLink.ts` HTTP function has been decommissioned for this flow.
 - **Property Address Data Consistency (Decision 2025-05-27):**
   - Ensured that the `createProperty.ts` Cloud Function saves the full address (street, city, state, zip) as provided by the `CreatePropertyForm.tsx`. This aligns creation logic with edit logic and resolves issues with incomplete address data for new properties.
 - **Google Places Autocomplete Styling (New Decision 2025-05-25):**

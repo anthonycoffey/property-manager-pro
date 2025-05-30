@@ -186,12 +186,13 @@ The application employs a modern web architecture with a React-based frontend an
             *   Inputs: `organizationId`, `propertyId`, `campaignName`, `campaignType` (`csv_import` or `public_link`), `rolesToAssign`, `maxUses?`, `expiresAt?`. If `csv_import`, also `storageFilePath` (path to CSV in Firebase Storage) and `sourceFileName`.
             *   Logic: Creates a `campaigns` document.
                 *   For `csv_import`: Downloads and parses CSV from `storageFilePath`, creates individual `invitations` (linked with `campaignId`), sends emails via `firestore-send-email` extension, updates campaign with `totalInvitedFromCsv`, moves processed CSV in Storage.
-                *   For `public_link`: Generates and stores a unique `accessUrl` for the campaign.
+                *   For `public_link`: Generates and stores a unique `accessUrl` for the campaign, which is a frontend URL (e.g., `app.com/join-public-campaign?campaign={campaignId}`).
             *   Output: `{ campaignId, accessUrl? }`.
-        *   **`handleCampaignSignUpLink` (v1 HTTP):**
-            *   Purpose: Handles incoming requests from `public_link` campaign URLs.
-            *   Trigger: HTTP GET request to a specific URL (e.g., `/join?campaign={campaignId}`).
-            *   Logic: Validates the `campaignId` (active, not expired, within limits). If valid, dynamically creates an `invitations` document (linked to the `campaignId`) and redirects the user to the standard `AcceptInvitationPage` with the new invitation ID.
+        *   **`processPublicCampaignLink` (v1 Callable - New):**
+            *   Purpose: Handles the processing of a public campaign link initiated by the frontend.
+            *   Trigger: Called by the `PublicCampaignHandlerPage.tsx` frontend page.
+            *   Inputs: `{ campaignId: string }`.
+            *   Logic: Validates the `campaignId` (active, not expired, within limits). If valid, dynamically creates an `invitations` document (linked to the `campaignId`) and returns details like `{ invitationId, campaignId, organizationId }` to the frontend.
         *   **`signUpWithInvitation` (v2 Callable - Updated):**
             *   Existing function updated to check if an accepted invitation has a `campaignId`.
             *   If so, it atomically increments `totalAccepted` on the linked campaign document and updates the campaign's `status` (e.g., to "completed" or "expired") if `maxUses` or `expiresAt` conditions are met.
@@ -283,15 +284,16 @@ The application employs a modern web architecture with a React-based frontend an
     2.  Frontend calls `createCampaign` Cloud Function.
     3.  `createCampaign` function:
         a.  Creates `campaigns/{campaignId}` document.
-        b.  Generates and stores an `accessUrl` (e.g., `app.com/join?campaign={campaignId}`).
+        b.  Generates and stores an `accessUrl` which is a frontend URL (e.g., `https://your-app-domain.web.app/join-public-campaign?campaign={campaignId}`).
         c.  Returns `campaignId` and `accessUrl` to frontend.
     4.  Frontend displays `accessUrl` and generates/displays a QR code from it.
-    5.  User clicks the public link or scans QR code, hitting the `accessUrl`.
-    6.  `handleCampaignSignUpLink` HTTP function is triggered:
-        a.  Validates the campaign.
-        b.  Dynamically creates an `invitations/{invitationId}` document (linked to `campaignId`).
-        c.  Redirects user to `AcceptInvitationPage` with the new `invitationId`.
-    7.  Resident signs up. `signUpWithInvitation` function is called.
+    5.  User clicks the public link or scans QR code, hitting the frontend `accessUrl`.
+    6.  The `PublicCampaignHandlerPage.tsx` (at `/join-public-campaign`) loads:
+        a.  It extracts the `campaignId` from the URL.
+        b.  It calls the `processPublicCampaignLink` callable Cloud Function with the `campaignId`.
+        c.  The `processPublicCampaignLink` function validates the campaign, creates an `invitations/{invitationId}` document (linked to `campaignId`), and returns the new `invitationId`, `campaignId`, and `organizationId`.
+        d.  `PublicCampaignHandlerPage.tsx` receives these details and programmatically navigates the user to `JoinCampaignPage` (e.g., `/join-campaign?invitationId=...&campaignId=...&organizationId=...`).
+    7.  Resident signs up via `JoinCampaignPage.tsx`. `signUpWithInvitation` function is called.
     8.  `signUpWithInvitation` processes user creation, updates invitation status, and updates the linked campaign's `totalAccepted` and `status`.
     9.  PM/OM/Admin can view campaign status and list in `CampaignsTable`.
 

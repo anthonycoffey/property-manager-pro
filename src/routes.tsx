@@ -10,6 +10,7 @@ import DemoPage from './pages/DemoPage'; // Added import for DemoPage
 import LostPasswordPage from './pages/LostPasswordPage'; // Added import for LostPasswordPage
 import CampaignDetailsPage from './pages/CampaignDetailsPage'; 
 import JoinCampaignPage from './pages/JoinCampaignPage'; // Added import for JoinCampaignPage
+import PublicCampaignHandlerPage from './pages/PublicCampaignHandlerPage'; // Added for new flow
 
 const AppRoutes: React.FC = () => {
   return (
@@ -33,6 +34,7 @@ const AppRoutes: React.FC = () => {
         } 
       />
       <Route path="/accept-invitation" element={<AcceptInvitationPage />} />
+      <Route path="/join-public-campaign" element={<PublicCampaignHandlerPage />} /> {/* New route for public campaign link handling */}
       <Route path="/join-campaign" element={<JoinCampaignPage />} /> {/* Added route for joining a campaign */}
       <Route path="/accept-org-manager-invitation" element={<AcceptOrgManagerInvitationPage />} />
       <Route path="/lost-password" element={<LostPasswordPage />} />

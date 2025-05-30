@@ -209,20 +209,31 @@ export const createCampaign = v1Https.onCall(
 
     // Type-specific setup
     if (campaignParams.campaignType === 'public_link') {
-      let httpFunctionBaseUrl;
-      const projectId = process.env.GCLOUD_PROJECT || 'phoenix-property-manager-pro'; // Use provided project ID as fallback
-      const region = 'us-central1'; // As defined in firebase.json hosting.frameworksBackend.region
-
+      let frontendAppBaseUrl: string;
       if (process.env.FUNCTIONS_EMULATOR === 'true') {
-        // For emulator, direct function invocation URL structure
-        const functionsPort = functions.config().emulators?.functions?.port || 5001; // Get port from config or default
-        httpFunctionBaseUrl = `http://localhost:${functionsPort}/${projectId}/${region}`;
+        const configuredDomain = functions.config().app?.domain;
+        if (configuredDomain) {
+          if (configuredDomain.toLowerCase() === "localhost") {
+            frontendAppBaseUrl = 'http://localhost:5173'; // Default Vite dev server port
+          } else {
+            frontendAppBaseUrl = configuredDomain.startsWith('http') ? configuredDomain : `http://${configuredDomain}`; // Assume http for local custom domains
+          }
+        } else {
+          frontendAppBaseUrl = 'http://localhost:5173'; // Default emulator frontend
+        }
       } else {
-        // Production direct function invocation URL structure
-        httpFunctionBaseUrl = `https://${region}-${projectId}.cloudfunctions.net`;
+        const prodDomain = functions.config().app?.domain;
+        if (!prodDomain) {
+          functions.logger.error(
+            "CRITICAL: functions.config().app.domain is not set for production environment! Public campaign links will use hardcoded fallback. This MUST be configured."
+          );
+          frontendAppBaseUrl = 'https://phoenix-property-manager-pro.web.app'; // Default production frontend
+        } else {
+          frontendAppBaseUrl = prodDomain.startsWith('http') ? prodDomain : `https://${prodDomain}`;
+        }
       }
-      // The accessUrl points to the HTTP trigger function
-      accessUrl = `${httpFunctionBaseUrl}/handleCampaignSignUpLink?campaign=${campaignRef.id}`;
+      // The accessUrl points to the new frontend handler page
+      accessUrl = `${frontendAppBaseUrl}/join-public-campaign?campaign=${campaignRef.id}`;
       newCampaignData.accessUrl = accessUrl;
     } else if (campaignParams.campaignType === 'csv_import') {
       // Use campaignParams

@@ -38,11 +38,11 @@
 *   **API Keys & Firebase Function Configuration:**
     *   `VITE_GOOGLE_MAPS_API_KEY`: Client-side environment variable for Google Maps API key, used for Places Autocomplete. Stored in `.env` (gitignored).
     *   **Firebase Function Environment Variables (set via Firebase CLI `functions:config:set`):**
-        *   `app.domain`: This configuration is used by the `handleCampaignSignUpLink` HTTP function to determine the base URL for redirecting users to the frontend application (e.g., `http://localhost:5173` for emulator, `https://phoenix-property-manager-pro.web.app` for production). It's crucial for production that this is set to your actual frontend application domain.
-        *   The `createCampaign` callable function constructs `accessUrl`s for public campaigns to directly invoke the `handleCampaignSignUpLink` HTTP function. The base URL for this HTTP function is determined by the environment:
-            *   **Emulator:** `http://localhost:{emulators.functions.port}/{GCLOUD_PROJECT}/{region}/handleCampaignSignUpLink` (e.g., `http://localhost:5001/phoenix-property-manager-pro/us-central1/handleCampaignSignUpLink`)
-            *   **Production:** `https://{region}-{GCLOUD_PROJECT}.cloudfunctions.net/handleCampaignSignUpLink` (e.g., `https://us-central1-phoenix-property-manager-pro.cloudfunctions.net/handleCampaignSignUpLink`)
-            *   The `GCLOUD_PROJECT` environment variable is typically available in deployed functions; `phoenix-property-manager-pro` is used as a fallback in the code. The `region` (`us-central1`) is taken from `firebase.json`.
+        *   `app.domain`: This configuration is used by the `createCampaign` callable function (and potentially other functions that need to construct frontend URLs) to determine the base URL of the frontend application (e.g., `http://localhost:5173` for emulator, `https://phoenix-property-manager-pro.web.app` for production). It's crucial for production that this is set to your actual frontend application domain.
+        *   The `createCampaign` callable function constructs `accessUrl`s for public campaigns. These URLs now point to a frontend route (e.g., `/join-public-campaign?campaign={campaignId}`). The base for this URL is determined using `functions.config().app.domain` or environment-specific fallbacks:
+            *   **Emulator Example:** `http://localhost:5173/join-public-campaign?campaign={campaignId}`
+            *   **Production Example:** `https://phoenix-property-manager-pro.web.app/join-public-campaign?campaign={campaignId}`
+        *   The previous `handleCampaignSignUpLink` HTTP function, which was directly invoked by old `accessUrl`s, has been replaced for this flow. The new frontend page (`/join-public-campaign`) now calls a new callable function (`processPublicCampaignLink`) to handle the campaign link processing.
 
 ## 3. Technical Constraints & Considerations
 

@@ -129,6 +129,7 @@ The application employs a modern web architecture with a React-based frontend an
                     *   `createdAt: timestamp`
                     *   `organizationId: string` (Denormalized for rules/queries)
                     *   `propertyId: string` (Denormalized for rules/queries)
+                    *   `id: string` (NEW: Stores the document's own ID for querying purposes)
                     *   `maxUses?: number | null`
                     *   `totalAccepted: number` (default 0)
                     *   `expiresAt?: timestamp | null`
@@ -192,7 +193,7 @@ The application employs a modern web architecture with a React-based frontend an
             *   Purpose: Handles the processing of a public campaign link initiated by the frontend.
             *   Trigger: Called by the `PublicCampaignHandlerPage.tsx` frontend page.
             *   Inputs: `{ campaignId: string }`.
-            *   Logic: Validates the `campaignId` (active, not expired, within limits). If valid, dynamically creates an `invitations` document (linked to the `campaignId`) and returns details like `{ invitationId, campaignId, organizationId }` to the frontend.
+            *   Logic: Validates the `campaignId` by querying the `campaigns` collection group for a document with a matching `id` field and `status: 'active'`. If valid (active, not expired, within limits), dynamically creates an `invitations` document (linked to the `campaignId`) and returns details like `{ invitationId, campaignId, organizationId }` to the frontend.
         *   **`signUpWithInvitation` (v2 Callable - Updated):**
             *   Existing function updated to check if an accepted invitation has a `campaignId`.
             *   If so, it atomically increments `totalAccepted` on the linked campaign document and updates the campaign's `status` (e.g., to "completed" or "expired") if `maxUses` or `expiresAt` conditions are met.

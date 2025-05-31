@@ -179,6 +179,7 @@ export const createCampaign = v1Https.onCall(
       targetPropertyId: string; // For clarity in the document
       propertyId: string; // For clarity in the document
       organizationId: string; // For clarity in the document
+      id: string; // Store the document ID as a field
       // Optional fields based on type
       accessUrl?: string;
       totalInvitedFromCsv?: number;
@@ -203,6 +204,7 @@ export const createCampaign = v1Https.onCall(
       targetPropertyId: campaignParams.propertyId, // Use campaignParams
       propertyId: campaignParams.propertyId, // Use campaignParams
       organizationId: campaignParams.organizationId, // Use campaignParams
+      id: campaignRef.id, // Add the document ID here
     };
 
     let accessUrl: string | undefined = undefined;

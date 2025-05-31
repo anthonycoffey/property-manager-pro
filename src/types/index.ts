@@ -137,7 +137,7 @@ export type InvitationStatus = 'pending' | 'accepted' | 'expired' | 'cancelled';
 
 export interface Invitation {
   id: string; // Firestore document ID
-  email: string;
+  email?: string; // Email can be undefined for public campaign invites initially
   rolesToAssign: string[];
   organizationId: string; 
   targetPropertyId?: string; // If for a resident

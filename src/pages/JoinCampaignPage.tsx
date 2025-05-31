@@ -42,7 +42,9 @@ const JoinCampaignPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  const [invitedEmail, setInvitedEmail] = useState<string>('');
+  // invitedEmail will store the email from the invitation, if present.
+  // email state will be for the input field, initialized by invitedEmail or empty.
+  const [invitedEmail, setInvitedEmail] = useState<string | null>(null); 
   const [isFetchingInvite, setIsFetchingInvite] = useState<boolean>(true);
 
   const location = useLocation();
@@ -50,7 +52,7 @@ const JoinCampaignPage: React.FC = () => {
   const { currentUser } = useAuth();
 
   const [invitationId, setInvitationId] = useState<string | null>(null);
-  const [campaignId, setCampaignId] = useState<string | null>(null); // Store campaignId if needed on this page
+  // const [campaignId, setCampaignId] = useState<string | null>(null); // Store campaignId if needed on this page
   const [organizationId, setOrganizationId] = useState<string | null>(null); // Store orgId from invitation
 
   useEffect(() => {
@@ -62,10 +64,10 @@ const JoinCampaignPage: React.FC = () => {
   useEffect(() => {
     const queryParams = new URLSearchParams(location.search);
     const invId = queryParams.get('invitationId');
-    const campId = queryParams.get('campaignId'); // Campaign ID might also be in URL
+    // const campId = queryParams.get('campaignId'); // Campaign ID might also be in URL
 
     setInvitationId(invId);
-    setCampaignId(campId); // Store it, though primary use is invId
+    // setCampaignId(campId); // Store it, though primary use is invId
 
     if (invId) {
       const functionsInstance = getFunctions();
@@ -139,15 +141,21 @@ const JoinCampaignPage: React.FC = () => {
 
 
           const result = await getInvitationDetailsFn({ invitationId: invId, organizationId: orgIdFromUrl });
-          const details = result.data as Invitation; // Assuming Invitation type has email and organizationId
+          const details = result.data as Invitation; 
 
           if (details.email) {
-            setInvitedEmail(details.email);
-            setEmail(details.email);
-            setOrganizationId(details.organizationId); // Confirm organizationId from the invitation
+            setInvitedEmail(details.email); // Store the email from invitation
+            setEmail(details.email);        // Pre-fill the input field
           } else {
-            setError('Could not retrieve invitation details. The link may be invalid or expired.');
+            // No email in invitation (e.g., public campaign link), allow user to enter it.
+            setInvitedEmail(null); // Explicitly set to null
+            setEmail('');          // Ensure input field is empty
           }
+          // organizationId is already set from orgIdFromUrl, which is necessary for the call.
+          // If details contained a different/more accurate orgId, we could update here,
+          // but for now, orgIdFromUrl is the source of truth for this page's context.
+          // setOrganizationId(details.organizationId || orgIdFromUrl); 
+
         } catch (error: unknown) {
           console.error('Error fetching campaign invitation details:', error);
           let specificError = 'Failed to load campaign invitation. The link may be invalid, expired, or already used.';
@@ -207,7 +215,8 @@ const JoinCampaignPage: React.FC = () => {
   };
 
   const processSocialSignUp = async (socialUser: UserCredential['user'], providerName: 'google' | 'microsoft') => {
-    if (isFetchingInvite || !invitedEmail || !organizationId) {
+    // Use the 'email' state which might be user-entered if 'invitedEmail' was null
+    if (isFetchingInvite || !organizationId) { 
       setError('Please wait for invitation details to load or ensure the invitation is valid.');
       return;
     }
@@ -216,13 +225,18 @@ const JoinCampaignPage: React.FC = () => {
       setSocialLoading(null);
       return;
     }
+    // For social sign-up, the email from the provider is paramount.
+    // If an email was invited, they must match. If no email was invited, use the provider's.
     if (!socialUser.email) {
       setError(`Could not retrieve email from ${providerName}. Please try again or use email/password.`);
       setSocialLoading(null);
       return;
     }
-    if (socialUser.email.toLowerCase() !== invitedEmail.toLowerCase()) {
-      setError(`The email from ${providerName} (${socialUser.email}) does not match the invited email (${invitedEmail}). Please use the account associated with the invited email.`);
+
+    const finalEmail = socialUser.email; // Use provider's email
+
+    if (invitedEmail && finalEmail.toLowerCase() !== invitedEmail.toLowerCase()) {
+      setError(`The email from ${providerName} (${finalEmail}) does not match the invited email (${invitedEmail}). Please use the account associated with the invited email.`);
       setSocialLoading(null);
       return;
     }
@@ -232,9 +246,9 @@ const JoinCampaignPage: React.FC = () => {
     try {
       const result = await signUpWithInvitationFn({
         uid: socialUser.uid,
-        email: invitedEmail,
-        displayName: socialUser.displayName || invitedEmail.split('@')[0] || 'New User',
-        organizationId, // This is crucial
+        email: finalEmail, // Use the email from the social provider
+        displayName: socialUser.displayName || finalEmail.split('@')[0] || 'New User',
+        organizationId, 
         invitationId,
         // campaignId will be on the invitation document, handled by backend
       });
@@ -253,7 +267,8 @@ const JoinCampaignPage: React.FC = () => {
   };
 
   const handleGoogleSignUp = async () => {
-    if (isFetchingInvite || !invitedEmail) return;
+    // Allow social sign up even if invitedEmail is null (public campaign)
+    if (isFetchingInvite) return; 
     setError(null); setSuccess(null); setSocialLoading('google');
     const provider = new GoogleAuthProvider();
     try {
@@ -267,7 +282,8 @@ const JoinCampaignPage: React.FC = () => {
   };
 
   const handleMicrosoftSignUp = async () => {
-    if (isFetchingInvite || !invitedEmail) return;
+    // Allow social sign up even if invitedEmail is null (public campaign)
+    if (isFetchingInvite) return; 
     setError(null); setSuccess(null); setSocialLoading('microsoft');
     const provider = new OAuthProvider('microsoft.com');
     try {
@@ -282,7 +298,8 @@ const JoinCampaignPage: React.FC = () => {
 
   const handleEmailPasswordSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (isFetchingInvite || !invitedEmail || !organizationId) {
+    // Use the 'email' state for submission, which could be user-entered
+    if (isFetchingInvite || !organizationId) { 
       setError('Please wait for invitation details to load or ensure the invitation is valid.');
       return;
     }
@@ -291,18 +308,23 @@ const JoinCampaignPage: React.FC = () => {
       setError('Invitation ID is missing. Cannot proceed.');
       return;
     }
-    if (!password || !displayName) {
-      setError('Please fill in all fields: Full Name and Password.');
+    if (!email || !password || !displayName) { // Check 'email' state here
+      setError('Please fill in all fields: Email, Full Name, and Password.');
+      return;
+    }
+    // If an email was part of the invitation, the submitted email must match.
+    if (invitedEmail && email.toLowerCase() !== invitedEmail.toLowerCase()) {
+      setError(`The email provided (${email}) does not match the invited email (${invitedEmail}). Please use the correct email address or contact support.`);
       return;
     }
 
     setLoading(true);
     try {
       const result = await signUpWithInvitationFn({
-        email: invitedEmail,
+        email: email, // Use the 'email' state from the form
         password,
         displayName,
-        organizationId, // This is crucial
+        organizationId, 
         invitationId,
         // campaignId will be on the invitation document, handled by backend
       });
@@ -331,7 +353,10 @@ const JoinCampaignPage: React.FC = () => {
     );
   }
 
-  if ((!invitationId || !organizationId || (error && !invitedEmail)) && !success) {
+  // Show error if critical IDs are missing, or if there's an error and we are still fetching (or failed to fetch)
+  // invitedEmail being null is okay if we are not in an error state from fetching.
+  if ((!invitationId || !organizationId || error) && !success && isFetchingInvite) {
+    // This covers cases where fetching is ongoing and already hit an error, or critical IDs missing.
     return (
       <Container component="main" maxWidth="xs">
         <Paper elevation={3} sx={{ marginTop: 8, padding: 4, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
@@ -359,20 +384,75 @@ const JoinCampaignPage: React.FC = () => {
     <Container component="main" maxWidth="xs">
       <Paper elevation={3} sx={{ marginTop: 8, padding: 4, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
         <Typography component="h1" variant="h5" sx={{ mb: 2 }}>Join Campaign & Create Account</Typography>
-        {error && <Alert severity="error" sx={{ mb: 2, width: '100%' }}>{error}</Alert>}
+        {error && !isFetchingInvite && <Alert severity="error" sx={{ mb: 2, width: '100%' }}>{error}</Alert>}
 
-        <Button fullWidth variant="outlined" startIcon={<GoogleIcon />} onClick={handleGoogleSignUp} disabled={loading || !!socialLoading || isFetchingInvite || !invitedEmail} sx={{ mt: 1, mb: 1, borderColor: '#db4437', color: '#db4437', '&:hover': { borderColor: '#db4437', backgroundColor: 'rgba(219, 68, 55, 0.04)' } }}>
+        <Button 
+          fullWidth 
+          variant="outlined" 
+          startIcon={<GoogleIcon />} 
+          onClick={handleGoogleSignUp} 
+          disabled={loading || !!socialLoading || isFetchingInvite} 
+          sx={{ mt: 1, mb: 1, borderColor: '#db4437', color: '#db4437', '&:hover': { borderColor: '#db4437', backgroundColor: 'rgba(219, 68, 55, 0.04)' } }}
+        >
           {socialLoading === 'google' ? <CircularProgress size={24} /> : 'Sign up with Google'}
         </Button>
-        <Button fullWidth variant="outlined" startIcon={<AccountCircleIcon />} onClick={handleMicrosoftSignUp} disabled={loading || !!socialLoading || isFetchingInvite || !invitedEmail} sx={{ mt: 1, mb: 2, borderColor: '#0078D4', color: '#0078D4', '&:hover': { borderColor: '#0078D4', backgroundColor: 'rgba(0, 120, 212, 0.04)' } }}>
+        <Button 
+          fullWidth 
+          variant="outlined" 
+          startIcon={<AccountCircleIcon />} 
+          onClick={handleMicrosoftSignUp} 
+          disabled={loading || !!socialLoading || isFetchingInvite} 
+          sx={{ mt: 1, mb: 2, borderColor: '#0078D4', color: '#0078D4', '&:hover': { borderColor: '#0078D4', backgroundColor: 'rgba(0, 120, 212, 0.04)' } }}
+        >
           {socialLoading === 'microsoft' ? <CircularProgress size={24} /> : 'Sign up with Microsoft'}
         </Button>
         <Divider sx={{ width: '100%', my: 2 }}>OR</Divider>
         <Box component="form" onSubmit={handleEmailPasswordSubmit} sx={{ mt: 1, width: '100%' }}>
-          <TextField margin="normal" required fullWidth id="email" label="Invited Email Address" name="email" value={email} InputProps={{ readOnly: true }} disabled={isFetchingInvite || loading || !!socialLoading} />
-          <TextField margin="normal" required fullWidth id="displayName" label="Full Name" name="displayName" autoComplete="name" autoFocus value={displayName} onChange={(e) => setDisplayName(e.target.value)} disabled={isFetchingInvite || loading || !!socialLoading || !invitedEmail} />
-          <TextField margin="normal" required fullWidth name="password" label="Password" type="password" id="password" autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} disabled={isFetchingInvite || loading || !!socialLoading || !invitedEmail} />
-          <Button type="submit" fullWidth variant="contained" sx={{ mt: 3, mb: 2 }} disabled={isFetchingInvite || loading || !!socialLoading || !invitedEmail}>
+          <TextField 
+            margin="normal" 
+            required 
+            fullWidth 
+            id="email" 
+            label={invitedEmail ? "Invited Email Address" : "Your Email Address"} 
+            name="email" 
+            value={email} 
+            onChange={(e) => setEmail(e.target.value)}
+            InputProps={{ readOnly: !!invitedEmail }} // ReadOnly if email came from invitation
+            disabled={isFetchingInvite || loading || !!socialLoading || !!invitedEmail} // Also disable if invitedEmail is set
+          />
+          <TextField 
+            margin="normal" 
+            required 
+            fullWidth 
+            id="displayName" 
+            label="Full Name" 
+            name="displayName" 
+            autoComplete="name" 
+            autoFocus={!invitedEmail} // Autofocus if email is not pre-filled
+            value={displayName} 
+            onChange={(e) => setDisplayName(e.target.value)} 
+            disabled={isFetchingInvite || loading || !!socialLoading} 
+          />
+          <TextField 
+            margin="normal" 
+            required 
+            fullWidth 
+            name="password" 
+            label="Password" 
+            type="password" 
+            id="password" 
+            autoComplete="new-password" 
+            value={password} 
+            onChange={(e) => setPassword(e.target.value)} 
+            disabled={isFetchingInvite || loading || !!socialLoading} 
+          />
+          <Button 
+            type="submit" 
+            fullWidth 
+            variant="contained" 
+            sx={{ mt: 3, mb: 2 }} 
+            disabled={isFetchingInvite || loading || !!socialLoading}
+          >
             {loading && !socialLoading ? <CircularProgress size={24} /> : 'Create Account with Email'}
           </Button>
         </Box>

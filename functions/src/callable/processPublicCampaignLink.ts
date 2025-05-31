@@ -1,7 +1,7 @@
 import * as functions from 'firebase-functions';
 import { https as v1Https } from 'firebase-functions/v1';
 import { HttpsError, CallableContext } from 'firebase-functions/v1/https';
-import { db, FieldValue, FieldPath } from '../firebaseAdmin.js';
+import { db, FieldValue } from '../firebaseAdmin.js';
 
 interface ProcessLinkData {
   campaignId: string;
@@ -35,7 +35,8 @@ export const processPublicCampaignLink = v1Https.onCall(
     try {
       const campaignSnap = await db
         .collectionGroup('campaigns')
-        .where(FieldPath.documentId(), '==', campaignId)
+        .where('id', '==', campaignId) // Query on the new 'id' field
+        .where('status', '==', 'active') // Ensure campaign is active
         .limit(1)
         .get();
 
@@ -90,7 +91,8 @@ export const processPublicCampaignLink = v1Https.onCall(
         campaignId: campaignDoc.id,
         rolesToAssign: campaignData.rolesToAssign,
         targetPropertyId: campaignData.targetPropertyId,
-        organizationId: campaignData.organizationId,
+        // organizationId: campaignData.organizationId, // Store as an array for consistency
+        organizationIds: [campaignData.organizationId], // Consistent with systemPatterns.md
         status: 'pending',
         createdAt: FieldValue.serverTimestamp(),
         expiresAt: campaignData.expiresAt || null,

@@ -12,8 +12,8 @@ The project has recently completed the backend and initial frontend (for Propert
   - **Concept:** "Campaigns" system for CSV bulk imports and Public Link/QR code resident invitations, with usage limits and expiry.
   - **Backend:**
     - Firestore rules for `campaigns` subcollection.
-    - `createCampaign` (v1 Callable): Creates campaigns, processes CSVs from Firebase Storage. For public links, now generates a frontend URL (e.g., `/join-public-campaign?campaign=...`).
-    - `processPublicCampaignLink` (v1 Callable - New): Handles validation of public campaign links (triggered by a frontend handler page) and creates invitation documents.
+    - `createCampaign` (v1 Callable): Creates campaigns, processes CSVs from Firebase Storage. For public links, now generates a frontend URL (e.g., `/join-public-campaign?campaign=...`) and stores the campaign's document ID in an `id` field (e.g. `id: campaignRef.id`) within the document data.
+    - `processPublicCampaignLink` (v1 Callable - New): Handles validation of public campaign links by querying the `campaigns` collection group using `where('id', '==', campaignIdFromUrl)` and `where('status', '==', 'active')`. Creates invitation documents. Triggered by a frontend handler page.
     - `handleCampaignSignUpLink` (v1 HTTP - Decommissioned for public link flow): Previously handled direct public links; its functionality is now replaced by `processPublicCampaignLink` and a frontend handler.
     - `signUpWithInvitation` (v2 Callable): Updated to increment campaign counters and update status.
     - `cleanupProcessedCampaignCSVs` (v2 Scheduled): Daily cleanup of old CSVs from Firebase Storage (`campaign_csvs_processed/`, `campaign_csvs_failed/`).
@@ -361,14 +361,16 @@ The remaining application functionality, based on the current `projectRoadmap.md
   - Implemented initial frontend for Property Managers (`CreateCampaignModal`, `CampaignsTable`, `PropertyCampaignsView` integrated into dashboard).
   - Utilized Firebase Storage for CSVs with a scheduled cleanup strategy.
   - Noted and navigated TypeScript v1/v2 type resolution challenges.
-*   **Public Campaign Link Flow Rearchitected (Frontend URL - 2025-05-30):**
-    *   The `createCampaign` Cloud Function (`functions/src/callable/createCampaign.ts`) was updated to generate `accessUrl`s that are frontend URLs (e.g., `https://your-app.com/join-public-campaign?campaign={campaignId}`). The base URL is derived from `functions.config().app.domain`.
+*   **Public Campaign Link Flow Rearchitected & Fixed (Frontend URL - 2025-05-30):**
+    *   The `createCampaign` Cloud Function (`functions/src/callable/createCampaign.ts`) was updated to:
+        *   Generate `accessUrl`s that are frontend URLs (e.g., `https://your-app.com/join-public-campaign?campaign={campaignId}`). The base URL is derived from `functions.config().app.domain`.
+        *   Store the campaign document's ID in an `id` field (e.g. `id: campaignRef.id`) within the document data itself.
     *   A new frontend page, `src/pages/PublicCampaignHandlerPage.tsx`, was created and mapped to the `/join-public-campaign` route.
     *   This handler page calls a new callable Cloud Function, `functions/src/callable/processPublicCampaignLink.ts`.
-    *   The `processPublicCampaignLink` function validates the campaign and creates an invitation document, returning details to the frontend handler.
+    *   The `processPublicCampaignLink` function validates the campaign by querying the `campaigns` collection group using `where('id', '==', campaignIdFromUrl)` and `where('status', '==', 'active')`. It then creates an invitation document and returns details to the frontend handler.
     *   The frontend handler page then navigates the user to the existing `/join-campaign` route (which uses `src/pages/JoinCampaignPage.tsx`) with the necessary `invitationId`, `campaignId`, and `organizationId`.
     *   The previous HTTP Cloud Function `functions/src/http/handleCampaignSignUpLink.ts` has been decommissioned for this flow (export removed, file deleted).
-    *   This change provides a cleaner, more user-friendly `accessUrl` for public campaigns.
+    *   This change provides a cleaner, more user-friendly `accessUrl` for public campaigns and resolves the "internal error" previously caused by an incorrect collection group query (which was attempting to use `FieldPath.documentId()` with just an ID segment).
 - **Organization Selector Bug Fix (2025-05-30):**
     - Corrected the `useEffect` hook in `src/components/Admin/OrganizationSelector.tsx` to properly handle changes in `managedOrganizationIds` (for OMs) and to clear invalid selections.
     - Added `managedOrganizationIds`, `selectedOrganizationId`, and `onOrganizationChange` to its dependency array.

@@ -91,9 +91,12 @@ export const deleteCampaign = deleteCampaignFunction;
 import { activateCampaign as activateCampaignFunction } from './callable/activateCampaign.js';
 export const activateCampaign = activateCampaignFunction;
 
+import { processPublicCampaignLink as processPublicCampaignLinkFunction } from './callable/processPublicCampaignLink.js';
+export const processPublicCampaignLink = processPublicCampaignLinkFunction;
+
 // HTTP Functions
-import { handleCampaignSignUpLink as handleCampaignSignUpLinkFunction } from './http/handleCampaignSignUpLink.js';
-export const handleCampaignSignUpLink = handleCampaignSignUpLinkFunction;
+// import { handleCampaignSignUpLink as handleCampaignSignUpLinkFunction } from './http/handleCampaignSignUpLink.js'; // Commented out as it's being decommissioned
+// export const handleCampaignSignUpLink = handleCampaignSignUpLinkFunction; // Commented out
 
 // Scheduled Functions
 import { cleanupProcessedCampaignCSVs as cleanupProcessedCampaignCSVsFunction } from './scheduled/cleanupProcessedCampaignCSVs.js';

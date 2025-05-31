@@ -227,10 +227,15 @@ const PropertyManagerDashboardPanel: React.FC<
           <Typography variant='h6' gutterBottom sx={{ mb: 2 }}>
             Invite New Resident
           </Typography>
-          <PropertySelectorDropdown
-            selectedPropertyId={selectedPropertyId}
-            onPropertyChange={handlePropertySelect}
-          />
+          {organizationId ? (
+            <PropertySelectorDropdown
+              organizationId={organizationId}
+              selectedPropertyId={selectedPropertyId}
+              onPropertyChange={handlePropertySelect}
+            />
+          ) : (
+            <Alert severity='warning'>Organization not identified. Cannot select property.</Alert>
+          )}
           {selectedPropertyId && organizationId ? (
             <>
               <InviteResidentForm
@@ -262,10 +267,15 @@ const PropertyManagerDashboardPanel: React.FC<
           <Typography variant='h6' gutterBottom sx={{ mb: 2 }}>
             Manage Invitation Campaigns
           </Typography>
-          <PropertySelectorDropdown
-            selectedPropertyId={selectedPropertyId}
-            onPropertyChange={handlePropertySelect}
-          />
+          {organizationId ? (
+            <PropertySelectorDropdown
+              organizationId={organizationId}
+              selectedPropertyId={selectedPropertyId}
+              onPropertyChange={handlePropertySelect}
+            />
+          ) : (
+            <Alert severity='warning'>Organization not identified. Cannot select property for campaigns.</Alert>
+          )}
           {selectedPropertyId && organizationId ? (
             <PropertyCampaignsView
               organizationId={organizationId}

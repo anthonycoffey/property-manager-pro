@@ -18,6 +18,7 @@ import {
   Tab,  // Added Tab
   Divider, // Added Divider
 } from '@mui/material';
+import OrgManagerCampaignsView from '../OrganizationManager/Campaigns/OrgManagerCampaignsView'; // Added
 import AddIcon from '@mui/icons-material/Add';
 import AdminPanelSettings from '@mui/icons-material/AdminPanelSettings';
 import { useAuth } from '../../hooks/useAuth';
@@ -372,6 +373,7 @@ const OrganizationManagerDashboardPanel: React.FC<
               >
                 <Tab label="Property Managers" {...a11yProps(0)} />
                 <Tab label="Properties & Residents" {...a11yProps(1)} />
+                <Tab label="Campaigns" {...a11yProps(2)} /> 
               </Tabs>
             </Box>
             <TabPanel value={tabValue} index={0}>
@@ -397,6 +399,9 @@ const OrganizationManagerDashboardPanel: React.FC<
                 onManageResidents={handleManageResidents} // Should now align as handleManageResidents expects PropertyType
                 onPropertiesUpdate={handlePropertiesUpdate}
               />
+            </TabPanel>
+            <TabPanel value={tabValue} index={2}>
+              <OrgManagerCampaignsView />
             </TabPanel>
           </>
         )}

@@ -179,6 +179,7 @@ export const createCampaign = v1Https.onCall(
       targetPropertyId: string; // For clarity in the document
       propertyId: string; // For clarity in the document
       organizationId: string; // For clarity in the document
+      id: string; // Store the document ID as a field
       // Optional fields based on type
       accessUrl?: string;
       totalInvitedFromCsv?: number;
@@ -203,17 +204,38 @@ export const createCampaign = v1Https.onCall(
       targetPropertyId: campaignParams.propertyId, // Use campaignParams
       propertyId: campaignParams.propertyId, // Use campaignParams
       organizationId: campaignParams.organizationId, // Use campaignParams
+      id: campaignRef.id, // Add the document ID here
     };
 
     let accessUrl: string | undefined = undefined;
 
     // Type-specific setup
     if (campaignParams.campaignType === 'public_link') {
-      // Use campaignParams
-      // Generate accessUrl (simple example, ensure uniqueness in a real scenario if needed)
-      // The actual URL will depend on your frontend routing for /join?campaign={id}
-      const appDomain = functions.config().app?.domain || 'app.example.com'; // Configure your app domain
-      accessUrl = `https://${appDomain}/join?campaign=${campaignRef.id}`;
+      let frontendAppBaseUrl: string;
+      if (process.env.FUNCTIONS_EMULATOR === 'true') {
+        const configuredDomain = functions.config().app?.domain;
+        if (configuredDomain) {
+          if (configuredDomain.toLowerCase() === "localhost") {
+            frontendAppBaseUrl = 'http://localhost:5173'; // Default Vite dev server port
+          } else {
+            frontendAppBaseUrl = configuredDomain.startsWith('http') ? configuredDomain : `http://${configuredDomain}`; // Assume http for local custom domains
+          }
+        } else {
+          frontendAppBaseUrl = 'http://localhost:5173'; // Default emulator frontend
+        }
+      } else {
+        const prodDomain = functions.config().app?.domain;
+        if (!prodDomain) {
+          functions.logger.error(
+            "CRITICAL: functions.config().app.domain is not set for production environment! Public campaign links will use hardcoded fallback. This MUST be configured."
+          );
+          frontendAppBaseUrl = 'https://phoenix-property-manager-pro.web.app'; // Default production frontend
+        } else {
+          frontendAppBaseUrl = prodDomain.startsWith('http') ? prodDomain : `https://${prodDomain}`;
+        }
+      }
+      // The accessUrl points to the new frontend handler page
+      accessUrl = `${frontendAppBaseUrl}/join-public-campaign?campaign=${campaignRef.id}`;
       newCampaignData.accessUrl = accessUrl;
     } else if (campaignParams.campaignType === 'csv_import') {
       // Use campaignParams

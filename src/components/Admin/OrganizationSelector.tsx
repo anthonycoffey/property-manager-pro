@@ -16,6 +16,8 @@ import {
   query,
   type DocumentData,
   QueryDocumentSnapshot,
+  orderBy, // Added orderBy
+  where, // Added where
 } from 'firebase/firestore';
 
 interface Organization {
@@ -28,13 +30,15 @@ interface Organization {
 interface OrganizationSelectorProps {
   selectedOrganizationId: string | null;
   onOrganizationChange: (organizationId: string | null) => void;
-  // sx?: SxProps<Theme>; // Optional styling
+  managedOrganizationIds?: string[] | null; // Optional: For OM to filter their orgs
+  label?: string; // Optional label
 }
 
 const OrganizationSelector: React.FC<OrganizationSelectorProps> = ({
   selectedOrganizationId,
   onOrganizationChange,
-  // sx,
+  managedOrganizationIds,
+  label = "Select Organization",
 }) => {
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -42,21 +46,60 @@ const OrganizationSelector: React.FC<OrganizationSelectorProps> = ({
 
   useEffect(() => {
     setLoading(true);
-    const organizationsCollection = collection(db, 'organizations'); // Use db instead of firestore
-    const q = query(organizationsCollection); // Add orderBy if needed, e.g., orderBy('name')
+    setError(null);
+    const organizationsCollection = collection(db, 'organizations');
+    let q;
+
+    if (managedOrganizationIds) { // This block handles OM context
+      if (managedOrganizationIds.length === 0) {
+        setOrganizations([]);
+        setLoading(false);
+        // If a selection existed but now there are no orgs to select from for this OM
+        if (selectedOrganizationId !== null) {
+          onOrganizationChange(null);
+        }
+        return; // No query needed, and no listener to unsubscribe from if we return early
+      }
+      // Firestore 'in' query limit is 30.
+      // For simplicity, we'll assume managedOrganizationIds.length will be <= 30.
+      // Production apps might need chunking for larger arrays.
+      if (managedOrganizationIds.length > 30) {
+        console.warn(
+          "OrganizationSelector: managedOrganizationIds exceeds 30. Firestore 'in' query might fail or be inefficient. Consider chunking."
+        );
+      }
+      q = query(
+        organizationsCollection,
+        where('__name__', 'in', managedOrganizationIds),
+        orderBy('name')
+      );
+    } else {
+      // Admin context or no specific filter: fetch all organizations
+      q = query(organizationsCollection, orderBy('name'));
+    }
 
     const unsubscribe = onSnapshot(
       q,
       (snapshot) => {
         const orgsData = snapshot.docs.map(
-          (doc: QueryDocumentSnapshot<DocumentData>) => ({
-            id: doc.id,
-            name: doc.data().name || 'Unnamed Organization', // Fallback for missing name
-            ...doc.data(), // Spread other fields if needed
-          })
+          (doc: QueryDocumentSnapshot<DocumentData>) =>
+            ({
+              id: doc.id,
+              name: doc.data().name || 'Unnamed Organization',
+              ...doc.data(),
+            } as Organization)
         );
-        setOrganizations(orgsData as Organization[]);
+        setOrganizations(orgsData);
         setLoading(false);
+
+        // If a selection was made but that org is no longer in the fetched list, clear it
+        // This handles cases where the list of available orgs changes (e.g., for an OM whose assignments change)
+        if (
+          selectedOrganizationId &&
+          !orgsData.some((org) => org.id === selectedOrganizationId)
+        ) {
+          onOrganizationChange(null);
+        }
       },
       (err) => {
         console.error('Error fetching organizations:', err);
@@ -66,11 +109,12 @@ const OrganizationSelector: React.FC<OrganizationSelectorProps> = ({
     );
 
     return () => unsubscribe();
-  }, []);
+  }, [managedOrganizationIds, selectedOrganizationId, onOrganizationChange]); // Added dependencies
 
   const handleChange = (event: SelectChangeEvent<string | null>) => {
     const value = event.target.value as string | null;
-    onOrganizationChange(value === '' ? null : value);
+    // Ensure '' from Select becomes null for parent state consistency
+    onOrganizationChange(value === '' || value === 'none' ? null : value);
   };
 
   if (loading) {
@@ -96,20 +140,31 @@ const OrganizationSelector: React.FC<OrganizationSelectorProps> = ({
       </Typography>
     );
   }
+  
+  if (organizations.length === 0 && !loading && managedOrganizationIds && managedOrganizationIds.length > 0) {
+    return <Typography sx={{ p: 2 }}>No organizations found matching your assignments.</Typography>;
+  }
+  
+  if (organizations.length === 0 && !loading && !managedOrganizationIds) {
+    return <Typography sx={{ p: 2 }}>No organizations found in the system.</Typography>;
+  }
+
 
   return (
     <Box sx={{mt: 1 }}>
-      <FormControl fullWidth>
+      <FormControl fullWidth disabled={loading || organizations.length === 0}>
         <InputLabel id='organization-select-label'>
-          Select Organization
+          {label}
         </InputLabel>
         <Select
           labelId='organization-select-label'
           id='organization-select'
-          value={selectedOrganizationId ?? ''}
-          label='Select Organization'
+          value={selectedOrganizationId ?? ''} // Use '' for Select if null, to avoid uncontrolled to controlled warning
+          label={label}
           onChange={handleChange}
         >
+          {/* Optional: Add a "None" or "Select..." option if desired, especially if the list can be empty */}
+          {/* For now, relying on the label and empty state messages */}
           {organizations.map((org) => (
             <MenuItem key={org.id} value={org.id}>
               {org.name}

@@ -12,6 +12,47 @@
     - Implemented UI in `CampaignsTable.tsx` with a "Reactivate" button and confirmation dialog (`ConfirmActivateCampaignDialog.tsx`).
     - Updated text in `ConfirmDeactivateCampaignDialog.tsx` to reflect that reversal is now possible.
     - Ensured type definitions for `ActivateCampaignData` are present in both `functions/src/types.ts` and `src/types/index.ts`.
+- **Campaign Table Actions & View Details Page (Frontend - 2025-05-30):**
+    - Completed enhancements to `src/components/PropertyManager/Campaigns/CampaignsTable.tsx` and associated features.
+    - **Actions Implemented:** "Edit", "Deactivate", "Reactivate" (previously completed on 2025-05-29), and "Delete". These actions open respective modals/dialogs and call corresponding Cloud Functions.
+    - **View Details Page:** The "View Details" menu item now navigates to a functional page (e.g., `/campaigns/{campaignId}`) displaying detailed campaign information, including (or providing a way to view) accepted residents.
+    - Implemented permission checks for enabling/disabling these menu items based on user role and campaign ownership/status.
+    - Added Snackbar notifications for success/failure of these operations.
+    - Corresponding Cloud Functions (`updateCampaign`, `deactivateCampaign`, `deleteCampaign`) are implemented.
+- **Public Campaign Link Flow Rearchitected & Fixed (Frontend URL - 2025-05-30):**
+    - Modified `functions/src/callable/createCampaign.ts`:
+        - Generates `accessUrl`s for "public_link" campaigns that point to a new frontend route (`/join-public-campaign?campaign={campaignId}`). The base URL for this link uses `functions.config().app.domain`.
+        - Stores the campaign document's ID in a new field named `id` within the document itself to facilitate querying by the `processPublicCampaignLink` function.
+    - Created a new callable Cloud Function `functions/src/callable/processPublicCampaignLink.ts`:
+        - Handles validation of the campaign by querying the `campaigns` collection group using the `id` field (matching the `campaignId` from the URL) and `status: 'active'`.
+        - Creates the invitation document when triggered by the new frontend handler page.
+    - Created a new frontend page `src/pages/PublicCampaignHandlerPage.tsx` at the `/join-public-campaign` route. This page calls `processPublicCampaignLink` and then navigates the user to `/join-campaign` with the necessary parameters.
+    - Decommissioned the `functions/src/http/handleCampaignSignUpLink.ts` HTTP function for this flow (export removed, file deleted).
+    - This resolves the previous "internal error" caused by an incorrect collection group query.
+- **Public Campaign Sign-up Flow Debugging & Fix (2025-05-30):**
+    - **Initial Issue:** Users navigating a public campaign link saw an "Invalid Campaign Link" error on the `JoinCampaignPage.tsx`.
+    - **Investigation:**
+        - Added console logs to `functions/src/callable/getInvitationDetails.ts`. Confirmed it correctly returned no email for public campaign invitations (which are created without an email initially).
+        - Reviewed `src/pages/JoinCampaignPage.tsx` and found it was incorrectly treating the absence of an email in the `getInvitationDetails` response as an error.
+    - **Fixes (Part 1 - Frontend `JoinCampaignPage.tsx`):**
+        - Modified `src/types/index.ts` to make `email` optional in the `Invitation` interface.
+        - Updated `JoinCampaignPage.tsx` to:
+            - Not set an error if `getInvitationDetails` returns no email.
+            - Allow the email input field to be editable if no email is pre-filled.
+            - Ensure social sign-up and email/password sign-up use the appropriate email (pre-filled, user-entered, or from social provider).
+    - **Further Issue:** After frontend fixes, `functions/src/callable/signUpWithInvitation.ts` was exiting prematurely (in ~7ms) without setting claims or creating user profiles.
+    - **Investigation (Part 2 - Backend `signUpWithInvitation.ts`):**
+        - Added detailed entry-point logging to `signUpWithInvitation.ts`.
+        - Identified a `TypeError` because the code was attempting `invitationData.email.toLowerCase()` when `invitationData.email` was undefined for public campaign invites.
+    - **Fixes (Part 2 - Backend `signUpWithInvitation.ts`):**
+        - Modified `signUpWithInvitation.ts` to check if `invitationData.email` exists before attempting to use it in string operations, resolving the `TypeError`.
+    - **Further Issue (Part 3 - Backend `signUpWithInvitation.ts` & `processPublicCampaignLink.ts`):** Even after the `TypeError` fix, `signUpWithInvitation.ts` was still exiting early, before setting claims. This was traced to how `organizationId` was being handled.
+        - `signUpWithInvitation.ts` expected `invitationData.organizationIds` (an array) to derive the `singleOrgId` for resident roles.
+        - Logged invitation data showed that invitations created by `processPublicCampaignLink.ts` had a single `organizationId` string field, not an `organizationIds` array.
+    - **Fixes (Part 3 - Backend `processPublicCampaignLink.ts` & `signUpWithInvitation.ts`):**
+        - Updated `functions/src/callable/processPublicCampaignLink.ts` to create invitation documents with `organizationIds: [campaignData.organizationId]` (an array with one element) instead of a single `organizationId` string. This aligns with `systemPatterns.md` and how `signUpWithInvitation.ts` expects to process it for resident roles.
+        - Added more robust entry-point logging and a top-level try-catch in `signUpWithInvitation.ts` to diagnose very early exits. This helped confirm the previous fixes were working and led to the identification of the `organizationIds` issue.
+    - **Result:** The public campaign sign-up flow is now working correctly, with users able to sign up and have their roles and profiles properly established.
 - **Phoenix Integration:** (Ongoing) Job querying, service request dispatch, services querying.
 - **Custom GPTChat Model Integration:** (Ongoing) For residents.
 - **Dashboard Data Visualizations & Statistics:** (Ongoing) Initial implementations.
@@ -25,10 +66,12 @@
         - **`createCampaign` (v1 Callable Function):**
             - Handles creation of `csv_import` and `public_link` campaigns.
             - For CSVs: Processes files uploaded to Firebase Storage (`campaign_csvs_pending/`), creates individual `invitations` linked to the campaign (triggering emails), and moves processed CSVs to `campaign_csvs_processed/`.
-            - For Public Links: Generates a unique `accessUrl`.
-        - **`handleCampaignSignUpLink` (v1 HTTP Function):**
-            - Triggered by the `accessUrl` of a public link campaign.
-            - Validates the campaign and dynamically creates an `invitations` document, then redirects to the `AcceptInvitationPage`.
+            - For Public Links: Generates a unique frontend `accessUrl` and stores the campaign's document ID in an `id` field (e.g., `id: campaignRef.id`) within the campaign document data.
+        - **`processPublicCampaignLink` (v1 Callable Function - New):**
+            - Called by the new `PublicCampaignHandlerPage.tsx`.
+            - Validates the campaign by querying the `campaigns` collection group using `where('id', '==', campaignIdFromUrl)` and `where('status', '==', 'active')`. Dynamically creates an `invitations` document. Returns invitation details to the frontend.
+        - **`handleCampaignSignUpLink` (v1 HTTP Function - Decommissioned for this flow):**
+            - Previously triggered by `accessUrl`. Its functionality is now handled by `processPublicCampaignLink` (callable) and the frontend handler page.
         - **`signUpWithInvitation` (v2 Callable Function - Updated):**
             - Modified to check for a `campaignId` on accepted invitations.
             - If present, atomically increments `totalAccepted` on the campaign document and updates its status (e.g., "completed", "expired") based on `maxUses` or `expiresAt`.
@@ -121,9 +164,8 @@
 1.  **Resident Invitation Campaigns - Enhancements & Broader Rollout:**
     *   Implement Campaign Management UI for Organization Managers (similar to PMs, with org/property selection).
     *   Implement Campaign Management UI for Admins (global view/management capabilities).
-    *   Add advanced campaign actions to `CampaignsTable.tsx` (e.g., Deactivate/Activate campaign, Edit campaign details like name/expiry/maxUses, View detailed list of accepted residents).
-    *   Implement the frontend page/route for handling public campaign links (`/join?campaign={campaignId}`) which will be served by the `handleCampaignSignUpLink` HTTP function.
-    *   Conduct thorough end-to-end testing of all campaign creation, invitation, sign-up, and tracking flows.
+    *   Ensure the new public campaign link flow (frontend URL -> `PublicCampaignHandlerPage.tsx` -> `processPublicCampaignLink` callable -> `JoinCampaignPage.tsx`) is fully integrated and functional.
+    *   Conduct thorough end-to-end testing of all campaign creation (verifying new `accessUrl` format), public link usage, invitation, sign-up, and tracking flows.
 2.  **Phoenix Integration:** (Ongoing)
     *   Implement job querying by Resident, Property, and Organization.
     *   Implement service request dispatch to Phoenix.
@@ -145,6 +187,16 @@
     - CSV files for `csv_import` campaigns are uploaded to Firebase Storage (`campaign_csvs_pending/`).
     - The `createCampaign` function processes these files and moves them to a `campaign_csvs_processed/` (or `campaign_csvs_failed/`) folder.
     - A daily scheduled Cloud Function (`cleanupProcessedCampaignCSVs`) will delete files older than 30 days from the processed/failed folders.
+- **Public Campaign URL Generation and Handling Rearchitected & Fixed (Decision 2025-05-30):**
+    - The `accessUrl` for "public_link" campaigns generated by `createCampaign.ts` now points to a frontend route (e.g., `/join-public-campaign?campaign={campaignId}`). The base URL for this link uses `functions.config().app.domain`.
+        - `createCampaign.ts` also now stores the campaign document's ID in an `id` field (e.g. `id: campaignRef.id`) within the document data itself. This `id` field is used by `processPublicCampaignLink` for querying.
+        - Emulator Example: `http://localhost:5173/join-public-campaign?campaign={campaignId}`
+        - Production Example: `https://phoenix-property-manager-pro.web.app/join-public-campaign?campaign={campaignId}`
+    - A new frontend page, `PublicCampaignHandlerPage.tsx` (at `/join-public-campaign`), handles this initial link.
+    - This page calls a new callable Cloud Function, `processPublicCampaignLink.ts`.
+    - `processPublicCampaignLink.ts` validates the campaign by querying the `campaigns` collection group using `where('id', '==', campaignIdFromUrl)` and `where('status', '==', 'active')`. It then creates an invitation document and returns details (like `invitationId`, `campaignId`, `organizationId`) to the `PublicCampaignHandlerPage.tsx`.
+    - `PublicCampaignHandlerPage.tsx` then programmatically navigates the user to the existing `/join-campaign` frontend path, passing the necessary parameters.
+    - The `handleCampaignSignUpLink.ts` HTTP function has been decommissioned for this flow. This new approach also resolves the "internal error" previously encountered with the HTTP function's collection group query.
 - **Property Address Data Consistency (Decision 2025-05-27):**
   - Ensured that the `createProperty.ts` Cloud Function saves the full address (street, city, state, zip) as provided by the `CreatePropertyForm.tsx`. This aligns creation logic with edit logic and resolves issues with incomplete address data for new properties.
 - **Google Places Autocomplete Styling (New Decision 2025-05-25):**
@@ -235,3 +287,12 @@
     - **Fix:**
         - Modified `functions/src/firebaseAdmin.ts` to export `Timestamp` from the initialized `firebase-admin/firestore`.
         - Updated `functions/src/callable/createCampaign.ts` to import `Timestamp` from `../firebaseAdmin.js` and use this imported `Timestamp` for all timestamp operations and type definitions, removing the direct uninitialized `import * as admin from 'firebase-admin';`.
+- **Organization Selector Bug Fix (2025-05-30):**
+    - Corrected the `useEffect` hook in `src/components/Admin/OrganizationSelector.tsx`.
+    - Added `managedOrganizationIds`, `selectedOrganizationId`, and `onOrganizationChange` to its dependency array.
+    - The effect now correctly re-fetches organizations if `managedOrganizationIds` change (for OMs).
+    - It also clears the parent's selected organization (`onOrganizationChange(null)`) if the currently selected organization is no longer in the available list (e.g., OM's assignments change, or an admin-selected org is deleted/filtered out).
+    - This aims to prevent stale selections and ensure dependent components (like `PropertySelectorDropdown`) receive consistent and valid `organizationId` props.
+- **Property Manager Campaign View Fix (2025-05-30):**
+    - Updated `src/components/Dashboard/PropertyManagerDashboardPanel.tsx` to conditionally render `PropertySelectorDropdown` only when `organizationId` (derived from props/auth claims) is truthy.
+    - This resolves TypeScript errors and ensures `PropertySelectorDropdown` always receives a valid `string` for its `organizationId` prop, preventing the "Organization ID not provided. Cannot load properties." error for Property Managers.

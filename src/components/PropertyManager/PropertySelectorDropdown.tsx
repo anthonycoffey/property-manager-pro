@@ -16,6 +16,7 @@ import {
   query,
   where,
   getDocs,
+  orderBy, // Added orderBy
   type DocumentData,
   QueryDocumentSnapshot,
 } from 'firebase/firestore';
@@ -35,9 +36,11 @@ interface Property {
 }
 
 interface PropertySelectorDropdownProps {
+  organizationId: string; // Now required
   selectedPropertyId: string | null;
-  onPropertyChange: (propertyId: string | null, propertyName: string | null) => void; // Now passes name too
+  onPropertyChange: (propertyId: string | null, propertyName: string | null) => void;
   disabled?: boolean;
+  label?: string; // Optional label
 }
 
 const formatAddress = (address: PropertyAddress | undefined): string => {
@@ -46,19 +49,22 @@ const formatAddress = (address: PropertyAddress | undefined): string => {
 };
 
 const PropertySelectorDropdown: React.FC<PropertySelectorDropdownProps> = ({
+  organizationId,
   selectedPropertyId,
   onPropertyChange,
   disabled = false,
+  label = "Select Property",
 }) => {
-  const { currentUser, organizationId: authOrganizationId } = useAuth();
+  const { currentUser } = useAuth(); // Still need currentUser for potential future permission checks if any
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchProperties = async () => {
-      if (!currentUser || !authOrganizationId || !currentUser.uid) {
-        setError('User organization or ID not found. Cannot load properties.');
+      if (!organizationId) { // Use passed organizationId
+        setError('Organization ID not provided. Cannot load properties.');
+        setProperties([]); // Clear properties if orgId is missing
         setLoading(false);
         return;
       }
@@ -66,8 +72,12 @@ const PropertySelectorDropdown: React.FC<PropertySelectorDropdownProps> = ({
       setLoading(true);
       setError(null);
       try {
-        const propertiesRef = collection(db, `organizations/${authOrganizationId}/properties`);
-        const q = query(propertiesRef, where('managedBy', '==', currentUser.uid));
+        const propertiesRef = collection(db, `organizations/${organizationId}/properties`);
+        // For Admin/OM context, we list all properties in the org, not just 'managedBy' current user.
+        // If this component is also used by PMs where 'managedBy' is relevant,
+        // that logic would need to be conditional based on role or a separate prop.
+        // For now, assuming Admin/OM context for this refactor.
+        const q = query(propertiesRef, orderBy('name', 'asc')); // Order by name for consistency
         const querySnapshot = await getDocs(q);
         
         const fetchedProperties: Property[] = [];
@@ -96,7 +106,7 @@ const PropertySelectorDropdown: React.FC<PropertySelectorDropdownProps> = ({
     };
 
     fetchProperties();
-  }, [currentUser, authOrganizationId]);
+  }, [organizationId]); // Depend on passed organizationId
 
   const handleChange = (event: SelectChangeEvent<string | null>) => {
     const value = event.target.value as string | null;
@@ -123,17 +133,17 @@ const PropertySelectorDropdown: React.FC<PropertySelectorDropdownProps> = ({
 
   return (
     <Box sx={{ minWidth: 240 }}>
-      <FormControl fullWidth error={!!error && properties.length === 0} disabled={disabled}>
-        <InputLabel id="property-select-label">Select Property</InputLabel>
+      <FormControl fullWidth error={!!error && properties.length === 0} disabled={disabled || !organizationId}>
+        <InputLabel id="property-select-label">{label}</InputLabel>
         <Select
           labelId="property-select-label"
           id="property-select"
           value={selectedPropertyId ?? 'none'}
-          label="Select Property"
+          label={label}
           onChange={handleChange}
         >
-          <MenuItem value="none" disabled={properties.length > 0}>
-            <em>{properties.length === 0 ? 'No properties available' : 'Select a Property'}</em>
+          <MenuItem value="none" disabled={properties.length > 0 || !organizationId}>
+            <em>{properties.length === 0 && organizationId ? 'No properties available for this organization' : 'Select a Property'}</em>
           </MenuItem>
           {properties.map((prop) => (
             <MenuItem key={prop.id} value={prop.id}>

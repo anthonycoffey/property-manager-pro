@@ -1,4 +1,5 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
+import * as logger from 'firebase-functions/logger';
 import { adminAuth, db, FieldValue } from '../firebaseAdmin.js'; // Already using firebaseAdmin exports
 import { handleHttpsError } from '../helpers/handleHttpsError.js';
 
@@ -25,14 +26,20 @@ interface CustomClaims {
 }
 
 export const signUpWithInvitation = onCall(async (request) => {
-  const {
-    email,
-    password, // Optional for social sign-on
+  logger.info('[signUpWithInvitation] Function called. Request object:', request);
+  logger.info('[signUpWithInvitation] Request data:', request.data);
+
+  try { // Top-level try starts here
+    const {
+      email,
+      password, // Optional for social sign-on
     displayName,
     organizationId: orgIdFromRequest, // This can be undefined if not in the accept link (e.g. global OM invite)
     invitationId,
     uid: preAuthUid, // UID from social sign-on if user is already authenticated
   } = request.data;
+
+  logger.info('[signUpWithInvitation] Received data:', request.data);
 
   // 1. Input Validation
   if (!email || !displayName || !invitationId) {
@@ -53,7 +60,8 @@ export const signUpWithInvitation = onCall(async (request) => {
   let invitationData: FirebaseFirestore.DocumentData | undefined;
   let actualInvitationPath: string | undefined;
 
-  try {
+  // This inner try...catch handles the main logic
+  try { 
     // 2. Fetch and Validate Invitation
     // Try fetching from organization-specific path if orgIdFromRequest is provided
     if (orgIdFromRequest) {
@@ -90,16 +98,20 @@ export const signUpWithInvitation = onCall(async (request) => {
       );
     }
     
-    // Server-side email validation against invitation
-    if (invitationData.email.toLowerCase() !== email.toLowerCase()) {
-        console.error(
-            `Email mismatch: Invitation email (${invitationData.email}) vs provided email (${email}) for invitation ${invitationId}.`
-        );
-        throw new HttpsError(
-            'failed-precondition',
-            'The provided email does not match the invited email address.'
-        );
+    // Server-side email validation against invitation, only if the invitation itself has an email
+    if (invitationData.email) { // Check if invitationData.email exists
+      if (invitationData.email.toLowerCase() !== email.toLowerCase()) {
+          logger.error( // Changed to logger
+              `Email mismatch: Invitation email (${invitationData.email}) vs provided email (${email}) for invitation ${invitationId}.`
+          );
+          throw new HttpsError(
+              'failed-precondition',
+              'The provided email does not match the invited email address.'
+          );
+      }
     }
+    // If invitationData.email is undefined (e.g. public campaign link), this check is skipped,
+    // and the 'email' from request.data will be used for the new user.
 
 
     // 3. Extract Invitation Details
@@ -304,7 +316,16 @@ export const signUpWithInvitation = onCall(async (request) => {
     if (error instanceof HttpsError) {
       throw error;
     }
-    console.error('Error in signUpWithInvitation:', error);
+    logger.error('Error in signUpWithInvitation:', error); // Changed to logger.error
     throw handleHttpsError(error, 'An unexpected error occurred during invitation sign-up.');
+  } 
+  // End of inner try...catch
+  } catch (e) { // Top-level catch for very early errors (e.g., destructuring request.data)
+    logger.error('[signUpWithInvitation] TOP LEVEL CRITICAL ERROR:', e);
+    // Ensure a HttpsError is thrown for the client
+    if (e instanceof HttpsError) {
+      throw e;
+    }
+    throw new HttpsError('internal', 'A critical internal error occurred in signUpWithInvitation.');
   }
 });

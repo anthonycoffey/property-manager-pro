@@ -18,7 +18,9 @@
   "dependencies": {
     "csv-parse": "^5.6.0",
     "firebase-admin": "^12.6.0",
-    "firebase-functions": "^6.3.2"
+    "firebase-functions": "^6.3.2",
+    "node-fetch": "^2.7.0",
+    "property-manager-pro": "file:.."
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.1",

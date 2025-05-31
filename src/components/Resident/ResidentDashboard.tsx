@@ -14,10 +14,12 @@ import AccountCircleIcon from '@mui/icons-material/AccountCircle'; // Added Acco
 import ApartmentIcon from '@mui/icons-material/Apartment';
 import PersonIcon from '@mui/icons-material/Person';
 import BuildIcon from '@mui/icons-material/Build';
+import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline'; // Icon for Chat
 import PropertyDetailsView from './PropertyDetailsView';
 import ResidentProfileManagement from './ResidentProfileManagement'; // Import the new component
 import CreateServiceRequestForm from './CreateServiceRequestForm'; // Import new component
 import ServiceRequestList from './ServiceRequestList'; // Import new component
+import ChatView from '../Chat/ChatView'; // Import ChatView
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -93,6 +95,11 @@ const ResidentDashboard: React.FC = () => {
               label='Service Requests'
               {...a11yProps(2)}
             />
+            <Tab
+              icon={<ChatBubbleOutlineIcon />}
+              label='AI Assistant'
+              {...a11yProps(3)}
+            />
           </Tabs>
         </Box>
         <TabPanel value={tabValue} index={0}>
@@ -113,6 +120,12 @@ const ResidentDashboard: React.FC = () => {
           />
           <Divider sx={{ my: 3 }} />
           <ServiceRequestList />
+        </TabPanel>
+        <TabPanel value={tabValue} index={3}>
+          {/* The ChatView component will manage its own height within this panel */}
+          <Box sx={{ height: 'calc(100vh - 260px)', minHeight: '400px' /* Adjust Xpx based on surrounding elements */ }}>
+            <ChatView />
+          </Box>
         </TabPanel>
       </Paper>
     </Container>

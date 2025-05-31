@@ -94,6 +94,9 @@ export const activateCampaign = activateCampaignFunction;
 import { processPublicCampaignLink as processPublicCampaignLinkFunction } from './callable/processPublicCampaignLink.js';
 export const processPublicCampaignLink = processPublicCampaignLinkFunction;
 
+import { getGptChatResponse as getGptChatResponseFunction } from './callable/getGptChatResponse.js';
+export const getGptChatResponse = getGptChatResponseFunction;
+
 // HTTP Functions
 // import { handleCampaignSignUpLink as handleCampaignSignUpLinkFunction } from './http/handleCampaignSignUpLink.js'; // Commented out as it's being decommissioned
 // export const handleCampaignSignUpLink = handleCampaignSignUpLinkFunction; // Commented out

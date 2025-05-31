@@ -251,6 +251,9 @@ The application employs a modern web architecture with a React-based frontend an
     *   **State Management for Dropdowns:** The MUI `Select` component for states uses a mapping of full state names to short codes (e.g., "California" to "CA") to ensure consistency between manual selection and the short codes provided by the Places API.
     *   **Cleanup:** The `useEffect` hook includes a cleanup function to remove the `PlaceAutocompleteElement` from the DOM when the component unmounts or is no longer active, preventing memory leaks.
 
+*   **TypeScript Best Practices:**
+    *   **Strong Typing:** Emphasize strong typing throughout the codebase. Avoid the use of `any` type wherever possible. Prefer specific types, `unknown` with type guards (as demonstrated in Section 5: Error Handling Patterns), or generics to maintain type safety and code clarity. This helps in catching errors early and improves code maintainability.
+
 ## 3. Component Relationships & Data Flow (Illustrative)
 
 *   **Authentication Flow:**

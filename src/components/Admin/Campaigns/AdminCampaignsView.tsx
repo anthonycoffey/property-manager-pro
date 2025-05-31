@@ -1,17 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { Box, Typography, CircularProgress, Paper } from '@mui/material';
+import React, { useState } from 'react';
+import { Box, Typography, Paper } from '@mui/material';
 import { useAuth } from '../../../hooks/useAuth';
-import { collection, query, getDocs, orderBy } from 'firebase/firestore';
-import type { DocumentData } from 'firebase/firestore'; // Type-only import
-import { db } from '../../../firebaseConfig';
 import OrganizationSelector from '../OrganizationSelector'; // Standard Admin Org Selector
 import PropertySelectorDropdown from '../../PropertyManager/PropertySelectorDropdown';
 import PropertyCampaignsView from '../../PropertyManager/Campaigns/PropertyCampaignsView';
-
-interface Organization {
-  id: string;
-  name: string;
-}
 
 const AdminCampaignsView: React.FC = () => {
   const { currentUser } = useAuth();

@@ -14,13 +14,11 @@ import { db } from '../../firebaseConfig';
 import {
   collection,
   query,
-  where,
   getDocs,
   orderBy, // Added orderBy
   type DocumentData,
   QueryDocumentSnapshot,
 } from 'firebase/firestore';
-import { useAuth } from '../../hooks/useAuth';
 
 interface PropertyAddress {
   street: string;
@@ -55,7 +53,7 @@ const PropertySelectorDropdown: React.FC<PropertySelectorDropdownProps> = ({
   disabled = false,
   label = "Select Property",
 }) => {
-  const { currentUser } = useAuth(); // Still need currentUser for potential future permission checks if any
+  // const { currentUser } = useAuth(); // Still need currentUser for potential future permission checks if any
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);

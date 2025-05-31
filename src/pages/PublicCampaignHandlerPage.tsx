@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { CircularProgress, Typography, Container, Box, Alert } from '@mui/material';
+import { CircularProgress, Typography, Container, Alert } from '@mui/material';
+import { isAppError } from '../utils/errorUtils'; // Added import
 import { httpsCallable } from 'firebase/functions';
 import { functions } from '../firebaseConfig'; // Assuming functions is exported from firebaseConfig
 
@@ -39,7 +40,7 @@ const PublicCampaignHandlerPage: React.FC = () => {
         >(functions, 'processPublicCampaignLink');
         
         const result = await processPublicCampaignLinkFunction({ campaignId });
-        const { invitationId, organizationId, targetPropertyId, rolesToAssign } = result.data;
+        const { invitationId, organizationId } = result.data;
 
         // Navigate to the actual JoinCampaignPage or AcceptInvitationPage
         // For now, let's assume JoinCampaignPage is the target
@@ -48,16 +49,16 @@ const PublicCampaignHandlerPage: React.FC = () => {
           `/join-campaign?invitationId=${invitationId}&campaignId=${campaignId}&organizationId=${organizationId}`
         );
         // No need to setLoading(false) as we are navigating away
-      } catch (err: any) {
+      } catch (err: unknown) { // Changed from any to unknown
         console.error('Error processing public campaign link:', err);
-        let message = 'An unexpected error occurred while processing the campaign link.';
-        if (err.code && err.message) {
-          // Firebase HttpsError
-          message = `Error: ${err.message} (Code: ${err.code})`;
-        } else if (err.message) {
-          message = err.message;
+        let displayMessage = 'An unexpected error occurred while processing the campaign link.';
+        if (isAppError(err)) {
+          displayMessage = err.message; // Default to err.message if it's an AppError
+          if (err.code) { // If it also has a code, format it nicely
+            displayMessage = `Error: ${err.message} (Code: ${err.code})`;
+          }
         }
-        setError(message);
+        setError(displayMessage);
         setLoading(false);
       }
     };

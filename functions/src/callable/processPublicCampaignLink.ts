@@ -1,6 +1,6 @@
 import * as functions from 'firebase-functions';
 import { https as v1Https } from 'firebase-functions/v1';
-import { HttpsError, CallableContext } from 'firebase-functions/v1/https';
+import { HttpsError } from 'firebase-functions/v1/https';
 import { db, FieldValue } from '../firebaseAdmin.js';
 
 interface ProcessLinkData {
@@ -17,7 +17,7 @@ interface ProcessLinkResult {
 }
 
 export const processPublicCampaignLink = v1Https.onCall(
-  async (data: ProcessLinkData, context: CallableContext): Promise<ProcessLinkResult> => {
+  async (data: ProcessLinkData): Promise<ProcessLinkResult> => {
     // App Check validation (optional but recommended for public callable functions)
     // if (context.app == undefined) {
     //   throw new HttpsError(

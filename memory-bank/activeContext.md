@@ -2,10 +2,8 @@
 
 ## 1. Current Work Focus
 
-- **Resident Invitation Campaigns:**
-    - Adding advanced campaign management features (edit, deactivate/activate, view detailed stats).
-    - Implementing the frontend page for public campaign links (`/join?campaign={id}`).
-    - Thorough end-to-end testing of all campaign flows.
+- **Phoenix Integration:** (Ongoing) Job querying, service request dispatch, services querying.
+- **Dashboard Data Visualizations & Statistics:** (Ongoing) Initial implementations.
 - **Campaign Reactivation Feature (Completed 2025-05-29):**
     - Added `activateCampaign` Cloud Function to set an inactive campaign's status to 'active'.
     - Implemented UI in `CampaignsTable.tsx` with a "Reactivate" button and confirmation dialog (`ConfirmActivateCampaignDialog.tsx`).
@@ -28,7 +26,7 @@
     - Created a new frontend page `src/pages/PublicCampaignHandlerPage.tsx` at the `/join-public-campaign` route. This page calls `processPublicCampaignLink` and then navigates the user to `/join-campaign` with the necessary parameters.
     - Decommissioned the `functions/src/http/handleCampaignSignUpLink.ts` HTTP function for this flow (export removed, file deleted).
     - This resolves the previous "internal error" caused by an incorrect collection group query.
-- **Public Campaign Sign-up Flow Debugging & Fix (2025-05-30):**
+- **Public Campaign Sign-up Flow Debugging & Fix (Completed 2025-05-30):**
     - **Initial Issue:** Users navigating a public campaign link saw an "Invalid Campaign Link" error on the `JoinCampaignPage.tsx`.
     - **Investigation:**
         - Added console logs to `functions/src/callable/getInvitationDetails.ts`. Confirmed it correctly returned no email for public campaign invitations (which are created without an email initially).
@@ -52,9 +50,7 @@
         - Updated `functions/src/callable/processPublicCampaignLink.ts` to create invitation documents with `organizationIds: [campaignData.organizationId]` (an array with one element) instead of a single `organizationId` string. This aligns with `systemPatterns.md` and how `signUpWithInvitation.ts` expects to process it for resident roles.
         - Added more robust entry-point logging and a top-level try-catch in `signUpWithInvitation.ts` to diagnose very early exits. This helped confirm the previous fixes were working and led to the identification of the `organizationIds` issue.
     - **Result:** The public campaign sign-up flow is now working correctly, with users able to sign up and have their roles and profiles properly established.
-- **Phoenix Integration:** (Ongoing) Job querying, service request dispatch, services querying.
-- **Custom GPTChat Model Integration:** (Ongoing) The migration of the rescuelink chatbot into this app is complete. Further integration steps are ongoing.
-- **Dashboard Data Visualizations & Statistics:** (Ongoing) Initial implementations.
+- **Custom GPTChat Model Integration (Completed 2025-05-31):** The migration of the rescuelink chatbot into this app is complete and integrated for all user roles.
 
 ## 2. Recent Changes & Activities
 
@@ -164,20 +160,19 @@
 
 ## 3. Next Steps
 
-1.  **Resident Invitation Campaigns - Enhancements & Broader Rollout:**
-    *   Ensure the new public campaign link flow (frontend URL -> `PublicCampaignHandlerPage.tsx` -> `processPublicCampaignLink` callable -> `JoinCampaignPage.tsx`) is fully integrated and functional.
-    *   Conduct thorough end-to-end testing of all campaign creation (verifying new `accessUrl` format), public link usage, invitation, sign-up, and tracking flows.
-    *   (UI for Organization Managers and Admins completed - see Recent Changes).
-2.  **Phoenix Integration:** (Ongoing)
+1.  **Resident Invitation Campaigns - Testing & Rollout (Completed 2025-05-31):**
+    *   The new public campaign link flow (frontend URL -> `PublicCampaignHandlerPage.tsx` -> `processPublicCampaignLink` callable -> `JoinCampaignPage.tsx`) is fully integrated and functional.
+    *   Thorough end-to-end testing of all campaign creation (CSV import and public link), public link usage, invitation, sign-up, and tracking flows has been completed and validated.
+    *   UI for Organization Managers and Admins is complete.
+2.  **Phoenix Integration (Ongoing):**
     *   Implement job querying by Resident, Property, and Organization.
     *   Implement service request dispatch to Phoenix.
     *   Implement services querying from Phoenix.
-3.  **Custom GPTChat Model Integration:** (Ongoing)
-    *   Integrate chatbot into Resident dashboard.
-    *   Evaluate PM access.
-4.  **Dashboard Data Visualizations & Statistics:** (Ongoing)
+3.  **Custom GPTChat Model Integration (Completed 2025-05-31):**
+    *   Chatbot (migrated from rescuelink) is integrated into the application for all user roles (Residents, Property Managers, Organization Managers, and Admins).
+4.  **Dashboard Data Visualizations & Statistics (Ongoing):**
     *   Implement metrics for all roles using Highcharts, including campaign performance data.
-5.  **Extend `projectRoadmap.md`:** Document detailed plans for the remaining dashboard features and core systems, including the full scope of Invitation Campaigns.
+5.  **Extend `projectRoadmap.md` (Completed):** Detailed plans for the remaining dashboard features and core systems, including the full scope of Invitation Campaigns, have been documented.
 
 ## 4. Active Decisions & Considerations
 

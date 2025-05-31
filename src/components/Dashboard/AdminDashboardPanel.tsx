@@ -252,11 +252,27 @@ const AdminDashboardPanel: React.FC = () => {
             allowScrollButtonsMobile
           >
             <Tab label='Organizations' icon={<Business />} {...a11yProps(0)} />
-            <Tab label='Organization Managers' icon={<Group />} {...a11yProps(1)} />
-            <Tab label='Property Managers' icon={<AssignmentInd />} {...a11yProps(2)} />
-            <Tab label='Properties & Residents' icon={<HomeWork />} {...a11yProps(3)} />
+            <Tab
+              label='Organization Managers'
+              icon={<Group />}
+              {...a11yProps(1)}
+            />
+            <Tab
+              label='Property Managers'
+              icon={<AssignmentInd />}
+              {...a11yProps(2)}
+            />
+            <Tab
+              label='Properties & Residents'
+              icon={<HomeWork />}
+              {...a11yProps(3)}
+            />
             <Tab label='Campaigns' icon={<Campaign />} {...a11yProps(4)} />
-            <Tab label='AI Assistant' icon={<ChatBubbleOutlineIcon />} {...a11yProps(5)} />
+            <Tab
+              label='AI Assistant'
+              icon={<ChatBubbleOutlineIcon />}
+              {...a11yProps(5)}
+            />
           </Tabs>
         </Box>
         <TabPanel value={adminTabValue} index={0}>
@@ -320,7 +336,11 @@ const AdminDashboardPanel: React.FC = () => {
           <AdminCampaignsView />
         </TabPanel>
         <TabPanel value={adminTabValue} index={5}>
-          <Box sx={{ height: 'calc(100vh - 320px)', minHeight: '400px' /* Adjust Xpx based on surrounding elements */ }}>
+          <Box
+            sx={{
+              minHeight: '400px',
+            }}
+          >
             <ChatView />
           </Box>
         </TabPanel>

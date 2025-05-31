@@ -15,10 +15,13 @@ import {
   Container,
   Stack,
   Tabs, // Added Tabs
-  Tab,  // Added Tab
+  Tab, // Added Tab
   Divider, // Added Divider
 } from '@mui/material';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline'; // Icon for Chat
+import AssignmentInd from '@mui/icons-material/AssignmentInd';
+import HomeWork from '@mui/icons-material/HomeWork';
+import Campaign from '@mui/icons-material/Campaign';
 import OrgManagerCampaignsView from '../OrganizationManager/Campaigns/OrgManagerCampaignsView'; // Added
 import AddIcon from '@mui/icons-material/Add';
 import AdminPanelSettings from '@mui/icons-material/AdminPanelSettings';
@@ -29,12 +32,17 @@ import OrganizationPropertiesList from '../Admin/OrganizationPropertiesList';
 import CreatePropertyForm from '../PropertyManager/CreatePropertyForm';
 import EditPropertyModal from '../PropertyManager/EditPropertyModal';
 import PropertyResidentsTable from '../PropertyManager/PropertyResidentsTable'; // Added
-import InviteResidentForm from '../PropertyManager/InviteResidentForm';     // Added
-import EditResidentModal from '../PropertyManager/EditResidentModal';       // Added
+import InviteResidentForm from '../PropertyManager/InviteResidentForm'; // Added
+import EditResidentModal from '../PropertyManager/EditResidentModal'; // Added
 import ChatView from '../Chat/ChatView'; // Import ChatView
 import { db } from '../../firebaseConfig';
 import { collection, query, where, getDocs } from 'firebase/firestore';
-import type { Organization, AppError, Property as PropertyType, Resident as ResidentType } from '../../types'; // Added ResidentType
+import type {
+  Organization,
+  AppError,
+  Property as PropertyType,
+  Resident as ResidentType,
+} from '../../types'; // Added ResidentType
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -47,7 +55,7 @@ function TabPanel(props: TabPanelProps) {
 
   return (
     <div
-      role="tabpanel"
+      role='tabpanel'
       hidden={value !== index}
       id={`om-tabpanel-${index}`}
       aria-labelledby={`om-tab-${index}`}
@@ -77,21 +85,28 @@ const OrganizationManagerDashboardPanel: React.FC<
   const [selectedOrgId, setSelectedOrgId] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<AppError | null>(null);
-  
+
   const [isAddOrgModalOpen, setIsAddOrgModalOpen] = useState(false);
   // Property Modals
-  const [isCreatePropertyModalOpen, setIsCreatePropertyModalOpen] = useState(false);
+  const [isCreatePropertyModalOpen, setIsCreatePropertyModalOpen] =
+    useState(false);
   const [isEditPropertyModalOpen, setIsEditPropertyModalOpen] = useState(false);
-  const [propertyToEdit, setPropertyToEdit] = useState<PropertyType | null>(null);
+  const [propertyToEdit, setPropertyToEdit] = useState<PropertyType | null>(
+    null
+  );
   // Residents Modals & State
-  const [isManageResidentsModalOpen, setIsManageResidentsModalOpen] = useState(false);
-  const [propertyForResidents, setPropertyForResidents] = useState<PropertyType | null>(null);
+  const [isManageResidentsModalOpen, setIsManageResidentsModalOpen] =
+    useState(false);
+  const [propertyForResidents, setPropertyForResidents] =
+    useState<PropertyType | null>(null);
   const [isEditResidentModalOpen, setIsEditResidentModalOpen] = useState(false);
-  const [residentToEdit, setResidentToEdit] = useState<ResidentType | null>(null);
+  const [residentToEdit, setResidentToEdit] = useState<ResidentType | null>(
+    null
+  );
   const [refreshResidentsListKey, setRefreshResidentsListKey] = useState(0);
-  
+
   const [refreshPropertiesListKey, setRefreshPropertiesListKey] = useState(0);
-  const [tabValue, setTabValue] = useState(0); 
+  const [tabValue, setTabValue] = useState(0);
 
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
@@ -189,7 +204,7 @@ const OrganizationManagerDashboardPanel: React.FC<
     setSnackbarSeverity('success');
     setSnackbarOpen(true);
     setIsCreatePropertyModalOpen(false);
-    setRefreshPropertiesListKey(prev => prev + 1);
+    setRefreshPropertiesListKey((prev) => prev + 1);
   };
 
   const handleOpenEditPropertyModal = (property: PropertyType) => {
@@ -208,7 +223,7 @@ const OrganizationManagerDashboardPanel: React.FC<
     setSnackbarOpen(true);
     setIsEditPropertyModalOpen(false);
     setPropertyToEdit(null);
-    setRefreshPropertiesListKey(prev => prev + 1);
+    setRefreshPropertiesListKey((prev) => prev + 1);
   };
 
   // Resident Management Handlers (similar to AdminDashboardPanel)
@@ -231,12 +246,12 @@ const OrganizationManagerDashboardPanel: React.FC<
     setResidentToEdit(null);
     setIsEditResidentModalOpen(false);
   };
-  
+
   const handleResidentInvited = () => {
     setSnackbarMessage('Resident invited successfully!');
     setSnackbarSeverity('success');
     setSnackbarOpen(true);
-    setRefreshResidentsListKey(prev => prev + 1);
+    setRefreshResidentsListKey((prev) => prev + 1);
   };
 
   const handleResidentUpdated = () => {
@@ -245,11 +260,11 @@ const OrganizationManagerDashboardPanel: React.FC<
     setSnackbarOpen(true);
     setIsEditResidentModalOpen(false);
     setResidentToEdit(null);
-    setRefreshResidentsListKey(prev => prev + 1);
+    setRefreshResidentsListKey((prev) => prev + 1);
   };
 
   const handlePropertiesUpdate = () => {
-    setRefreshPropertiesListKey(prev => prev + 1);
+    setRefreshPropertiesListKey((prev) => prev + 1);
   };
 
   const handleAddOrgSuccess = () => {
@@ -257,7 +272,7 @@ const OrganizationManagerDashboardPanel: React.FC<
     setSnackbarMessage('Organization created successfully!');
     setSnackbarSeverity('success');
     setSnackbarOpen(true);
-    fetchOrganizations(); 
+    fetchOrganizations();
   };
 
   const handleSnackbarClose = (
@@ -368,15 +383,27 @@ const OrganizationManagerDashboardPanel: React.FC<
               <Tabs
                 value={tabValue}
                 onChange={handleTabChange}
-                aria-label="organization manager actions tabs"
-                variant="scrollable"
-                scrollButtons="auto"
+                aria-label='organization manager actions tabs'
+                variant='scrollable'
+                scrollButtons='auto'
                 allowScrollButtonsMobile
               >
-                <Tab label="Property Managers" {...a11yProps(0)} />
-                <Tab label="Properties & Residents" {...a11yProps(1)} />
-                <Tab label="Campaigns" {...a11yProps(2)} />
-                <Tab label="AI Assistant" icon={<ChatBubbleOutlineIcon />} {...a11yProps(3)} />
+                <Tab
+                  label='Property Managers'
+                  icon={<AssignmentInd />}
+                  {...a11yProps(0)}
+                />
+                <Tab
+                  label='Properties & Residents'
+                  icon={<HomeWork />}
+                  {...a11yProps(1)}
+                />
+                <Tab label='Campaigns' icon={<Campaign />} {...a11yProps(2)} />
+                <Tab
+                  label='AI Assistant'
+                  icon={<ChatBubbleOutlineIcon />}
+                  {...a11yProps(3)}
+                />
               </Tabs>
             </Box>
             <TabPanel value={tabValue} index={0}>
@@ -387,7 +414,7 @@ const OrganizationManagerDashboardPanel: React.FC<
             </TabPanel>
             <TabPanel value={tabValue} index={1}>
               <Button
-                variant="contained"
+                variant='contained'
                 startIcon={<AddIcon />}
                 onClick={handleOpenCreatePropertyModal}
                 sx={{ mb: 2 }}
@@ -407,19 +434,26 @@ const OrganizationManagerDashboardPanel: React.FC<
               <OrgManagerCampaignsView />
             </TabPanel>
             <TabPanel value={tabValue} index={3}>
-              <Box sx={{ height: 'calc(100vh - 400px)', minHeight: '400px' /* Adjust Xpx based on surrounding elements and org selector */ }}>
+              <Box
+                sx={{
+                  minHeight: '400px',
+                }}
+              >
                 <ChatView />
               </Box>
             </TabPanel>
           </>
         )}
-         {!selectedOrgId && organizations.length > 0 && (
-          <Typography sx={{p:2}}>Please select an organization to manage.</Typography>
+        {!selectedOrgId && organizations.length > 0 && (
+          <Typography sx={{ p: 2 }}>
+            Please select an organization to manage.
+          </Typography>
         )}
         {organizations.length === 0 && !loading && (
-            <Typography sx={{p:2}}>
-                You are not currently managing any organizations. You can create one using the "Add Organization" button.
-            </Typography>
+          <Typography sx={{ p: 2 }}>
+            You are not currently managing any organizations. You can create one
+            using the "Add Organization" button.
+          </Typography>
         )}
       </Paper>
 
@@ -433,7 +467,7 @@ const OrganizationManagerDashboardPanel: React.FC<
         <AddOrganizationModal
           open={isCreatePropertyModalOpen}
           onClose={handleCloseCreatePropertyModal}
-          title="Create New Property"
+          title='Create New Property'
         >
           <CreatePropertyForm
             organizationId={selectedOrgId}
@@ -461,15 +495,19 @@ const OrganizationManagerDashboardPanel: React.FC<
           title={`Residents for Property: ${propertyForResidents.name}`}
         >
           <Box>
-            <Typography variant="h6" gutterBottom>Invite New Resident</Typography>
+            <Typography variant='h6' gutterBottom>
+              Invite New Resident
+            </Typography>
             <InviteResidentForm
               organizationId={selectedOrgId}
               propertyId={propertyForResidents.id}
               propertyName={propertyForResidents.name}
               onInvitationSent={handleResidentInvited}
             />
-            <Divider sx={{my: 2}} />
-            <Typography variant="h6" gutterBottom>Current Residents</Typography>
+            <Divider sx={{ my: 2 }} />
+            <Typography variant='h6' gutterBottom>
+              Current Residents
+            </Typography>
             <PropertyResidentsTable
               key={refreshResidentsListKey}
               organizationId={selectedOrgId}

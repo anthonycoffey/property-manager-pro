@@ -59,14 +59,13 @@ const ChatInput = React.forwardRef<ChatInputHandle, ChatInputProps>(({ onSendMes
       <TextField
         fullWidth
         variant="outlined" 
-        size="small"
         placeholder={isLoading ? "RescueBot is replying..." : "Type your message..."}
         value={inputValue}
         onChange={handleInputChange}
-        onKeyPress={handleKeyPress}
+        onKeyDown={handleKeyPress}
         disabled={isLoading}
         inputRef={internalInputRef} // Assign internalRef for focusing
-        sx={{ '& .MuiOutlinedInput-root': { borderRadius: '20px' } }} 
+        sx={{ '& .MuiOutlinedInput-root': { borderRadius: '20px', backgroundColor: 'background.paper' } }} 
       />
       <IconButton 
         type="submit" 

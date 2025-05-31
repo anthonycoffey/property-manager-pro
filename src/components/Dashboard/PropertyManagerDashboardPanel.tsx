@@ -18,6 +18,9 @@ import AddIcon from '@mui/icons-material/Add';
 import CloseIcon from '@mui/icons-material/Close';
 import DomainAddIcon from '@mui/icons-material/DomainAdd';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline'; // Icon for Chat
+import HomeWork from '@mui/icons-material/HomeWork';
+import Group from '@mui/icons-material/Group';
+import Campaign from '@mui/icons-material/Campaign';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../../firebaseConfig';
 import type { Property as PropertyType, Resident } from '../../types'; // Added Resident
@@ -206,10 +209,14 @@ const PropertyManagerDashboardPanel: React.FC<
             scrollButtons='auto'
             allowScrollButtonsMobile
           >
-            <Tab label='Properties' {...a11yProps(0)} />
-            <Tab label='Residents' {...a11yProps(1)} />
-            <Tab label='Campaigns' {...a11yProps(2)} />
-            <Tab label='AI Assistant' icon={<ChatBubbleOutlineIcon />} {...a11yProps(3)} />
+            <Tab label='Properties' icon={<HomeWork />} {...a11yProps(0)} />
+            <Tab label='Residents' icon={<Group />} {...a11yProps(1)} />
+            <Tab label='Campaigns' icon={<Campaign />} {...a11yProps(2)} />
+            <Tab
+              label='AI Assistant'
+              icon={<ChatBubbleOutlineIcon />}
+              {...a11yProps(3)}
+            />
           </Tabs>
         </Box>
         <TabPanel value={pmTabValue} index={0}>
@@ -237,7 +244,9 @@ const PropertyManagerDashboardPanel: React.FC<
               onPropertyChange={handlePropertySelect}
             />
           ) : (
-            <Alert severity='warning'>Organization not identified. Cannot select property.</Alert>
+            <Alert severity='warning'>
+              Organization not identified. Cannot select property.
+            </Alert>
           )}
           {selectedPropertyId && organizationId ? (
             <>
@@ -277,7 +286,9 @@ const PropertyManagerDashboardPanel: React.FC<
               onPropertyChange={handlePropertySelect}
             />
           ) : (
-            <Alert severity='warning'>Organization not identified. Cannot select property for campaigns.</Alert>
+            <Alert severity='warning'>
+              Organization not identified. Cannot select property for campaigns.
+            </Alert>
           )}
           {selectedPropertyId && organizationId ? (
             <PropertyCampaignsView
@@ -286,12 +297,17 @@ const PropertyManagerDashboardPanel: React.FC<
             />
           ) : (
             <Alert severity='info' sx={{ mt: 2 }}>
-              Please select a property from the dropdown above to manage invitation campaigns.
+              Please select a property from the dropdown above to manage
+              invitation campaigns.
             </Alert>
           )}
         </TabPanel>
         <TabPanel value={pmTabValue} index={3}>
-          <Box sx={{ height: 'calc(100vh - 320px)', minHeight: '400px' /* Adjust Xpx based on surrounding elements */ }}>
+          <Box
+            sx={{
+              minHeight: '400px',
+            }}
+          >
             <ChatView />
           </Box>
         </TabPanel>

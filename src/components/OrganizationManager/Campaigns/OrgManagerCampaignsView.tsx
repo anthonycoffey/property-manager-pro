@@ -1,8 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Box, Typography, CircularProgress, Paper } from '@mui/material';
 import { useAuth } from '../../../hooks/useAuth';
 import { collection, query, where, getDocs } from 'firebase/firestore';
-import type { DocumentData } from 'firebase/firestore'; // Type-only import
 import { db } from '../../../firebaseConfig';
 import OrganizationSelector from '../../Admin/OrganizationSelector'; // Reusing Admin's Org Selector
 import PropertySelectorDropdown from '../../PropertyManager/PropertySelectorDropdown';
@@ -19,11 +18,10 @@ const OrgManagerCampaignsView: React.FC = () => {
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [selectedOrganizationId, setSelectedOrganizationId] = useState<string | null>(null);
   const [selectedPropertyId, setSelectedPropertyId] = useState<string | null>(null);
-  const [selectedPropertyName, setSelectedPropertyName] = useState<string | null>(null);
   const [loadingOrgs, setLoadingOrgs] = useState<boolean>(false);
   const [errorOrgs, setErrorOrgs] = useState<string | null>(null);
 
-  const managedOrgIds = currentUser?.customClaims?.organizationIds as string[] || [];
+  const managedOrgIds = useMemo(() => currentUser?.customClaims?.organizationIds as string[] || [], [currentUser]);
   const isMultiOrgManager = managedOrgIds.length > 1;
   const isSingleOrgManager = managedOrgIds.length === 1;
 
@@ -66,12 +64,10 @@ const OrgManagerCampaignsView: React.FC = () => {
   const handleOrganizationChange = (orgId: string | null) => {
     setSelectedOrganizationId(orgId);
     setSelectedPropertyId(null); // Reset property when org changes
-    setSelectedPropertyName(null);
   };
 
-  const handlePropertyChange = (propertyId: string | null, propertyName: string | null) => {
+  const handlePropertyChange = (propertyId: string | null) => {
     setSelectedPropertyId(propertyId);
-    setSelectedPropertyName(propertyName); // propertyName is already string | null
   };
 
   if (!currentUser || !currentUser.customClaims?.roles?.includes('organization_manager')) {

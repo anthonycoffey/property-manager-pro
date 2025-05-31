@@ -35,6 +35,9 @@ The project has recently completed the backend and initial frontend (for Propert
       - Calls the `activateCampaign` Cloud Function.
       - Implemented Snackbar notifications for actions.
     - Updated the confirmation text in `src/components/PropertyManager/Campaigns/ConfirmDeactivateCampaignDialog.tsx` to reflect that deactivation is reversible.
+- **Campaign Management UI for Organization Managers & Admins (Completed 2025-05-30):**
+    - Implemented `src/components/OrganizationManager/Campaigns/OrgManagerCampaignsView.tsx` providing Organization Managers with UI to manage resident invitation campaigns for properties within their assigned organizations. This includes appropriate organization and property selectors.
+    - Implemented `src/components/Admin/Campaigns/AdminCampaignsView.tsx` providing Admins with a global UI to view and manage resident invitation campaigns across all organizations. This includes appropriate organization and property selectors.
 *   **Campaign Table Actions & View Details Page (Frontend & Backend) - 2025-05-30:**
     *   The `CampaignsTable.tsx` component now includes fully functional actions in its row menu:
         *   **Edit:** Opens `EditCampaignModal.tsx` for modifying campaign details (calls `updateCampaign` Cloud Function).
@@ -259,8 +262,7 @@ The remaining application functionality, based on the current `projectRoadmap.md
 ## 3. Immediate Next Steps (Updated from activeContext.md)
 
 1.  **Resident Invitation Campaigns - Enhancements & Broader Rollout:**
-    - Implement Campaign Management UI for Organization Managers.
-    - Implement Campaign Management UI for Admins.
+    - (UI for Organization Managers and Admins completed - see "What Works / Completed").
     - Verify and test the new public campaign link flow:
         - `createCampaign` generates frontend `accessUrl`.
         - `PublicCampaignHandlerPage.tsx` (at `/join-public-campaign`) correctly calls `processPublicCampaignLink`.

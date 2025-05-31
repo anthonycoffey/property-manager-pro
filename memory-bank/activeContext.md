@@ -3,7 +3,6 @@
 ## 1. Current Work Focus
 
 - **Resident Invitation Campaigns:**
-    - Implementing UI for Organization Managers and Admins.
     - Adding advanced campaign management features (edit, deactivate/activate, view detailed stats).
     - Implementing the frontend page for public campaign links (`/join?campaign={id}`).
     - Thorough end-to-end testing of all campaign flows.
@@ -58,6 +57,10 @@
 - **Dashboard Data Visualizations & Statistics:** (Ongoing) Initial implementations.
 
 ## 2. Recent Changes & Activities
+
+- **Campaign Management UI for Organization Managers & Admins (Completed 2025-05-30):**
+    - Implemented `src/components/OrganizationManager/Campaigns/OrgManagerCampaignsView.tsx` providing Organization Managers with UI to manage resident invitation campaigns for properties within their assigned organizations.
+    - Implemented `src/components/Admin/Campaigns/AdminCampaignsView.tsx` providing Admins with a global UI to view and manage resident invitation campaigns across all organizations.
 
 - **Resident Invitation Campaigns Feature (Backend & Initial Frontend - 2025-05-29):**
     - **Concept:** Introduced "Campaigns" as a unified system for resident invitations, supporting bulk CSV imports and shareable public links/QR codes with usage limits and expiration dates.
@@ -162,10 +165,9 @@
 ## 3. Next Steps
 
 1.  **Resident Invitation Campaigns - Enhancements & Broader Rollout:**
-    *   Implement Campaign Management UI for Organization Managers (similar to PMs, with org/property selection).
-    *   Implement Campaign Management UI for Admins (global view/management capabilities).
     *   Ensure the new public campaign link flow (frontend URL -> `PublicCampaignHandlerPage.tsx` -> `processPublicCampaignLink` callable -> `JoinCampaignPage.tsx`) is fully integrated and functional.
     *   Conduct thorough end-to-end testing of all campaign creation (verifying new `accessUrl` format), public link usage, invitation, sign-up, and tracking flows.
+    *   (UI for Organization Managers and Admins completed - see Recent Changes).
 2.  **Phoenix Integration:** (Ongoing)
     *   Implement job querying by Resident, Property, and Organization.
     *   Implement service request dispatch to Phoenix.
@@ -252,6 +254,10 @@
     - **Input Fields (`TextField`):** Default to `variant="outlined"`.
     - **Primary Action Button (e.g., "Save", "Update", "Create"):** Style with `variant="contained"` and `color="primary"`.
     - **Cancel Button:** Style with `variant="outlined"` and `color="error"`.
+- **Strict Typing (Preference Reinforced 2025-05-30):**
+    - Avoid the use of `any` type in TypeScript wherever feasible.
+    - Prefer specific types, interfaces, or `unknown` with type guards (as detailed in `systemPatterns.md` for error handling and `techContext.md` for general TypeScript best practices).
+    - This aligns with ESLint rules like `@typescript-eslint/no-explicit-any` and promotes better code quality, maintainability, and early error detection.
 
 ## 6. Learnings & Project Insights
 

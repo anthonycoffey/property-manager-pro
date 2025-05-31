@@ -43,6 +43,10 @@
             *   **Emulator Example:** `http://localhost:5173/join-public-campaign?campaign={campaignId}`
             *   **Production Example:** `https://phoenix-property-manager-pro.web.app/join-public-campaign?campaign={campaignId}`
         *   The previous `handleCampaignSignUpLink` HTTP function, which was directly invoked by old `accessUrl`s, has been replaced for this flow. The new frontend page (`/join-public-campaign`) now calls a new callable function (`processPublicCampaignLink`) to handle the campaign link processing.
+*   **TypeScript Configuration & Best Practices:**
+    *   The project utilizes TypeScript to enhance code quality and maintainability.
+    *   **Strict Typing:** Adherence to strong typing is a core principle. The use of the `any` type is strongly discouraged and should be avoided unless absolutely necessary and well-justified. Prefer specific types, `unknown` coupled with type guards (as demonstrated in the error handling patterns in `systemPatterns.md`), or generics to ensure type safety.
+    *   ESLint is configured with rules like `@typescript-eslint/no-explicit-any` to help enforce this standard.
 
 ## 3. Technical Constraints & Considerations
 

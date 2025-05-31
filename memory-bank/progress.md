@@ -4,7 +4,7 @@
 
 The project has recently completed the backend and initial frontend (for Property Managers) of the "Resident Invitation Campaigns" feature. This includes CSV bulk import, public link/QR code generation, and associated Cloud Functions and Firestore structures.
 
-- **Date of this update:** 2025-05-30
+- **Date of this update:** 2025-05-31
 
 ## 2. What Works / Completed
 
@@ -109,6 +109,7 @@ The project has recently completed the backend and initial frontend (for Propert
   - **Email Templates (JSON in `docs/`):**
     - Created `docs/propertyManagerInvitation.json`.
     - Created `docs/residentInvitation.json`.
+    - Created `docs/organizationManagerInvitation.json`.
   - **UI Components (React Forms):**
     - Created `src/components/Admin/InvitePropertyManagerForm.tsx`.
     - Created `src/components/PropertyManager/CreatePropertyForm.tsx`.
@@ -273,11 +274,11 @@ The remaining application functionality, based on the current `projectRoadmap.md
     - Implement job querying by Resident, Property, and Organization.
     - Implement service request dispatch to Phoenix.
     - Implement services querying from Phoenix.
-3.  **Custom GPTChat Model Integration:** (Ongoing)
-    - Integrate chatbot into Resident dashboard.
-    - Evaluate PM access.
+3.  **Custom GPTChat Model Integration:** (Ongoing) The migration of the rescuelink chatbot into this app is complete.
+    *   Integrate chatbot into Resident dashboard.
+    *   Evaluate PM access.
 4.  **Dashboard Data Visualizations & Statistics:** (Ongoing)
-    - Implement metrics for all roles using Highcharts, including campaign performance data.
+    *   Implement metrics for all roles using Highcharts, including campaign performance data.
 5.  **Extend `projectRoadmap.md`:** Document detailed plans for the remaining dashboard features and core systems, including the full scope of Invitation Campaigns.
 
 ## 4. Known Issues & Blockers
@@ -358,7 +359,6 @@ The remaining application functionality, based on the current `projectRoadmap.md
   - Verified comprehensive role-based management capabilities for Admins, OMs, and PMs.
   - Defined new "Immediate Next Steps" focusing on Phoenix Integration, CSV Import, GPTChat Integration, and Dashboard Visualizations. (This is now updated above in section 3)
 - **2025-05-29 (Resident Invitation Campaigns):**
-  - Adopted "Campaigns" concept for CSV and Public Link/QR invitations.
   - Implemented backend (Firestore rules, `createCampaign` v1 callable, `handleCampaignSignUpLink` v1 HTTP, `signUpWithInvitation` v2 callable update, `cleanupProcessedCampaignCSVs` v2 scheduled).
   - Implemented initial frontend for Property Managers (`CreateCampaignModal`, `CampaignsTable`, `PropertyCampaignsView` integrated into dashboard).
   - Utilized Firebase Storage for CSVs with a scheduled cleanup strategy.

@@ -53,7 +53,7 @@
         - Added more robust entry-point logging and a top-level try-catch in `signUpWithInvitation.ts` to diagnose very early exits. This helped confirm the previous fixes were working and led to the identification of the `organizationIds` issue.
     - **Result:** The public campaign sign-up flow is now working correctly, with users able to sign up and have their roles and profiles properly established.
 - **Phoenix Integration:** (Ongoing) Job querying, service request dispatch, services querying.
-- **Custom GPTChat Model Integration:** (Ongoing) For residents.
+- **Custom GPTChat Model Integration:** (Ongoing) The migration of the rescuelink chatbot into this app is complete. Further integration steps are ongoing.
 - **Dashboard Data Visualizations & Statistics:** (Ongoing) Initial implementations.
 
 ## 2. Recent Changes & Activities

@@ -16,7 +16,8 @@ import {
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import CloseIcon from '@mui/icons-material/Close';
-import DomainAddIcon from '@mui/icons-material/DomainAdd'; // Added DomainAddIcon
+import DomainAddIcon from '@mui/icons-material/DomainAdd';
+import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline'; // Icon for Chat
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../../firebaseConfig';
 import type { Property as PropertyType, Resident } from '../../types'; // Added Resident
@@ -29,6 +30,7 @@ import EditPropertyModal from '../PropertyManager/EditPropertyModal';
 import EditResidentModal from '../PropertyManager/EditResidentModal'; // Import EditResidentModal
 import PropertyResidentsTable from '../PropertyManager/PropertyResidentsTable';
 import PropertyCampaignsView from '../PropertyManager/Campaigns/PropertyCampaignsView'; // Import Campaigns View
+import ChatView from '../Chat/ChatView'; // Import ChatView
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -207,6 +209,7 @@ const PropertyManagerDashboardPanel: React.FC<
             <Tab label='Properties' {...a11yProps(0)} />
             <Tab label='Residents' {...a11yProps(1)} />
             <Tab label='Campaigns' {...a11yProps(2)} />
+            <Tab label='AI Assistant' icon={<ChatBubbleOutlineIcon />} {...a11yProps(3)} />
           </Tabs>
         </Box>
         <TabPanel value={pmTabValue} index={0}>
@@ -287,6 +290,11 @@ const PropertyManagerDashboardPanel: React.FC<
               Please select a property from the dropdown above to manage invitation campaigns.
             </Alert>
           )}
+        </TabPanel>
+        <TabPanel value={pmTabValue} index={3}>
+          <Box sx={{ height: 'calc(100vh - 320px)', minHeight: '400px' /* Adjust Xpx based on surrounding elements */ }}>
+            <ChatView />
+          </Box>
         </TabPanel>
 
         <Dialog

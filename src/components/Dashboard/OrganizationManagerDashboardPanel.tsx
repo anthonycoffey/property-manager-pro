@@ -18,6 +18,7 @@ import {
   Tab,  // Added Tab
   Divider, // Added Divider
 } from '@mui/material';
+import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline'; // Icon for Chat
 import OrgManagerCampaignsView from '../OrganizationManager/Campaigns/OrgManagerCampaignsView'; // Added
 import AddIcon from '@mui/icons-material/Add';
 import AdminPanelSettings from '@mui/icons-material/AdminPanelSettings';
@@ -30,6 +31,7 @@ import EditPropertyModal from '../PropertyManager/EditPropertyModal';
 import PropertyResidentsTable from '../PropertyManager/PropertyResidentsTable'; // Added
 import InviteResidentForm from '../PropertyManager/InviteResidentForm';     // Added
 import EditResidentModal from '../PropertyManager/EditResidentModal';       // Added
+import ChatView from '../Chat/ChatView'; // Import ChatView
 import { db } from '../../firebaseConfig';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import type { Organization, AppError, Property as PropertyType, Resident as ResidentType } from '../../types'; // Added ResidentType
@@ -373,7 +375,8 @@ const OrganizationManagerDashboardPanel: React.FC<
               >
                 <Tab label="Property Managers" {...a11yProps(0)} />
                 <Tab label="Properties & Residents" {...a11yProps(1)} />
-                <Tab label="Campaigns" {...a11yProps(2)} /> 
+                <Tab label="Campaigns" {...a11yProps(2)} />
+                <Tab label="AI Assistant" icon={<ChatBubbleOutlineIcon />} {...a11yProps(3)} />
               </Tabs>
             </Box>
             <TabPanel value={tabValue} index={0}>
@@ -402,6 +405,11 @@ const OrganizationManagerDashboardPanel: React.FC<
             </TabPanel>
             <TabPanel value={tabValue} index={2}>
               <OrgManagerCampaignsView />
+            </TabPanel>
+            <TabPanel value={tabValue} index={3}>
+              <Box sx={{ height: 'calc(100vh - 400px)', minHeight: '400px' /* Adjust Xpx based on surrounding elements and org selector */ }}>
+                <ChatView />
+              </Box>
             </TabPanel>
           </>
         )}

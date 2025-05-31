@@ -55,13 +55,13 @@ interface PhoenixPaginatedResponse {
 }
 
 // Helper function to fetch services pricing from Phoenix API
-async function fetchServicesPricingFromPhoenix(debugMode = false): Promise<string> {
+async function fetchServicesPricingFromPhoenix(debugMode = false, envPhoenixApiUrl?: string): Promise<string> {
   try {
-    const phoenixApiBaseUrl = functions.config().phoenix?.api_url;
-    // const phoenixApiKey = functions.config().phoenix?.api_key; // If Phoenix API needs auth
+    const phoenixApiBaseUrl = envPhoenixApiUrl || functions.config().phoenix?.api_url;
+    // const phoenixApiKey = process.env.PHOENIX_API_KEY || functions.config().phoenix?.api_key; // If Phoenix API needs auth
 
     if (!phoenixApiBaseUrl) {
-      console.error('Phoenix API base URL not configured in Firebase functions config.');
+      console.error('Phoenix API base URL not found in process.env or functions.config().');
       return 'Pricing information is currently unavailable (config error).';
     }
 
@@ -187,14 +187,49 @@ async function fetchServicesPricingFromPhoenix(debugMode = false): Promise<strin
 // If v2 is intended, the function definition style would change.
 // @ts-expect-error TODO: Resolve CallableContext type mismatch if it causes runtime issues. Linter seems to misinterpret v1 CallableContext with current setup.
 export const getGptChatResponse = functions.https.onCall(async (data: any, context: CallableContext) => {
-  // We still expect 'data' to conform to RequestData structure.
-  const { messages, maxTokens = 300, useFineTuned = true, debugMode = false /*, captchaToken = null*/ } = data as RequestData;
+  // Log available configurations
+  console.log("CF: Attempting to log functions.config() and process.env relevant keys.");
+  try {
+    const funcConfig = functions.config();
+    console.log("CF: functions.config() keys:", Object.keys(funcConfig));
+    if (funcConfig.openai) {
+      console.log("CF: functions.config().openai keys:", Object.keys(funcConfig.openai));
+    }
+    if (funcConfig.phoenix) {
+      console.log("CF: functions.config().phoenix keys:", Object.keys(funcConfig.phoenix));
+    }
+    if (funcConfig.rescue_link) {
+      console.log("CF: functions.config().rescue_link keys:", Object.keys(funcConfig.rescue_link));
+    }
+  } catch (e: unknown) {
+    console.error("CF: Error inspecting functions.config():", e instanceof Error ? e.message : e);
+  }
+  console.log("CF: process.env.OPENAI_API_KEY exists:", !!process.env.OPENAI_API_KEY);
+  console.log("CF: process.env.PHOENIX_API_URL exists:", !!process.env.PHOENIX_API_URL);
+  // Note: Firebase CLI often converts config `foo.bar` to `FOO_BAR` env var.
+  // So `openai.api_key` might become `OPENAI_API_KEY`.
+
+  // data object from v1 onCall can have circular structures if stringified directly.
+  // Log the keys of the received data object to see if 'messages' is present at the top level.
+  if (data && typeof data === 'object') {
+    console.log("CF: Keys in received 'data' object:", Object.keys(data));
+  } else {
+    console.log("CF: Received 'data' is not an object or is null/undefined:", data);
+  }
+
+  // We still expect 'data.data' (the client's payload) to conform to RequestData structure.
+  const clientPayload = data.data || {}; // Access the nested 'data' property sent by the client SDK
+  const { messages, maxTokens = 300, useFineTuned = true, debugMode = false /*, captchaToken = null*/ } = clientPayload as RequestData;
   const isDebug = debugMode === true; // Ensure boolean
 
+  // Log the destructured properties we care about
+  console.log("CF: Received client payload properties - messages:", messages ? `Array with ${messages.length} item(s)` : messages, `| maxTokens: ${maxTokens} | useFineTuned: ${useFineTuned} | debugMode: ${isDebug}`);
+  
   if (isDebug) {
-    console.log("getGptChatResponse called with data:", JSON.stringify(data));
-    if (context.auth) { // context.auth is optional, so check if it exists
-        console.log("Called by authenticated user:", context.auth.uid);
+    // More detailed log if client explicitly requests debugMode
+    console.log("CF_DEBUG: Full client payload received:", JSON.stringify(clientPayload, null, 2));
+    if (context.auth) { 
+        console.log("CF_DEBUG: Called by authenticated user:", context.auth.uid);
     } else {
         console.log("Called by unauthenticated user (or context.auth is undefined).");
     }
@@ -206,15 +241,20 @@ export const getGptChatResponse = functions.https.onCall(async (data: any, conte
   }
 
   try {
-    const openaiApiKey = functions.config().openai?.api_key || functions.config().rescue_link?.openai_api;
-    if (!openaiApiKey) {
-      console.error('OpenAI API key not configured in Firebase functions config.');
-      throw new functions.https.HttpsError('internal', 'Chat service not configured. Please contact support.');
-    }
-    if (isDebug) console.log('Successfully retrieved OpenAI API key.');
+    // Prioritize process.env, then functions.config()
+    const openaiApiKey = process.env.OPENAI_API_KEY || functions.config().openai?.api_key || process.env.RESCUE_LINK_OPENAI_API || functions.config().rescue_link?.openai_api;
+    const phoenixApiUrlFromEnv = process.env.PHOENIX_API_URL; // Assuming phoenix.api_url -> PHOENIX_API_URL
 
-    const servicesPricing = await fetchServicesPricingFromPhoenix(isDebug);
-    if (isDebug) console.log('Fetched services pricing for prompt:', servicesPricing);
+    if (!openaiApiKey) {
+      console.error('OpenAI API key not found in process.env or functions.config().');
+      throw new functions.https.HttpsError('internal', 'Chat service not configured (OpenAI API key missing). Please contact support.');
+    }
+    if (isDebug) console.log('CF_DEBUG: Successfully retrieved OpenAI API key (length):', openaiApiKey.length);
+
+    // Pass phoenixApiUrl to fetchServicesPricingFromPhoenix, prioritizing env var
+    const servicesPricing = await fetchServicesPricingFromPhoenix(isDebug, phoenixApiUrlFromEnv);
+    console.log("CF: Fetched services pricing string length:", servicesPricing.length);
+    if (isDebug) console.log('CF_DEBUG: Fetched services pricing for prompt content:', servicesPricing);
 
     const systemPromptContent = `You are RescueBot, a friendly and helpful virtual assistant for Rescue Rob's Roadside Services.
 
@@ -268,10 +308,12 @@ Keep responses brief but helpful. Stay focused on helping the user quickly get t
     const completeMessages: ChatMessage[] = messages[0]?.role === 'system' ? messages : [systemMessage, ...messages];
 
     const modelId = useFineTuned ? 'ft:gpt-4o-mini-2024-07-18:rescue-robs-roadside::BU1LpSKu' : 'gpt-4o-mini';
-    if (isDebug) console.log('Using OpenAI model:', modelId);
+    console.log('CF: Using OpenAI model:', modelId);
+    if (isDebug) console.log('CF_DEBUG: System prompt content length:', systemPromptContent.length);
 
+    console.log("CF: 'completeMessages' to be sent to OpenAI (summary):", JSON.stringify(completeMessages.map(m => ({role: m.role, content: m.content.substring(0,70) + "..."})), null, 2)); // Log snippet
     if (isDebug) {
-      console.log('DEBUG MODE - Full messages to OpenAI:', JSON.stringify(completeMessages, null, 2));
+      console.log('CF_DEBUG: Full "completeMessages" to OpenAI:', JSON.stringify(completeMessages, null, 2)); // Corrected string concatenation
     }
 
     const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {

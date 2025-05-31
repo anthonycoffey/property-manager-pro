@@ -13,7 +13,7 @@ import {
   Container,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
-import { AdminPanelSettings } from '@mui/icons-material';
+import { AdminPanelSettings, ChatBubbleOutline as ChatBubbleOutlineIcon } from '@mui/icons-material'; // Added ChatBubbleOutlineIcon
 
 import OrganizationSelector from '../Admin/OrganizationSelector';
 import PropertyManagerManagement from '../Admin/PropertyManagerManagement';
@@ -28,6 +28,7 @@ import PropertyResidentsTable from '../PropertyManager/PropertyResidentsTable';
 import InviteResidentForm from '../PropertyManager/InviteResidentForm';
 import EditResidentModal from '../PropertyManager/EditResidentModal';
 import AdminCampaignsView from '../Admin/Campaigns/AdminCampaignsView'; // Added
+import ChatView from '../Chat/ChatView'; // Import ChatView
 import type {
   Property as PropertyType,
   Resident as ResidentType,
@@ -247,6 +248,7 @@ const AdminDashboardPanel: React.FC = () => {
             <Tab label='Property Managers' {...a11yProps(2)} />
             <Tab label='Properties & Residents' {...a11yProps(3)} />
             <Tab label='Campaigns' {...a11yProps(4)} />
+            <Tab label='AI Assistant' icon={<ChatBubbleOutlineIcon />} {...a11yProps(5)} />
           </Tabs>
         </Box>
         <TabPanel value={adminTabValue} index={0}>
@@ -308,6 +310,11 @@ const AdminDashboardPanel: React.FC = () => {
         </TabPanel>
         <TabPanel value={adminTabValue} index={4}>
           <AdminCampaignsView />
+        </TabPanel>
+        <TabPanel value={adminTabValue} index={5}>
+          <Box sx={{ height: 'calc(100vh - 320px)', minHeight: '400px' /* Adjust Xpx based on surrounding elements */ }}>
+            <ChatView />
+          </Box>
         </TabPanel>
 
         <AddOrganizationModal

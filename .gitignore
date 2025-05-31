@@ -27,3 +27,4 @@ dist-ssr
 .firebase/
 extensions/firestore-send-email.env
 rescuelink/
+.runtimeconfig.json

@@ -1,3 +1,4 @@
+import 'dotenv/config'; // Load environment variables from .env files
 import functions from 'firebase-functions'; // Changed from * as functions
 import { CallableContext } from 'firebase-functions/v1/https'; // Explicit v1 import
 import fetch from 'node-fetch'; // Standard import for node-fetch v3+ with nodenext
@@ -57,8 +58,8 @@ interface PhoenixPaginatedResponse {
 // Helper function to fetch services pricing from Phoenix API
 async function fetchServicesPricingFromPhoenix(debugMode = false, envPhoenixApiUrl?: string): Promise<string> {
   try {
-    const phoenixApiBaseUrl = envPhoenixApiUrl || functions.config().phoenix?.api_url;
-    // const phoenixApiKey = process.env.PHOENIX_API_KEY || functions.config().phoenix?.api_key; // If Phoenix API needs auth
+    const phoenixApiBaseUrl = envPhoenixApiUrl; // Should now come from process.env
+    // const phoenixApiKey = process.env.PHOENIX_API_KEY; // If Phoenix API needs auth
 
     if (!phoenixApiBaseUrl) {
       console.error('Phoenix API base URL not found in process.env or functions.config().');
@@ -93,6 +94,7 @@ async function fetchServicesPricingFromPhoenix(debugMode = false, envPhoenixApiU
     }
 
     const fullPricingUrl = `${phoenixApiBaseUrl}/services?limit=${fetchLimit}`;
+    console.log(`Full pricing URL constructed: ${fullPricingUrl}`);
     if (debugMode) console.log(`Fetching all pricing data from: ${fullPricingUrl}`);
 
     const response = await fetch(fullPricingUrl, {
@@ -188,26 +190,12 @@ async function fetchServicesPricingFromPhoenix(debugMode = false, envPhoenixApiU
 // @ts-expect-error TODO: Resolve CallableContext type mismatch if it causes runtime issues. Linter seems to misinterpret v1 CallableContext with current setup.
 export const getGptChatResponse = functions.https.onCall(async (data: any, context: CallableContext) => {
   // Log available configurations
-  console.log("CF: Attempting to log functions.config() and process.env relevant keys.");
-  try {
-    const funcConfig = functions.config();
-    console.log("CF: functions.config() keys:", Object.keys(funcConfig));
-    if (funcConfig.openai) {
-      console.log("CF: functions.config().openai keys:", Object.keys(funcConfig.openai));
-    }
-    if (funcConfig.phoenix) {
-      console.log("CF: functions.config().phoenix keys:", Object.keys(funcConfig.phoenix));
-    }
-    if (funcConfig.rescue_link) {
-      console.log("CF: functions.config().rescue_link keys:", Object.keys(funcConfig.rescue_link));
-    }
-  } catch (e: unknown) {
-    console.error("CF: Error inspecting functions.config():", e instanceof Error ? e.message : e);
-  }
+  console.log("CF: Attempting to log process.env relevant keys.");
   console.log("CF: process.env.OPENAI_API_KEY exists:", !!process.env.OPENAI_API_KEY);
   console.log("CF: process.env.PHOENIX_API_URL exists:", !!process.env.PHOENIX_API_URL);
-  // Note: Firebase CLI often converts config `foo.bar` to `FOO_BAR` env var.
-  // So `openai.api_key` might become `OPENAI_API_KEY`.
+  // Note: When deploying to Firebase Functions, .env files in the functions directory
+  // are automatically loaded and their variables are available via process.env.
+  // When running locally with the emulator, 'dotenv/config' handles loading.
 
   // data object from v1 onCall can have circular structures if stringified directly.
   // Log the keys of the received data object to see if 'messages' is present at the top level.
@@ -241,9 +229,9 @@ export const getGptChatResponse = functions.https.onCall(async (data: any, conte
   }
 
   try {
-    // Prioritize process.env, then functions.config()
-    const openaiApiKey = process.env.OPENAI_API_KEY || functions.config().openai?.api_key || process.env.RESCUE_LINK_OPENAI_API || functions.config().rescue_link?.openai_api;
-    const phoenixApiUrlFromEnv = process.env.PHOENIX_API_URL; // Assuming phoenix.api_url -> PHOENIX_API_URL
+    // Use process.env for environment variables
+    const openaiApiKey = process.env.OPENAI_API_KEY || process.env.RESCUE_LINK_OPENAI_API;
+    const phoenixApiUrlFromEnv = process.env.PHOENIX_API_URL;
 
     if (!openaiApiKey) {
       console.error('OpenAI API key not found in process.env or functions.config().');

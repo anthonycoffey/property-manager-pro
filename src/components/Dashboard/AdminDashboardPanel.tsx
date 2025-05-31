@@ -13,7 +13,15 @@ import {
   Container,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
-import { AdminPanelSettings, ChatBubbleOutline as ChatBubbleOutlineIcon } from '@mui/icons-material'; // Added ChatBubbleOutlineIcon
+import {
+  AdminPanelSettings,
+  ChatBubbleOutline as ChatBubbleOutlineIcon,
+  Business, // Added icon for Organizations
+  Group, // Added icon for Organization Managers
+  AssignmentInd, // Added icon for Property Managers
+  HomeWork, // Added icon for Properties & Residents
+  Campaign, // Added icon for Campaigns
+} from '@mui/icons-material'; // Added ChatBubbleOutlineIcon
 
 import OrganizationSelector from '../Admin/OrganizationSelector';
 import PropertyManagerManagement from '../Admin/PropertyManagerManagement';
@@ -243,11 +251,11 @@ const AdminDashboardPanel: React.FC = () => {
             scrollButtons='auto'
             allowScrollButtonsMobile
           >
-            <Tab label='Organizations' {...a11yProps(0)} />
-            <Tab label='Organization Managers' {...a11yProps(1)} />
-            <Tab label='Property Managers' {...a11yProps(2)} />
-            <Tab label='Properties & Residents' {...a11yProps(3)} />
-            <Tab label='Campaigns' {...a11yProps(4)} />
+            <Tab label='Organizations' icon={<Business />} {...a11yProps(0)} />
+            <Tab label='Organization Managers' icon={<Group />} {...a11yProps(1)} />
+            <Tab label='Property Managers' icon={<AssignmentInd />} {...a11yProps(2)} />
+            <Tab label='Properties & Residents' icon={<HomeWork />} {...a11yProps(3)} />
+            <Tab label='Campaigns' icon={<Campaign />} {...a11yProps(4)} />
             <Tab label='AI Assistant' icon={<ChatBubbleOutlineIcon />} {...a11yProps(5)} />
           </Tabs>
         </Box>

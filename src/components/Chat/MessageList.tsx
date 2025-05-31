@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Box, List, Typography, CircularProgress } from '@mui/material';
 import ChatMessageItem from './ChatMessageItem';
 import type { ChatMessage } from './types'; // Use type-only import
@@ -8,11 +8,23 @@ interface MessageListProps {
   isLoading: boolean; // To display typing/loading indicator
 }
 
+const loadingWords = ["cooking", "thinking", "searching", "vibing", "working", "looking", "checking"];
+
 const MessageList: React.FC<MessageListProps> = ({ messages, isLoading }) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [currentLoadingWord, setCurrentLoadingWord] = useState('');
 
   useEffect(() => {
-    // Scroll to bottom when messages array changes, but give a slight delay 
+    if (isLoading) {
+      const randomIndex = Math.floor(Math.random() * loadingWords.length);
+      setCurrentLoadingWord(loadingWords[randomIndex]);
+    } else {
+      setCurrentLoadingWord(''); // Clear word when not loading
+    }
+  }, [isLoading]); // Rerun effect when isLoading changes
+
+  useEffect(() => {
+    // Scroll to bottom when messages array changes, but give a slight delay
     // for the new message to render and height to be calculated.
     const timer = setTimeout(() => {
       messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -34,7 +46,7 @@ const MessageList: React.FC<MessageListProps> = ({ messages, isLoading }) => {
           <Box sx={{ display: 'flex', alignItems: 'center', pl: '48px' /* Indent like assistant message if no avatar shown here */ }}>
             <CircularProgress size={20} sx={{ mr: 1 }} />
             <Typography variant="caption" color="text.secondary">
-              RescueBot is typing...
+              RescueBot is {currentLoadingWord}...
             </Typography>
           </Box>
         </Box>

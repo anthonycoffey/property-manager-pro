@@ -26,3 +26,4 @@ dist-ssr
 .vite/
 .firebase/
 extensions/firestore-send-email.env
+rescuelink/

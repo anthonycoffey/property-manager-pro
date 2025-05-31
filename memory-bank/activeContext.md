@@ -29,6 +29,30 @@
     - Created a new frontend page `src/pages/PublicCampaignHandlerPage.tsx` at the `/join-public-campaign` route. This page calls `processPublicCampaignLink` and then navigates the user to `/join-campaign` with the necessary parameters.
     - Decommissioned the `functions/src/http/handleCampaignSignUpLink.ts` HTTP function for this flow (export removed, file deleted).
     - This resolves the previous "internal error" caused by an incorrect collection group query.
+- **Public Campaign Sign-up Flow Debugging & Fix (2025-05-30):**
+    - **Initial Issue:** Users navigating a public campaign link saw an "Invalid Campaign Link" error on the `JoinCampaignPage.tsx`.
+    - **Investigation:**
+        - Added console logs to `functions/src/callable/getInvitationDetails.ts`. Confirmed it correctly returned no email for public campaign invitations (which are created without an email initially).
+        - Reviewed `src/pages/JoinCampaignPage.tsx` and found it was incorrectly treating the absence of an email in the `getInvitationDetails` response as an error.
+    - **Fixes (Part 1 - Frontend `JoinCampaignPage.tsx`):**
+        - Modified `src/types/index.ts` to make `email` optional in the `Invitation` interface.
+        - Updated `JoinCampaignPage.tsx` to:
+            - Not set an error if `getInvitationDetails` returns no email.
+            - Allow the email input field to be editable if no email is pre-filled.
+            - Ensure social sign-up and email/password sign-up use the appropriate email (pre-filled, user-entered, or from social provider).
+    - **Further Issue:** After frontend fixes, `functions/src/callable/signUpWithInvitation.ts` was exiting prematurely (in ~7ms) without setting claims or creating user profiles.
+    - **Investigation (Part 2 - Backend `signUpWithInvitation.ts`):**
+        - Added detailed entry-point logging to `signUpWithInvitation.ts`.
+        - Identified a `TypeError` because the code was attempting `invitationData.email.toLowerCase()` when `invitationData.email` was undefined for public campaign invites.
+    - **Fixes (Part 2 - Backend `signUpWithInvitation.ts`):**
+        - Modified `signUpWithInvitation.ts` to check if `invitationData.email` exists before attempting to use it in string operations, resolving the `TypeError`.
+    - **Further Issue (Part 3 - Backend `signUpWithInvitation.ts` & `processPublicCampaignLink.ts`):** Even after the `TypeError` fix, `signUpWithInvitation.ts` was still exiting early, before setting claims. This was traced to how `organizationId` was being handled.
+        - `signUpWithInvitation.ts` expected `invitationData.organizationIds` (an array) to derive the `singleOrgId` for resident roles.
+        - Logged invitation data showed that invitations created by `processPublicCampaignLink.ts` had a single `organizationId` string field, not an `organizationIds` array.
+    - **Fixes (Part 3 - Backend `processPublicCampaignLink.ts` & `signUpWithInvitation.ts`):**
+        - Updated `functions/src/callable/processPublicCampaignLink.ts` to create invitation documents with `organizationIds: [campaignData.organizationId]` (an array with one element) instead of a single `organizationId` string. This aligns with `systemPatterns.md` and how `signUpWithInvitation.ts` expects to process it for resident roles.
+        - Added more robust entry-point logging and a top-level try-catch in `signUpWithInvitation.ts` to diagnose very early exits. This helped confirm the previous fixes were working and led to the identification of the `organizationIds` issue.
+    - **Result:** The public campaign sign-up flow is now working correctly, with users able to sign up and have their roles and profiles properly established.
 - **Phoenix Integration:** (Ongoing) Job querying, service request dispatch, services querying.
 - **Custom GPTChat Model Integration:** (Ongoing) For residents.
 - **Dashboard Data Visualizations & Statistics:** (Ongoing) Initial implementations.

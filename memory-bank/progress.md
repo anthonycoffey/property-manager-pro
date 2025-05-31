@@ -360,17 +360,23 @@ The remaining application functionality, based on the current `projectRoadmap.md
   - Implemented backend (Firestore rules, `createCampaign` v1 callable, `handleCampaignSignUpLink` v1 HTTP, `signUpWithInvitation` v2 callable update, `cleanupProcessedCampaignCSVs` v2 scheduled).
   - Implemented initial frontend for Property Managers (`CreateCampaignModal`, `CampaignsTable`, `PropertyCampaignsView` integrated into dashboard).
   - Utilized Firebase Storage for CSVs with a scheduled cleanup strategy.
-  - Noted and navigated TypeScript v1/v2 type resolution challenges.
-*   **Public Campaign Link Flow Rearchitected & Fixed (Frontend URL - 2025-05-30):**
-    *   The `createCampaign` Cloud Function (`functions/src/callable/createCampaign.ts`) was updated to:
-        *   Generate `accessUrl`s that are frontend URLs (e.g., `https://your-app.com/join-public-campaign?campaign={campaignId}`). The base URL is derived from `functions.config().app.domain`.
+    - Noted and navigated TypeScript v1/v2 type resolution challenges.
+*   **Public Campaign Link Flow Rearchitected & Sign-up Debugged (2025-05-30):**
+    *   **URL Rearchitecture:**
+        *   The `createCampaign` Cloud Function (`functions/src/callable/createCampaign.ts`) was updated to generate `accessUrl`s that are frontend URLs (e.g., `https://your-app.com/join-public-campaign?campaign={campaignId}`). The base URL is derived from `functions.config().app.domain`.
         *   Store the campaign document's ID in an `id` field (e.g. `id: campaignRef.id`) within the document data itself.
     *   A new frontend page, `src/pages/PublicCampaignHandlerPage.tsx`, was created and mapped to the `/join-public-campaign` route.
     *   This handler page calls a new callable Cloud Function, `functions/src/callable/processPublicCampaignLink.ts`.
     *   The `processPublicCampaignLink` function validates the campaign by querying the `campaigns` collection group using `where('id', '==', campaignIdFromUrl)` and `where('status', '==', 'active')`. It then creates an invitation document and returns details to the frontend handler.
     *   The frontend handler page then navigates the user to the existing `/join-campaign` route (which uses `src/pages/JoinCampaignPage.tsx`) with the necessary `invitationId`, `campaignId`, and `organizationId`.
     *   The previous HTTP Cloud Function `functions/src/http/handleCampaignSignUpLink.ts` has been decommissioned for this flow (export removed, file deleted).
-    *   This change provides a cleaner, more user-friendly `accessUrl` for public campaigns and resolves the "internal error" previously caused by an incorrect collection group query (which was attempting to use `FieldPath.documentId()` with just an ID segment).
+    *   This change provides a cleaner, more user-friendly `accessUrl` for public campaigns and resolved an "internal error" from an incorrect collection group query.
+    *   **Sign-up Debugging:**
+        *   Fixed an issue in `src/pages/JoinCampaignPage.tsx` where it incorrectly showed an "Invalid Campaign Link" error if `getInvitationDetails` returned no email (expected for public campaign invites). The page now allows users to enter their email if not pre-filled.
+        *   Resolved a `TypeError` in `functions/src/callable/signUpWithInvitation.ts` that occurred when `invitationData.email` was undefined. The function now correctly handles this case.
+        *   Corrected `functions/src/callable/processPublicCampaignLink.ts` to store `organizationIds: [orgId]` (an array) in new invitation documents, aligning with how `signUpWithInvitation.ts` expects to process organization context for setting claims. This resolved an issue where user roles were not being assigned.
+        *   Added enhanced logging to `signUpWithInvitation.ts` and `getInvitationDetails.ts` to aid debugging.
+    *   **Result:** The end-to-end public campaign sign-up flow is now functional.
 - **Organization Selector Bug Fix (2025-05-30):**
     - Corrected the `useEffect` hook in `src/components/Admin/OrganizationSelector.tsx` to properly handle changes in `managedOrganizationIds` (for OMs) and to clear invalid selections.
     - Added `managedOrganizationIds`, `selectedOrganizationId`, and `onOrganizationChange` to its dependency array.

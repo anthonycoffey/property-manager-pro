@@ -193,8 +193,10 @@ The application employs a modern web architecture with a React-based frontend an
             *   Purpose: Handles the processing of a public campaign link initiated by the frontend.
             *   Trigger: Called by the `PublicCampaignHandlerPage.tsx` frontend page.
             *   Inputs: `{ campaignId: string }`.
-            *   Logic: Validates the `campaignId` by querying the `campaigns` collection group for a document with a matching `id` field and `status: 'active'`. If valid (active, not expired, within limits), dynamically creates an `invitations` document (linked to the `campaignId`) and returns details like `{ invitationId, campaignId, organizationId }` to the frontend.
+            *   Logic: Validates the `campaignId` by querying the `campaigns` collection group for a document with a matching `id` field and `status: 'active'`. If valid (active, not expired, within limits), dynamically creates an `invitations` document (linked to the `campaignId`, and crucially, stores `organizationIds: [campaignData.organizationId]` in the new invitation) and returns details like `{ invitationId, campaignId, organizationId }` to the frontend.
         *   **`signUpWithInvitation` (v2 Callable - Updated):**
+            *   Now correctly handles invitations created by `processPublicCampaignLink` by expecting `organizationIds` (an array) in the invitation data to derive the `organizationId` for setting claims, especially for resident roles.
+            *   Correctly skips email comparison if `invitationData.email` is undefined (as is the case for new public campaign invitations).
             *   Existing function updated to check if an accepted invitation has a `campaignId`.
             *   If so, it atomically increments `totalAccepted` on the linked campaign document and updates the campaign's `status` (e.g., to "completed" or "expired") if `maxUses` or `expiresAt` conditions are met.
         *   **`cleanupProcessedCampaignCSVs` (v2 Scheduled):**
@@ -294,8 +296,8 @@ The application employs a modern web architecture with a React-based frontend an
         b.  It calls the `processPublicCampaignLink` callable Cloud Function with the `campaignId`.
         c.  The `processPublicCampaignLink` function validates the campaign, creates an `invitations/{invitationId}` document (linked to `campaignId`), and returns the new `invitationId`, `campaignId`, and `organizationId`.
         d.  `PublicCampaignHandlerPage.tsx` receives these details and programmatically navigates the user to `JoinCampaignPage` (e.g., `/join-campaign?invitationId=...&campaignId=...&organizationId=...`).
-    7.  Resident signs up via `JoinCampaignPage.tsx`. `signUpWithInvitation` function is called.
-    8.  `signUpWithInvitation` processes user creation, updates invitation status, and updates the linked campaign's `totalAccepted` and `status`.
+    7.  Resident signs up via `JoinCampaignPage.tsx` (which now correctly handles cases where `getInvitationDetails` returns no email for the invitation, allowing user input). `signUpWithInvitation` function is called.
+    8.  `signUpWithInvitation` processes user creation (using the email from the form if not in the invitation), sets claims (now correctly deriving `organizationId` from the `organizationIds` array in the invitation), creates profiles, updates invitation status, and updates the linked campaign's `totalAccepted` and `status`.
     9.  PM/OM/Admin can view campaign status and list in `CampaignsTable`.
 
 *   **Data Display (e.g., Property List for Property Manager):**

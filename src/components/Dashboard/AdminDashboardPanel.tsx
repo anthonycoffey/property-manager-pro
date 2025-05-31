@@ -284,7 +284,7 @@ const AdminDashboardPanel: React.FC = () => {
           </Typography>
           <InviteOrganizationManagerForm />
 
-          <Divider sx={{ my: 3 }} />
+          <Divider sx={{ my: 4 }} />
 
           <OrganizationManagerAssignments />
         </TabPanel>
@@ -293,7 +293,7 @@ const AdminDashboardPanel: React.FC = () => {
             selectedOrganizationId={selectedAdminOrgId}
             onOrganizationChange={handleAdminOrgChange}
           />
-          <Divider sx={{ my: 2 }} />
+          <Divider sx={{ my: 4 }} />
           {selectedAdminOrgId ? (
             <PropertyManagerManagement organizationId={selectedAdminOrgId} />
           ) : (

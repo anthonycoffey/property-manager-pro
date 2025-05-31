@@ -16,12 +16,19 @@ interface Organization {
 const OrgManagerCampaignsView: React.FC = () => {
   const { currentUser } = useAuth();
   const [organizations, setOrganizations] = useState<Organization[]>([]);
-  const [selectedOrganizationId, setSelectedOrganizationId] = useState<string | null>(null);
-  const [selectedPropertyId, setSelectedPropertyId] = useState<string | null>(null);
+  const [selectedOrganizationId, setSelectedOrganizationId] = useState<
+    string | null
+  >(null);
+  const [selectedPropertyId, setSelectedPropertyId] = useState<string | null>(
+    null
+  );
   const [loadingOrgs, setLoadingOrgs] = useState<boolean>(false);
   const [errorOrgs, setErrorOrgs] = useState<string | null>(null);
 
-  const managedOrgIds = useMemo(() => currentUser?.customClaims?.organizationIds as string[] || [], [currentUser]);
+  const managedOrgIds = useMemo(
+    () => (currentUser?.customClaims?.organizationIds as string[]) || [],
+    [currentUser]
+  );
   const isMultiOrgManager = managedOrgIds.length > 1;
   const isSingleOrgManager = managedOrgIds.length === 1;
 
@@ -39,16 +46,19 @@ const OrgManagerCampaignsView: React.FC = () => {
             return;
           }
           // Fetch details for only the organizations the OM manages
-          const orgsQuery = query(collection(db, 'organizations'), where('__name__', 'in', managedOrgIds));
+          const orgsQuery = query(
+            collection(db, 'organizations'),
+            where('__name__', 'in', managedOrgIds)
+          );
           const querySnapshot = await getDocs(orgsQuery);
-          const fetchedOrganizations = querySnapshot.docs.map(doc => ({
+          const fetchedOrganizations = querySnapshot.docs.map((doc) => ({
             id: doc.id,
             name: doc.data().name as string,
           }));
           setOrganizations(fetchedOrganizations);
         } catch (err) {
-          console.error("Error fetching organizations:", err);
-          setErrorOrgs("Failed to load organizations.");
+          console.error('Error fetching organizations:', err);
+          setErrorOrgs('Failed to load organizations.');
         } finally {
           setLoadingOrgs(false);
         }
@@ -70,36 +80,53 @@ const OrgManagerCampaignsView: React.FC = () => {
     setSelectedPropertyId(propertyId);
   };
 
-  if (!currentUser || !currentUser.customClaims?.roles?.includes('organization_manager')) {
-    return <Typography color="error">Access Denied. You are not an Organization Manager.</Typography>;
+  if (
+    !currentUser ||
+    !currentUser.customClaims?.roles?.includes('organization_manager')
+  ) {
+    return (
+      <Typography color='error'>
+        Access Denied. You are not an Organization Manager.
+      </Typography>
+    );
   }
 
   if (managedOrgIds.length === 0 && !isMultiOrgManager) {
-     return <Typography>You are not assigned to any organizations to manage campaigns.</Typography>;
+    return (
+      <Typography>
+        You are not assigned to any organizations to manage campaigns.
+      </Typography>
+    );
   }
 
   return (
-    <Paper sx={{ p: 3, mt: 2 }}>
-      <Typography variant="h5" gutterBottom>
-        Campaign Management
-      </Typography>
-
+    <Paper>
       {isMultiOrgManager && (
         <Box sx={{ mb: 2 }}>
-          <Typography variant="subtitle1" gutterBottom>Select Organization:</Typography>
+          <Typography variant='subtitle1' gutterBottom>
+            Select Organization:
+          </Typography>
           {/* OrganizationSelector will show its own loading/error state based on managedOrgIds */}
           <OrganizationSelector
             selectedOrganizationId={selectedOrganizationId}
             onOrganizationChange={handleOrganizationChange}
             managedOrganizationIds={managedOrgIds}
-            label="Select Managed Organization"
+            label='Select Managed Organization'
           />
           {/* The OrganizationSelector itself will display messages like "No organizations found..." */}
           {/* So, the specific loading/error/empty states for 'organizations' in this component might be redundant if selector handles it well */}
           {/* However, keeping a general loading/error for the initial fetch of managedOrgIds might still be useful if that fetch was complex */}
           {/* For now, assuming OrganizationSelector handles its display based on managedOrgIds */}
-          {loadingOrgs && <CircularProgress size={24} sx={{ display: organizations.length > 0 ? 'none' : 'block', margin: 'auto' }} />}
-          {errorOrgs && <Typography color="error">{errorOrgs}</Typography>}
+          {loadingOrgs && (
+            <CircularProgress
+              size={24}
+              sx={{
+                display: organizations.length > 0 ? 'none' : 'block',
+                margin: 'auto',
+              }}
+            />
+          )}
+          {errorOrgs && <Typography color='error'>{errorOrgs}</Typography>}
           {/* This specific check might be redundant if OrganizationSelector handles empty states based on managedOrgIds */}
           {/* {!loadingOrgs && !errorOrgs && organizations.length === 0 && managedOrgIds.length > 0 && (
             <Typography>No organizations found for your assigned IDs.</Typography>
@@ -109,12 +136,11 @@ const OrgManagerCampaignsView: React.FC = () => {
 
       {selectedOrganizationId && (
         <Box sx={{ mb: 2 }}>
-          <Typography variant="subtitle1" gutterBottom>Select Property:</Typography>
           <PropertySelectorDropdown
             organizationId={selectedOrganizationId}
             selectedPropertyId={selectedPropertyId}
             onPropertyChange={handlePropertyChange}
-            label="Properties"
+            label='Properties'
           />
         </Box>
       )}
@@ -126,10 +152,14 @@ const OrgManagerCampaignsView: React.FC = () => {
         />
       )}
       {selectedOrganizationId && !selectedPropertyId && (
-        <Typography sx={{mt: 2}}>Please select a property to view campaigns.</Typography>
+        <Typography sx={{ mt: 2 }}>
+          Please select a property to view campaigns.
+        </Typography>
       )}
-       {!selectedOrganizationId && isMultiOrgManager && (
-        <Typography sx={{mt: 2}}>Please select an organization to manage campaigns.</Typography>
+      {!selectedOrganizationId && isMultiOrgManager && (
+        <Typography sx={{ mt: 2 }}>
+          Please select an organization to manage campaigns.
+        </Typography>
       )}
     </Paper>
   );

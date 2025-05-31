@@ -51,9 +51,6 @@ const AdminCampaignsView: React.FC = () => {
       <Divider sx={{ my: 2 }} />
       {selectedOrganizationId && (
         <Box sx={{ mb: 2 }}>
-          <Typography variant='subtitle1' gutterBottom>
-            Select Property:
-          </Typography>
           <PropertySelectorDropdown
             organizationId={selectedOrganizationId}
             selectedPropertyId={selectedPropertyId}

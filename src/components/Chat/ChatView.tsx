@@ -1,3 +1,4 @@
+import { isAppError } from '../../utils/errorUtils';
 import React, { useState, useEffect, useRef } from 'react'; // Removed useCallback
 import { Paper, Alert } from '@mui/material'; // Removed CircularProgress as it's in MessageList
 import { getFunctions, httpsCallable } from 'firebase/functions';
@@ -98,13 +99,14 @@ const ChatView: React.FC = () => {
       console.error("Error calling getGptChatResponse:", err);
       let friendlyErrorMessage = "Sorry, I encountered an issue. Please try again.";
       // Check if it's a Firebase HttpsError from the client SDK
-      if (typeof err === 'object' && err !== null && 'code' in err && 'message' in err) {
-        // This is likely a FirebaseError or HttpsError from firebase/app or firebase/functions client SDK
-        const firebaseError = err as { code: string; message: string; details?: any };
-        friendlyErrorMessage = firebaseError.message || friendlyErrorMessage;
-        console.error(`Firebase HttpsError: Code: ${firebaseError.code}, Message: ${firebaseError.message}`, firebaseError.details);
+      if (isAppError(err)) {
+        friendlyErrorMessage = err.message;
+        console.error('AppError:', err);
       } else if (err instanceof Error) {
         friendlyErrorMessage = err.message;
+        console.error('Error:', err);
+      } else {
+        console.error('Unknown error type:', err);
       }
       setError(friendlyErrorMessage);
       const errorNotification: ChatMessage = {

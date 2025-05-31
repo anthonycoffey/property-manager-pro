@@ -15,13 +15,11 @@ interface PropertyCampaignsViewProps {
 
   // If property is always passed in (simpler for first integration):
   propertyId: string | null;
-  propertyName?: string | null; // Optional, for display
 }
 
 const PropertyCampaignsView: React.FC<PropertyCampaignsViewProps> = ({
   organizationId,
   propertyId,
-  propertyName,
 }) => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 

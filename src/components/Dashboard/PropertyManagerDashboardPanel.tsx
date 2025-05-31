@@ -283,7 +283,6 @@ const PropertyManagerDashboardPanel: React.FC<
             <PropertyCampaignsView
               organizationId={organizationId}
               propertyId={selectedPropertyId}
-              propertyName={selectedPropertyName}
             />
           ) : (
             <Alert severity='info' sx={{ mt: 2 }}>

@@ -3,6 +3,7 @@ import { https as v1Https } from 'firebase-functions/v1';
 import { HttpsError, CallableContext } from 'firebase-functions/v1/https';
 import { parse } from 'csv-parse/sync';
 import { db, storage, FieldValue, Timestamp } from '../firebaseAdmin.js';
+import crypto from 'crypto';
 
 interface CampaignData {
   organizationId: string;
@@ -91,9 +92,34 @@ export const createCampaign = v1Https.onCall(
     // context.auth is now guaranteed to be defined
     const { uid: authUid, token: authToken } = context.auth;
 
+    // Determine appDomain (frontendAppBaseUrl) once for constructing links
+    let appDomain: string;
+    if (process.env.FUNCTIONS_EMULATOR === 'true') {
+      const configuredDomain = functions.config().app?.domain;
+      if (configuredDomain) {
+        if (configuredDomain.toLowerCase() === "localhost") {
+          appDomain = 'http://localhost:5173'; // Default Vite dev server port
+        } else {
+          appDomain = configuredDomain.startsWith('http') ? configuredDomain : `http://${configuredDomain}`;
+        }
+      } else {
+        appDomain = 'http://localhost:5173'; // Default emulator frontend
+      }
+    } else {
+      const prodDomain = functions.config().app?.domain;
+      if (!prodDomain) {
+        functions.logger.error(
+          "CRITICAL: functions.config().app.domain is not set for production environment! Public campaign links and invitation emails will use hardcoded fallback. This MUST be configured."
+        );
+        appDomain = 'https://phoenix-property-manager-pro.web.app'; // Default production frontend
+      } else {
+        appDomain = prodDomain.startsWith('http') ? prodDomain : `https://${prodDomain}`;
+      }
+    }
+
     // Validate roles - Admin, Organization Manager, Property Manager
     const roles = authToken.roles as string[] | undefined; // Roles from custom claims
-    const userOrganizationId = authToken.organizationId as string | undefined;
+    const userOrganizationId = authToken.organizationId as string | undefined; // Used for PM inviter name fetch
     const userOrganizationIds = authToken.organizationIds as
       | string[]
       | undefined; // For Org Managers
@@ -207,35 +233,13 @@ export const createCampaign = v1Https.onCall(
       id: campaignRef.id, // Add the document ID here
     };
 
+
     let accessUrl: string | undefined = undefined;
 
     // Type-specific setup
     if (campaignParams.campaignType === 'public_link') {
-      let frontendAppBaseUrl: string;
-      if (process.env.FUNCTIONS_EMULATOR === 'true') {
-        const configuredDomain = functions.config().app?.domain;
-        if (configuredDomain) {
-          if (configuredDomain.toLowerCase() === "localhost") {
-            frontendAppBaseUrl = 'http://localhost:5173'; // Default Vite dev server port
-          } else {
-            frontendAppBaseUrl = configuredDomain.startsWith('http') ? configuredDomain : `http://${configuredDomain}`; // Assume http for local custom domains
-          }
-        } else {
-          frontendAppBaseUrl = 'http://localhost:5173'; // Default emulator frontend
-        }
-      } else {
-        const prodDomain = functions.config().app?.domain;
-        if (!prodDomain) {
-          functions.logger.error(
-            "CRITICAL: functions.config().app.domain is not set for production environment! Public campaign links will use hardcoded fallback. This MUST be configured."
-          );
-          frontendAppBaseUrl = 'https://phoenix-property-manager-pro.web.app'; // Default production frontend
-        } else {
-          frontendAppBaseUrl = prodDomain.startsWith('http') ? prodDomain : `https://${prodDomain}`;
-        }
-      }
-      // The accessUrl points to the new frontend handler page
-      accessUrl = `${frontendAppBaseUrl}/join-public-campaign?campaign=${campaignRef.id}`;
+      // The accessUrl points to the new frontend handler page, using the already determined appDomain
+      accessUrl = `${appDomain}/join-public-campaign?campaign=${campaignRef.id}`;
       newCampaignData.accessUrl = accessUrl;
     } else if (campaignParams.campaignType === 'csv_import') {
       // Use campaignParams
@@ -265,6 +269,48 @@ export const createCampaign = v1Https.onCall(
       const bucket = storage.bucket(); // Default bucket
       const file = bucket.file(filePath);
 
+      // --- Pre-Loop Data Fetching for Email Template (specific to CSV import) ---
+      let propertyNameForEmail = 'Your Property'; // Fallback
+      let inviterNameForEmail = 'The Management Team'; // Fallback
+      const appNameForEmail = 'Property Manager Pro'; // As per plan
+
+      try {
+        // Fetch Property Name
+        const propertyDoc = await db
+          .collection('organizations')
+          .doc(campaignParams.organizationId)
+          .collection('properties')
+          .doc(campaignParams.propertyId)
+          .get();
+        if (propertyDoc.exists) {
+          propertyNameForEmail = propertyDoc.data()?.name || propertyNameForEmail;
+        } else {
+          functions.logger.warn(`Property ${campaignParams.propertyId} not found for campaign ${campaignRef.id}. Using fallback name for email.`);
+        }
+
+        // Fetch Inviter's Name
+        // Ensure userOrganizationId is available for Property Manager role check
+        const currentPMUserOrgId = isPropertyManager ? userOrganizationId : null;
+
+        let inviterProfileDoc;
+        if (isAdmin || isOrganizationManager) {
+          inviterProfileDoc = await db.collection('admins').doc(authUid).get();
+        } else if (isPropertyManager && currentPMUserOrgId) { // Check currentPMUserOrgId
+          inviterProfileDoc = await db.collection('organizations').doc(currentPMUserOrgId).collection('users').doc(authUid).get();
+        }
+
+
+        if (inviterProfileDoc?.exists) {
+          inviterNameForEmail = inviterProfileDoc.data()?.displayName || inviterProfileDoc.data()?.name || inviterNameForEmail;
+        } else {
+          functions.logger.warn(`Inviter profile ${authUid} not found (or org ID missing for PM). Using fallback name for email.`);
+        }
+      } catch (fetchError) {
+        functions.logger.error(`Error fetching property/inviter details for campaign ${campaignRef.id} emails:`, fetchError);
+        // Proceeding with fallback names.
+      }
+      // --- End Pre-Loop Data Fetching for Email Template ---
+
       try {
         const [fileBuffer] = await file.download();
         // Parse CSV. `columns: true` makes each record an object keyed by header names.
@@ -275,7 +321,7 @@ export const createCampaign = v1Https.onCall(
         });
 
         let invitedCount = 0;
-        const batch = db.batch();
+        const batch = db.batch(); // Initialize batch here, once before the loop.
 
         for (const rawRecord of rawRecords) {
           const processedData: { [key: string]: string | null } = {};
@@ -341,11 +387,12 @@ export const createCampaign = v1Https.onCall(
             additionalCsvData[originalHeader] = rawRecord[originalHeader]?.trim() || null;
           }
 
+          const invitationToken = crypto.randomUUID();
           const invitationRef = db
             .collection('organizations')
             .doc(campaignParams.organizationId)
             .collection('invitations')
-            .doc();
+            .doc(invitationToken); // Use UUID as document ID
 
           const invitationData = {
             email: emailValue.trim(), // Already validated
@@ -362,6 +409,31 @@ export const createCampaign = v1Https.onCall(
             additionalCsvData: Object.keys(additionalCsvData).length > 0 ? additionalCsvData : null, // Add if not empty
           };
           batch.set(invitationRef, invitationData);
+
+          // --- Add Mail Document to Batch for this resident ---
+          const invitationLink = `${appDomain}/accept-invitation?token=${invitationToken}&orgId=${campaignParams.organizationId}`;
+          const inviteeName = (processedData['displayName'] as string)?.trim() || emailValue.trim(); // Fallback to email if displayName is not present
+
+          const mailDocRef = db.collection('mail').doc(); // Auto-generate ID for mail document
+          const mailData = {
+            to: [emailValue.trim()],
+            template: {
+              name: "residentInvitation", // Name of the template in Firestore /templates collection
+              data: {
+                appName: appNameForEmail,
+                propertyName: propertyNameForEmail,
+                inviteeName: inviteeName,
+                inviterName: inviterNameForEmail,
+                invitationLink: invitationLink,
+              }
+            },
+            // Optional: Add audit fields for the mail document itself
+            // createdBy: authUid,
+            // createdAt: FieldValue.serverTimestamp(),
+          };
+          batch.set(mailDocRef, mailData);
+          // --- End Add Mail Document ---
+
           invitedCount++;
         }
 

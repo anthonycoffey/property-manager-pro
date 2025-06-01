@@ -399,7 +399,8 @@ export const createCampaign = v1Https.onCall(
             displayName: (processedData['displayName'] as string)?.trim() || null,
             unitNumber: (processedData['unitNumber'] as string)?.trim() || null,
             rolesToAssign: campaignParams.rolesToAssign,
-            organizationId: campaignParams.organizationId,
+            organizationId: campaignParams.organizationId, // Keep for direct reference if needed
+            organizationIds: [campaignParams.organizationId], // Add the array for consistency
             targetPropertyId: campaignParams.propertyId,
             status: 'pending',
             createdBy: authUid,

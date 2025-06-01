@@ -22,7 +22,7 @@ The application should provide a seamless and intuitive experience tailored to e
     *   **System Configuration:** Tools for managing core system settings (if any).
     *   **Top-Level Support:** Easy access to all data (organizations, users, properties, residents, services, invitation campaigns) for customer support and troubleshooting across the platform.
     *   **Organization Management:** Tools for creating, viewing, editing, and deactivating organizations.
-    *   **Campaign Oversight (Future):** Ability to view and manage resident invitation campaigns across all organizations if needed for support or auditing.
+    *   **Campaign Oversight (Implemented):** Ability to view and manage resident invitation campaigns across all organizations (`AdminCampaignsView.tsx`).
 
 *   **Organization Managers (`organization_manager`):**
     *   **Scoped Oversight:** A dedicated dashboard to manage their assigned organization(s). If managing multiple, an easy way to switch context.

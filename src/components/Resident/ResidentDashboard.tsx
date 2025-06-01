@@ -7,19 +7,19 @@ import {
   Tabs,
   Tab,
   Divider,
-  Stack, // Added Stack
-} from '@mui/material'; // Added Divider, Removed Grid
+  Stack,
+} from '@mui/material';
 import { useAuth } from '../../hooks/useAuth';
-import AccountCircleIcon from '@mui/icons-material/AccountCircle'; // Added AccountCircleIcon
+import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import ApartmentIcon from '@mui/icons-material/Apartment';
 import PersonIcon from '@mui/icons-material/Person';
 import BuildIcon from '@mui/icons-material/Build';
-import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline'; // Icon for Chat
+import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import PropertyDetailsView from './PropertyDetailsView';
-import ResidentProfileManagement from './ResidentProfileManagement'; // Import the new component
-import CreateServiceRequestForm from './CreateServiceRequestForm'; // Import new component
-import ServiceRequestList from './ServiceRequestList'; // Import new component
-import ChatView from '../Chat/ChatView'; // Import ChatView
+import ResidentProfileManagement from './ResidentProfileManagement';
+import CreateServiceRequestForm from './CreateServiceRequestForm';
+import ServiceRequestList from './ServiceRequestList';
+import ChatView from '../Chat/ChatView';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -64,13 +64,12 @@ const ResidentDashboard: React.FC = () => {
 
   return (
     <Container component='main' maxWidth='lg'>
-      <Paper sx={{ p: 2, display: 'flex', flexDirection: 'column' }} elevation={6}>
+      <Paper
+        sx={{ p: 2, display: 'flex', flexDirection: 'column' }}
+        elevation={6}
+      >
         <Stack direction='row' alignItems='center' sx={{ mb: 2 }}>
-          <AccountCircleIcon
-            fontSize='large'
-            color='primary'
-            sx={{ mr: 1 }}
-          />
+          <AccountCircleIcon fontSize='large' color='primary' sx={{ mr: 1 }} />
           <Typography variant='h4' color='primary'>
             Resident Dashboard
           </Typography>
@@ -122,8 +121,11 @@ const ResidentDashboard: React.FC = () => {
           <ServiceRequestList />
         </TabPanel>
         <TabPanel value={tabValue} index={3}>
-          {/* The ChatView component will manage its own height within this panel */}
-          <Box sx={{ height: 'calc(100vh - 260px)', minHeight: '400px' /* Adjust Xpx based on surrounding elements */ }}>
+          <Box
+            sx={{
+              minHeight: '400px',
+            }}
+          >
             <ChatView />
           </Box>
         </TabPanel>

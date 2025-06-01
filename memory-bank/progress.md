@@ -4,7 +4,7 @@
 
 The project has recently completed the backend and initial frontend (for Property Managers) of the "Resident Invitation Campaigns" feature. This includes CSV bulk import, public link/QR code generation, and associated Cloud Functions and Firestore structures.
 
-- **Date of this update:** 2025-05-30
+- **Date of this update:** 2025-05-31
 
 ## 2. What Works / Completed
 
@@ -36,17 +36,19 @@ The project has recently completed the backend and initial frontend (for Propert
       - Implemented Snackbar notifications for actions.
     - Updated the confirmation text in `src/components/PropertyManager/Campaigns/ConfirmDeactivateCampaignDialog.tsx` to reflect that deactivation is reversible.
 - **Campaign Management UI for Organization Managers & Admins (Completed 2025-05-30):**
-    - Implemented `src/components/OrganizationManager/Campaigns/OrgManagerCampaignsView.tsx` providing Organization Managers with UI to manage resident invitation campaigns for properties within their assigned organizations. This includes appropriate organization and property selectors.
-    - Implemented `src/components/Admin/Campaigns/AdminCampaignsView.tsx` providing Admins with a global UI to view and manage resident invitation campaigns across all organizations. This includes appropriate organization and property selectors.
-*   **Campaign Table Actions & View Details Page (Frontend & Backend) - 2025-05-30:**
-    *   The `CampaignsTable.tsx` component now includes fully functional actions in its row menu:
-        *   **Edit:** Opens `EditCampaignModal.tsx` for modifying campaign details (calls `updateCampaign` Cloud Function).
-        *   **Deactivate:** Uses `ConfirmDeactivateCampaignDialog.tsx` (calls `deactivateCampaign` Cloud Function).
-        *   **Reactivate:** (Completed 2025-05-29) Uses `ConfirmActivateCampaignDialog.tsx` (calls `activateCampaign` Cloud Function).
-        *   **Delete:** Uses `ConfirmDeleteCampaignDialog.tsx` for inactive campaigns (calls `deleteCampaign` Cloud Function).
-        *   **View Details:** Navigates to a page (e.g., `/campaigns/{campaignId}`) showing campaign details, including accepted residents.
-    *   Includes UI for permission checks and Snackbar notifications.
-    *   Corresponding Cloud Functions (`updateCampaign.ts`, `deactivateCampaign.ts`, `deleteCampaign.ts`) are implemented in `functions/src/callable/`.
+  - Implemented `src/components/OrganizationManager/Campaigns/OrgManagerCampaignsView.tsx` providing Organization Managers with UI to manage resident invitation campaigns for properties within their assigned organizations. This includes appropriate organization and property selectors.
+  - Implemented `src/components/Admin/Campaigns/AdminCampaignsView.tsx` providing Admins with a global UI to view and manage resident invitation campaigns across all organizations. This includes appropriate organization and property selectors.
+
+* **Campaign Table Actions & View Details Page (Frontend & Backend) - 2025-05-30:**
+  - The `CampaignsTable.tsx` component now includes fully functional actions in its row menu:
+    - **Edit:** Opens `EditCampaignModal.tsx` for modifying campaign details (calls `updateCampaign` Cloud Function).
+    - **Deactivate:** Uses `ConfirmDeactivateCampaignDialog.tsx` (calls `deactivateCampaign` Cloud Function).
+    - **Reactivate:** (Completed 2025-05-29) Uses `ConfirmActivateCampaignDialog.tsx` (calls `activateCampaign` Cloud Function).
+    - **Delete:** Uses `ConfirmDeleteCampaignDialog.tsx` for inactive campaigns (calls `deleteCampaign` Cloud Function).
+    - **View Details:** Navigates to a page (e.g., `/campaigns/{campaignId}`) showing campaign details, including accepted residents.
+  - Includes UI for permission checks and Snackbar notifications.
+  - Corresponding Cloud Functions (`updateCampaign.ts`, `deactivateCampaign.ts`, `deleteCampaign.ts`) are implemented in `functions/src/callable/`.
+
 - **Project Definition:**
   - `projectRoadmap.md` has been reviewed and serves as the primary guide for development. (Note: Current version of `projectRoadmap.md` details up to Admin Dashboard features).
 - **Core Memory Bank Documentation Established:**
@@ -109,6 +111,7 @@ The project has recently completed the backend and initial frontend (for Propert
   - **Email Templates (JSON in `docs/`):**
     - Created `docs/propertyManagerInvitation.json`.
     - Created `docs/residentInvitation.json`.
+    - Created `docs/organizationManagerInvitation.json`.
   - **UI Components (React Forms):**
     - Created `src/components/Admin/InvitePropertyManagerForm.tsx`.
     - Created `src/components/PropertyManager/CreatePropertyForm.tsx`.
@@ -247,6 +250,12 @@ The project has recently completed the backend and initial frontend (for Propert
   - Admins can manage organization managers, property managers, properties, and residents.
   - Organization managers can manage property managers, properties, and residents for assigned organizations.
   - Property managers can manage properties and residents for their organization.
+- **Resident Invitation Campaigns - End-to-End Testing (Completed 2025-05-31):**
+  - CSV import and public link user flows have been thoroughly tested and validated.
+- **Custom GPTChat Model Integration (Completed 2025-05-31):**
+  - The rescuelink chatbot has been successfully migrated and integrated into the application for all user roles (Residents, Property Managers, Organization Managers, and Admins).
+- **Project Roadmap Extension (Completed 2025-05-31):**
+  - `projectRoadmap.md` has been reviewed and extended to cover further development plans.
 
 ## 3. What's Left to Build (High-Level from `projectRoadmap.md`)
 
@@ -255,35 +264,25 @@ The remaining application functionality, based on the current `projectRoadmap.md
 - **B. Admin Dashboard (Super Admin View):**
   - Property Managers Management (CRUD): Further refinement or specific sub-tasks if not fully covered by general management capabilities.
   - (Note: Other items previously listed here like Organization Management, Properties Management, and Residents Management for Admins are now considered complete based on recent verifications).
-- (The old "Invitation System (Phase 3)" is now superseded by the "Resident Invitation Campaigns" feature for resident invites.)
-
-(Further features beyond the Admin Dashboard, such as Organization Manager, Property Manager, and Resident Dashboards, and core systems like Service Requests, are planned but not yet detailed in the current version of `projectRoadmap.md`.)
+  - (The old "Invitation System (Phase 3)" is now superseded by the "Resident Invitation Campaigns" feature for resident invites.)
 
 ## 3. Immediate Next Steps (Updated from activeContext.md)
 
-1.  **Resident Invitation Campaigns - Enhancements & Broader Rollout:**
-    - (UI for Organization Managers and Admins completed - see "What Works / Completed").
-    - Verify and test the new public campaign link flow:
-        - `createCampaign` generates frontend `accessUrl`.
-        - `PublicCampaignHandlerPage.tsx` (at `/join-public-campaign`) correctly calls `processPublicCampaignLink`.
-        - `processPublicCampaignLink` correctly creates an invitation.
-        - User is correctly navigated to `JoinCampaignPage.tsx` to complete sign-up.
-    - Conduct thorough end-to-end testing of all campaign creation, public link usage, invitation, sign-up, and tracking flows.
-2.  **Phoenix Integration:** (Ongoing)
+1.  **Phoenix Integration (Ongoing):**
     - Implement job querying by Resident, Property, and Organization.
     - Implement service request dispatch to Phoenix.
     - Implement services querying from Phoenix.
-3.  **Custom GPTChat Model Integration:** (Ongoing)
-    - Integrate chatbot into Resident dashboard.
-    - Evaluate PM access.
-4.  **Dashboard Data Visualizations & Statistics:** (Ongoing)
+2.  **Dashboard Data Visualizations & Statistics (Ongoing):**
     - Implement metrics for all roles using Highcharts, including campaign performance data.
-5.  **Extend `projectRoadmap.md`:** Document detailed plans for the remaining dashboard features and core systems, including the full scope of Invitation Campaigns.
+3.  **Resident Invitation Campaigns - Testing & Rollout (Completed 2025-05-31):**
+    - The new public campaign link flow (frontend URL -> `PublicCampaignHandlerPage.tsx` -> `processPublicCampaignLink` callable -> `JoinCampaignPage.tsx`) is fully integrated and functional.
+    - Thorough end-to-end testing of all campaign creation (CSV import and public link), public link usage, invitation, sign-up, and tracking flows has been completed and validated.
+    - UI for Organization Managers and Admins is complete.
+4.  **Custom GPTChat Model Integration (Completed 2025-05-31):**
+    - Chatbot (migrated from rescuelink) is integrated into the application for all user roles (Residents, Property Managers, Organization Managers, and Admins).
+5.  **Extend `projectRoadmap.md` (Completed):** Detailed plans for the remaining dashboard features and core systems, including the full scope of Invitation Campaigns, have been documented.
 
 ## 4. Known Issues & Blockers
-
-- **TypeScript v1/v2 Firebase Functions Typing:** Persistent TypeScript type resolution issues were encountered in the local dev environment when mixing v1 and v2 Firebase Function types/signatures (e.g., for `onCall`, `onRequest`, `CallableContext`, `EventContext`, `Response`). While workarounds (explicit v1 type imports, `write_to_file` fallback, using v2 `onSchedule`) were used, this indicates a potential sensitivity in the project's TypeScript setup that needs monitoring. Deployed functions may work correctly if Firebase CLI interprets them as intended.
-- **MUI Grid TypeScript Errors:** Lingering TypeScript errors related to MUI `Grid` component props in `CreatePropertyForm.tsx` might indicate a deeper type configuration issue or linter quirk. Functionality is expected to be unaffected.
 
 ## 5. Evolution of Project Decisions
 
@@ -358,31 +357,32 @@ The remaining application functionality, based on the current `projectRoadmap.md
   - Verified comprehensive role-based management capabilities for Admins, OMs, and PMs.
   - Defined new "Immediate Next Steps" focusing on Phoenix Integration, CSV Import, GPTChat Integration, and Dashboard Visualizations. (This is now updated above in section 3)
 - **2025-05-29 (Resident Invitation Campaigns):**
-  - Adopted "Campaigns" concept for CSV and Public Link/QR invitations.
   - Implemented backend (Firestore rules, `createCampaign` v1 callable, `handleCampaignSignUpLink` v1 HTTP, `signUpWithInvitation` v2 callable update, `cleanupProcessedCampaignCSVs` v2 scheduled).
   - Implemented initial frontend for Property Managers (`CreateCampaignModal`, `CampaignsTable`, `PropertyCampaignsView` integrated into dashboard).
   - Utilized Firebase Storage for CSVs with a scheduled cleanup strategy.
     - Noted and navigated TypeScript v1/v2 type resolution challenges.
-*   **Public Campaign Link Flow Rearchitected & Sign-up Debugged (2025-05-30):**
-    *   **URL Rearchitecture:**
-        *   The `createCampaign` Cloud Function (`functions/src/callable/createCampaign.ts`) was updated to generate `accessUrl`s that are frontend URLs (e.g., `https://your-app.com/join-public-campaign?campaign={campaignId}`). The base URL is derived from `functions.config().app.domain`.
-        *   Store the campaign document's ID in an `id` field (e.g. `id: campaignRef.id`) within the document data itself.
-    *   A new frontend page, `src/pages/PublicCampaignHandlerPage.tsx`, was created and mapped to the `/join-public-campaign` route.
-    *   This handler page calls a new callable Cloud Function, `functions/src/callable/processPublicCampaignLink.ts`.
-    *   The `processPublicCampaignLink` function validates the campaign by querying the `campaigns` collection group using `where('id', '==', campaignIdFromUrl)` and `where('status', '==', 'active')`. It then creates an invitation document and returns details to the frontend handler.
-    *   The frontend handler page then navigates the user to the existing `/join-campaign` route (which uses `src/pages/JoinCampaignPage.tsx`) with the necessary `invitationId`, `campaignId`, and `organizationId`.
-    *   The previous HTTP Cloud Function `functions/src/http/handleCampaignSignUpLink.ts` has been decommissioned for this flow (export removed, file deleted).
-    *   This change provides a cleaner, more user-friendly `accessUrl` for public campaigns and resolved an "internal error" from an incorrect collection group query.
-    *   **Sign-up Debugging:**
-        *   Fixed an issue in `src/pages/JoinCampaignPage.tsx` where it incorrectly showed an "Invalid Campaign Link" error if `getInvitationDetails` returned no email (expected for public campaign invites). The page now allows users to enter their email if not pre-filled.
-        *   Resolved a `TypeError` in `functions/src/callable/signUpWithInvitation.ts` that occurred when `invitationData.email` was undefined. The function now correctly handles this case.
-        *   Corrected `functions/src/callable/processPublicCampaignLink.ts` to store `organizationIds: [orgId]` (an array) in new invitation documents, aligning with how `signUpWithInvitation.ts` expects to process organization context for setting claims. This resolved an issue where user roles were not being assigned.
-        *   Added enhanced logging to `signUpWithInvitation.ts` and `getInvitationDetails.ts` to aid debugging.
-    *   **Result:** The end-to-end public campaign sign-up flow is now functional.
+
+* **Public Campaign Link Flow Rearchitected & Sign-up Debugged (2025-05-30):**
+  - **URL Rearchitecture:**
+    - The `createCampaign` Cloud Function (`functions/src/callable/createCampaign.ts`) was updated to generate `accessUrl`s that are frontend URLs (e.g., `https://your-app.com/join-public-campaign?campaign={campaignId}`). The base URL is derived from `functions.config().app.domain`.
+    - Store the campaign document's ID in an `id` field (e.g. `id: campaignRef.id`) within the document data itself.
+  - A new frontend page, `src/pages/PublicCampaignHandlerPage.tsx`, was created and mapped to the `/join-public-campaign` route.
+  - This handler page calls a new callable Cloud Function, `functions/src/callable/processPublicCampaignLink.ts`.
+  - The `processPublicCampaignLink` function validates the campaign by querying the `campaigns` collection group using `where('id', '==', campaignIdFromUrl)` and `where('status', '==', 'active')`. It then creates an invitation document and returns details to the frontend handler.
+  - The frontend handler page then navigates the user to the existing `/join-campaign` route (which uses `src/pages/JoinCampaignPage.tsx`) with the necessary `invitationId`, `campaignId`, and `organizationId`.
+  - The previous HTTP Cloud Function `functions/src/http/handleCampaignSignUpLink.ts` has been decommissioned for this flow (export removed, file deleted).
+  - This change provides a cleaner, more user-friendly `accessUrl` for public campaigns and resolved an "internal error" from an incorrect collection group query.
+  - **Sign-up Debugging:**
+    - Fixed an issue in `src/pages/JoinCampaignPage.tsx` where it incorrectly showed an "Invalid Campaign Link" error if `getInvitationDetails` returned no email (expected for public campaign invites). The page now allows users to enter their email if not pre-filled.
+    - Resolved a `TypeError` in `functions/src/callable/signUpWithInvitation.ts` that occurred when `invitationData.email` was undefined. The function now correctly handles this case.
+    - Corrected `functions/src/callable/processPublicCampaignLink.ts` to store `organizationIds: [orgId]` (an array) in new invitation documents, aligning with how `signUpWithInvitation.ts` expects to process organization context for setting claims. This resolved an issue where user roles were not being assigned.
+    - Added enhanced logging to `signUpWithInvitation.ts` and `getInvitationDetails.ts` to aid debugging.
+  - **Result:** The end-to-end public campaign sign-up flow is now functional.
+
 - **Organization Selector Bug Fix (2025-05-30):**
-    - Corrected the `useEffect` hook in `src/components/Admin/OrganizationSelector.tsx` to properly handle changes in `managedOrganizationIds` (for OMs) and to clear invalid selections.
-    - Added `managedOrganizationIds`, `selectedOrganizationId`, and `onOrganizationChange` to its dependency array.
-    - This aims to improve the stability of organization selection and prevent downstream errors like "Organization ID not provided" in campaign views by ensuring consistent state.
+  - Corrected the `useEffect` hook in `src/components/Admin/OrganizationSelector.tsx` to properly handle changes in `managedOrganizationIds` (for OMs) and to clear invalid selections.
+  - Added `managedOrganizationIds`, `selectedOrganizationId`, and `onOrganizationChange` to its dependency array.
+  - This aims to improve the stability of organization selection and prevent downstream errors like "Organization ID not provided" in campaign views by ensuring consistent state.
 - **Property Manager Campaign View Fix (2025-05-30):**
-    - Updated `src/components/Dashboard/PropertyManagerDashboardPanel.tsx` to conditionally render `PropertySelectorDropdown` in the "Invite Residents" and "Campaigns" tabs only when `organizationId` (derived from props/auth claims) is truthy.
-    - This resolves TypeScript errors related to passing `string | null` to a prop expecting `string`, and ensures `PropertySelectorDropdown` always receives a valid `organizationId` when rendered. This is intended to fix the "Organization ID not provided. Cannot load properties." error for Property Managers when accessing campaign features.
+  - Updated `src/components/Dashboard/PropertyManagerDashboardPanel.tsx` to conditionally render `PropertySelectorDropdown` in the "Invite Residents" and "Campaigns" tabs only when `organizationId` (derived from props/auth claims) is truthy.
+  - This resolves TypeScript errors related to passing `string | null` to a prop expecting `string`, and ensures `PropertySelectorDropdown` always receives a valid `organizationId` when rendered. This is intended to fix the "Organization ID not provided. Cannot load properties." error for Property Managers when accessing campaign features.

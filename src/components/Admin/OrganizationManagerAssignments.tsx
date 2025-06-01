@@ -238,9 +238,6 @@ const OrganizationManagerAssignments: React.FC = () => {
 
   return (
     <Paper>
-      <Typography variant='h6' gutterBottom>
-        Organization Managers
-      </Typography>
       {loading && <CircularProgress size={24} sx={{ ml: 2, mb: 1 }} />}
       <TableContainer>
         <Table stickyHeader>
@@ -252,44 +249,54 @@ const OrganizationManagerAssignments: React.FC = () => {
               <TableCell>Actions</TableCell>
             </TableRow>
           </TableHead>
-          <TableBody>
-            {managers.map((manager) => (
+            <TableBody>
+            {managers.length === 0 ? (
+              <TableRow>
+              <TableCell colSpan={4} align="center">
+                <Typography variant="body2" color="text.secondary">
+                No organization managers found.
+                </Typography>
+              </TableCell>
+              </TableRow>
+            ) : (
+              managers.map((manager) => (
               <TableRow key={manager.uid}>
                 <TableCell>{manager.displayName}</TableCell>
                 <TableCell>{manager.email}</TableCell>
                 <TableCell>
-                  {manager.assignedOrganizationIds &&
-                  manager.assignedOrganizationIds.length > 0 ? (
-                    manager.assignedOrganizationIds.map((orgId) => (
-                      <Chip
-                        key={orgId}
-                        label={getOrganizationName(orgId)}
-                        onDelete={() =>
-                          handleOpenUnassignConfirm(manager, orgId)
-                        }
-                        deleteIcon={<DeleteIcon />}
-                        size='small'
-                        sx={{ mr: 0.5, mb: 0.5 }}
-                        color='primary'
-                      />
-                    ))
-                  ) : (
-                    <Typography variant='caption'>None</Typography>
-                  )}
+                {manager.assignedOrganizationIds &&
+                manager.assignedOrganizationIds.length > 0 ? (
+                  manager.assignedOrganizationIds.map((orgId) => (
+                  <Chip
+                    key={orgId}
+                    label={getOrganizationName(orgId)}
+                    onDelete={() =>
+                    handleOpenUnassignConfirm(manager, orgId)
+                    }
+                    deleteIcon={<DeleteIcon />}
+                    size="small"
+                    sx={{ mr: 0.5, mb: 0.5 }}
+                    color="primary"
+                  />
+                  ))
+                ) : (
+                  <Typography variant="caption">None</Typography>
+                )}
                 </TableCell>
                 <TableCell>
-                  <Button
-                    variant='outlined'
-                    size='small'
-                    startIcon={<AddCircleOutlineIcon />}
-                    onClick={() => handleOpenAssignModal(manager)}
-                  >
-                    Assign
-                  </Button>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  startIcon={<AddCircleOutlineIcon />}
+                  onClick={() => handleOpenAssignModal(manager)}
+                >
+                  Assign
+                </Button>
                 </TableCell>
               </TableRow>
-            ))}
-          </TableBody>
+              ))
+            )}
+            </TableBody>
         </Table>
       </TableContainer>
 

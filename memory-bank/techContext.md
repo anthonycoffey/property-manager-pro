@@ -11,10 +11,11 @@
 *   **State Management:**
     *   **React Context API:** Global state (user auth, theme).
     *   **React Hooks:** Local component state.
-*   **Data Fetching (Client-Side):** Standard Fetch API, but server-side data fetching will be done via Server Components and is always preferred over client-side fetching.
+*   **Data Fetching (Client-Side):** Standard Fetch API. Client-side service modules (e.g., `src/lib/phoenixService.ts`) are used to encapsulate API calls. Server-side data fetching via Server Components is preferred where applicable.
 *   **Charting/Visualization:** Highcharts for displaying analytics and reports.
-*   **Address Autocompletion:** Google Places API using the `google.maps.places.PlaceAutocompleteElement` (Web Component). Script loading managed by `@react-google-maps/api`'s `LoadScript`.
-*   **Build Tool:** (Implicit) Likely Vite or Create React App, to be confirmed. Standard Node.js/npm/yarn ecosystem.
+*   **Advanced Select/Dropdowns:** `react-select` for features like multi-select, search, and custom styling.
+*   **Address Autocompletion:** Google Places API. Uses `@react-google-maps/api`'s `useJsApiLoader` for script loading, then directly utilizes `google.maps.places.AutocompleteService` and `google.maps.Geocoder` with MUI `Autocomplete` component for UI.
+*   **Build Tool:** (Implicit) Vite. Standard Node.js/npm ecosystem.
 
 ### Backend
 *   **Firebase:**
@@ -37,12 +38,10 @@
 *   **Local Emulation:** Firebase Local Emulator Suite will be crucial for testing Authentication, Firestore, and Cloud Functions locally before deployment.
 *   **API Keys & Firebase Function Configuration:**
     *   `VITE_GOOGLE_MAPS_API_KEY`: Client-side environment variable for Google Maps API key, used for Places Autocomplete. Stored in `.env` (gitignored).
-    *   **Firebase Function Environment Variables (set via Firebase CLI `functions:config:set`):**
-        *   `app.domain`: This configuration is used by the `createCampaign` callable function (and potentially other functions that need to construct frontend URLs) to determine the base URL of the frontend application (e.g., `http://localhost:5173` for emulator, `https://phoenix-property-manager-pro.web.app` for production). It's crucial for production that this is set to your actual frontend application domain.
-        *   The `createCampaign` callable function constructs `accessUrl`s for public campaigns. These URLs now point to a frontend route (e.g., `/join-public-campaign?campaign={campaignId}`). The base for this URL is determined using `functions.config().app.domain` or environment-specific fallbacks:
-            *   **Emulator Example:** `http://localhost:5173/join-public-campaign?campaign={campaignId}`
-            *   **Production Example:** `https://phoenix-property-manager-pro.web.app/join-public-campaign?campaign={campaignId}`
-        *   The previous `handleCampaignSignUpLink` HTTP function, which was directly invoked by old `accessUrl`s, has been replaced for this flow. The new frontend page (`/join-public-campaign`) now calls a new callable function (`processPublicCampaignLink`) to handle the campaign link processing.
+    *   `VITE_PHOENIX_API_URL`: Client-side environment variable for the Phoenix API base URL. Stored in `.env` (gitignored).
+    *   **Firebase Function Environment Variables:**
+        *   `app.domain`: Used by Cloud Functions (e.g., `createCampaign`) to construct frontend URLs. Set via `functions:config:set app.domain="YOUR_APP_DOMAIN"` or through `dotenv` for local emulation.
+        *   `PHOENIX_API_URL`: Server-side environment variable for the Phoenix API base URL, accessed in Cloud Functions via `process.env.PHOENIX_API_URL` (typically configured via `dotenv` for local development/emulation and set as runtime environment variables for deployed functions).
 *   **TypeScript Configuration & Best Practices:**
     *   The project utilizes TypeScript to enhance code quality and maintainability.
     *   **Strict Typing:** Adherence to strong typing is a core principle. The use of the `any` type is strongly discouraged and should be avoided unless absolutely necessary and well-justified. Prefer specific types, `unknown` coupled with type guards (as demonstrated in the error handling patterns in `systemPatterns.md`), or generics to ensure type safety.
@@ -66,19 +65,23 @@
     *   `react`, `react-dom`
     *   `@mui/material`, `@emotion/react`, `@emotion/styled` (for MUI)
     *   `@mui/icons-material`
-    *   `@react-google-maps/api` (used for `LoadScript` to load Google Maps API)
+    *   `@react-google-maps/api` (used for `useJsApiLoader` to load Google Maps API)
+    *   `react-select` (for advanced dropdown/select components)
     *   `qrcode.react` (for generating QR codes for public campaign links)
     *   Routing library (e.g., `react-router-dom`) - *Not explicitly mentioned but essential for a multi-page app.*
 *   **Backend (Cloud Functions - Node.js example):**
     *   `firebase-admin` (for server-side Firebase access)
     *   `firebase-functions` (for writing Cloud Functions - v1 and v2)
+    *   `node-fetch` (for making HTTP requests from Cloud Functions)
     *   `csv-parse` (for parsing CSV files in Cloud Functions)
+    *   `dotenv` (for managing environment variables in Cloud Functions development/emulation)
     *   Potentially other NPM packages for specific integrations (e.g., CRM SDK, email libraries like Nodemailer).
 *   **Development:**
     *   `firebase-tools` (Firebase CLI)
     *   `@types/express` (for v1 HTTP Cloud Function request/response types)
     *   `@types/qrcode.react` (type definitions for qrcode.react)
     *   Linters (ESLint), Prettier, TypeScript (optional but recommended for larger projects).
+    *   `@types/react-select` (for `react-select` type definitions).
 
 ## 5. Tool Usage Patterns
 

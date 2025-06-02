@@ -141,6 +141,20 @@ export const createServiceRequest = https.onCall(
     };
     
     // 1. Construct Phoenix API Payload
+    // Prepare resident data for sourceMeta
+    const residentDataForMeta = {
+      uid: residentId, // Already available from context.auth.uid
+      displayName: residentDisplayName, // Fetched or from token
+      email: context.auth.token.email || null,
+    };
+
+    const sourceMeta = {
+      applicationName: "PropertyManagerPro",
+      organizationId: data.organizationId, // from input data
+      propertyId: data.propertyId,       // from input data
+      resident: residentDataForMeta,
+    };
+
     const phoenixPayload = {
       submission: [
         { name: "full_name", value: residentDisplayName },
@@ -169,7 +183,8 @@ export const createServiceRequest = https.onCall(
         },
         { name: "notes", value: data.residentNotes || "" }
       ],
-      source: "phoenix-property-manager-pro.web.app", // As per user's request
+      source: "PropertyManagerPro", // Standardized source name
+      sourceMeta: sourceMeta, // Add the new sourceMeta object
       completed: false,
       submitted: true
     };

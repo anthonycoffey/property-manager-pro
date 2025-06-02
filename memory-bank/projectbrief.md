@@ -21,14 +21,14 @@ To develop a multi-tenant ERP-style web application for property management. The
 *   **Resident Management:**
     *   Property Managers (and Organization Managers) can invite and manage residents for their properties.
     *   Super Admins can manage all residents across all organizations for support purposes.
-*   **Service Request Management:** Residents can request services, and these requests can be tracked and managed.
+*   **Service Request Management:** Residents can request services, and these requests can be tracked and managed within the application and integrated with external systems (e.g., Phoenix API for dispatch and external processing).
 *   **Invitation System:** Enhanced system for inviting residents, including:
     *   Individual email invitations.
     *   "Campaigns" feature allowing bulk resident import via CSV.
     *   "Campaigns" feature for generating shareable public links/QR codes with optional usage limits and expiration dates.
 *   **Data Storage:** Utilize a scalable and secure NoSQL database (Cloud Firestore) for all application data. Firebase Storage for file uploads (e.g., CSVs for bulk import).
-*   **Backend Logic:** Implement server-side logic using cloud functions for tasks like API integrations, email sending, CSV processing (from Firebase Storage), dynamic invitation generation, and business rule enforcement. Includes scheduled functions for data cleanup.
-*   **Frontend Interface:** Develop a responsive and user-friendly interface using React, Material UI, and Material Icons.
+*   **Backend Logic:** Implement server-side logic using cloud functions for tasks like integrations with third-party APIs (e.g., Phoenix API for service requests), email sending, CSV processing (from Firebase Storage), dynamic invitation generation, and business rule enforcement. Includes scheduled functions for data cleanup.
+*   **Frontend Interface:** Develop a responsive and user-friendly interface using React, Material UI, Material Icons, and other libraries like `react-select` for enhanced UI controls.
 
 ## 3. Key Technologies
 
@@ -45,4 +45,4 @@ To develop a multi-tenant ERP-style web application for property management. The
 
 ## 5. Scope
 
-The initial scope focuses on delivering the core functionalities for Super Admins, Organization Managers, Property Managers, and Residents as outlined in the project roadmap. This includes user authentication, property management, resident management, service requests, and the invitation system, CRM integration, and basic analytics.
+The initial scope focuses on delivering the core functionalities for Super Admins, Organization Managers, Property Managers, and Residents as outlined in the project roadmap. This includes user authentication, property management, resident management, service requests (including integration with external systems like the Phoenix API), the invitation system, CRM integration, and basic analytics.

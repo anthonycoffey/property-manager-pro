@@ -2,11 +2,31 @@
 
 ## 1. Current Status: RBAC & Firestore Implementation (As of 2025-05-23)
 
-The project has recently completed the backend and initial frontend (for Property Managers) of the "Resident Invitation Campaigns" feature. This includes CSV bulk import, public link/QR code generation, and associated Cloud Functions and Firestore structures.
+The project has recently completed the initial phase of Phoenix API integration for service request form submissions, alongside significant enhancements to the resident service request form.
 
-- **Date of this update:** 2025-05-31
+- **Date of this update:** 2025-06-02
 
 ## 2. What Works / Completed
+
+- **Phoenix API Integration - Service Request Form Submission (Completed 2025-06-02):**
+    - **Objective:** Integrate the resident service request form with an external Phoenix API to create a form submission record when a new service request is made.
+    - **Client-Side Service (`src/lib/phoenixService.ts`):**
+        - Created `getPhoenixServices()` to fetch available service types from the Phoenix API (`GET /services`) for populating the service request form dropdown.
+    - **Frontend Form (`src/components/Resident/CreateServiceRequestForm.tsx`):**
+        - Replaced MUI Select with `react-select` for service types, enabling multi-select, search, clearable options, and custom styling (including z-index for menu).
+        - Integrated Google Places Autocomplete for service location input.
+        - Added an SMS consent checkbox.
+        - Implemented as-you-type phone number formatting `(xxx) xxx-xxxx`.
+        - Updated data payload to backend to include structured address, SMS consent, and an array of selected service types.
+    - **Backend Cloud Function (`functions/src/callable/createServiceRequest.ts`):**
+        - Modified to accept the new data structure from the frontend.
+        - Implemented a "Phoenix API first" workflow: attempts to `POST` to Phoenix `/form-submission` endpoint.
+        - If Phoenix submission is successful (201 Created), then saves the service request to Firestore, including the `phoenixSubmissionId`. Otherwise, an error is returned, and no Firestore record is created.
+        - Handles an array of service types for both Phoenix payload and Firestore (stores as comma-separated string in `requestType` field for Firestore).
+    - **Type Definitions (`functions/src/types.ts`):**
+        - Updated `ServiceRequest` interface with `serviceLocationData`, `smsConsent`, `phoenixSubmissionId`.
+        - Added `ServiceLocationAddress` interface.
+    - **Dependencies:** Added `react-select` (frontend) and uses `node-fetch` (backend).
 
 - **Resident Invitation Campaigns (Backend & Initial Frontend for PMs) - 2025-05-29:**
   - **Concept:** "Campaigns" system for CSV bulk imports and Public Link/QR code resident invitations, with usage limits and expiry.
@@ -266,21 +286,17 @@ The remaining application functionality, based on the current `projectRoadmap.md
   - (Note: Other items previously listed here like Organization Management, Properties Management, and Residents Management for Admins are now considered complete based on recent verifications).
   - (The old "Invitation System (Phase 3)" is now superseded by the "Resident Invitation Campaigns" feature for resident invites.)
 
-## 3. Immediate Next Steps (Updated from activeContext.md)
+## 3. Immediate Next Steps (Updated from activeContext.md - As of 2025-06-02)
 
-1.  **Phoenix Integration (Ongoing):**
-    - Implement job querying by Resident, Property, and Organization.
-    - Implement service request dispatch to Phoenix.
-    - Implement services querying from Phoenix.
+1.  **Phoenix Integration - Remaining Tasks (Ongoing):**
+    *   Implement job querying by Resident, Property, and Organization.
+    *   Further develop service request dispatch lifecycle beyond initial submission (e.g., updates, status changes to Phoenix API).
+    *   Implement services querying from Phoenix for display or management within the app if needed (beyond the current service type dropdown population).
 2.  **Dashboard Data Visualizations & Statistics (Ongoing):**
-    - Implement metrics for all roles using Highcharts, including campaign performance data.
-3.  **Resident Invitation Campaigns - Testing & Rollout (Completed 2025-05-31):**
-    - The new public campaign link flow (frontend URL -> `PublicCampaignHandlerPage.tsx` -> `processPublicCampaignLink` callable -> `JoinCampaignPage.tsx`) is fully integrated and functional.
-    - Thorough end-to-end testing of all campaign creation (CSV import and public link), public link usage, invitation, sign-up, and tracking flows has been completed and validated.
-    - UI for Organization Managers and Admins is complete.
-4.  **Custom GPTChat Model Integration (Completed 2025-05-31):**
-    - Chatbot (migrated from rescuelink) is integrated into the application for all user roles (Residents, Property Managers, Organization Managers, and Admins).
-5.  **Extend `projectRoadmap.md` (Completed):** Detailed plans for the remaining dashboard features and core systems, including the full scope of Invitation Campaigns, have been documented.
+    *   Implement metrics for all roles using Highcharts, including campaign performance data.
+3.  **Resident Invitation Campaigns - Testing & Rollout (Completed 2025-05-31)**
+4.  **Custom GPTChat Model Integration (Completed 2025-05-31)**
+5.  **Extend `projectRoadmap.md` (Completed)**
 
 ## 4. Known Issues & Blockers
 
@@ -386,3 +402,12 @@ The remaining application functionality, based on the current `projectRoadmap.md
 - **Property Manager Campaign View Fix (2025-05-30):**
   - Updated `src/components/Dashboard/PropertyManagerDashboardPanel.tsx` to conditionally render `PropertySelectorDropdown` in the "Invite Residents" and "Campaigns" tabs only when `organizationId` (derived from props/auth claims) is truthy.
   - This resolves TypeScript errors related to passing `string | null` to a prop expecting `string`, and ensures `PropertySelectorDropdown` always receives a valid `organizationId` when rendered. This is intended to fix the "Organization ID not provided. Cannot load properties." error for Property Managers when accessing campaign features.
+- **Phoenix API Integration Workflow for Service Requests (2025-06-02):**
+  - Decided that for new service requests, the system will first attempt submission to the external Phoenix API. If successful, the request is then saved to the internal Firestore database. This ensures data consistency with the external system for submitted requests.
+- **Client-Side API Service Module (`src/lib/phoenixService.ts`) (2025-06-02):**
+  - Established a pattern of using dedicated service modules for client-side interactions with external APIs, starting with fetching service types from Phoenix.
+- **Enhanced Select Component (`react-select`) for Service Types (2025-06-02):**
+  - Adopted `react-select` for the service type dropdown in the service request form to enable multi-select, search, and clearable features, improving UX.
+  - Implemented custom styling for `react-select` to align with MUI theme and manage z-index.
+- **Phone Number Auto-Formatting (2025-06-02):**
+  - Implemented as-you-type formatting for phone number input in the service request form.

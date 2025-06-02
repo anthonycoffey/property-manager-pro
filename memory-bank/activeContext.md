@@ -2,7 +2,8 @@
 
 ## 1. Current Work Focus
 
-- **Phoenix Integration:** (Ongoing) Job querying, service request dispatch, services querying.
+- **Phoenix Integration - Service Request Form Submission (Completed 2025-06-02):** Initial phase of dispatching service requests from the resident dashboard to the Phoenix API is complete.
+- **Phoenix Integration - Remaining:** (Ongoing) Job querying by various roles, full service request dispatch lifecycle beyond initial submission, services querying for display/management.
 - **Dashboard Data Visualizations & Statistics:** (Ongoing) Initial implementations.
 - **Campaign Reactivation Feature (Completed 2025-05-29):**
     - Added `activateCampaign` Cloud Function to set an inactive campaign's status to 'active'.
@@ -53,6 +54,32 @@
 - **Custom GPTChat Model Integration (Completed 2025-05-31):** The migration of the rescuelink chatbot into this app is complete and integrated for all user roles.
 
 ## 2. Recent Changes & Activities
+
+- **Phoenix API Integration - Service Request Form Submission (Completed 2025-06-02):**
+    - **Objective:** Integrate the resident service request form with an external Phoenix API to create a form submission record when a new service request is made.
+    - **Client-Side Service (`src/lib/phoenixService.ts`):**
+        - Created a new service file to encapsulate client-side calls to the Phoenix API.
+        - Implemented `getPhoenixServices()` to fetch available service types from the Phoenix API (`GET /services`) for populating dropdowns. Includes error handling and filtering for internal services.
+    - **Frontend Form (`src/components/Resident/CreateServiceRequestForm.tsx`):**
+        - **Service Types Dropdown:**
+            - Replaced the static MUI `Select` with `react-select` for dynamic service type selection.
+            - Fetches service types from `phoenixService.ts`.
+            - Configured for multi-select, allowing users to choose multiple services.
+            - Added `isClearable` and `isSearchable` props.
+            - Styled the `react-select` component (including `menu` z-index) for better MUI theme integration and to ensure visibility over other elements.
+        - **Service Location:** Implemented Google Places Autocomplete using `@react-google-maps/api` and `google.maps.places.AutocompleteService` / `Geocoder` (pattern similar to `EditPropertyModal.tsx`). Captures a structured address object.
+        - **SMS Consent:** Added a checkbox for SMS consent.
+        - **Phone Number Formatting:** Implemented as-you-type formatting for the contact phone number to `(xxx) xxx-xxxx`.
+        - **Data Payload:** Updated the data structure sent to the backend to include the structured address, SMS consent, and an array of selected service types (each with `id` and `value`).
+    - **Backend Cloud Function (`functions/src/callable/createServiceRequest.ts`):**
+        - **Interface Update:** Modified `CreateServiceRequestData` to accept the new payload from the frontend (structured address, SMS consent, array of service types).
+        - **Workflow Change:** The function now calls the Phoenix API (`POST /form-submission`) *before* attempting to write to Firestore.
+        - **Phoenix API Call:** Constructs the payload for Phoenix, including mapping the selected service types to the format expected by Phoenix. Uses `process.env.PHOENIX_API_URL` (via `dotenv`) for the API endpoint.
+        - **Conditional Firestore Write:** If the Phoenix API call is successful (201 Created), the service request (including the `phoenixSubmissionId` from the Phoenix API response and a comma-separated string of service names for `requestType`) is saved to Firestore. Otherwise, an error is returned to the client, and no Firestore record is created.
+    - **Type Definitions (`functions/src/types.ts`):**
+        - Updated the `ServiceRequest` interface to include new optional fields: `serviceLocationData` (for the structured address), `smsConsent`, and `phoenixSubmissionId`.
+        - Added `ServiceLocationAddress` interface.
+    - **Dependencies:** Added `react-select` to frontend dependencies. `node-fetch` is used in the Cloud Function.
 
 - **Campaign Management UI for Organization Managers & Admins (Completed 2025-05-30):**
     - Implemented `src/components/OrganizationManager/Campaigns/OrgManagerCampaignsView.tsx` providing Organization Managers with UI to manage resident invitation campaigns for properties within their assigned organizations.
@@ -164,10 +191,12 @@
     *   The new public campaign link flow (frontend URL -> `PublicCampaignHandlerPage.tsx` -> `processPublicCampaignLink` callable -> `JoinCampaignPage.tsx`) is fully integrated and functional.
     *   Thorough end-to-end testing of all campaign creation (CSV import and public link), public link usage, invitation, sign-up, and tracking flows has been completed and validated.
     *   UI for Organization Managers and Admins is complete.
-2.  **Phoenix Integration (Ongoing):**
-    *   Implement job querying by Resident, Property, and Organization.
-    *   Implement service request dispatch to Phoenix.
-    *   Implement services querying from Phoenix.
+2.  **Phoenix Integration (Service Request Form Submission - Completed 2025-06-02):**
+    *   The initial submission of service requests from the resident dashboard to the Phoenix API's `/form-submission` endpoint is complete.
+    *   **Remaining Phoenix Integration Tasks (Ongoing):**
+        *   Implement job querying by Resident, Property, and Organization.
+        *   Further develop service request dispatch lifecycle beyond initial submission (e.g., updates, status changes).
+        *   Implement services querying from Phoenix for display or management within the app if needed beyond the service type dropdown.
 3.  **Custom GPTChat Model Integration (Completed 2025-05-31):**
     *   Chatbot (migrated from rescuelink) is integrated into the application for all user roles (Residents, Property Managers, Organization Managers, and Admins).
 4.  **Dashboard Data Visualizations & Statistics (Ongoing):**
@@ -237,7 +266,10 @@
 - **Error Handling Pattern (New Decision 2025-05-28):**
   - Use `catch (err: unknown)` for error handling.
   - Employ the `isAppError` type guard (from `src/utils/errorUtils.ts`) along with the `AppError` interface (`src/types/index.ts`) to safely access error messages and codes.
-  - This pattern is documented in `memory-bank/systemPatterns.md`.
+    - This pattern is documented in `memory-bank/systemPatterns.md`.
+- **Phoenix API Integration Workflow (New Decision 2025-06-02):** For creating service requests, the system will first attempt to submit the data to the external Phoenix API. Only if this external submission is successful (e.g., 201 Created) will the service request be saved to the internal Firestore database. This ensures that records in our system have a corresponding entry in Phoenix where required.
+- **Client-Side API Service Modules (New Decision 2025-06-02):** For client-side interactions with external APIs (like fetching service types from Phoenix), encapsulate API call logic within dedicated service modules (e.g., `src/lib/phoenixService.ts`).
+- **Enhanced Select Component (New Decision 2025-06-02):** Utilized `react-select` for the service type dropdown in the service request form to provide multi-select, search, and clearable functionalities, enhancing user experience.
 
 ## 5. ImportantPatterns & Preferences
 
@@ -253,6 +285,8 @@
     - Avoid the use of `any` type in TypeScript wherever feasible.
     - Prefer specific types, interfaces, or `unknown` with type guards (as detailed in `systemPatterns.md` for error handling and `techContext.md` for general TypeScript best practices).
     - This aligns with ESLint rules like `@typescript-eslint/no-explicit-any` and promotes better code quality, maintainability, and early error detection.
+- **Client-Side API Service Modules:** Using dedicated modules like `src/lib/phoenixService.ts` for client-side API interactions keeps components cleaner and API logic centralized and reusable.
+- **`react-select` Integration:** `react-select` offers powerful features but requires careful state management for its value (especially for multi-select) and mapping of options. Its `styles` API is flexible for MUI theme alignment.
 
 ## 6. Learnings & Project Insights
 

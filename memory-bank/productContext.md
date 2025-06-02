@@ -44,7 +44,13 @@ The application should provide a seamless and intuitive experience tailored to e
 
 *   **Residents:**
     *   **Convenient Access:** A personal dashboard to view their property details, manage their profile (including vehicle information), and submit/track service requests.
-    *   **Easy Service Requests:** A simple and clear process for requesting services (e.g., tire change, jump start) and tracking their status.
+    *   **Easy Service Requests:** An enhanced, simple, and clear process for requesting services. This includes:
+        *   Dynamic fetching of available service types from external systems (e.g., Phoenix API).
+        *   Ability to select multiple service types if applicable.
+        *   Improved address input for service location using Google Places Autocomplete.
+        *   Clear options for SMS consent regarding their service request.
+        *   User-friendly phone number input formatting.
+        *   Tracking the status of their submitted requests.
     *   **Self-Service:** Ability to update personal information and manage their account.
     *   **Secure and Private:** Confidence that their personal data is secure and access is appropriately restricted.
 

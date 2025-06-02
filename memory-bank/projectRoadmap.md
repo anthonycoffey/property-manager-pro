@@ -12,10 +12,11 @@ This document outlines a strategic plan for developing your multi-tenant ERP-sty
     * **Server Components:** Ideal for fetching data on the server, rendering static or data-heavy parts of the UI, improving initial load performance, and reducing client-side JavaScript bundle size. We'll apply this strategically where data fetching is primary and interactivity is secondary.
 * **Material UI (MUI):** This comprehensive React UI library, implementing Google's Material Design, will provide a robust and aesthetically pleasing set of components.
 * **Material Icons:** We'll use Material Icons for a wide range of vector-based icons that integrate seamlessly with Material UI.
+* **`react-select`:** For advanced select/dropdown components requiring features like multi-select, search, and custom styling.
 * **State Management:**
     * **React Context API:** For global state that needs to be accessed by many components (e.g., current user, authentication status).
 * **Charting/Visualization:** **Highcharts** will be used for creating interactive charts and graphs for analytics and reporting features.
-* **Data Fetching:** We'll primarily use the standard Fetch API for client-side data fetching. The architecture will remain open to integrating a more advanced data fetching and caching library like **React Query** in the future if it proves beneficial.
+* **Data Fetching:** We'll primarily use the standard Fetch API for client-side data fetching (potentially encapsulated in service modules like `src/lib/phoenixService.ts`). The architecture will remain open to integrating a more advanced data fetching and caching library like **React Query** in the future if it proves beneficial.
 
 ### Backend
 * **Firebase:** This comprehensive platform will serve as the backbone:
@@ -299,18 +300,20 @@ This system is dedicated to managing the lifecycle of automobile roadside assist
         *   `residentFeedback?`: An object for resident feedback post-service (e.g., `{ rating: number, comments: string }` - future enhancement).
 
 *   **2. Workflow & Cloud Functions (with Phoenix Integration Points):**
-    *   **a. Resident Submits Request (`createServiceRequest` Callable Function):**
-        *   Triggered from the Resident Dashboard.
-        *   Inputs: `vehicleId` (or full vehicle details if not pre-selected), `serviceType`, `locationData`, `description`.
-        *   Logic:
-            1.  Validates resident's eligibility (e.g., active account, service coverage if applicable - future).
-            2.  Creates a new document in the Firestore `services` collection with an initial status like "submitted_to_app".
-            3.  **Phoenix Integration (Dispatch):** Immediately, or via a subsequent triggered Cloud Function (e.g., Firestore trigger on new service document), the request details are securely transmitted to the Phoenix dispatch system API.
-                *   The Phoenix API is expected to return a `phoenixJobId` upon successful job creation.
-                *   This `phoenixJobId` is then updated onto the Firestore service document, and the status might change to "pending_phoenix_dispatch" or "phoenix_job_created".
-            4.  Returns a confirmation (including the local `serviceId`) to the resident's app.
-    *   **b. Phoenix Updates Status (Webhook or Polling):**
-        *   **Phoenix Integration (Status Sync):** A mechanism is required for the Phoenix system to send real-time (or near real-time) status updates back to this application.
+    *   **a. Resident Submits Request (`createServiceRequest` Callable Function - Implemented Initial Phase):**
+        *   Triggered from the Resident Dashboard (`CreateServiceRequestForm.tsx`).
+        *   **Inputs (Current Implementation):** `organizationId`, `propertyId`, `residentNotes?`, `serviceDateTime` (ISO), `phone?`, `description`, `smsConsent`, `serviceLocationAddress` (structured Google Places object), `serviceTypes` (array of `{id, value}`).
+        *   **Logic (Current Implementation):**
+            1.  Validates resident authentication and input data.
+            2.  Constructs a detailed payload for the Phoenix API's `/form-submission` endpoint.
+            3.  **Phoenix API Call (Primary Step):** Makes a `POST` request to the Phoenix API.
+            4.  **Conditional Firestore Write:** If the Phoenix API call returns a 201 Created status:
+                *   Retrieves the `phoenixJobId` (or equivalent) from the Phoenix response.
+                *   Creates a new document in the Firestore `services` collection, storing all relevant details including `phoenixSubmissionId`, structured `serviceLocationData`, `smsConsent`, and a comma-separated `requestType` (derived from selected service names).
+                *   Returns success and the Firestore `serviceRequestId` to the client.
+            5.  If the Phoenix API call fails, an error is returned to the client, and no Firestore record is created.
+    *   **b. Phoenix Updates Status (Webhook or Polling - Future):**
+        *   **Phoenix Integration (Status Sync):** A mechanism will be required for the Phoenix system to send real-time (or near real-time) status updates back to this application.
             *   **Preferred Method: Webhook.** An HTTP-triggered Cloud Function is exposed, which Phoenix calls whenever a job status changes (e.g., provider assigned, en route, ETA update, completed, cancelled). This function updates the corresponding Firestore `services` document with the new `status`, `assignedProviderInfo`, `ETA`, `completionNotes`, etc.
             *   **Alternative: Polling.** A scheduled Cloud Function could periodically poll a Phoenix API for updates on active jobs (less efficient and real-time).
         *   Firestore updates from these syncs will drive real-time status changes visible on Resident, PM, and OM dashboards.

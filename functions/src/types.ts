@@ -3,6 +3,16 @@
 
 // It's important to keep these types in sync with the main /src/types.ts
 
+// Interface for structured address data, mirrored from createServiceRequest.ts
+export interface ServiceLocationAddress {
+  address_1: string;
+  city: string;
+  state: string;
+  country: string;
+  zipcode: string;
+  fullAddress: string;
+}
+
 // Using google.protobuf.Timestamp for server-side representation if needed,
 // or firebase.firestore.Timestamp. For simplicity, using a generic Timestamp type
 // that aligns with what Firestore expects or returns.
@@ -150,6 +160,9 @@ export interface ServiceRequest {
   phone?: string; // Contact phone for the service
   serviceLocation?: string; // Location where service is needed
   residentNotes?: string; // Initial notes from the resident
+  serviceLocationData?: ServiceLocationAddress; // Optional: store the structured address
+  smsConsent?: boolean; // Store SMS consent
+  phoenixSubmissionId?: string | null; // Store ID from Phoenix API
   assignedTo?: string; 
   assignedToName?: string; 
   completedAt?: Timestamp | Date | FirebaseFirestore.FieldValue; // Allow FieldValue

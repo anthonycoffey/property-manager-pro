@@ -99,20 +99,33 @@ Property Manager Pro is a multi-tenant ERP-style web application designed to str
 
 ### Development Mode
 
-1.  **Start the Firebase Emulators (Recommended for local development):**
-    In a separate terminal, run:
-    ```bash
-    firebase emulators:start --import=./firebase-emulator-data --export-on-exit
-    ```
-    (The `--import` and `--export-on-exit` flags are optional for data persistence. You might need to create an empty `firebase-emulator-data` directory first if you use `--import` without prior export.)
-    *   Ensure your `firebase.json` is configured to use the emulators for Auth, Firestore, and Functions.
-    *   Seed email templates to the emulator using the script: `node scripts/seedTemplates.js --env=emulator`
+To run this application locally for development, you'll need to run the following commands, typically each in a separate terminal window:
 
-2.  **Start the Vite development server:**
+1.  **Start Firebase Emulators:**
+    ```bash
+    firebase emulators:start
+    ```
+    This command starts the local Firebase emulators for services like Authentication, Firestore, and Functions.
+
+2.  **Run the Vite Development Server:**
     ```bash
     npm run dev
     ```
-    The application will be available at `http://localhost:5173` (or another port if 5173 is busy).
+    This starts the frontend application. It will typically be available at `http://localhost:5173`.
+
+3.  **Seed Email Templates (if needed):**
+    ```bash
+    npm run seed:templates:local
+    ```
+    This command seeds necessary email templates into the local Firestore emulator. This might only be needed once or when templates change.
+
+4.  **Build and Watch Cloud Functions:**
+    ```bash
+    cd functions && npm run build:watch
+    ```
+    This command navigates into the `functions` directory, then builds the Cloud Functions and watches for changes, rebuilding them automatically. This is crucial for local development of backend logic.
+
+The application (frontend) will usually be available at `http://localhost:5173` (or another port if 5173 is busy). Ensure your Firebase emulators are running and configured correctly in your `firebase.json` for a smooth local development experience.
 
 ### Building for Production
 

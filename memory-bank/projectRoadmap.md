@@ -17,12 +17,13 @@ This document outlines a strategic plan for developing your multi-tenant ERP-sty
     * **React Context API:** For global state that needs to be accessed by many components (e.g., current user, authentication status).
 * **Charting/Visualization:** **Highcharts** will be used for creating interactive charts and graphs for analytics and reporting features.
 * **Data Fetching:** We'll primarily use the standard Fetch API for client-side data fetching (potentially encapsulated in service modules like `src/lib/phoenixService.ts`). The architecture will remain open to integrating a more advanced data fetching and caching library like **React Query** in the future if it proves beneficial.
+*   **Schema Validation (Frontend):** `zod` for validating form inputs (e.g., phone numbers in the Twilio call request dialog).
 
 ### Backend
 * **Firebase:** This comprehensive platform will serve as the backbone:
     * **Firebase Authentication:** For user registration, login, and robust **role-based access control**.
     * **Cloud Firestore:** A flexible, scalable NoSQL cloud database for storing all application data (users, properties, residents, services, invitations, mail, templates). Its real-time capabilities are excellent for dashboards.
-    * **Firebase Cloud Functions:** For server-side logic, API integrations (CRM), scheduled tasks, and enforcing business rules. This is where the "server-side" aspect of your application will largely reside, handling tasks that cannot or should not be done directly on the client.
+    * **Firebase Cloud Functions:** For server-side logic, API integrations (CRM, Twilio for click-to-call), scheduled tasks, and enforcing business rules. This is where the "server-side" aspect of your application will largely reside, handling tasks that cannot or should not be done directly on the client.
     * **`firestore-send-email` Extension:** Will be used for sending templated emails (e.g., invitations, notifications). This involves a `mail` collection to trigger emails and a `templates` collection to store email content.
     * **Firebase Hosting:** For fast and secure hosting of your React application.
 
@@ -43,6 +44,7 @@ The application will follow a hybrid rendering approach, combining Client-Side R
 * **Firestore Database:** All persistent data will be stored in Firestore, with **security rules** meticulously defined to ensure data integrity and restrict access based on user roles and ownership.
 * **Firebase Cloud Functions:** These will serve as the backend API for:
     * **CRM Integration:** Dispatching service requests, fetching analytics.
+    * **Twilio Integration:** Initiating click-to-call requests from users to live agents via the `requestTwilioCall` function.
     * **Triggering Email Invitations:** Cloud Functions will write to the `mail` collection to trigger emails via the `firestore-send-email` extension.
     * **CSV Processing:** Handling bulk resident imports securely and efficiently.
     * **QR Code Generation:** Generating QR codes on the server for security and consistency.
@@ -272,6 +274,7 @@ The Resident Dashboard provides a personalized portal for residents to manage th
             *   Answering common questions about available roadside services, what's covered, or how to submit a request effectively.
             *   Potentially assisting in initiating a service request through a conversational interface (e.g., "I have a flat tire on my Honda Civic at [location]").
             *   Providing basic troubleshooting tips for minor car issues before a service request is formally logged (e.g., "how to check if your car battery is dead," "what to do if you run out of gas").
+        *   **Live Agent Escalation (Completed 2025-06-03):** Integrated a "Call Agent" button within the ChatView, allowing users to request an immediate callback via Twilio if chatbot assistance is insufficient. This triggers the `requestTwilioCall` Firebase Function.
 
 ---
 ## 5. Core Systems (Beyond Role-Specific Dashboards)
@@ -438,6 +441,7 @@ This system involves integrating a custom-trained or context-aware GPT-based cha
     *   **a. Frontend Chat Interface (React Component):**
         *   A reusable React component will provide the chat UI within the Resident Dashboard.
         *   Standard features: message input field, conversation history display, typing indicators, clear button.
+        *   Includes a "Call Agent" button that opens a dialog (`src/components/Chat/RequestTwilioCallDialog.tsx`) for phone number input and invokes `functions\src\callable\requestTwilioCall.ts` cloud function.
     *   **b. Backend API Layer (Firebase Cloud Function):**
         *   A secure HTTPS callable Cloud Function will serve as the backend for the chat interface.
         *   **Responsibilities:**

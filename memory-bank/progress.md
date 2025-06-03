@@ -1,12 +1,34 @@
 # Progress: Multi-Tenant ERP-Style Web Application
 
-## 1. Current Status: RBAC & Firestore Implementation (As of 2025-05-23)
+## 1. Current Status
 
-The project has recently completed the initial phase of Phoenix API integration for service request form submissions, alongside significant enhancements to the resident service request form.
+The project has recently completed the integration of a Twilio-based "Request Call" feature into the ChatView, allowing users to escalate to a voice call with a live agent.
 
-- **Date of this update:** 2025-06-02
+- **Date of this update:** 2025-06-03
 
 ## 2. What Works / Completed
+
+- **Twilio "Request Call" Integration (Completed 2025-06-03):**
+    - **Objective:** Allow users to request an immediate phone call from a live agent via the chat interface.
+    - **Backend Cloud Function (`functions/src/callable/requestTwilioCall.ts`):**
+        - Created a new v2 HTTPS Callable function.
+        - Authenticates the PMP user.
+        - Accepts an E.164 formatted phone number.
+        - Uses Twilio credentials (Account SID, Auth Token, From Phone Number, Webhook URL) from environment variables (`process.env`) to make an API call to Twilio to initiate an outbound call.
+        - Returns success/failure status and Twilio Call SID.
+        - Exported in `functions/src/index.ts`.
+    - **Frontend Dialog (`src/components/Chat/RequestTwilioCallDialog.tsx`):**
+        - Created a new React component using Material UI Dialog.
+        - Form for user to input a 10-digit US phone number.
+        - Phone number is pre-filled from `useAuth().currentUser.phoneNumber` if available and is a US number; user can edit it.
+        - Input validation using `zod` for 10-digit US format.
+        - On submit, formats number to E.164 and calls the `requestTwilioCall` Firebase function.
+        - Displays success/error notifications using MUI Snackbar.
+    - **Frontend Integration (`src/components/Chat/ChatView.tsx`):**
+        - Added a "Call Agent" button (MUI Button with `PhoneCallbackIcon`) next to the chat input area.
+        - Clicking the button opens the `RequestTwilioCallDialog`.
+    - **Dependencies:** Added `zod` to the root `package.json`.
+    - **Configuration:** Requires Twilio credentials to be set in `functions/.env` for local emulation or as environment variables for deployment.
 
 - **Phoenix API Integration - Service Request Form Submission (Completed 2025-06-02):**
     - **Objective:** Integrate the resident service request form with an external Phoenix API to create a form submission record when a new service request is made.
@@ -279,24 +301,17 @@ The project has recently completed the initial phase of Phoenix API integration 
 
 ## 3. What's Left to Build (High-Level from `projectRoadmap.md`)
 
-The remaining application functionality, based on the current `projectRoadmap.md` (which details up to Admin Dashboard features), includes:
+The remaining application functionality, based on the current `projectRoadmap.md` includes:
 
-- **B. Admin Dashboard (Super Admin View):**
-  - Property Managers Management (CRUD): Further refinement or specific sub-tasks if not fully covered by general management capabilities.
-  - (Note: Other items previously listed here like Organization Management, Properties Management, and Residents Management for Admins are now considered complete based on recent verifications).
-  - (The old "Invitation System (Phase 3)" is now superseded by the "Resident Invitation Campaigns" feature for resident invites.)
-
-## 3. Immediate Next Steps (Updated from activeContext.md - As of 2025-06-02)
-
-1.  **Phoenix Integration - Remaining Tasks (Ongoing):**
-    *   Implement job querying by Resident, Property, and Organization.
-    *   Further develop service request dispatch lifecycle beyond initial submission (e.g., updates, status changes to Phoenix API).
-    *   Implement services querying from Phoenix for display or management within the app if needed (beyond the current service type dropdown population).
-2.  **Dashboard Data Visualizations & Statistics (Ongoing):**
-    *   Implement metrics for all roles using Highcharts, including campaign performance data.
-3.  **Resident Invitation Campaigns - Testing & Rollout (Completed 2025-05-31)**
-4.  **Custom GPTChat Model Integration (Completed 2025-05-31)**
-5.  **Extend `projectRoadmap.md` (Completed)**
+  1.  **Phoenix Integration - Remaining Tasks (Ongoing):**
+      *   Implement job / service request queries by Resident, Property, and Organization, etc. from Property Manager Pro to Phoenix
+      *   Further develop service request dispatch lifecycle beyond initial submission (e.g., updates, status changes to Phoenix API).
+          - for example, webhooks to send / receive service request status data back to property manager app from phoenix.
+  2.  **Dashboard Data Visualizations & Statistics (Ongoing):**
+      *   Implement metrics as needed for all roles using Highcharts, including campaign performance data.
+      *   Manage aggregate style data to manage "statistics" like KPI and other metrics for various user roles
+        - how many invited vs. signed up, how many residents per property and organization(total), how many services scheduled, how many active/closed/cancelled services
+        - some of this data is readily available, and we will need to enhance the app further to support others
 
 ## 4. Known Issues & Blockers
 

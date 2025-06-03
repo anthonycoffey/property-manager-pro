@@ -15,6 +15,7 @@
 *   **Charting/Visualization:** Highcharts for displaying analytics and reports.
 *   **Advanced Select/Dropdowns:** `react-select` for features like multi-select, search, and custom styling.
 *   **Address Autocompletion:** Google Places API. Uses `@react-google-maps/api`'s `useJsApiLoader` for script loading, then directly utilizes `google.maps.places.AutocompleteService` and `google.maps.Geocoder` with MUI `Autocomplete` component for UI.
+*   **Schema Validation (Frontend):** `zod` for validating form inputs (e.g., phone numbers in the Twilio call request dialog).
 *   **Build Tool:** (Implicit) Vite. Standard Node.js/npm ecosystem.
 
 ### Backend
@@ -22,6 +23,7 @@
     *   **Firebase Authentication:** User management, RBAC via custom claims.
     *   **Cloud Firestore:** NoSQL database (data: users, properties, residents, services, invitations, campaigns). Real-time updates. Firestore Security Rules for access control.
     *   **Firebase Cloud Functions:** Server-side logic, API (Node.js runtime for v1 and v2 functions). Includes callable, HTTP-triggered, and scheduled functions.
+        *   **Third-Party Integrations:** Used for connecting to external services like Phoenix API (for service dispatch) and Twilio API (for click-to-call functionality via `requestTwilioCall` function).
     *   **Firebase Storage:** Used for file uploads, such as CSV files for bulk resident imports.
     *   **Firebase Hosting:** Static asset hosting, CDN.
     *   **`firestore-send-email` Extension:** For sending templated emails. This involves:
@@ -39,9 +41,11 @@
 *   **API Keys & Firebase Function Configuration:**
     *   `VITE_GOOGLE_MAPS_API_KEY`: Client-side environment variable for Google Maps API key, used for Places Autocomplete. Stored in `.env` (gitignored).
     *   `VITE_PHOENIX_API_URL`: Client-side environment variable for the Phoenix API base URL. Stored in `.env` (gitignored).
-    *   **Firebase Function Environment Variables:**
-        *   `app.domain`: Used by Cloud Functions (e.g., `createCampaign`) to construct frontend URLs. Set via `functions:config:set app.domain="YOUR_APP_DOMAIN"` or through `dotenv` for local emulation.
-        *   `PHOENIX_API_URL`: Server-side environment variable for the Phoenix API base URL, accessed in Cloud Functions via `process.env.PHOENIX_API_URL` (typically configured via `dotenv` for local development/emulation and set as runtime environment variables for deployed functions).
+    *   **Firebase Function Environment Variables (accessed via `process.env`):**
+        *   `app.domain`: Used by Cloud Functions (e.g., `createCampaign`) to construct frontend URLs.
+        *   `PHOENIX_API_URL`: Server-side environment variable for the Phoenix API base URL.
+        *   `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER`, `TWILIO_WEBHOOK_URL`: For Twilio integration used by `requestTwilioCall` function.
+        *   These are typically configured via `dotenv` (e.g., in `functions/.env`) for local development/emulation and set as runtime environment variables for deployed functions.
 *   **TypeScript Configuration & Best Practices:**
     *   The project utilizes TypeScript to enhance code quality and maintainability.
     *   **Strict Typing:** Adherence to strong typing is a core principle. The use of the `any` type is strongly discouraged and should be avoided unless absolutely necessary and well-justified. Prefer specific types, `unknown` coupled with type guards (as demonstrated in the error handling patterns in `systemPatterns.md`), or generics to ensure type safety.
@@ -49,7 +53,7 @@
 
 ## 3. Technical Constraints & Considerations
 
-*   **Firebase Quotas and Limits:** Development must be mindful of Firebase usage quotas (e.g., Firestore reads/writes, Cloud Function invocations, storage).
+*   **Firebase Quotas and Limits:** Development must be mindful of Firebase usage quotas (e.g., Firestore reads/writes, Cloud Function invocations, storage, third-party API call limits via functions).
 *   **Firestore Security Rules Complexity:** Writing and maintaining comprehensive and secure Firestore rules can be complex and requires careful planning and testing.
 *   **Cold Starts (Cloud Functions):** Be aware of potential cold start latencies for infrequently used Cloud Functions and optimize where necessary.
 *   **Data Modeling for NoSQL:** Careful consideration of data duplication vs. complex queries is needed for Firestore to ensure performance and scalability. Denormalization might be used strategically.
@@ -68,11 +72,12 @@
     *   `@react-google-maps/api` (used for `useJsApiLoader` to load Google Maps API)
     *   `react-select` (for advanced dropdown/select components)
     *   `qrcode.react` (for generating QR codes for public campaign links)
+    *   `zod` (for schema validation, e.g., phone numbers)
     *   Routing library (e.g., `react-router-dom`) - *Not explicitly mentioned but essential for a multi-page app.*
 *   **Backend (Cloud Functions - Node.js example):**
     *   `firebase-admin` (for server-side Firebase access)
     *   `firebase-functions` (for writing Cloud Functions - v1 and v2)
-    *   `node-fetch` (for making HTTP requests from Cloud Functions)
+    *   `node-fetch` (for making HTTP requests from Cloud Functions, e.g., to Phoenix API, Twilio API)
     *   `csv-parse` (for parsing CSV files in Cloud Functions)
     *   `dotenv` (for managing environment variables in Cloud Functions development/emulation)
     *   Potentially other NPM packages for specific integrations (e.g., CRM SDK, email libraries like Nodemailer).
@@ -86,7 +91,7 @@
 ## 5. Tool Usage Patterns
 
 *   **Firebase Console:** For managing Firebase services, viewing analytics, configuring authentication, and managing Firestore data manually if needed.
-*   **Firebase CLI:** For deployment, local emulation, and managing Firebase project settings programmatically.
+*   **Firebase CLI:** For deployment, local emulation, and managing Firebase project settings programmatically (including environment configuration for functions).
 *   **React DevTools:** Browser extension for debugging React components and state.
 *   **IDE Debugger:** For stepping through both frontend and backend (Cloud Functions, if using Node.js and configured for local debugging) code.
 *   **Postman / Insomnia (or similar):** For testing Cloud Function HTTP endpoints directly.

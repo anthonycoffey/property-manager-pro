@@ -9,22 +9,29 @@ The application employs a modern web architecture with a React-based frontend an
     - **Client Components:** Used for interactive elements, forms, and real-time UI updates.
     - **Server Components:** Strategically used for initial data fetching, rendering static or data-heavy sections to improve load times and reduce client-side bundle size.
   - **Material UI (MUI):** Provides a comprehensive suite of pre-built UI components, ensuring a consistent and professional look and feel.
+  - **Material Icons:** Used for a wide range of vector-based icons that integrate seamlessly with Material UI.
   - **`react-select`:** Used for advanced select/dropdown functionality, such as multi-select and enhanced searchability.
   - **State Management:**
     - **React Context API:** For global state accessible by many components (e.g., user authentication status, current theme).
+  - **Charting/Visualization:** **Highcharts** is used for analytics and reporting features.
+  - **Data Fetching:** Primarily uses the standard Fetch API for client-side data fetching, encapsulated in service modules (e.g., `src/lib/phoenixService.ts`). The architecture is open to integrating React Query in the future.
+  - **Schema Validation:** Uses `zod` for validating form inputs.
+
 - **Backend (Firebase):**
   - **Firebase Authentication:** Manages user sign-up, login, and session management. Custom claims are used to implement Role-Based Access Control (RBAC).
   - **Cloud Firestore:** NoSQL database for storing all application data. Real-time capabilities are leveraged for dynamic dashboards. Firestore Security Rules are critical for data integrity and access control.
   - **Firebase Cloud Functions:** Provide server-side logic for:
     - Backend API endpoints.
     - Business rule enforcement.
-    - Integrations with third-party services (e.g., Phoenix API, CRM).
+    - Integrations with third-party services (e.g., Phoenix API, Twilio API, CRM).
     - Scheduled tasks and background processing (e.g., CSV imports, monthly service count resets).
   - **`firestore-send-email` Extension:** Leveraged for sending templated emails.
     - Emails are triggered by writing documents to a specific Firestore collection (`mail`).
     - Templates are stored in another Firestore collection (`templates`).
     - This can be initiated by Cloud Functions or directly by client-side operations (with appropriate security rules) that need to send an email.
   - **Firebase Hosting:** Hosts the static assets of the React application and provides CDN capabilities.
+
+---
 
 ## 2. Key Technical Decisions & Design Patterns
 
@@ -67,18 +74,17 @@ The application employs a modern web architecture with a React-based frontend an
             - `description: string` (General description, potentially merged with residentNotes)
             - `residentNotes?: string` (Specific notes from the resident)
             - `status: "submitted" | "in_progress" | "completed" | "cancelled" | "on_hold"`
-            - `submittedAt: timestamp` (Firestore server timestamp)
-            - `serviceDateTime?: timestamp` (Desired date/time for service, from client, stored as Firestore Timestamp)
-            - `phone?: string` (Contact phone for this request)
-            - `serviceLocation?: string` (Full formatted address string from Google Places)
-            - `serviceLocationData?: object` // Optional: structured address object { address_1, city, state, country, zipcode, fullAddress }
-            - `smsConsent?: boolean` // Resident's consent for SMS updates for this request
-            - `phoenixSubmissionId?: string | null` // ID of the submission in the Phoenix API
-            - `assignedTo?: string` (Auth UID of an org user)
+            - `submittedAt: timestamp`
+            - `serviceDateTime?: timestamp`
+            - `phone?: string`
+            - `serviceLocation?: string`
+            - `serviceLocationData?: object`
+            - `smsConsent?: boolean`
+            - `phoenixSubmissionId?: string | null`
+            - `assignedTo?: string`
             - `assignedToName?: string`
             - `completedAt?: timestamp`
-            - `notes?: Array<{ userId: string; userName: string; note: string; timestamp: timestamp }>` // Log of updates
-
+            - `notes?: Array<{ userId: string; userName: string; note: string; timestamp: timestamp }>`
   - **3. `globalInvitations` (Root Collection - New/Updated)**
     - Fields: `email`, `name`, `rolesToAssign: ["organization_manager"]`, `organizationIds?`, `status`, `createdBy`, `invitedByRole`, `createdAt`, `expiresAt`, `invitationType`.
 
@@ -116,7 +122,7 @@ The application employs a modern web architecture with a React-based frontend an
     - **Example:** `src/lib/phoenixService.ts` contains `getPhoenixServices()` to fetch service types from the Phoenix API (`GET /services`) for use in forms.
 
 - **Address Autocompletion (Google Places API):**
-    - Implemented in forms like `CreateServiceRequestForm.tsx` and `EditPropertyModal.tsx`.
+  - Implemented in forms like `CreateServiceRequestForm.tsx` and `EditPropertyModal.tsx`.
     - Uses `@react-google-maps/api`'s `useJsApiLoader` to load the Google Maps API with the `places` library.
     - Instantiates `google.maps.places.AutocompleteService` (for fetching predictions) and `google.maps.Geocoder` (for getting detailed place information from a `place_id`).
     - An MUI `Autocomplete` component is used for the UI to display predictions.
@@ -153,11 +159,53 @@ The application employs a modern web architecture with a React-based frontend an
         e.  If Phoenix API call fails: Returns error to the client; no Firestore document is created.
     3.  **Frontend:**
         a.  Displays success or error message.
-        b.  If successful, clears the form and triggers `onServiceRequestSubmitted` callback (which might refresh a list of service requests).
-    4.  The Resident's dashboard can listen to Firestore for real-time updates to their service request list.
+        b.  If successful, clears the form and triggers a callback.
+    4.  The Resident's dashboard can listen to Firestore for real-time updates.
+
+- **Request Twilio Call Flow (New):**
+    1.  **Frontend (`ChatView.tsx` & `RequestTwilioCallDialog.tsx`):**
+        a.  User clicks "Call Agent".
+        b.  Dialog opens, user enters phone number (validated with `zod`).
+        c.  Phone number is formatted to E.164.
+        d.  Calls the `requestTwilioCall` Cloud Function.
+    2.  **Backend:** Validates, retrieves Twilio credentials, makes API call, returns result.
+    3.  **Frontend:** Displays result via Snackbar, closes dialog on success.
+    4.  **Twilio & Webhook:** Twilio places the call and requests TwiML instructions from the webhook.
+
+---
 
 ## 4. Scalability and Maintainability
-(As previously documented)
+
+- **Firebase Services:** Chosen for scalability.
+- **Modular Design:** Separation of frontend, backend, and database rules.
+- **Server Components:** Co-locate data fetching with rendering logic.
+- **Clear Data Models:** Well-defined Firestore schema.
+
+---
 
 ## 5. Error Handling Patterns
-(As previously documented)
+
+- **Standardized Error Object:**
+    ```typescript
+    export interface AppError {
+      message: string;
+      code?: string;
+    }
+    ```
+- **Type-Safe Error Catching:**
+    ```typescript
+    import { isAppError } from '../../utils/errorUtils';
+
+    try {
+      // ...
+    } catch (err: unknown) {
+      let errorMessage = "An unexpected error occurred.";
+      if (isAppError(err)) {
+        errorMessage = err.message;
+      }
+      // Display errorMessage to the user
+    }
+    ```
+    The `isAppError` type guard ensures safe access to error properties.
+
+---

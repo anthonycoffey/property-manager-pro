@@ -1,6 +1,6 @@
-import React, { useEffect, useState, type ReactNode } from 'react';
+import React, { useEffect, useState, type ReactNode, useCallback } from 'react'; // Added useCallback
 import { auth } from '../firebaseConfig';
-import type { User as FirebaseUser, IdTokenResult } from 'firebase/auth';
+import { signOut, type User as FirebaseUser, type IdTokenResult } from 'firebase/auth'; // Added signOut
 import { AuthContext, type CustomUser } from '../hooks/useAuth';
 
 interface AuthProviderProps {
@@ -19,6 +19,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [propertyId, setPropertyId] = useState<string | null>(null);
 
   const [loading, setLoading] = useState(true);
+
+  const signOutUser = useCallback(async () => {
+    try {
+      await signOut(auth);
+      // State updates (currentUser to null, etc.) will be handled by onAuthStateChanged
+    } catch (error) {
+      console.error("Error signing out: ", error);
+      // Optionally re-throw or handle more gracefully
+      throw error;
+    }
+  }, []);
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((user) => {
@@ -91,6 +102,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     organizationId,
     organizationIds,
     propertyId,
+    signOutUser, // Added signOutUser to context
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

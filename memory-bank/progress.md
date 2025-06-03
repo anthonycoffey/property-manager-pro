@@ -313,8 +313,6 @@ The remaining application functionality, based on the current `projectRoadmap.md
         - how many invited vs. signed up, how many residents per property and organization(total), how many services scheduled, how many active/closed/cancelled services
         - some of this data is readily available, and we will need to enhance the app further to support others
 
-  5.  **Extend `projectRoadmap.md` (Completed)**
-
 ## 4. Known Issues & Blockers
 
 ## 5. Evolution of Project Decisions

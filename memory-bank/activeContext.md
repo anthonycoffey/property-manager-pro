@@ -2,6 +2,10 @@
 
 ## 1. Current Work Focus
 
+- **Twilio "Request Call" Integration (Completed 2025-06-03):** Migrated "Live Agent" call request functionality from `rescuelink` project. Allows users in ChatView to request an immediate callback via Twilio.
+    - Created `functions/src/callable/requestTwilioCall.ts` Firebase Cloud Function to initiate Twilio call.
+    - Created `src/components/Chat/RequestTwilioCallDialog.tsx` for user phone input.
+    - Integrated a "Call Agent" button into `src/components/Chat/ChatView.tsx`.
 - **Phoenix Integration - Service Request Form Submission (Completed 2025-06-02):** Initial phase of dispatching service requests from the resident dashboard to the Phoenix API is complete.
 - **Phoenix Integration - Remaining:** (Ongoing) Job querying by various roles, full service request dispatch lifecycle beyond initial submission, services querying for display/management.
 - **Dashboard Data Visualizations & Statistics:** (Ongoing) Initial implementations.
@@ -54,6 +58,28 @@
 - **Custom GPTChat Model Integration (Completed 2025-05-31):** The migration of the rescuelink chatbot into this app is complete and integrated for all user roles.
 
 ## 2. Recent Changes & Activities
+
+- **Twilio "Request Call" Integration (Completed 2025-06-03):**
+    - **Objective:** Allow users to request an immediate phone call from a live agent via the chat interface.
+    - **Backend Cloud Function (`functions/src/callable/requestTwilioCall.ts`):**
+        - Created a new v2 HTTPS Callable function.
+        - Authenticates the PMP user.
+        - Accepts an E.164 formatted phone number.
+        - Uses Twilio credentials (Account SID, Auth Token, From Phone Number, Webhook URL) from environment variables (`process.env`) to make an API call to Twilio to initiate an outbound call.
+        - Returns success/failure status and Twilio Call SID.
+        - Exported in `functions/src/index.ts`.
+    - **Frontend Dialog (`src/components/Chat/RequestTwilioCallDialog.tsx`):**
+        - Created a new React component using Material UI Dialog.
+        - Form for user to input a 10-digit US phone number.
+        - Phone number is pre-filled from `useAuth().currentUser.phoneNumber` if available and is a US number; user can edit it.
+        - Input validation using `zod` for 10-digit US format.
+        - On submit, formats number to E.164 and calls the `requestTwilioCall` Firebase function.
+        - Displays success/error notifications using MUI Snackbar.
+    - **Frontend Integration (`src/components/Chat/ChatView.tsx`):**
+        - Added a "Call Agent" button (MUI Button with `PhoneCallbackIcon`) next to the chat input area.
+        - Clicking the button opens the `RequestTwilioCallDialog`.
+    - **Dependencies:** Added `zod` to the root `package.json`.
+    - **Configuration:** Requires Twilio credentials to be set in `functions/.env` for local emulation or as environment variables for deployment.
 
 - **Phoenix API Integration - Service Request Form Submission (Completed 2025-06-02):**
     - **Objective:** Integrate the resident service request form with an external Phoenix API to create a form submission record when a new service request is made.

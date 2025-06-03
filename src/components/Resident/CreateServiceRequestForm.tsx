@@ -396,15 +396,10 @@ const CreateServiceRequestForm: React.FC<CreateServiceRequestFormProps> = ({
         component='form'
         onSubmit={handleSubmit}
         noValidate
-        sx={{
-          width: '100%',
-          mx: 'auto',
-          p: { xs: 1, sm: 2 },
-        }}
       >
-        <Typography variant='h5' gutterBottom sx={{ mb: 2 }}>
+        {/* <Typography variant='h5' gutterBottom sx={{ mb: 2 }}>
           Service Request Form
-        </Typography>
+        </Typography> */}
 
         {error && (
           <Alert severity='error' sx={{ mb: 2 }}>

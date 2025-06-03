@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react'; // Added useMemo
 import {
   Box,
   Typography,
@@ -12,28 +12,58 @@ import {
   DialogContent,
   IconButton,
   Container,
-  Stack, // Added Stack
+  Stack,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import CloseIcon from '@mui/icons-material/Close';
-import DomainAddIcon from '@mui/icons-material/DomainAdd';
-import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline'; // Icon for Chat
+import DomainAddIcon from '@mui/icons-material/DomainAdd'; // Property Manager Dashboard Icon
+import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import HomeWork from '@mui/icons-material/HomeWork';
 import Group from '@mui/icons-material/Group';
 import Campaign from '@mui/icons-material/Campaign';
+import DashboardIcon from '@mui/icons-material/Dashboard'; // For new Dashboard tab
+import PeopleIcon from '@mui/icons-material/People'; // For KPIs
+
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../../firebaseConfig';
-import type { Property as PropertyType, Resident } from '../../types'; // Added Resident
+import type {
+  Property as PropertyType,
+  Resident as ResidentType,
+} from '../../types';
 
 import PropertyManagerPropertiesList from '../PropertyManager/PropertyManagerPropertiesList';
 import InviteResidentForm from '../PropertyManager/InviteResidentForm';
 import CreatePropertyForm from '../PropertyManager/CreatePropertyForm';
 import PropertySelectorDropdown from '../PropertyManager/PropertySelectorDropdown';
 import EditPropertyModal from '../PropertyManager/EditPropertyModal';
-import EditResidentModal from '../PropertyManager/EditResidentModal'; // Import EditResidentModal
+import EditResidentModal from '../PropertyManager/EditResidentModal';
 import PropertyResidentsTable from '../PropertyManager/PropertyResidentsTable';
-import PropertyCampaignsView from '../PropertyManager/Campaigns/PropertyCampaignsView'; // Import Campaigns View
-import ChatView from '../Chat/ChatView'; // Import ChatView
+import PropertyCampaignsView from '../PropertyManager/Campaigns/PropertyCampaignsView';
+import ChatView from '../Chat/ChatView';
+
+// Chart Components
+import KpiCard from './Charts/KpiCard';
+import BarChart from './Charts/BarChart';
+
+// Firebase functions
+import { getFunctions, httpsCallable } from 'firebase/functions';
+import { isAppError } from '../../utils/errorUtils'; // Added for type-safe error handling
+
+// Define PropertyManagerDashboardStatsData type locally
+interface PropertyCampaignPerformanceData {
+  campaignName: string;
+  accepted: number;
+  status: string;
+  type: string;
+}
+interface PropertyManagerDashboardStatsData {
+  propertyCounts: {
+    totalResidents: number;
+    totalUnits: number;
+    occupancyRate: number;
+  };
+  campaignPerformance?: PropertyCampaignPerformanceData[];
+}
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -43,24 +73,25 @@ interface TabPanelProps {
 
 function TabPanel(props: TabPanelProps) {
   const { children, value, index, ...other } = props;
-
   return (
     <div
       role='tabpanel'
       hidden={value !== index}
-      id={`simple-tabpanel-${index}`}
-      aria-labelledby={`simple-tab-${index}`}
+      id={`pm-tabpanel-${index}`}
+      aria-labelledby={`pm-tab-${index}`}
       {...other}
     >
-      {value === index && <Box sx={{ p: 3 }}>{children}</Box>}
+      {value === index && (
+        <Box sx={{ p: { xs: 1, sm: 2, md: 3 } }}>{children}</Box>
+      )}
     </div>
   );
 }
 
 function a11yProps(index: number) {
   return {
-    id: `simple-tab-${index}`,
-    'aria-controls': `simple-tabpanel-${index}`,
+    id: `pm-tab-${index}`,
+    'aria-controls': `pm-tabpanel-${index}`,
   };
 }
 
@@ -71,7 +102,7 @@ interface PropertyManagerDashboardPanelProps {
 const PropertyManagerDashboardPanel: React.FC<
   PropertyManagerDashboardPanelProps
 > = ({ organizationId }) => {
-  const [pmTabValue, setPmTabValue] = useState(0);
+  const [pmTabValue, setPmTabValue] = useState(0); // Default to new Dashboard tab
   const [selectedPropertyId, setSelectedPropertyId] = useState<string | null>(
     null
   );
@@ -87,8 +118,17 @@ const PropertyManagerDashboardPanel: React.FC<
   );
   const [refreshPropertiesKey, setRefreshPropertiesKey] = useState(0);
   const [isEditResidentModalOpen, setIsEditResidentModalOpen] = useState(false);
-  const [residentToEdit, setResidentToEdit] = useState<Resident | null>(null);
+  const [residentToEdit, setResidentToEdit] = useState<ResidentType | null>(
+    null
+  );
   const [refreshResidentsKey, setRefreshResidentsKey] = useState(0);
+
+  // State for dashboard data
+  const [dashboardStats, setDashboardStats] =
+    useState<PropertyManagerDashboardStatsData | null>(null);
+  const [dashboardLoading, setDashboardLoading] = useState<boolean>(false);
+  const [dashboardError, setDashboardError] = useState<string | null>(null);
+  const functionsInstance = getFunctions();
 
   useEffect(() => {
     const fetchOrgName = async () => {
@@ -96,11 +136,9 @@ const PropertyManagerDashboardPanel: React.FC<
         try {
           const orgDocRef = doc(db, 'organizations', organizationId);
           const orgDocSnap = await getDoc(orgDocRef);
-          if (orgDocSnap.exists()) {
-            setOrganizationName(orgDocSnap.data()?.name || 'N/A');
-          } else {
-            setOrganizationName('N/A');
-          }
+          setOrganizationName(
+            orgDocSnap.exists() ? orgDocSnap.data()?.name || 'N/A' : 'N/A'
+          );
         } catch (error) {
           console.error('Error fetching organization name:', error);
           setOrganizationName('Error');
@@ -111,6 +149,45 @@ const PropertyManagerDashboardPanel: React.FC<
     };
     fetchOrgName();
   }, [organizationId]);
+
+  // Fetch dashboard stats for selected property
+  useEffect(() => {
+    const fetchPropertyManagerStats = async () => {
+      if (!organizationId || !selectedPropertyId || pmTabValue !== 0) {
+        setDashboardStats(null);
+        return;
+      }
+      setDashboardLoading(true);
+      setDashboardError(null);
+      try {
+        const getStatsFunction = httpsCallable(
+          functionsInstance,
+          'getPropertyManagerDashboardStats'
+        );
+        // Ensure organizationId and selectedPropertyId are passed in a data object
+        const result = await getStatsFunction({
+          organizationId,
+          propertyId: selectedPropertyId,
+        });
+        setDashboardStats(result.data as PropertyManagerDashboardStatsData);
+      } catch (err: unknown) {
+        console.error(
+          `Error fetching dashboard stats for property ${selectedPropertyId}:`,
+          err
+        );
+        let errorMessage = 'Failed to load dashboard statistics.';
+        if (isAppError(err)) {
+          errorMessage = err.message;
+        } else if (err instanceof Error) {
+          errorMessage = err.message;
+        }
+        setDashboardError(errorMessage);
+      } finally {
+        setDashboardLoading(false);
+      }
+    };
+    fetchPropertyManagerStats();
+  }, [organizationId, selectedPropertyId, pmTabValue, functionsInstance]);
 
   const handlePmTabChange = useCallback(
     (_event: React.SyntheticEvent, newValue: number) => {
@@ -123,56 +200,77 @@ const PropertyManagerDashboardPanel: React.FC<
     (propertyId: string | null, propertyName?: string | null) => {
       setSelectedPropertyId(propertyId);
       setSelectedPropertyName(propertyName ?? null);
+      if (pmTabValue !== 0) {
+        // If not on dashboard, switch to a relevant tab or clear selection for other tabs
+        // setPmTabValue(1); // Or a more relevant default for property actions
+      }
     },
-    []
+    [pmTabValue]
   );
 
-  const handleOpenCreatePropertyModal = () => {
+  const handleOpenCreatePropertyModal = () =>
     setIsCreatePropertyModalOpen(true);
-  };
-
-  const handleCloseCreatePropertyModal = () => {
+  const handleCloseCreatePropertyModal = () =>
     setIsCreatePropertyModalOpen(false);
-  };
-
   const handlePropertyCreated = () => {
     handleCloseCreatePropertyModal();
     setRefreshPropertiesKey((prev) => prev + 1);
   };
-
   const handleOpenEditPropertyModal = (property: PropertyType) => {
     setPropertyToEdit(property);
     setIsEditPropertyModalOpen(true);
   };
-
   const handleCloseEditPropertyModal = () => {
     setPropertyToEdit(null);
     setIsEditPropertyModalOpen(false);
   };
-
   const handlePropertyUpdated = () => {
     handleCloseEditPropertyModal();
     setRefreshPropertiesKey((prev) => prev + 1);
   };
-
-  const handleOpenEditResidentModal = (resident: Resident) => {
+  const handleOpenEditResidentModal = (resident: ResidentType) => {
     setResidentToEdit(resident);
     setIsEditResidentModalOpen(true);
   };
-
   const handleCloseEditResidentModal = () => {
     setResidentToEdit(null);
     setIsEditResidentModalOpen(false);
   };
-
   const handleResidentUpdated = () => {
     handleCloseEditResidentModal();
     setRefreshResidentsKey((prev) => prev + 1);
   };
 
+  // Chart options
+  const campaignPerformanceOptions: Highcharts.Options | null = useMemo(() => {
+    if (!dashboardStats?.campaignPerformance) return null;
+    const categories = dashboardStats.campaignPerformance.map(
+      (c) => c.campaignName
+    );
+    const acceptedData = dashboardStats.campaignPerformance.map(
+      (c) => c.accepted
+    );
+    return {
+      chart: { type: 'bar' },
+      title: {
+        text: `Campaign Acceptance for ${
+          selectedPropertyName || 'Selected Property'
+        }`,
+      },
+      xAxis: { categories, title: { text: 'Campaign Name' } },
+      yAxis: {
+        min: 0,
+        title: { text: 'Number Accepted' },
+        allowDecimals: false,
+      },
+      series: [{ name: 'Accepted', data: acceptedData, type: 'bar' }],
+      accessibility: { enabled: true },
+    };
+  }, [dashboardStats?.campaignPerformance, selectedPropertyName]);
+
   return (
     <Container component='main' maxWidth='lg'>
-      <Paper elevation={6} sx={{ mb: 4, p: 2 }}>
+      <Paper elevation={3} sx={{ mb: 4, p: { xs: 1, sm: 2 } }}>
         <Box
           sx={{
             display: 'flex',
@@ -182,8 +280,8 @@ const PropertyManagerDashboardPanel: React.FC<
             mb: 2,
           }}
         >
-          <Stack direction='row' alignItems='center'>
-            <DomainAddIcon fontSize='large' color='primary' sx={{ mr: 1 }} />
+          <Stack direction='row' alignItems='center' spacing={1}>
+            <DomainAddIcon fontSize='large' color='primary' />
             <Typography variant='h4' color='primary'>
               {organizationName} Dashboard
             </Typography>
@@ -192,10 +290,7 @@ const PropertyManagerDashboardPanel: React.FC<
             variant='contained'
             startIcon={<AddIcon />}
             onClick={handleOpenCreatePropertyModal}
-            sx={{
-              width: { xs: '100%', sm: 'auto' },
-              mt: { xs: 2, sm: 0 },
-            }}
+            sx={{ width: { xs: '100%', sm: 'auto' }, mt: { xs: 2, sm: 0 } }}
           >
             Add Property
           </Button>
@@ -209,33 +304,21 @@ const PropertyManagerDashboardPanel: React.FC<
             scrollButtons='auto'
             allowScrollButtonsMobile
           >
-            <Tab label='Properties' icon={<HomeWork />} {...a11yProps(0)} />
-            <Tab label='Residents' icon={<Group />} {...a11yProps(1)} />
-            <Tab label='Campaigns' icon={<Campaign />} {...a11yProps(2)} />
+            <Tab label='Dashboard' icon={<DashboardIcon />} {...a11yProps(0)} />
+            <Tab label='My Properties' icon={<HomeWork />} {...a11yProps(1)} />
+            <Tab label='Residents' icon={<Group />} {...a11yProps(2)} />
+            <Tab label='Campaigns' icon={<Campaign />} {...a11yProps(3)} />
             <Tab
               label='AI Assistant'
               icon={<ChatBubbleOutlineIcon />}
-              {...a11yProps(3)}
+              {...a11yProps(4)}
             />
           </Tabs>
         </Box>
+
         <TabPanel value={pmTabValue} index={0}>
           <Typography variant='h6' gutterBottom sx={{ mb: 2 }}>
-            Your Managed Properties
-          </Typography>
-          <PropertyManagerPropertiesList
-            key={refreshPropertiesKey}
-            selectedPropertyId={selectedPropertyId}
-            onPropertySelect={(id: string) => handlePropertySelect(id)}
-            onEditProperty={handleOpenEditPropertyModal}
-            onPropertiesUpdate={() =>
-              setRefreshPropertiesKey((prev) => prev + 1)
-            }
-          />
-        </TabPanel>
-        <TabPanel value={pmTabValue} index={1}>
-          <Typography variant='h6' gutterBottom sx={{ mb: 2 }}>
-            Invite New Resident
+            Property Dashboard Overview
           </Typography>
           {organizationId ? (
             <PropertySelectorDropdown
@@ -247,6 +330,134 @@ const PropertyManagerDashboardPanel: React.FC<
             <Alert severity='warning'>
               Organization not identified. Cannot select property.
             </Alert>
+          )}
+
+          {selectedPropertyId && organizationId ? (
+            <Box sx={{ mt: 2 }}>
+              {dashboardError && (
+                <Alert severity='error' sx={{ mb: 2 }}>
+                  {dashboardError}
+                </Alert>
+              )}
+              <Typography variant='h5' gutterBottom sx={{ mb: 2 }}>
+                Stats for: {selectedPropertyName || 'Selected Property'}
+              </Typography>
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 3 }}>
+                <Box
+                  sx={{
+                    flexGrow: 1,
+                    flexBasis: { xs: '100%', sm: 'calc(50% - 8px)' },
+                  }}
+                >
+                  <KpiCard
+                    title='Total Residents'
+                    value={
+                      dashboardLoading
+                        ? '...'
+                        : dashboardStats?.propertyCounts?.totalResidents ??
+                          'N/A'
+                    }
+                    isLoading={dashboardLoading}
+                    icon={<PeopleIcon />}
+                  />
+                </Box>
+                <Box
+                  sx={{
+                    flexGrow: 1,
+                    flexBasis: { xs: '100%', sm: 'calc(50% - 8px)' },
+                  }}
+                >
+                  <KpiCard
+                    title='Occupancy Rate'
+                    value={
+                      dashboardLoading
+                        ? '...'
+                        : `${
+                            (dashboardStats?.propertyCounts?.occupancyRate ??
+                              0) * 100
+                          }%`
+                    }
+                    unit=''
+                    isLoading={dashboardLoading}
+                    icon={<HomeWork />}
+                  />
+                </Box>
+                <Box
+                  sx={{
+                    flexGrow: 1,
+                    flexBasis: { xs: '100%', sm: 'calc(50% - 8px)' },
+                  }}
+                >
+                  <KpiCard
+                    title='Total Units'
+                    value={
+                      dashboardLoading
+                        ? '...'
+                        : dashboardStats?.propertyCounts?.totalUnits ?? 'N/A'
+                    }
+                    isLoading={dashboardLoading}
+                    icon={<HomeWork />}
+                  />
+                </Box>
+              </Box>
+              {(dashboardStats?.campaignPerformance &&
+                dashboardStats.campaignPerformance.length > 0) ||
+              dashboardLoading ? (
+                <Paper elevation={2} sx={{ p: 2, borderRadius: 2, mt: 2 }}>
+                  {campaignPerformanceOptions && (
+                    <BarChart
+                      options={campaignPerformanceOptions}
+                      isLoading={dashboardLoading}
+                      height='350px'
+                    />
+                  )}
+                </Paper>
+              ) : (
+                !dashboardLoading && (
+                  <Typography sx={{ mt: 2 }}>
+                    No campaign data to display for this property.
+                  </Typography>
+                )
+              )}
+              {!(dashboardStats || dashboardLoading) && !dashboardError && (
+                <Typography sx={{ mt: 2 }}>
+                  No dashboard data to display for this property.
+                </Typography>
+              )}
+            </Box>
+          ) : (
+            <Alert severity='info' sx={{ mt: 2 }}>
+              Please select a property to view its dashboard.
+            </Alert>
+          )}
+        </TabPanel>
+
+        <TabPanel value={pmTabValue} index={1}>
+          <Typography variant='h6' gutterBottom sx={{ mb: 2 }}>
+            Your Managed Properties
+          </Typography>
+          <PropertyManagerPropertiesList
+            key={refreshPropertiesKey}
+            selectedPropertyId={selectedPropertyId}
+            onPropertySelect={handlePropertySelect}
+            onEditProperty={handleOpenEditPropertyModal}
+            onPropertiesUpdate={() =>
+              setRefreshPropertiesKey((prev) => prev + 1)
+            }
+          />
+        </TabPanel>
+        <TabPanel value={pmTabValue} index={2}>
+          <Typography variant='h6' gutterBottom sx={{ mb: 2 }}>
+            Manage Residents
+          </Typography>
+          {organizationId ? (
+            <PropertySelectorDropdown
+              organizationId={organizationId}
+              selectedPropertyId={selectedPropertyId}
+              onPropertyChange={handlePropertySelect}
+            />
+          ) : (
+            <Alert severity='warning'>Organization not identified.</Alert>
           )}
           {selectedPropertyId && organizationId ? (
             <>
@@ -270,12 +481,11 @@ const PropertyManagerDashboardPanel: React.FC<
             </>
           ) : (
             <Alert severity='info' sx={{ mt: 2 }}>
-              Please select a property from the dropdown above to invite a
-              resident or view current residents.
+              Please select a property to manage residents.
             </Alert>
           )}
         </TabPanel>
-        <TabPanel value={pmTabValue} index={2}>
+        <TabPanel value={pmTabValue} index={3}>
           <Typography variant='h6' gutterBottom sx={{ mb: 2 }}>
             Manage Invitation Campaigns
           </Typography>
@@ -286,9 +496,7 @@ const PropertyManagerDashboardPanel: React.FC<
               onPropertyChange={handlePropertySelect}
             />
           ) : (
-            <Alert severity='warning'>
-              Organization not identified. Cannot select property for campaigns.
-            </Alert>
+            <Alert severity='warning'>Organization not identified.</Alert>
           )}
           {selectedPropertyId && organizationId ? (
             <PropertyCampaignsView
@@ -297,17 +505,12 @@ const PropertyManagerDashboardPanel: React.FC<
             />
           ) : (
             <Alert severity='info' sx={{ mt: 2 }}>
-              Please select a property from the dropdown above to manage
-              invitation campaigns.
+              Please select a property to manage campaigns.
             </Alert>
           )}
         </TabPanel>
-        <TabPanel value={pmTabValue} index={3}>
-          <Box
-            sx={{
-              minHeight: '400px',
-            }}
-          >
+        <TabPanel value={pmTabValue} index={4}>
+          <Box sx={{ minHeight: '400px' }}>
             <ChatView />
           </Box>
         </TabPanel>
@@ -319,7 +522,7 @@ const PropertyManagerDashboardPanel: React.FC<
           maxWidth='sm'
         >
           <DialogTitle>
-            Create New Property
+            Create New Property{' '}
             <IconButton
               aria-label='close'
               onClick={handleCloseCreatePropertyModal}
@@ -338,20 +541,20 @@ const PropertyManagerDashboardPanel: React.FC<
               <CreatePropertyForm
                 onSuccess={handlePropertyCreated}
                 organizationId={organizationId}
+                onCancel={handleCloseCreatePropertyModal}
               />
             )}
           </DialogContent>
         </Dialog>
-
         {propertyToEdit && (
           <EditPropertyModal
             open={isEditPropertyModalOpen}
             onClose={handleCloseEditPropertyModal}
             propertyData={propertyToEdit}
             onSuccess={handlePropertyUpdated}
+            organizationId={organizationId || undefined}
           />
         )}
-
         {residentToEdit && organizationId && selectedPropertyId && (
           <EditResidentModal
             open={isEditResidentModalOpen}

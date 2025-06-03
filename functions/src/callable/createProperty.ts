@@ -9,7 +9,14 @@ export const createProperty = onCall(async (request) => {
 
   const callerUid = request.auth.uid;
   const callerRoles = (request.auth.token?.roles as string[]) || [];
-  const { propertyName, address, propertyType, organizationId: targetOrganizationId } = request.data; // Org ID from request for org_manager
+  // Destructure totalUnits from request.data
+  const { propertyName, address, propertyType, organizationId: targetOrganizationId, totalUnits } = request.data as {
+    propertyName: string;
+    address: { street: string; city: string; state: string; zip: string };
+    propertyType: string;
+    organizationId?: string;
+    totalUnits: number; // Added totalUnits
+  };
 
   let operationOrgId: string | undefined;
 
@@ -45,9 +52,10 @@ export const createProperty = onCall(async (request) => {
     typeof address.street !== 'string' || !address.street ||
     typeof address.city !== 'string' || !address.city ||
     typeof address.state !== 'string' || !address.state ||
-    typeof address.zip !== 'string' || !address.zip
+    typeof address.zip !== 'string' || !address.zip ||
+    typeof totalUnits !== 'number' || totalUnits <= 0 // Validate totalUnits
   ) {
-    throw new HttpsError('invalid-argument', 'Missing required fields: propertyName, propertyType, and a valid address object with street, city, state, and zip.');
+    throw new HttpsError('invalid-argument', 'Missing required fields: propertyName, propertyType, totalUnits (must be a positive number), and a valid address object with street, city, state, and zip.');
   }
 
   try {
@@ -65,9 +73,10 @@ export const createProperty = onCall(async (request) => {
       },
       type: propertyType,
       organizationId: operationOrgId,
-      managedBy: callerUid,
+      managedBy: callerUid, // Consider if 'managedBy' should always be the creator or explicitly passed
+      totalUnits: totalUnits, // Add totalUnits to the property data
       createdAt: FieldValue.serverTimestamp(),
-      status: 'active', 
+      status: 'active',
     };
 
     await newPropertyRef.set(propertyData);

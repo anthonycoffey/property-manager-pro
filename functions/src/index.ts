@@ -100,6 +100,16 @@ export const getGptChatResponse = getGptChatResponseFunction;
 import { requestTwilioCall as requestTwilioCallFunction } from './callable/requestTwilioCall.js';
 export const requestTwilioCall = requestTwilioCallFunction;
 
+// Dashboard Statistics Callable Functions
+import { getAdminDashboardStats as getAdminDashboardStatsFunction } from './callable/getAdminDashboardStats.js';
+export const getAdminDashboardStats = getAdminDashboardStatsFunction;
+
+import { getOrgManagerDashboardStats as getOrgManagerDashboardStatsFunction } from './callable/getOrgManagerDashboardStats.js';
+export const getOrgManagerDashboardStats = getOrgManagerDashboardStatsFunction;
+
+import { getPropertyManagerDashboardStats as getPropertyManagerDashboardStatsFunction } from './callable/getPropertyManagerDashboardStats.js';
+export const getPropertyManagerDashboardStats = getPropertyManagerDashboardStatsFunction;
+
 // HTTP Functions
 // import { handleCampaignSignUpLink as handleCampaignSignUpLinkFunction } from './http/handleCampaignSignUpLink.js'; // Commented out as it's being decommissioned
 // export const handleCampaignSignUpLink = handleCampaignSignUpLinkFunction; // Commented out

@@ -19,6 +19,27 @@ export interface ServiceLocationAddress {
 // Firebase Admin SDK typically uses its own Timestamp type.
 import { Timestamp } from 'firebase-admin/firestore'; // Firebase Admin SDK Timestamp
 
+// --- Property Type (mirrored from /src/types.ts) ---
+export interface PropertyAddressData { // Mirrored from PropertyAddress in src/types
+  street: string;
+  city: string;
+  state: string;
+  zip: string;
+}
+
+export interface PropertyData {
+  id: string; // Firestore document ID
+  name: string;
+  address: PropertyAddressData;
+  type: string; // e.g., "residential", "commercial"
+  managedBy?: string; // UID of the property manager
+  organizationId: string; // ID of the organization this property belongs to
+  createdAt: Timestamp; // Using Firebase Admin Timestamp
+  totalUnits?: number; // Total number of rentable units in the property
+  status?: 'active' | 'inactive' | 'archived';
+  // Add any other relevant property fields
+}
+
 // --- Campaign Types (mirrored from /src/types.ts) ---
 export type CampaignStatus =
   | 'active'

@@ -38,6 +38,7 @@ export interface Property {
   managedBy?: string; // UID of the property manager
   organizationId: string; // ID of the organization this property belongs to
   createdAt?: Timestamp | Date; // Optional, depending on how it's handled client-side
+  totalUnits?: number; // Total number of rentable units in the property
   // Add any other relevant property fields
 }
 

@@ -50,6 +50,8 @@ const CreatePropertyForm: React.FC<CreatePropertyFormProps> = ({
     state: '',
     zip: '',
   });
+  const [totalUnits, setTotalUnits] = useState<string>(''); // New state for total units
+
   // MUI Autocomplete specific states
   const [autocompleteValue, setAutocompleteValue] =
     useState<google.maps.places.AutocompletePrediction | null>(null);
@@ -237,11 +239,18 @@ const CreatePropertyForm: React.FC<CreatePropertyFormProps> = ({
       !address.street ||
       !address.city ||
       !address.state ||
-      !address.zip
+      !address.zip ||
+      !totalUnits // Add totalUnits to validation
     ) {
       setError(
-        'Property Name, Type, and full Address (Street, City, State, Zip) are required.'
+        'Property Name, Type, Total Units, and full Address (Street, City, State, Zip) are required.'
       );
+      return;
+    }
+
+    const parsedTotalUnits = parseInt(totalUnits, 10);
+    if (isNaN(parsedTotalUnits) || parsedTotalUnits <= 0) {
+      setError('Total Units must be a positive number.');
       return;
     }
 
@@ -257,6 +266,7 @@ const CreatePropertyForm: React.FC<CreatePropertyFormProps> = ({
           state: address.state,
           zip: address.zip,
         },
+        totalUnits: parsedTotalUnits, // Pass totalUnits
         organizationId: organizationId, // Pass the organizationId to the Cloud Function
       });
 
@@ -266,6 +276,7 @@ const CreatePropertyForm: React.FC<CreatePropertyFormProps> = ({
         setSuccess(`Property "${propertyName}" created successfully.`);
         setPropertyName('');
         setPropertyType('');
+        setTotalUnits(''); // Reset totalUnits
         setAddress({ street: '', city: '', state: '', zip: '' });
         setAutocompleteValue(null);
         setAutocompleteInputValue('');
@@ -350,8 +361,40 @@ const CreatePropertyForm: React.FC<CreatePropertyFormProps> = ({
         >
           <MenuItem value='Residential'>Residential</MenuItem>
           <MenuItem value='Commercial'>Commercial</MenuItem>
+          {/* Consider adding more types or making this dynamic if needed */}
         </Select>
       </FormControl>
+
+      <TextField
+        label='Total Units'
+        type='number'
+        fullWidth
+        value={totalUnits}
+        onChange={(e) => {
+          // Allow only positive integers, or empty string for clearing
+          const val = e.target.value;
+          if (val === '' || /^[1-9]\d*$/.test(val)) {
+            setTotalUnits(val);
+          } else if (val === '0' && totalUnits === '') { // allow typing '0' if field is empty
+             setTotalUnits(val);
+          } else if (val === '0' && totalUnits !== '0') { // prevent leading zeros if not the only digit
+            // do nothing or set to empty
+          } else if (val !== '' && !/^[1-9]\d*$/.test(val) && val !== '0') {
+            // if it's not a positive integer and not '0', don't update
+          }
+
+
+        }}
+        onBlur={() => { // Remove leading zero if it's the only digit and not intended
+          if (totalUnits === '0') {
+            // Decide if '0' is valid. If not, setTotalUnits('');
+          }
+        }}
+        inputProps={{ min: 1 }} // HTML5 validation, but JS validation is primary
+        margin='normal'
+        required
+        disabled={loading || !isLoaded}
+      />
 
       <Typography variant='subtitle1' sx={{ mt: 2 }}>
         Property Address

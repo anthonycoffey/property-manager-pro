@@ -2,11 +2,19 @@
 
 ## 1. Current Status
 
-The project has recently completed the integration of a Twilio-based "Request Call" feature into the ChatView, allowing users to escalate to a voice call with a live agent.
+The project has recently completed an update to the login page to prevent access by authenticated users, and the integration of a Twilio-based "Request Call" feature.
 
 - **Date of this update:** 2025-06-03
 
 ## 2. What Works / Completed
+
+- **Login Page Accessibility (Completed 2025-06-03):**
+    - **Objective:** Prevent authenticated users from accessing the login page.
+    - **File Modified:** `src/components/LoginForm.tsx`
+    - **Changes:**
+        - Imported `useEffect` from `react` and `useAuth` from `../hooks/useAuth`.
+        - Added a `useEffect` hook that checks if `currentUser` (from `useAuth()`) exists.
+        - If `currentUser` exists, the user is navigated to `/dashboard`.
 
 - **Twilio "Request Call" Integration (Completed 2025-06-03):**
     - **Objective:** Allow users to request an immediate phone call from a live agent via the chat interface.

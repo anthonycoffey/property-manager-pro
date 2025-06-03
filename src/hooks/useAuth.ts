@@ -19,6 +19,7 @@ interface AuthContextType {
   organizationId: string | null | undefined; // Primarily for PMs/Residents
   organizationIds: string[] | null | undefined; // For Organization Managers
   propertyId: string | null | undefined;
+  signOutUser?: () => Promise<void>; // Added for sign out functionality
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);

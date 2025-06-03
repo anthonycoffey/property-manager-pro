@@ -1,3 +1,6 @@
+# ** UNUSED FILE **
+# LEAVING AS REFERENCE IN CASE WE MOVE TO APP HOSTING FOR NEXTJS
+
 runConfig:
   minInstances: 0
   # maxInstances: 100

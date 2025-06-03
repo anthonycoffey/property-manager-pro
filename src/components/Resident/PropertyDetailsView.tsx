@@ -4,7 +4,17 @@ import {
   Typography,
   CircularProgress,
   Alert,
+  List,
+  ListItem,
+  ListItemIcon,
+  ListItemText,
 } from '@mui/material';
+import {
+  HomeWork as HomeWorkIcon,
+  Person as PersonIcon,
+  Apartment as ApartmentIcon,
+  LocationOn as LocationOnIcon,
+} from '@mui/icons-material';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../../firebaseConfig';
 import { useAuth } from '../../hooks/useAuth';
@@ -78,30 +88,54 @@ const PropertyDetailsView: React.FC = () => {
 
   return (
     <>
-      <Typography variant='h5' gutterBottom sx={{ mb: 2 }}>
-        Property Information
-      </Typography>
-      <Box sx={{ mt: 2 }}>
-        <Typography variant='subtitle1' gutterBottom>
-          <strong>Resident Name:</strong> {propertyDetails.name}
+      <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+        <HomeWorkIcon sx={{ mr: 1, fontSize: '2rem' }} color='primary' />
+        <Typography variant='h5' component='div'>
+          Property Information
         </Typography>
-        <Typography variant='subtitle1' gutterBottom>
-          <strong>Type:</strong> {propertyDetails.type}
-        </Typography>
-        {propertyDetails.address && (
-          <>
-            <Typography variant='subtitle1' gutterBottom>
-              <strong>Address:</strong>
-            </Typography>
-            <Typography variant='body2' sx={{ pl: 2 }}>
-              {propertyDetails.address.street}
-              <br />
-              {propertyDetails.address.city}, {propertyDetails.address.state}{' '}
-              {propertyDetails.address.zip}
-            </Typography>
-          </>
-        )}
       </Box>
+      <List sx={{ width: '100%', bgcolor: 'background.paper' }}>
+        <ListItem>
+          <ListItemIcon>
+            <PersonIcon />
+          </ListItemIcon>
+          <ListItemText
+            primary='Property Name'
+            secondary={propertyDetails.name}
+          />
+        </ListItem>
+        <ListItem>
+          <ListItemIcon>
+            <ApartmentIcon />
+          </ListItemIcon>
+          <ListItemText
+            primary='Property Type'
+            secondary={propertyDetails.type}
+          />
+        </ListItem>
+        {propertyDetails.address && (
+          <ListItem alignItems='flex-start'>
+            <ListItemIcon sx={{ mt: 1 }}>
+              <LocationOnIcon />
+            </ListItemIcon>
+            <ListItemText
+              primary='Address'
+              secondary={
+                <>
+                  <Typography component='span' variant='body2' color='text.primary'>
+                    {propertyDetails.address.street}
+                  </Typography>
+                  <br />
+                  <Typography component='span' variant='body2' color='text.primary'>
+                    {propertyDetails.address.city}, {propertyDetails.address.state}{' '}
+                    {propertyDetails.address.zip}
+                  </Typography>
+                </>
+              }
+            />
+          </ListItem>
+        )}
+      </List>
     </>
   );
 };

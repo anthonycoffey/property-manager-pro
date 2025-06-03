@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   TextField,
   Button,
@@ -20,6 +20,7 @@ import { useNavigate, Link as RouterLink } from 'react-router-dom'; // Added Rou
 import PMPLogo from '/property-manager-pro.svg'; // Import the logo
 import PMPLogoLight from '/property-manager-pro-light.svg'; // Import the light logo
 import { useThemeMode } from '../hooks/useThemeMode'; // Import the theme mode hook
+import { useAuth } from '../hooks/useAuth'; // Import the auth hook
 import {
   signInWithEmailAndPassword,
   GoogleAuthProvider,
@@ -37,6 +38,13 @@ const LoginForm: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { mode } = useThemeMode(); // Get current theme mode
+  const { currentUser } = useAuth(); // Get current user
+
+  useEffect(() => {
+    if (currentUser) {
+      navigate('/dashboard');
+    }
+  }, [currentUser, navigate]);
 
   const handleClickShowPassword = () => setShowPassword((show) => !show);
   const handleMouseDownPassword = (

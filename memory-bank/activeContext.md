@@ -2,6 +2,7 @@
 
 ## 1. Current Work Focus
 
+- **Login Page Accessibility (Completed 2025-06-03):** Updated `src/components/LoginForm.tsx` to redirect authenticated users to the `/dashboard` if they attempt to access the login page.
 - **Twilio "Request Call" Integration (Completed 2025-06-03):** Migrated "Live Agent" call request functionality from `rescuelink` project. Allows users in ChatView to request an immediate callback via Twilio.
     - Created `functions/src/callable/requestTwilioCall.ts` Firebase Cloud Function to initiate Twilio call.
     - Created `src/components/Chat/RequestTwilioCallDialog.tsx` for user phone input.
@@ -58,6 +59,14 @@
 - **Custom GPTChat Model Integration (Completed 2025-05-31):** The migration of the rescuelink chatbot into this app is complete and integrated for all user roles.
 
 ## 2. Recent Changes & Activities
+
+- **Login Page Accessibility (Completed 2025-06-03):**
+    - **Objective:** Prevent authenticated users from accessing the login page.
+    - **File Modified:** `src/components/LoginForm.tsx`
+    - **Changes:**
+        - Imported `useEffect` from `react` and `useAuth` from `../hooks/useAuth`.
+        - Added a `useEffect` hook that checks if `currentUser` (from `useAuth()`) exists.
+        - If `currentUser` exists, the user is navigated to `/dashboard`.
 
 - **Twilio "Request Call" Integration (Completed 2025-06-03):**
     - **Objective:** Allow users to request an immediate phone call from a live agent via the chat interface.

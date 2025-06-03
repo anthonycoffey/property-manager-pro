@@ -2,13 +2,25 @@ import React, { useEffect, useState } from 'react';
 import {
   Box,
   Typography,
-  // Paper, // Removed unused import
+  Paper,
   TextField,
   Button,
   CircularProgress,
   Alert,
   Snackbar,
+  List,
+  ListItem,
+  ListItemIcon,
+  ListItemText,
 } from '@mui/material';
+import {
+  ManageAccounts as ManageAccountsIcon,
+  Badge as BadgeIcon,
+  Email as EmailIcon,
+  MeetingRoom as MeetingRoomIcon,
+  DirectionsCar as DirectionsCarIcon,
+  Save as SaveIcon,
+} from '@mui/icons-material';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../../firebaseConfig';
 import { useAuth } from '../../hooks/useAuth';
@@ -148,9 +160,12 @@ const ResidentProfileManagement: React.FC = () => {
 
   return (
     <>
-      <Typography variant='h5' gutterBottom sx={{ mb: 2 }}>
-        Manage Your Profile
-      </Typography>
+      <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+        <ManageAccountsIcon sx={{ mr: 1, fontSize: '2rem' }} color='primary' />
+        <Typography variant='h5' component='div'>
+          Manage Your Profile
+        </Typography>
+      </Box>
 
       {error && (
         <Alert severity='error' sx={{ mb: 2 }}>
@@ -158,71 +173,93 @@ const ResidentProfileManagement: React.FC = () => {
         </Alert>
       )}
 
-      <Typography variant='subtitle1' gutterBottom>
-        <strong>Name:</strong> {profile.displayName || 'N/A'}
-      </Typography>
-      <Typography variant='subtitle1' gutterBottom>
-        <strong>Email:</strong> {profile.email || 'N/A'}
-      </Typography>
-      <Typography variant='subtitle1' gutterBottom sx={{ mb: 3 }}>
-        <strong>Unit:</strong> {profile.unitNumber || 'N/A'}
-      </Typography>
+      <List sx={{ width: '100%', bgcolor: 'background.paper', mb: 3 }}>
+        <ListItem>
+          <ListItemIcon>
+            <BadgeIcon />
+          </ListItemIcon>
+          <ListItemText
+            primary='Name'
+            secondary={profile.displayName || 'N/A'}
+          />
+        </ListItem>
+        <ListItem>
+          <ListItemIcon>
+            <EmailIcon />
+          </ListItemIcon>
+          <ListItemText primary='Email' secondary={profile.email || 'N/A'} />
+        </ListItem>
+        <ListItem>
+          <ListItemIcon>
+            <MeetingRoomIcon />
+          </ListItemIcon>
+          <ListItemText
+            primary='Unit'
+            secondary={profile.unitNumber || 'N/A'}
+          />
+        </ListItem>
+      </List>
 
-      <Typography
-        variant='h6'
-        gutterBottom
-        component='div'
-        sx={{ mb: 2, mt: 2, borderTop: '1px solid #eee', pt: 2 }}
-      >
-        Vehicle Information
-      </Typography>
-      <Box
-        component='form'
-        onSubmit={handleSubmit}
-        noValidate
-        sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}
-      >
-        <TextField
-          fullWidth
-          name='vehicleMake'
-          label='Vehicle Make'
-          value={profile.vehicleMake}
-          onChange={handleChange}
-          disabled={saving}
-        />
-        <TextField
-          fullWidth
-          name='vehicleModel'
-          label='Vehicle Model'
-          value={profile.vehicleModel}
-          onChange={handleChange}
-          disabled={saving}
-        />
-        <TextField
-          fullWidth
-          name='vehicleColor'
-          label='Vehicle Color'
-          value={profile.vehicleColor}
-          onChange={handleChange}
-          disabled={saving}
-        />
-        <TextField
-          fullWidth
-          name='licensePlate'
-          label='License Plate'
-          value={profile.licensePlate}
-          onChange={handleChange}
-          disabled={saving}
-        />
-        <Button
-          type='submit'
-          variant='contained'
-          sx={{ mt: 3, mb: 2 }}
-          disabled={saving || loading}
+      <Paper elevation={2} sx={{ p: 2, mt: 2 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+          <DirectionsCarIcon sx={{ mr: 1 }} color='action' />
+          <Typography variant='h6' component='div'>
+            Vehicle Information
+          </Typography>
+        </Box>
+        <Box
+          component='form'
+          onSubmit={handleSubmit}
+          noValidate
+          sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}
         >
-          {saving ? <CircularProgress size={24} /> : 'Save Vehicle Information'}
-        </Button>
-      </Box>
+          <TextField
+            fullWidth
+            name='vehicleMake'
+            label='Vehicle Make'
+            value={profile.vehicleMake}
+            onChange={handleChange}
+            disabled={saving}
+          />
+          <TextField
+            fullWidth
+            name='vehicleModel'
+            label='Vehicle Model'
+            value={profile.vehicleModel}
+            onChange={handleChange}
+            disabled={saving}
+          />
+          <TextField
+            fullWidth
+            name='vehicleColor'
+            label='Vehicle Color'
+            value={profile.vehicleColor}
+            onChange={handleChange}
+            disabled={saving}
+          />
+          <TextField
+            fullWidth
+            name='licensePlate'
+            label='License Plate'
+            value={profile.licensePlate}
+            onChange={handleChange}
+            disabled={saving}
+          />
+          <Button
+            type='submit'
+            variant='contained'
+            startIcon={<SaveIcon />}
+            sx={{ mt: 3, mb: 2 }}
+            disabled={saving || loading}
+          >
+            {saving ? (
+              <CircularProgress size={24} />
+            ) : (
+              'Save Vehicle Information'
+            )}
+          </Button>
+        </Box>
+      </Paper>
       <Snackbar
         open={!!successMessage}
         autoHideDuration={6000}

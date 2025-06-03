@@ -130,7 +130,7 @@ const AcceptInvitationPage: React.FC = () => {
   const handleAuthSuccess = (message: string) => {
     setSuccess(message);
     setTimeout(() => {
-      navigate('/login');
+      navigate('/dashboard');
     }, 3000);
   };
 
@@ -296,7 +296,7 @@ const AcceptInvitationPage: React.FC = () => {
       if (responseData?.success) {
         handleAuthSuccess(
           responseData.message ||
-            'Account created successfully! You will be redirected to login.'
+            'Account created successfully! You will now be redirected to dashboard.'
         );
       } else {
         setError(

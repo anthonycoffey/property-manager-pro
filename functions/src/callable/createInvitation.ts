@@ -256,17 +256,40 @@ export const createInvitation = onCall(async (request) => {
         ? 'organization_manager'
         : 'general',
     };
-    // Add the actual organizationIds to the document for OM invites
+
+    // Determine and set organizationIds for the invitation document
+    let finalOrganizationIdsForDoc: string[] | null = null;
     if (rolesToAssign.includes('organization_manager')) {
-      invitationData.organizationIds =
+      // For OM invites, organizationIds can be an array (empty or populated) or null if not provided.
+      finalOrganizationIdsForDoc =
         organizationIds && organizationIds.length > 0 ? organizationIds : null;
     } else {
-      if (singleOrgIdForInvite) {
-        invitationData.organizationIds = [singleOrgIdForInvite];
+      // For non-OM roles (e.g., property_manager, resident),
+      // prior validation ensures 'organizationIds' input is an array with exactly one valid string.
+      // So, organizationIds![0] is safe to access here.
+      if (
+        organizationIds &&
+        organizationIds.length === 1 &&
+        organizationIds[0]
+      ) {
+        finalOrganizationIdsForDoc = [organizationIds[0]];
       } else {
-        invitationData.organizationIds = null; // Should only happen for OM invite with no orgs selected
+        // This block should ideally not be reached if input validation is effective.
+        // Logging an error if this unexpected state occurs.
+        console.error(
+          '[createInvitation] Critical error: organizationIds not correctly validated for non-OM role before setting in document.',
+          { rolesToAssign, organizationIds }
+        );
+        // To prevent undefined, explicitly set to null, though this indicates a logic flaw elsewhere.
+        finalOrganizationIdsForDoc = null;
+        // Consider throwing an error if this state is truly invalid and should halt execution.
+        throw new HttpsError(
+          'internal',
+          'Failed to determine organizationIds for non-OM invitation due to inconsistent validation.'
+        );
       }
     }
+    invitationData.organizationIds = finalOrganizationIdsForDoc;
 
     if (targetPropertyId && rolesToAssign.includes('resident')) {
       invitationData.targetPropertyId = targetPropertyId;
@@ -280,10 +303,8 @@ export const createInvitation = onCall(async (request) => {
 
     const projectId =
       process.env.GCLOUD_PROJECT || 'phoenix-property-manager-pro';
-    let appDomain = `${projectId}.firebaseapp.com`; // Default production domain
-    let protocol = 'https'; // Default production protocol
-
-    // console.log('PROCESS.ENV: ', process.env);
+    let appDomain = `${projectId}.firebaseapp.com`;
+    let protocol = 'https';
 
     if (process.env.FUNCTIONS_EMULATOR === 'true') {
       appDomain = 'localhost:5173';

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'; // useCallback removed
+import React, { useEffect, useState } from 'react';
 import {
   Box,
   Typography,
@@ -10,11 +10,7 @@ import {
   ListItemText,
   Divider,
   Chip,
-  // IconButton,
-  // Collapse,
 } from '@mui/material';
-// import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-// import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import {
   collection,
   query,
@@ -56,12 +52,6 @@ const getStatusChipColor = (
 const ServiceRequestListItem: React.FC<{ request: ServiceRequest }> = ({
   request,
 }) => {
-  // const [expanded, setExpanded] = useState(false);
-
-  // const handleToggleExpand = () => {
-  //   setExpanded(!expanded);
-  // };
-
   const formatDate = (timestamp: Timestamp | Date | undefined): string => {
     if (!timestamp) return 'N/A';
     const date = (timestamp as Timestamp).toDate
@@ -72,13 +62,7 @@ const ServiceRequestListItem: React.FC<{ request: ServiceRequest }> = ({
 
   return (
     <>
-      <ListItem
-      // secondaryAction={
-      //   <IconButton edge="end" aria-label="expand" onClick={handleToggleExpand}>
-      //     {expanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
-      //   </IconButton>
-      // }
-      >
+      <ListItem>
         <ListItemText
           primary={`${request.requestType} - Submitted: ${formatDate(
             request.submittedAt
@@ -101,49 +85,23 @@ const ServiceRequestListItem: React.FC<{ request: ServiceRequest }> = ({
           }
         />
       </ListItem>
-      {/* <Collapse in={expanded} timeout="auto" unmountOnExit>
-        <Box sx={{ pl: 2, pr:2, pb: 2, ml: 2, borderLeft: '2px solid #eee' }}>
-          <Typography variant="subtitle2" gutterBottom sx={{mt:1}}>Job Details:</Typography>
-          <Typography variant="body2" sx={{whiteSpace: 'pre-wrap', mb:1}}>{request.description}</Typography>
-          
-          {request.unitNumber && <Typography variant="caption" display="block">Unit: {request.unitNumber}</Typography>}
-          {request.assignedToName && <Typography variant="caption" display="block">Assigned To: {request.assignedToName}</Typography>}
-          {request.completedAt && <Typography variant="caption" display="block">Completed: {formatDate(request.completedAt)}</Typography>}
 
-          {request.notes && request.notes.length > 0 && (
-            <>
-              <Typography variant="subtitle2" gutterBottom sx={{mt:1}}>Notes:</Typography>
-              <List dense disablePadding>
-                {request.notes.map((note, index) => (
-                  <ListItem key={index} sx={{pl:1}}>
-                    <ListItemText 
-                      primary={`${note.userName} (${formatDate(note.timestamp)}):`}
-                      secondary={note.note}
-                    />
-                  </ListItem>
-                ))}
-              </List>
-            </>
-          )}
-        </Box>
-      </Collapse> */}
       <Divider component='li' />
     </>
   );
 };
 
 const ServiceRequestList: React.FC = () => {
-  const { currentUser, organizationId } = useAuth(); // Removed propertyId as services are at org level
+  const { currentUser, organizationId } = useAuth();
   const [serviceRequests, setServiceRequests] = useState<ServiceRequest[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!currentUser || !organizationId) {
-      // Check for organizationId
       setError('User not authenticated or organization ID missing.');
       setLoading(false);
-      return () => {}; // Return an empty cleanup function
+      return () => {};
     }
 
     setLoading(true);
@@ -205,15 +163,11 @@ const ServiceRequestList: React.FC = () => {
   }
 
   if (serviceRequests.length === 0) {
-    return (
-      <Alert severity='info' sx={{ mt: 2 }}>
-        You have no service requests.
-      </Alert>
-    );
+    return <Alert severity='info'>You have no service requests.</Alert>;
   }
 
   return (
-    <Paper elevation={1} sx={{ mt: 2 }}>
+    <Paper elevation={0}>
       <Typography variant='h6' gutterBottom>
         Your Service Requests
       </Typography>

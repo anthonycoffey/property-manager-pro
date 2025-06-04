@@ -141,6 +141,14 @@ export interface AppError {
   code?: string;
 }
 
+export interface Vehicle {
+  make: string;
+  model: string;
+  year: number;
+  color: string;
+  plate: string;
+}
+
 export interface Resident {
   id: string; 
   displayName: string;
@@ -153,10 +161,7 @@ export interface Resident {
   leaseEndDate?: Timestamp | Date;
   invitedBy?: string; 
   createdAt: Timestamp | Date;
-  vehicleMake?: string;
-  vehicleModel?: string;
-  vehicleColor?: string;
-  licensePlate?: string;
+  vehicles?: Vehicle[];
 }
 
 export type ServiceRequestStatus = 

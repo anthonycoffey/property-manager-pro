@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react'; // Added useEffect, useMemo
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Box,
   Typography,
@@ -23,7 +23,7 @@ import {
   AssignmentInd,
   HomeWork,
   Campaign,
-  // TrendingUp as TrendingUpIcon, // Explicitly import for direct use if needed
+  TrendingUp as TrendingUpIcon, // Added TrendingUpIcon
 } from '@mui/icons-material';
 
 import OrganizationSelector from '../Admin/OrganizationSelector';
@@ -44,17 +44,32 @@ import ChatView from '../Chat/ChatView';
 // Import Chart Components
 import KpiCard from './Charts/KpiCard';
 import LineChart from './Charts/LineChart';
-// import BarChart from './Charts/BarChart'; // BarChart not used in this specific layout yet
 import PieChart from './Charts/PieChart';
-// import GaugeChart from './Charts/GaugeChart'; // GaugeChart not used in this specific layout yet
 
 // Firebase functions
 import { getFunctions, httpsCallable } from 'firebase/functions';
-import { isAppError } from '../../utils/errorUtils'; // Added for type-safe error handling
+import { isAppError } from '../../utils/errorUtils';
 import type {
   Property as PropertyType,
   Resident as ResidentType,
 } from '../../types';
+
+// Define Phoenix Stats types
+interface PhoenixVolumeTrendPoint {
+  date: string;
+  count: number;
+}
+
+interface PhoenixTypeDistributionPoint {
+  name: string;
+  y: number;
+}
+
+interface AdminPhoenixStats {
+  volumeTrends?: PhoenixVolumeTrendPoint[];
+  typeDistribution?: PhoenixTypeDistributionPoint[];
+  averageCompletionTime?: number | null; // in milliseconds
+}
 
 // Define AdminDashboardStats type locally
 interface GrowthDataPoint {
@@ -122,6 +137,11 @@ const AdminDashboardPanel: React.FC = () => {
     useState<AdminDashboardStatsData | null>(null);
   const [dashboardLoading, setDashboardLoading] = useState<boolean>(true);
   const [dashboardError, setDashboardError] = useState<string | null>(null);
+
+  // State for Phoenix stats
+  const [phoenixStats, setPhoenixStats] = useState<AdminPhoenixStats | null>(null);
+  const [phoenixLoading, setPhoenixLoading] = useState<boolean>(true);
+  const [phoenixError, setPhoenixError] = useState<string | null>(null);
 
   const functionsInstance = getFunctions();
   const [isCreatePropertyModalOpen, setIsCreatePropertyModalOpen] =
@@ -246,7 +266,6 @@ const AdminDashboardPanel: React.FC = () => {
           functionsInstance,
           'getAdminDashboardStats'
         );
-        // Pass an empty object if no specific data like dateRange is being sent.
         const result = await getStatsFunction({});
         setDashboardStats(result.data as AdminDashboardStatsData);
       } catch (err: unknown) {
@@ -263,10 +282,85 @@ const AdminDashboardPanel: React.FC = () => {
       }
     };
 
+    const fetchPhoenixAdminStats = async () => {
+      setPhoenixLoading(true);
+      setPhoenixError(null);
+      try {
+        const getStatsFunction = httpsCallable(
+          functionsInstance,
+          'getAdminPhoenixStats'
+        );
+        // TODO: Pass appropriate dateRange if needed by the function/UI
+        const result = await getStatsFunction({ /* dateRange: ... */ });
+        if ((result.data as any)?.success) {
+          setPhoenixStats((result.data as any).data as AdminPhoenixStats);
+        } else {
+          throw new Error((result.data as any)?.message || 'Failed to fetch Phoenix stats');
+        }
+      } catch (err: unknown) {
+        console.error('Error fetching admin Phoenix stats:', err);
+        let errorMessage = 'Failed to load Phoenix dashboard statistics.';
+        if (isAppError(err)) {
+          errorMessage = err.message;
+        } else if (err instanceof Error) {
+          errorMessage = err.message;
+        }
+        setPhoenixError(errorMessage);
+      } finally {
+        setPhoenixLoading(false);
+      }
+    };
+
     if (adminTabValue === 0) {
       fetchAdminStats();
+      fetchPhoenixAdminStats();
     }
   }, [adminTabValue, functionsInstance]);
+
+  // Chart options for Phoenix Stats
+  const phoenixVolumeTrendOptions: Highcharts.Options | null = useMemo(() => {
+    if (!phoenixStats?.volumeTrends || phoenixStats.volumeTrends.length === 0) return null;
+    return {
+      title: { text: 'Service Request Volume (Phoenix)' },
+      xAxis: {
+        categories: phoenixStats.volumeTrends.map(d => d.date),
+        type: 'category', // Ensures dates are treated as categories
+      },
+      yAxis: {
+        title: { text: 'Number of Dispatched Requests' },
+        allowDecimals: false,
+      },
+      series: [{
+        name: 'Dispatched Requests',
+        data: phoenixStats.volumeTrends.map(d => d.count),
+        type: 'line',
+      }],
+      accessibility: { enabled: true },
+    };
+  }, [phoenixStats?.volumeTrends]);
+
+  const phoenixTypeDistributionOptions: Highcharts.Options | null = useMemo(() => {
+    if (!phoenixStats?.typeDistribution || phoenixStats.typeDistribution.length === 0) return null;
+    return {
+      chart: { type: 'pie' },
+      title: { text: 'Service Request Types (Phoenix)' },
+      tooltip: { pointFormat: '{series.name}: <b>{point.percentage:.1f}%</b> ({point.y})' },
+      plotOptions: {
+        pie: {
+          allowPointSelect: true,
+          cursor: 'pointer',
+          dataLabels: { enabled: true, format: '<b>{point.name}</b>: {point.y}' },
+        },
+      },
+      series: [{
+        name: 'Requests',
+        colorByPoint: true,
+        data: phoenixStats.typeDistribution,
+        type: 'pie',
+      }],
+      accessibility: { enabled: true },
+    };
+  }, [phoenixStats?.typeDistribution]);
 
   const orgGrowthOptions: Highcharts.Options | null = useMemo(() => {
     if (
@@ -280,6 +374,7 @@ const AdminDashboardPanel: React.FC = () => {
         categories: dashboardStats.growthTrends.organizations.map(
           (d) => d.period
         ),
+        type: 'category',
       },
       yAxis: {
         title: { text: 'Number of Organizations' },
@@ -306,6 +401,7 @@ const AdminDashboardPanel: React.FC = () => {
       title: { text: 'Resident Growth' },
       xAxis: {
         categories: dashboardStats.growthTrends.residents.map((d) => d.period),
+        type: 'category',
       },
       yAxis: { title: { text: 'Number of Residents' }, allowDecimals: false },
       series: [
@@ -359,8 +455,6 @@ const AdminDashboardPanel: React.FC = () => {
 
   return (
     <Container component='main' maxWidth='xl'>
-      {' '}
-      {/* Changed to xl for more space */}
       <Paper elevation={3} sx={{ mb: 4, p: { xs: 1, sm: 2 } }}>
         <Box
           sx={{
@@ -597,7 +691,75 @@ const AdminDashboardPanel: React.FC = () => {
                 ) : null}
               </Box>
             </Stack>
-            {!(dashboardStats || dashboardLoading) && !dashboardError && (
+            
+            {/* Phoenix Stats Section */}
+            <Divider sx={{ my: 3, borderColor: 'primary.main', borderWidth: '1px', opacity: 0.5 }} />
+            <Typography variant="h5" gutterBottom sx={{ color: 'primary.main', mb: 2 }}>
+              Phoenix Service Analytics
+            </Typography>
+
+            {phoenixError && (
+              <Alert severity='error' sx={{ mb: 2 }}>
+                {phoenixError}
+              </Alert>
+            )}
+
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 3 }}>
+              <Box
+                  sx={{
+                    flexGrow: 1,
+                    flexBasis: {
+                      xs: '100%',
+                      sm: 'calc(50% - 8px)',
+                      md: 'calc(33.333% - 11px)',
+                    },
+                    minWidth: { xs: 'calc(50% - 8px)', sm: 180 },
+                  }}
+                >
+                <KpiCard
+                  title="Avg. Service Completion Time"
+                  value={
+                    phoenixLoading 
+                      ? '...' 
+                      : phoenixStats?.averageCompletionTime != null 
+                        ? `${(phoenixStats.averageCompletionTime / (1000 * 60)).toFixed(1)} min`
+                        : 'N/A'
+                  }
+                  isLoading={phoenixLoading}
+                  icon={<TrendingUpIcon />}
+                />
+              </Box>
+            </Box>
+            
+            <Stack spacing={3}>
+              {(phoenixStats?.volumeTrends && phoenixStats.volumeTrends.length > 0) || phoenixLoading ? (
+                <Paper elevation={2} sx={{ p: 2, borderRadius: 2 }}>
+                  {phoenixVolumeTrendOptions && (
+                    <LineChart
+                      options={phoenixVolumeTrendOptions}
+                      isLoading={phoenixLoading}
+                      height="350px"
+                    />
+                  )}
+                </Paper>
+              ) : null}
+
+              {(phoenixStats?.typeDistribution && phoenixStats.typeDistribution.length > 0) || phoenixLoading ? (
+                <Paper elevation={2} sx={{ p: 2, borderRadius: 2 }}>
+                  {phoenixTypeDistributionOptions && (
+                    <PieChart
+                      options={phoenixTypeDistributionOptions}
+                      isLoading={phoenixLoading}
+                      height="350px"
+                    />
+                  )}
+                </Paper>
+              ) : null}
+            </Stack>
+
+            {/* Combined check for no data */}
+            {!(dashboardStats || dashboardLoading) && !dashboardError && 
+             !(phoenixStats || phoenixLoading) && !phoenixError && (
               <Typography>No dashboard data to display.</Typography>
             )}
           </Box>

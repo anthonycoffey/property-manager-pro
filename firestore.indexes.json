@@ -20,7 +20,8 @@
       "collectionGroup": "properties",
       "queryScope": "COLLECTION_GROUP",
       "fields": [
-        { "fieldPath": "organizationId", "order": "ASCENDING" }
+        { "fieldPath": "organizationId", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
       ]
     },
     {

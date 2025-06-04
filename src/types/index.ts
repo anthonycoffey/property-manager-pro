@@ -42,6 +42,14 @@ export interface Property {
   // Add any other relevant property fields
 }
 
+export interface Vehicle {
+  make: string;
+  model: string;
+  year: number;
+  color: string;
+  plate: string;
+}
+
 export interface Resident {
   id: string; // Firestore document ID (matches Firebase Auth UID)
   displayName: string;
@@ -55,14 +63,11 @@ export interface Resident {
   invitedBy?: string; // UID of the user who invited them
   createdAt: Timestamp | Date;
   // Vehicle Information
-  vehicleMake?: string;
-  vehicleModel?: string;
-  vehicleColor?: string;
-  licensePlate?: string;
+  vehicles?: Vehicle[];
   // Add other resident-specific fields as needed
 }
 
-export type ServiceRequestStatus = 
+export type ServiceRequestStatus =
   | 'submitted' 
   | 'in_progress' 
   | 'completed' 

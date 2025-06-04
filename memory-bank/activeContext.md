@@ -17,6 +17,26 @@
 
 ## 2. Recent Changes & Activities (Newest First)
 
+- **Resident Profile - Vehicle Information Update (Completed 2025-06-04):**
+    - **Objective:** Refactor resident vehicle information from flat fields to an array of vehicle objects (max 2).
+    - **Type Definitions Updated:**
+        - Defined `Vehicle` interface (`make`, `model`, `year`, `color`, `plate`) in `src/types/index.ts` and `functions/src/types.ts`.
+        - Updated `Resident` interface in both files to use `vehicles?: Vehicle[]` and removed old flat vehicle fields.
+    - **Backend Cloud Function (`functions/src/callable/updateResidentProfile.ts`):**
+        - Modified to accept and validate the `vehicles` array (max length 2, schema adherence).
+        - Updated Firestore write logic for the `vehicles` array.
+        - Added logic to delete old flat vehicle fields from Firestore upon update.
+    - **Frontend Component (`src/components/Resident/ResidentProfileManagement.tsx`):**
+        - Reworked UI to manage an array of up to 2 vehicles (add/remove forms, input fields for each vehicle detail).
+        - Updated state management and submission logic to handle the `vehicles` array.
+        - Ensured layout uses `Stack` or `Box` with flexbox instead of `Grid`.
+        - **UI Refinements (based on feedback 2025-06-04):**
+            - Changed default year for new vehicles to be empty (stored as 0).
+            - Replaced remove icon with a trash icon (`DeleteOutlineIcon`).
+            - Adjusted button layout: "Add Vehicle" button moved to header, "Save Profile" button centered at the bottom.
+            - Removed inner `Paper` for individual vehicle forms, using `Box` with border and `Divider` for better visual separation.
+    - **Memory Bank Updated:** `systemPatterns.md` updated to reflect new resident data model. `activeContext.md` updated with UI refinement details.
+
 - **Dashboard Data Visualizations & Statistics - Phase 1 (Non-Phoenix Data) (Completed 2025-06-03):**
     - **Objective:** Implement initial dashboard statistics and visualizations.
     - **Data Model Enhancement:**

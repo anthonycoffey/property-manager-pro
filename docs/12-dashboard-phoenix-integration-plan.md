@@ -8,104 +8,123 @@ To provide users with insights into service request volumes, types, and performa
 
 ## 2. Prerequisites
 
-*   **Phoenix API Documentation:** Availability of detailed documentation for Phoenix API endpoints that allow querying of aggregated and/or raw service job data. This includes:
-    *   Endpoints for fetching job counts (by type, status, date range).
-    *   Endpoints for fetching data related to job timings (e.g., creation, assignment, completion times) to calculate average durations.
-    *   Filtering capabilities based on metadata sent from this application (e.g., `clientOrganizationId`, `clientPropertyId`, `requestSourceIdentifier`).
-    *   Authentication methods and rate limits for these API endpoints.
-*   **Existing Dashboard Infrastructure:** The current dashboard panels (`AdminDashboardPanel`, `OrganizationManagerDashboardPanel`, `PropertyManagerDashboardPanel`) and chart wrapper components (`KpiCard`, `LineChart`, `BarChart`, etc.) will be leveraged.
+- **Phoenix API Documentation:**
+  - Detailed documentation for key Phoenix API endpoints (`/form-submissions/search/source-meta` and `/jobs/search/source-meta`) has been provided. These endpoints allow querying based on `sourceMeta` (including `applicationName`, `organizationId`, `propertyId`), `serviceType`, date ranges, and status.
+  - **Authentication Note:** For initial development and testing, authentication on these Phoenix endpoints will be temporarily disabled. Authentication mechanisms will be revisited and implemented before production deployment.
+- **Existing Dashboard Infrastructure:** The current dashboard panels (`AdminDashboardPanel`, `OrganizationManagerDashboardPanel`, `PropertyManagerDashboardPanel`) and chart wrapper components (`KpiCard`, `LineChart`, `BarChart`, etc.) will be leveraged.
+- **Phoenix API Base URL:** `https://phoenix-staging-data-3d6054f8c3ef.herokuapp.com` (accessible via `process.env.PHOENIX_API_URL` in Firebase Functions).
 
 ## 3. Scope of Phoenix Integration for Dashboards
 
-The following statistics are planned, contingent on Phoenix API capabilities:
+The following statistics are planned, leveraging the provided Phoenix API capabilities:
 
-### 3.1. Admin Dashboard
+### 3.1. Admin Dashboard (Platform-Wide)
 
-*   **Service Request Volume Trends (Platform-Wide):**
-    *   Metric: Total service requests over time (e.g., daily, weekly, monthly).
-    *   Chart: Line chart.
-    *   Data Source: Phoenix API.
-*   **Service Request Types Distribution (Platform-Wide):**
-    *   Metric: Breakdown of service requests by type (e.g., "tire_change", "jump_start").
-    *   Chart: Pie chart or Bar chart.
-    *   Data Source: Phoenix API.
-*   **Average Service Completion Time (Platform-Wide):**
-    *   Metric: Average time from request creation/dispatch to completion.
-    *   Chart: KPI Card or trend line.
-    *   Data Source: Phoenix API (requires start/end timestamps per job).
+- **Service Request Volume Trends:**
+  - Metric: Trend of dispatched service requests over time (e.g., daily, weekly, monthly).
+  - Chart: Line chart.
+  - Data Source: Phoenix API (`/form-submissions/search/source-meta`).
+  - Logic: Query with `applicationName=PropertyManagerPro`, `fromDate`, `toDate`, and `limit=1`. Use `analytics.dispatched_count` from the response for each period.
+- **Service Request Types Distribution:**
+  - Metric: Breakdown of dispatched service requests by type.
+  - Chart: Pie chart or Bar chart.
+  - Data Source: Phoenix API (`/form-submissions/search/source-meta`).
+  - Logic: For a predefined list of service types, query with `applicationName=PropertyManagerPro`, `serviceType=<type_name>`, `fromDate`, `toDate`, and `limit=1`. Use `meta.total` for each type.
+- **Average Service Completion Time:**
+  - Metric: Average time from job creation to job completion for dispatched services.
+  - Chart: KPI Card or trend line.
+  - Data Source: Phoenix API (`/jobs/search/source-meta`).
+  - Logic: Query with `applicationName=PropertyManagerPro`, `status` IN (`completed`, `paid`, `invoiced`), and `completedAt` within `dateRange`. Calculate average of (`job.completedAt` - `job.createdAt`).
 
 ### 3.2. Organization Manager Dashboard (Scoped to Selected Organization)
 
-*   **Service Request Volume (Per Organization):**
-    *   Metric: Total service requests over time for the selected organization.
-    *   Chart: Line chart.
-    *   Data Source: Phoenix API, filtered by `clientOrganizationId`.
-*   **Service Request Types (Per Organization):**
-    *   Metric: Breakdown by type for the selected organization.
-    *   Chart: Pie or Bar chart.
-    *   Data Source: Phoenix API, filtered by `clientOrganizationId`.
-*   **Average Completion Time (Per Organization):**
-    *   Metric: Average time for the selected organization.
-    *   Chart: KPI Card or trend line.
-    *   Data Source: Phoenix API, filtered by `clientOrganizationId`.
-*   **(Optional) Top Properties by Service Request Volume:**
-    *   Metric: List or bar chart of properties with the highest request volumes within the organization.
-    *   Data Source: Phoenix API, aggregated by `clientPropertyId` within the `clientOrganizationId`.
+- **Service Request Volume Trends:**
+  - As above (Admin Dashboard), additionally filtered by `organizationId`.
+- **Service Request Types Distribution:**
+  - As above (Admin Dashboard), additionally filtered by `organizationId`.
+- **Average Completion Time:**
+  - As above (Admin Dashboard), additionally filtered by `organizationId`.
+- **(Optional) Top Properties by Service Request Volume:**
+  - Metric: List or bar chart of properties with the highest dispatched request volumes.
+  - Data Source: Phoenix API (`/form-submissions/search/source-meta`).
+  - Logic: Query for each property within the organization, using `analytics.dispatched_count` (filtered by `propertyId`) or `meta.total` (filtered by `propertyId`) for each period.
 
 ### 3.3. Property Manager Dashboard (Scoped to Selected Property)
 
-*   **Service Request Volume (Per Property):**
-    *   Metric: Total service requests over time for the selected property.
-    *   Chart: Line chart.
-    *   Data Source: Phoenix API, filtered by `clientPropertyId` (and `clientOrganizationId`).
-*   **Service Request Types (Per Property):**
-    *   Metric: Breakdown by type for the selected property.
-    *   Chart: Pie or Bar chart.
-    *   Data Source: Phoenix API, filtered by `clientPropertyId`.
-*   **Open vs. Closed Requests (Per Property):**
-    *   Metric: Count of currently open and recently closed service requests.
-    *   Chart: KPI Cards or a simple Bar chart.
-    *   Data Source: Phoenix API, filtered by `clientPropertyId` and status.
+- **Service Request Volume Trends:**
+  - As above (Admin Dashboard), additionally filtered by `organizationId` and `propertyId`.
+- **Service Request Types Distribution:**
+  - As above (Admin Dashboard), additionally filtered by `organizationId` and `propertyId`.
+- **Open vs. Closed Requests:**
+  - Metric: Count of currently open and closed dispatched service requests.
+  - Chart: KPI Cards or a simple Bar chart.
+  - Data Source: Phoenix API (`/jobs/search/source-meta`).
+  - Logic:
+    - Open: Query with `applicationName=PropertyManagerPro`, `organizationId`, `propertyId`, `status` IN (`pending`, `assigned`, `en-route`, `in-progress`), and `limit=1`. Use `meta.total`.
+    - Closed: Query with `applicationName=PropertyManagerPro`, `organizationId`, `propertyId`, `status` IN (`completed`, `paid`, `invoiced`), and `limit=1`. Use `meta.total`. (Consider `dateRange` for "recently closed").
 
 ## 4. Technical Implementation Plan
 
 ### 4.1. Backend (New/Updated Cloud Functions)
 
 New Firebase Cloud Functions (callable) will be created, or existing ones updated, to interact with the Phoenix API. These functions will be responsible for:
-*   Authenticating with the Phoenix API.
-*   Making requests to the appropriate Phoenix API endpoints.
-*   Transforming the data received from Phoenix into a format suitable for the frontend charts.
-*   Handling errors gracefully.
 
-*   **`getAdminServiceRequestStats` (New or Expanded `getAdminDashboardStats`):**
-    *   Fetches platform-wide service request data from Phoenix.
-*   **`getOrgServiceRequestStats` (New or Expanded `getOrgManagerDashboardStats`):**
-    *   Inputs: `organizationId`, `dateRange?`
-    *   Fetches service request data for the specified `organizationId` from Phoenix.
-*   **`getPropertyManagerServiceRequestStats` (Expanded):**
-    *   Inputs: `organizationId`, `propertyId`, `dateRange?`
-    *   Fetches service request data for the specified `propertyId` from Phoenix.
+- Making requests to the appropriate Phoenix API endpoints (initially without authentication headers, as authentication is temporarily disabled on Phoenix side for these development endpoints; this will be reinstated before production).
+- Applying necessary filters (`applicationName`, `organizationId`, `propertyId`, `serviceType`, `status`, date ranges) based on input parameters, as detailed in Section 3.
+- Processing paginated responses if fetching lists of jobs (e.g., for average completion time).
+- Extracting specific data points (e.g., `analytics.dispatched_count`, `meta.total`) or calculating aggregates (e.g., average completion time).
+- Transforming the data received from Phoenix into a format suitable for the frontend charts.
+- Handling errors gracefully.
+
+- **`getAdminServiceRequestStats` (New or to be integrated into `getAdminDashboardStats`):**
+  - Fetches platform-wide service request data from Phoenix as detailed in section 3.1. This includes volume trends, type distribution, and average completion time.
+- **`getOrgServiceRequestStats` (New or to be integrated into `getOrgManagerDashboardStats`):**
+  - Inputs: `organizationId`, `dateRange?`
+  - Fetches service request data for the specified `organizationId` from Phoenix as detailed in section 3.2.
+- **`getPropertyManagerServiceRequestStats` (New or to be integrated into `getPropertyManagerDashboardStats`):**
+  - Inputs: `organizationId`, `propertyId`, `dateRange?`
+  - Fetches service request data for the specified `propertyId` from Phoenix as detailed in section 3.3.
 
 ### 4.2. Frontend (Dashboard Panel Updates)
 
 The existing dashboard panel components will be updated:
-*   **State Management:** Add new state variables to hold the Phoenix-sourced statistics and their loading/error states.
-*   **Data Fetching:** Modify `useEffect` hooks (or add new ones) to call the new/updated Cloud Functions when the respective dashboard tab is active and necessary filters (like `organizationId` or `propertyId`) are selected.
-*   **Chart Integration:** Use the existing chart wrapper components (`LineChart`, `PieChart`, `KpiCard`, etc.) to display the data fetched from Phoenix.
-    *   Construct Highcharts `options` objects based on the data returned by the Cloud Functions.
-    *   Pass these options to the chart components.
-    *   Handle loading and error states appropriately for these new charts.
+
+- **State Management:** Add new state variables to hold the Phoenix-sourced statistics and their loading/error states.
+- **Data Fetching:** Modify `useEffect` hooks (or add new ones) to call the new/updated Cloud Functions when the respective dashboard tab is active and necessary filters (like `organizationId` or `propertyId`) are selected.
+- **Chart Integration:** Use the existing chart wrapper components (`LineChart`, `PieChart`, `KpiCard`, etc.) to display the data fetched from Phoenix.
+  - Construct Highcharts `options` objects based on the data returned by the Cloud Functions.
+  - Pass these options to the chart components.
+  - Handle loading and error states appropriately for these new charts.
 
 ## 5. Error Handling and Data Consistency
 
-*   Robust error handling for Phoenix API calls within Cloud Functions.
-*   Clear display of errors or "data unavailable" messages on the dashboard if Phoenix API is unreachable or returns errors.
-*   Consideration for caching Phoenix API responses in Cloud Functions if data doesn't change too frequently and API rate limits are a concern (e.g., using Firebase Cache service or a simple in-memory cache with TTL).
+- Robust error handling for Phoenix API calls within Cloud Functions.
+- Clear display of errors or "data unavailable" messages on the dashboard if Phoenix API is unreachable or returns errors.
+- Consideration for caching Phoenix API responses in Cloud Functions if data doesn't change too frequently and API rate limits are a concern (e.g., using Firebase Cache service or a simple in-memory cache with TTL).
 
-## 6. Next Steps (Once Phoenix API Docs are Available)
+## 6. Implementation Next Steps
 
-1.  **Review Phoenix API Documentation:** Understand available endpoints, request/response formats, authentication, and rate limits.
-2.  **Refine Scope:** Adjust the planned statistics based on what data is realistically available and performant to query from Phoenix.
-3.  **Implement Backend Functions:** Develop and test the Cloud Functions that interface with Phoenix.
-4.  **Implement Frontend Integration:** Update dashboard panels to call these functions and display the new charts.
-5.  **Thorough Testing:** Test data accuracy, chart rendering, loading states, and error handling across all relevant dashboard views.
+1.  **Develop Backend Cloud Functions:**
+    *   Implement the logic for `getAdminServiceRequestStats`, `getOrgServiceRequestStats`, and `getPropertyManagerServiceRequestStats` (or integrate their logic into existing dashboard stats functions).
+    *   Ensure functions correctly call the Phoenix API endpoints (`/form-submissions/search/source-meta`, `/jobs/search/source-meta`) with appropriate filters as per Section 3.
+    *   Implement data transformation to prepare data for Highcharts.
+    *   Include robust error handling.
+2.  **Implement Frontend Integration:**
+    *   Update `AdminDashboardPanel.tsx`, `OrganizationManagerDashboardPanel.tsx`, and `PropertyManagerDashboardPanel.tsx`.
+    *   Add state management for new Phoenix-sourced statistics.
+    *   Implement `useEffect` hooks to call the Cloud Functions.
+    *   Integrate new charts using existing chart wrapper components, passing the fetched and transformed data.
+    *   Handle loading states and display error messages appropriately.
+3.  **Thorough Testing:**
+    *   Unit test Cloud Functions where possible.
+    *   Perform integration testing of Cloud Functions calling the (temporarily unauthenticated) Phoenix API staging environment.
+    *   Conduct end-to-end testing of dashboard views:
+        *   Verify data accuracy for all metrics.
+        *   Check chart rendering and interactivity.
+        *   Test loading indicators and error state displays.
+4.  **Security - Reinstate Authentication:**
+    *   Once initial functionality is confirmed, coordinate with the Phoenix team to re-enable authentication on their endpoints.
+    *   Update Cloud Functions to securely manage and send the required authentication tokens with API requests. This typically involves storing tokens as secrets (e.g., in Google Secret Manager) and accessing them at runtime.
+5.  **Documentation Review:**
+    *   Ensure this document (`12-dashboard-phoenix-integration-plan.md`) remains up-to-date as implementation progresses.
+    *   Update any relevant Memory Bank files (`systemPatterns.md`, `activeContext.md`) with new patterns or decisions arising from this implementation.

@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect, useMemo } from 'react'; // Added useMemo
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import {
   Box,
   Typography,
@@ -13,16 +13,20 @@ import {
   IconButton,
   Container,
   Stack,
+  Divider,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import CloseIcon from '@mui/icons-material/Close';
-import DomainAddIcon from '@mui/icons-material/DomainAdd'; // Property Manager Dashboard Icon
+import DomainAddIcon from '@mui/icons-material/DomainAdd';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import HomeWork from '@mui/icons-material/HomeWork';
 import Group from '@mui/icons-material/Group';
 import Campaign from '@mui/icons-material/Campaign';
-import DashboardIcon from '@mui/icons-material/Dashboard'; // For new Dashboard tab
-import PeopleIcon from '@mui/icons-material/People'; // For KPIs
+import DashboardIcon from '@mui/icons-material/Dashboard';
+import PeopleIcon from '@mui/icons-material/People';
+import TrendingUpIcon from '@mui/icons-material/TrendingUp';
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
+import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
 
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../../firebaseConfig';
@@ -44,10 +48,30 @@ import ChatView from '../Chat/ChatView';
 // Chart Components
 import KpiCard from './Charts/KpiCard';
 import BarChart from './Charts/BarChart';
+import LineChart from './Charts/LineChart';
+import PieChart from './Charts/PieChart';
 
 // Firebase functions
 import { getFunctions, httpsCallable } from 'firebase/functions';
-import { isAppError } from '../../utils/errorUtils'; // Added for type-safe error handling
+import { isAppError } from '../../utils/errorUtils';
+
+// Define Phoenix Stats types
+interface PhoenixVolumeTrendPoint {
+  date: string;
+  count: number;
+}
+
+interface PhoenixTypeDistributionPoint {
+  name: string;
+  y: number;
+}
+
+interface PropertyManagerPhoenixStats {
+  volumeTrends?: PhoenixVolumeTrendPoint[];
+  typeDistribution?: PhoenixTypeDistributionPoint[];
+  openRequests?: number;
+  closedRequests?: number;
+}
 
 // Define PropertyManagerDashboardStatsData type locally
 interface PropertyCampaignPerformanceData {
@@ -102,7 +126,7 @@ interface PropertyManagerDashboardPanelProps {
 const PropertyManagerDashboardPanel: React.FC<
   PropertyManagerDashboardPanelProps
 > = ({ organizationId }) => {
-  const [pmTabValue, setPmTabValue] = useState(0); // Default to new Dashboard tab
+  const [pmTabValue, setPmTabValue] = useState(0);
   const [selectedPropertyId, setSelectedPropertyId] = useState<string | null>(
     null
   );
@@ -123,11 +147,17 @@ const PropertyManagerDashboardPanel: React.FC<
   );
   const [refreshResidentsKey, setRefreshResidentsKey] = useState(0);
 
-  // State for dashboard data
+  // State for existing dashboard data
   const [dashboardStats, setDashboardStats] =
     useState<PropertyManagerDashboardStatsData | null>(null);
   const [dashboardLoading, setDashboardLoading] = useState<boolean>(false);
   const [dashboardError, setDashboardError] = useState<string | null>(null);
+
+  // State for Phoenix stats
+  const [phoenixStats, setPhoenixStats] = useState<PropertyManagerPhoenixStats | null>(null);
+  const [phoenixLoading, setPhoenixLoading] = useState<boolean>(false);
+  const [phoenixError, setPhoenixError] = useState<string | null>(null);
+
   const functionsInstance = getFunctions();
 
   useEffect(() => {
@@ -154,7 +184,7 @@ const PropertyManagerDashboardPanel: React.FC<
   useEffect(() => {
     const fetchPropertyManagerStats = async () => {
       if (!organizationId || !selectedPropertyId || pmTabValue !== 0) {
-        setDashboardStats(null);
+        setDashboardStats(null); // Clear if not applicable
         return;
       }
       setDashboardLoading(true);
@@ -164,7 +194,6 @@ const PropertyManagerDashboardPanel: React.FC<
           functionsInstance,
           'getPropertyManagerDashboardStats'
         );
-        // Ensure organizationId and selectedPropertyId are passed in a data object
         const result = await getStatsFunction({
           organizationId,
           propertyId: selectedPropertyId,
@@ -186,7 +215,53 @@ const PropertyManagerDashboardPanel: React.FC<
         setDashboardLoading(false);
       }
     };
-    fetchPropertyManagerStats();
+
+    const fetchPhoenixPropertyManagerStats = async () => {
+      if (!organizationId || !selectedPropertyId || pmTabValue !== 0) {
+        setPhoenixStats(null); // Clear if not applicable
+        return;
+      }
+      setPhoenixLoading(true);
+      setPhoenixError(null);
+      try {
+        const getStatsFunction = httpsCallable(
+          functionsInstance,
+          'getPropertyManagerPhoenixStats'
+        );
+        const result = await getStatsFunction({
+          organizationId,
+          propertyId: selectedPropertyId,
+          // dateRange: /* pass if you add date range selection */
+        });
+        if ((result.data as any)?.success) {
+          setPhoenixStats((result.data as any).data as PropertyManagerPhoenixStats);
+        } else {
+          throw new Error((result.data as any)?.message || 'Failed to fetch Phoenix stats for property');
+        }
+      } catch (err: unknown) {
+        console.error(
+          `Error fetching Phoenix stats for property ${selectedPropertyId}:`,
+          err
+        );
+        let errorMessage = 'Failed to load Phoenix statistics for property.';
+        if (isAppError(err)) {
+          errorMessage = err.message;
+        } else if (err instanceof Error) {
+          errorMessage = err.message;
+        }
+        setPhoenixError(errorMessage);
+      } finally {
+        setPhoenixLoading(false);
+      }
+    };
+
+    if (pmTabValue === 0 && organizationId && selectedPropertyId) {
+      fetchPropertyManagerStats();
+      fetchPhoenixPropertyManagerStats();
+    } else { // Clear stats if conditions are not met
+        setDashboardStats(null);
+        setPhoenixStats(null);
+    }
   }, [organizationId, selectedPropertyId, pmTabValue, functionsInstance]);
 
   const handlePmTabChange = useCallback(
@@ -200,12 +275,8 @@ const PropertyManagerDashboardPanel: React.FC<
     (propertyId: string | null, propertyName?: string | null) => {
       setSelectedPropertyId(propertyId);
       setSelectedPropertyName(propertyName ?? null);
-      if (pmTabValue !== 0) {
-        // If not on dashboard, switch to a relevant tab or clear selection for other tabs
-        // setPmTabValue(1); // Or a more relevant default for property actions
-      }
     },
-    [pmTabValue]
+    []
   );
 
   const handleOpenCreatePropertyModal = () =>
@@ -241,7 +312,7 @@ const PropertyManagerDashboardPanel: React.FC<
     setRefreshResidentsKey((prev) => prev + 1);
   };
 
-  // Chart options
+  // Chart options for existing stats
   const campaignPerformanceOptions: Highcharts.Options | null = useMemo(() => {
     if (!dashboardStats?.campaignPerformance) return null;
     const categories = dashboardStats.campaignPerformance.map(
@@ -257,7 +328,7 @@ const PropertyManagerDashboardPanel: React.FC<
           selectedPropertyName || 'Selected Property'
         }`,
       },
-      xAxis: { categories, title: { text: 'Campaign Name' } },
+      xAxis: { categories, title: { text: 'Campaign Name' }, type: 'category' },
       yAxis: {
         min: 0,
         title: { text: 'Number Accepted' },
@@ -267,6 +338,51 @@ const PropertyManagerDashboardPanel: React.FC<
       accessibility: { enabled: true },
     };
   }, [dashboardStats?.campaignPerformance, selectedPropertyName]);
+
+  // Chart options for Phoenix Stats
+  const phoenixVolumeTrendOptions: Highcharts.Options | null = useMemo(() => {
+    if (!phoenixStats?.volumeTrends || phoenixStats.volumeTrends.length === 0) return null;
+    return {
+      title: { text: 'Service Request Volume (Phoenix)' },
+      xAxis: {
+        categories: phoenixStats.volumeTrends.map(d => d.date),
+        type: 'category',
+      },
+      yAxis: {
+        title: { text: 'Number of Dispatched Requests' },
+        allowDecimals: false,
+      },
+      series: [{
+        name: 'Dispatched Requests',
+        data: phoenixStats.volumeTrends.map(d => d.count),
+        type: 'line',
+      }],
+      accessibility: { enabled: true },
+    };
+  }, [phoenixStats?.volumeTrends]);
+
+  const phoenixTypeDistributionOptions: Highcharts.Options | null = useMemo(() => {
+    if (!phoenixStats?.typeDistribution || phoenixStats.typeDistribution.length === 0) return null;
+    return {
+      chart: { type: 'pie' },
+      title: { text: 'Service Request Types (Phoenix)' },
+      tooltip: { pointFormat: '{series.name}: <b>{point.percentage:.1f}%</b> ({point.y})' },
+      plotOptions: {
+        pie: {
+          allowPointSelect: true,
+          cursor: 'pointer',
+          dataLabels: { enabled: true, format: '<b>{point.name}</b>: {point.y}' },
+        },
+      },
+      series: [{
+        name: 'Requests',
+        colorByPoint: true,
+        data: phoenixStats.typeDistribution,
+        type: 'pie',
+      }],
+      accessibility: { enabled: true },
+    };
+  }, [phoenixStats?.typeDistribution]);
 
   return (
     <Container component='main' maxWidth='lg'>
@@ -325,6 +441,7 @@ const PropertyManagerDashboardPanel: React.FC<
               organizationId={organizationId}
               selectedPropertyId={selectedPropertyId}
               onPropertyChange={handlePropertySelect}
+              key={refreshPropertiesKey}
             />
           ) : (
             <Alert severity='warning'>
@@ -343,66 +460,34 @@ const PropertyManagerDashboardPanel: React.FC<
                 Stats for: {selectedPropertyName || 'Selected Property'}
               </Typography>
               <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 3 }}>
-                <Box
-                  sx={{
-                    flexGrow: 1,
-                    flexBasis: { xs: '100%', sm: 'calc(50% - 8px)' },
-                  }}
-                >
+                <Box sx={{ flexGrow: 1, flexBasis: { xs: '100%', sm: 'calc(33.333% - 11px)' } }}>
                   <KpiCard
                     title='Total Residents'
-                    value={
-                      dashboardLoading
-                        ? '...'
-                        : dashboardStats?.propertyCounts?.totalResidents ??
-                          'N/A'
-                    }
+                    value={ dashboardLoading ? '...' : dashboardStats?.propertyCounts?.totalResidents ?? 'N/A' }
                     isLoading={dashboardLoading}
                     icon={<PeopleIcon />}
                   />
                 </Box>
-                <Box
-                  sx={{
-                    flexGrow: 1,
-                    flexBasis: { xs: '100%', sm: 'calc(50% - 8px)' },
-                  }}
-                >
+                <Box sx={{ flexGrow: 1, flexBasis: { xs: '100%', sm: 'calc(33.333% - 11px)' } }}>
                   <KpiCard
                     title='Occupancy Rate'
-                    value={
-                      dashboardLoading
-                        ? '...'
-                        : `${
-                            (dashboardStats?.propertyCounts?.occupancyRate ??
-                              0) * 100
-                          }%`
-                    }
+                    value={ dashboardLoading ? '...' : `${((dashboardStats?.propertyCounts?.occupancyRate ?? 0) * 100).toFixed(1)}%` }
                     unit=''
                     isLoading={dashboardLoading}
-                    icon={<HomeWork />}
+                    icon={<TrendingUpIcon />}
                   />
                 </Box>
-                <Box
-                  sx={{
-                    flexGrow: 1,
-                    flexBasis: { xs: '100%', sm: 'calc(50% - 8px)' },
-                  }}
-                >
+                <Box sx={{ flexGrow: 1, flexBasis: { xs: '100%', sm: 'calc(33.333% - 11px)' } }}>
                   <KpiCard
                     title='Total Units'
-                    value={
-                      dashboardLoading
-                        ? '...'
-                        : dashboardStats?.propertyCounts?.totalUnits ?? 'N/A'
-                    }
+                    value={ dashboardLoading ? '...' : dashboardStats?.propertyCounts?.totalUnits ?? 'N/A' }
                     isLoading={dashboardLoading}
                     icon={<HomeWork />}
                   />
                 </Box>
               </Box>
               {(dashboardStats?.campaignPerformance &&
-                dashboardStats.campaignPerformance.length > 0) ||
-              dashboardLoading ? (
+                dashboardStats.campaignPerformance.length > 0) || dashboardLoading ? (
                 <Paper elevation={2} sx={{ p: 2, borderRadius: 2, mt: 2 }}>
                   {campaignPerformanceOptions && (
                     <BarChart
@@ -413,16 +498,69 @@ const PropertyManagerDashboardPanel: React.FC<
                   )}
                 </Paper>
               ) : (
-                !dashboardLoading && (
-                  <Typography sx={{ mt: 2 }}>
-                    No campaign data to display for this property.
-                  </Typography>
-                )
+                !dashboardLoading && (<Typography sx={{ mt: 2 }}>No campaign data to display for this property.</Typography>)
               )}
-              {!(dashboardStats || dashboardLoading) && !dashboardError && (
-                <Typography sx={{ mt: 2 }}>
-                  No dashboard data to display for this property.
-                </Typography>
+              
+              {/* Phoenix Stats Section */}
+              <Divider sx={{ my: 3, borderColor: 'primary.main', borderWidth: '1px', opacity: 0.5 }} />
+              <Typography variant="h6" gutterBottom sx={{ color: 'primary.main', mb: 2 }}>
+                Phoenix Service Analytics for {selectedPropertyName || 'Selected Property'}
+              </Typography>
+
+              {phoenixError && (
+                <Alert severity='error' sx={{ mb: 2 }}>
+                  {phoenixError}
+                </Alert>
+              )}
+
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 3 }}>
+                <Box sx={{ flexGrow: 1, flexBasis: { xs: '100%', sm: 'calc(50% - 8px)'} }}>
+                  <KpiCard
+                    title="Open Service Requests"
+                    value={ phoenixLoading ? '...' : phoenixStats?.openRequests ?? 'N/A' }
+                    isLoading={phoenixLoading}
+                    icon={<HourglassEmptyIcon />}
+                  />
+                </Box>
+                <Box sx={{ flexGrow: 1, flexBasis: { xs: '100%', sm: 'calc(50% - 8px)'} }}>
+                  <KpiCard
+                    title="Closed Service Requests"
+                    value={ phoenixLoading ? '...' : phoenixStats?.closedRequests ?? 'N/A' }
+                    isLoading={phoenixLoading}
+                    icon={<CheckCircleOutlineIcon />}
+                  />
+                </Box>
+              </Box>
+              
+              <Stack spacing={3}>
+                {(phoenixStats?.volumeTrends && phoenixStats.volumeTrends.length > 0) || phoenixLoading ? (
+                  <Paper elevation={2} sx={{ p: 2, borderRadius: 2 }}>
+                    {phoenixVolumeTrendOptions && (
+                      <LineChart
+                        options={phoenixVolumeTrendOptions}
+                        isLoading={phoenixLoading}
+                        height="350px"
+                      />
+                    )}
+                  </Paper>
+                ) : null}
+
+                {(phoenixStats?.typeDistribution && phoenixStats.typeDistribution.length > 0) || phoenixLoading ? (
+                  <Paper elevation={2} sx={{ p: 2, borderRadius: 2 }}>
+                    {phoenixTypeDistributionOptions && (
+                      <PieChart
+                        options={phoenixTypeDistributionOptions}
+                        isLoading={phoenixLoading}
+                        height="350px"
+                      />
+                    )}
+                  </Paper>
+                ) : null}
+              </Stack>
+
+              {!(dashboardStats || dashboardLoading) && !dashboardError && 
+               !(phoenixStats || phoenixLoading) && !phoenixError && (
+                <Typography sx={{ mt: 2 }}>No dashboard data to display for this property.</Typography>
               )}
             </Box>
           ) : (
@@ -436,15 +574,19 @@ const PropertyManagerDashboardPanel: React.FC<
           <Typography variant='h6' gutterBottom sx={{ mb: 2 }}>
             Your Managed Properties
           </Typography>
-          <PropertyManagerPropertiesList
-            key={refreshPropertiesKey}
-            selectedPropertyId={selectedPropertyId}
-            onPropertySelect={handlePropertySelect}
-            onEditProperty={handleOpenEditPropertyModal}
-            onPropertiesUpdate={() =>
-              setRefreshPropertiesKey((prev) => prev + 1)
-            }
-          />
+          {organizationId ? (
+            <PropertyManagerPropertiesList
+              key={refreshPropertiesKey}
+              selectedPropertyId={selectedPropertyId}
+              onPropertySelect={handlePropertySelect}
+              onEditProperty={handleOpenEditPropertyModal}
+              onPropertiesUpdate={() =>
+                setRefreshPropertiesKey((prev) => prev + 1)
+              }
+            />
+          ) : (
+             <Alert severity='warning'>Organization context not available.</Alert>
+          )}
         </TabPanel>
         <TabPanel value={pmTabValue} index={2}>
           <Typography variant='h6' gutterBottom sx={{ mb: 2 }}>
@@ -455,6 +597,7 @@ const PropertyManagerDashboardPanel: React.FC<
               organizationId={organizationId}
               selectedPropertyId={selectedPropertyId}
               onPropertyChange={handlePropertySelect}
+              key={`resident-${refreshPropertiesKey}`}
             />
           ) : (
             <Alert severity='warning'>Organization not identified.</Alert>
@@ -494,6 +637,7 @@ const PropertyManagerDashboardPanel: React.FC<
               organizationId={organizationId}
               selectedPropertyId={selectedPropertyId}
               onPropertyChange={handlePropertySelect}
+              key={`campaign-${refreshPropertiesKey}`}
             />
           ) : (
             <Alert severity='warning'>Organization not identified.</Alert>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react'; // Added useMemo
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Box,
   Typography,
@@ -21,13 +21,14 @@ import {
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import AssignmentInd from '@mui/icons-material/AssignmentInd';
 import HomeWork from '@mui/icons-material/HomeWork';
-import CampaignIcon from '@mui/icons-material/Campaign'; // Corrected Icon
-import DashboardIcon from '@mui/icons-material/Dashboard'; // For new Dashboard tab
-import PeopleIcon from '@mui/icons-material/People'; // For KPIs
+import CampaignIcon from '@mui/icons-material/Campaign';
+import DashboardIcon from '@mui/icons-material/Dashboard';
+import PeopleIcon from '@mui/icons-material/People';
+import TrendingUpIcon from '@mui/icons-material/TrendingUp'; // Added for Phoenix KPI
 
 import OrgManagerCampaignsView from '../OrganizationManager/Campaigns/OrgManagerCampaignsView';
 import AddIcon from '@mui/icons-material/Add';
-import BusinessIcon from '@mui/icons-material/Business'; // More appropriate for Org Dashboard title
+import BusinessIcon from '@mui/icons-material/Business';
 
 import { useAuth } from '../../hooks/useAuth';
 import OrgScopedPropertyManagerManagement from '../OrganizationManager/OrgScopedPropertyManagerManagement';
@@ -45,18 +46,35 @@ import { collection, query, where, getDocs } from 'firebase/firestore';
 // Chart Components
 import KpiCard from './Charts/KpiCard';
 import BarChart from './Charts/BarChart';
-// import LineChart from './Charts/LineChart'; // If needed later
-// import PieChart from './Charts/PieChart'; // If needed later
+import LineChart from './Charts/LineChart'; // Added for Phoenix Volume Trends
+import PieChart from './Charts/PieChart';   // Added for Phoenix Type Distribution
 
 // Firebase functions
 import { getFunctions, httpsCallable } from 'firebase/functions';
-import { isAppError } from '../../utils/errorUtils'; // Added for type-safe error handling
+import { isAppError } from '../../utils/errorUtils';
 import type {
   Organization,
   AppError,
   Property as PropertyType,
   Resident as ResidentType,
 } from '../../types';
+
+// Define Phoenix Stats types (similar to AdminDashboardPanel)
+interface PhoenixVolumeTrendPoint {
+  date: string;
+  count: number;
+}
+
+interface PhoenixTypeDistributionPoint {
+  name: string;
+  y: number;
+}
+
+interface OrgManagerPhoenixStats { // Structure for data from getOrgManagerPhoenixStats
+  volumeTrends?: PhoenixVolumeTrendPoint[];
+  typeDistribution?: PhoenixTypeDistributionPoint[];
+  averageCompletionTime?: number | null; // in milliseconds
+}
 
 // Define OrgManagerDashboardStatsData type locally
 interface CampaignPerformanceData {
@@ -139,18 +157,24 @@ const OrganizationManagerDashboardPanel: React.FC<
   );
   const [refreshResidentsListKey, setRefreshResidentsListKey] = useState(0);
   const [refreshPropertiesListKey, setRefreshPropertiesListKey] = useState(0);
-  const [tabValue, setTabValue] = useState(0); // Default to new Dashboard tab
+  const [tabValue, setTabValue] = useState(0);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error'>(
     'success'
   );
 
-  // State for dashboard data
+  // State for existing dashboard data
   const [dashboardStats, setDashboardStats] =
     useState<OrgManagerDashboardStatsData | null>(null);
-  const [dashboardLoading, setDashboardLoading] = useState<boolean>(false); // Start false, true on fetch
+  const [dashboardLoading, setDashboardLoading] = useState<boolean>(false);
   const [dashboardError, setDashboardError] = useState<string | null>(null);
+
+  // State for Phoenix stats
+  const [phoenixStats, setPhoenixStats] = useState<OrgManagerPhoenixStats | null>(null);
+  const [phoenixLoading, setPhoenixLoading] = useState<boolean>(false);
+  const [phoenixError, setPhoenixError] = useState<string | null>(null);
+
   const functionsInstance = getFunctions();
 
   const fetchOrganizations = useCallback(async () => {
@@ -176,7 +200,7 @@ const OrganizationManagerDashboardPanel: React.FC<
         }
       });
       if (orgIds && orgIds.length > 0) {
-        const chunkSize = 10;
+        const chunkSize = 10; // Firestore 'in' query limit
         for (let i = 0; i < orgIds.length; i += chunkSize) {
           const chunk = orgIds.slice(i, i + chunkSize);
           const assignedQuery = query(
@@ -195,7 +219,6 @@ const OrganizationManagerDashboardPanel: React.FC<
       }
       setOrganizations(orgs);
       if (orgs.length > 0 && !selectedOrgId) {
-        // Set selectedOrgId only if not already set
         setSelectedOrgId(orgs[0].id);
       } else if (orgs.length === 0) {
         setSelectedOrgId('');
@@ -207,7 +230,7 @@ const OrganizationManagerDashboardPanel: React.FC<
     } finally {
       setLoading(false);
     }
-  }, [currentUser?.uid, orgIds, selectedOrgId]); // Added selectedOrgId to dependencies
+  }, [currentUser?.uid, orgIds, selectedOrgId]);
 
   useEffect(() => {
     fetchOrganizations();
@@ -217,8 +240,7 @@ const OrganizationManagerDashboardPanel: React.FC<
   useEffect(() => {
     const fetchOrgManagerStats = async () => {
       if (!selectedOrgId || tabValue !== 0) {
-        // Only fetch if dashboard tab is active and org is selected
-        setDashboardStats(null); // Clear stats if not on dashboard tab or no org selected
+        setDashboardStats(null);
         return;
       }
       setDashboardLoading(true);
@@ -228,7 +250,6 @@ const OrganizationManagerDashboardPanel: React.FC<
           functionsInstance,
           'getOrgManagerDashboardStats'
         );
-        // Pass dateRange if/when implemented, for now, ensure organizationId is in a data object
         const result = await getStatsFunction({
           organizationId: selectedOrgId,
         });
@@ -249,7 +270,50 @@ const OrganizationManagerDashboardPanel: React.FC<
         setDashboardLoading(false);
       }
     };
-    fetchOrgManagerStats();
+
+    const fetchPhoenixOrgManagerStats = async () => {
+      if (!selectedOrgId || tabValue !== 0) {
+        setPhoenixStats(null);
+        return;
+      }
+      setPhoenixLoading(true);
+      setPhoenixError(null);
+      try {
+        const getStatsFunction = httpsCallable(
+          functionsInstance,
+          'getOrgManagerPhoenixStats'
+        );
+        // TODO: Pass appropriate dateRange if needed by the function/UI
+        const result = await getStatsFunction({
+          organizationId: selectedOrgId,
+          /* dateRange: ... */
+        });
+        if ((result.data as any)?.success) {
+          setPhoenixStats((result.data as any).data as OrgManagerPhoenixStats);
+        } else {
+          throw new Error((result.data as any)?.message || 'Failed to fetch Phoenix stats for organization');
+        }
+      } catch (err: unknown) {
+        console.error(
+          `Error fetching Phoenix stats for org ${selectedOrgId}:`,
+          err
+        );
+        let errorMessage = 'Failed to load Phoenix statistics for organization.';
+        if (isAppError(err)) {
+          errorMessage = err.message;
+        } else if (err instanceof Error) {
+          errorMessage = err.message;
+        }
+        setPhoenixError(errorMessage);
+      } finally {
+        setPhoenixLoading(false);
+      }
+    };
+
+    if (tabValue === 0 && selectedOrgId) {
+      fetchOrgManagerStats();
+      fetchPhoenixOrgManagerStats();
+    }
   }, [selectedOrgId, tabValue, functionsInstance]);
 
   const handleOrgChange = (event: SelectChangeEvent<string>) =>
@@ -323,7 +387,7 @@ const OrganizationManagerDashboardPanel: React.FC<
     setSnackbarMessage('Organization created successfully!');
     setSnackbarSeverity('success');
     setSnackbarOpen(true);
-    fetchOrganizations(); // Refetch organizations to include the new one
+    fetchOrganizations();
   };
   const handleSnackbarClose = (
     _event?: React.SyntheticEvent | Event,
@@ -333,7 +397,7 @@ const OrganizationManagerDashboardPanel: React.FC<
     setSnackbarOpen(false);
   };
 
-  // Chart options
+  // Chart options for existing stats
   const campaignPerformanceOptions: Highcharts.Options | null = useMemo(() => {
     if (!dashboardStats?.campaignPerformance?.conversionRates) return null;
     const categories = dashboardStats.campaignPerformance.conversionRates.map(
@@ -345,7 +409,7 @@ const OrganizationManagerDashboardPanel: React.FC<
     return {
       chart: { type: 'bar' },
       title: { text: 'Campaign Acceptance' },
-      xAxis: { categories, title: { text: 'Campaign Name' } },
+      xAxis: { categories, title: { text: 'Campaign Name' }, type: 'category' },
       yAxis: {
         min: 0,
         title: { text: 'Number Accepted' },
@@ -356,8 +420,53 @@ const OrganizationManagerDashboardPanel: React.FC<
     };
   }, [dashboardStats?.campaignPerformance]);
 
+  // Chart options for Phoenix Stats
+  const phoenixVolumeTrendOptions: Highcharts.Options | null = useMemo(() => {
+    if (!phoenixStats?.volumeTrends || phoenixStats.volumeTrends.length === 0) return null;
+    return {
+      title: { text: 'Service Request Volume (Phoenix)' },
+      xAxis: {
+        categories: phoenixStats.volumeTrends.map(d => d.date),
+        type: 'category',
+      },
+      yAxis: {
+        title: { text: 'Number of Dispatched Requests' },
+        allowDecimals: false,
+      },
+      series: [{
+        name: 'Dispatched Requests',
+        data: phoenixStats.volumeTrends.map(d => d.count),
+        type: 'line',
+      }],
+      accessibility: { enabled: true },
+    };
+  }, [phoenixStats?.volumeTrends]);
+
+  const phoenixTypeDistributionOptions: Highcharts.Options | null = useMemo(() => {
+    if (!phoenixStats?.typeDistribution || phoenixStats.typeDistribution.length === 0) return null;
+    return {
+      chart: { type: 'pie' },
+      title: { text: 'Service Request Types (Phoenix)' },
+      tooltip: { pointFormat: '{series.name}: <b>{point.percentage:.1f}%</b> ({point.y})' },
+      plotOptions: {
+        pie: {
+          allowPointSelect: true,
+          cursor: 'pointer',
+          dataLabels: { enabled: true, format: '<b>{point.name}</b>: {point.y}' },
+        },
+      },
+      series: [{
+        name: 'Requests',
+        colorByPoint: true,
+        data: phoenixStats.typeDistribution,
+        type: 'pie',
+      }],
+      accessibility: { enabled: true },
+    };
+  }, [phoenixStats?.typeDistribution]);
+
+
   if (loading && organizations.length === 0) {
-    // Show main loading only if no orgs are loaded yet
     return (
       <Box
         sx={{
@@ -481,7 +590,6 @@ const OrganizationManagerDashboardPanel: React.FC<
               </Tabs>
             </Box>
             <TabPanel value={tabValue} index={0}>
-              {/* OM Dashboard Content */}
               <Box sx={{ flexGrow: 1 }}>
                 {dashboardError && (
                   <Alert severity='error' sx={{ mb: 2 }}>
@@ -497,68 +605,26 @@ const OrganizationManagerDashboardPanel: React.FC<
                     mt: 1,
                   }}
                 >
-                  <Box
-                    sx={{
-                      flexGrow: 1,
-                      flexBasis: {
-                        xs: '100%',
-                        sm: 'calc(50% - 8px)',
-                        md: 'calc(33.333% - 11px)',
-                      },
-                    }}
-                  >
+                  <Box sx={{ flexGrow: 1, flexBasis: { xs: '100%', sm: 'calc(50% - 8px)', md: 'calc(33.333% - 11px)' } }}>
                     <KpiCard
                       title='Total Properties'
-                      value={
-                        dashboardLoading
-                          ? '...'
-                          : dashboardStats?.organizationCounts?.properties ??
-                            'N/A'
-                      }
+                      value={ dashboardLoading ? '...' : dashboardStats?.organizationCounts?.properties ?? 'N/A' }
                       isLoading={dashboardLoading}
                       icon={<HomeWork />}
                     />
                   </Box>
-                  <Box
-                    sx={{
-                      flexGrow: 1,
-                      flexBasis: {
-                        xs: '100%',
-                        sm: 'calc(50% - 8px)',
-                        md: 'calc(33.333% - 11px)',
-                      },
-                    }}
-                  >
+                  <Box sx={{ flexGrow: 1, flexBasis: { xs: '100%', sm: 'calc(50% - 8px)', md: 'calc(33.333% - 11px)' } }}>
                     <KpiCard
                       title='Total Residents'
-                      value={
-                        dashboardLoading
-                          ? '...'
-                          : dashboardStats?.organizationCounts?.residents ??
-                            'N/A'
-                      }
+                      value={ dashboardLoading ? '...' : dashboardStats?.organizationCounts?.residents ?? 'N/A' }
                       isLoading={dashboardLoading}
                       icon={<PeopleIcon />}
                     />
                   </Box>
-                  <Box
-                    sx={{
-                      flexGrow: 1,
-                      flexBasis: {
-                        xs: '100%',
-                        sm: 'calc(50% - 8px)',
-                        md: 'calc(33.333% - 11px)',
-                      },
-                    }}
-                  >
+                  <Box sx={{ flexGrow: 1, flexBasis: { xs: '100%', sm: 'calc(50% - 8px)', md: 'calc(33.333% - 11px)' } }}>
                     <KpiCard
                       title='Property Managers'
-                      value={
-                        dashboardLoading
-                          ? '...'
-                          : dashboardStats?.organizationCounts
-                              ?.propertyManagers ?? 'N/A'
-                      }
+                      value={ dashboardLoading ? '...' : dashboardStats?.organizationCounts?.propertyManagers ?? 'N/A' }
                       isLoading={dashboardLoading}
                       icon={<AssignmentInd />}
                     />
@@ -566,9 +632,7 @@ const OrganizationManagerDashboardPanel: React.FC<
                 </Box>
                 <Stack spacing={3}>
                   {(dashboardStats?.campaignPerformance?.conversionRates &&
-                    dashboardStats.campaignPerformance.conversionRates.length >
-                      0) ||
-                  dashboardLoading ? (
+                    dashboardStats.campaignPerformance.conversionRates.length > 0) || dashboardLoading ? (
                     <Paper elevation={2} sx={{ p: 2, borderRadius: 2 }}>
                       {campaignPerformanceOptions && (
                         <BarChart
@@ -580,40 +644,72 @@ const OrganizationManagerDashboardPanel: React.FC<
                       )}
                     </Paper>
                   ) : (
-                    !dashboardLoading && (
-                      <Typography>
-                        No campaign data to display for this organization.
-                      </Typography>
-                    )
+                    !dashboardLoading && (<Typography>No campaign data to display for this organization.</Typography>)
                   )}
 
                   {dashboardStats?.campaignPerformance || dashboardLoading ? (
-                    <Paper
-                      elevation={2}
-                      sx={{ p: 2, borderRadius: 2, textAlign: 'center' }}
-                    >
+                    <Paper elevation={2} sx={{ p: 2, borderRadius: 2, textAlign: 'center' }}>
                       <KpiCard
                         title='Active Campaigns'
-                        value={
-                          dashboardLoading
-                            ? '...'
-                            : dashboardStats?.campaignPerformance
-                                ?.activeCampaigns ?? 'N/A'
-                        }
+                        value={ dashboardLoading ? '...' : dashboardStats?.campaignPerformance?.activeCampaigns ?? 'N/A' }
                         isLoading={dashboardLoading}
-                        sx={{
-                          width: 'auto',
-                          boxShadow: 'none',
-                          p: 0,
-                          display: 'inline-flex',
-                          flexDirection: 'column',
-                          alignItems: 'center',
-                        }}
+                        sx={{ width: 'auto', boxShadow: 'none', p: 0, display: 'inline-flex', flexDirection: 'column', alignItems: 'center' }}
                       />
                     </Paper>
                   ) : null}
                 </Stack>
-                {!(dashboardStats || dashboardLoading) && !dashboardError && (
+
+                {/* Phoenix Stats Section */}
+                <Divider sx={{ my: 3, borderColor: 'primary.main', borderWidth: '1px', opacity: 0.5 }} />
+                <Typography variant="h6" gutterBottom sx={{ color: 'primary.main', mb: 2 }}>
+                  Phoenix Service Analytics
+                </Typography>
+
+                {phoenixError && (
+                  <Alert severity='error' sx={{ mb: 2 }}>
+                    {phoenixError}
+                  </Alert>
+                )}
+
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 3 }}>
+                  <Box sx={{ flexGrow: 1, flexBasis: { xs: '100%', sm: 'calc(50% - 8px)', md: 'calc(33.333% - 11px)' } }}>
+                    <KpiCard
+                      title="Avg. Service Completion Time"
+                      value={ phoenixLoading ? '...' : phoenixStats?.averageCompletionTime != null ? `${(phoenixStats.averageCompletionTime / (1000 * 60)).toFixed(1)} min` : 'N/A' }
+                      isLoading={phoenixLoading}
+                      icon={<TrendingUpIcon />}
+                    />
+                  </Box>
+                </Box>
+                
+                <Stack spacing={3}>
+                  {(phoenixStats?.volumeTrends && phoenixStats.volumeTrends.length > 0) || phoenixLoading ? (
+                    <Paper elevation={2} sx={{ p: 2, borderRadius: 2 }}>
+                      {phoenixVolumeTrendOptions && (
+                        <LineChart
+                          options={phoenixVolumeTrendOptions}
+                          isLoading={phoenixLoading}
+                          height="350px"
+                        />
+                      )}
+                    </Paper>
+                  ) : null}
+
+                  {(phoenixStats?.typeDistribution && phoenixStats.typeDistribution.length > 0) || phoenixLoading ? (
+                    <Paper elevation={2} sx={{ p: 2, borderRadius: 2 }}>
+                      {phoenixTypeDistributionOptions && (
+                        <PieChart
+                          options={phoenixTypeDistributionOptions}
+                          isLoading={phoenixLoading}
+                          height="350px"
+                        />
+                      )}
+                    </Paper>
+                  ) : null}
+                </Stack>
+                
+                {!(dashboardStats || dashboardLoading) && !dashboardError && 
+                 !(phoenixStats || phoenixLoading) && !phoenixError && (
                   <Typography>No dashboard data to display.</Typography>
                 )}
               </Box>

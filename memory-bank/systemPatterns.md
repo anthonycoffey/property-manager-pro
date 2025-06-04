@@ -60,7 +60,7 @@ The application employs a modern web architecture with a React-based frontend an
     - **Subcollections:**
       - **`users`**: Profiles for org staff. Fields: `displayName`, `email`, `organizationRoles`, `permissions?`, `invitedBy?`, `createdAt`.
       - **`properties`**: Property details. Fields: `name`, `address` (object: `street`, `city`, `state`, `zip`), `type`, `managedBy`, `createdAt`.
-        - **Subcollection `residents`**: Resident profiles. Fields: `displayName`, `email`, `unitNumber`, `roles`, `leaseStartDate?`, `leaseEndDate?`, `invitedBy?`, `createdAt`, vehicle info, etc.
+        - **Subcollection `residents`**: Resident profiles. Fields: `displayName`, `email`, `unitNumber`, `roles`, `leaseStartDate?`, `leaseEndDate?`, `invitedBy?`, `createdAt`, `vehicles?` (array of up to 2 vehicle objects: `{ make: string, model: string, year: number, color: string, plate: string }`), etc.
       - **`invitations`**: Org-specific user/resident invites. Fields: `email`, `rolesToAssign`, `organizationIds`, `targetPropertyId?`, `status`, `createdBy`, `createdAt`, `expiresAt`, `campaignId?`.
       - **`campaigns`**: Resident invitation campaigns. Fields: `campaignName`, `campaignType`, `status`, `rolesToAssign`, `createdBy`, `createdAt`, `organizationId`, `propertyId`, `id` (self-ID), `maxUses?`, `totalAccepted`, `expiresAt?`, CSV/public link specific fields.
       - **`services`** (Subcollection: `organizations/{organizationId}/services`)

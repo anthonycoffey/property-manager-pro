@@ -2,6 +2,7 @@ import { https } from 'firebase-functions/v1';
 import { CallableContext } from 'firebase-functions/v1/https';
 import fetch from 'node-fetch';
 import { handleHttpsError } from '../helpers/handleHttpsError.js';
+import * as logger from 'firebase-functions/logger';
 
 const PHOENIX_API_URL_BASE = process.env.PHOENIX_API_URL;
 
@@ -19,6 +20,7 @@ interface GetPropertyManagerPhoenixStatsData {
 interface PhoenixAnalytics {
   total_submissions?: string;
   dispatched_count?: string;
+  serviceTypeDistribution?: Array<{ type: string; count: number }>;
   [key: string]: any;
 }
 
@@ -61,62 +63,21 @@ const buildPhoenixUrl = (baseUrl: string, path: string, params: Record<string, s
 
 // --- Individual Metric Fetchers (scoped by organizationId and propertyId) ---
 
-async function fetchVolumeTrends(
-  phoenixApiBaseUrl: string,
-  organizationId: string,
-  propertyId: string
-): Promise<any> {
-  const trendsData = [];
-  const today = new Date();
-  
-  for (let i = 6; i >= 0; i--) {
-    const targetDate = new Date(today);
-    targetDate.setDate(today.getDate() - i);
-    const dateStr = targetDate.toISOString().split('T')[0];
+// Volume Trends removed as per user feedback (6/4/2025)
+// async function fetchVolumeTrends(...) { ... }
 
-    const apiUrl = buildPhoenixUrl(phoenixApiBaseUrl, '/form-submissions/search/source-meta', {
-      applicationName: 'PropertyManagerPro',
-      organizationId: organizationId,
-      propertyId: propertyId,
-      fromDate: `${dateStr}T00:00:00.000Z`,
-      toDate: `${dateStr}T23:59:59.999Z`,
-      limit: 1,
-    });
-
-    try {
-      const response = await fetch(apiUrl);
-      if (!response.ok) {
-        console.error(`Phoenix API error for prop volume trends on ${dateStr} (Org: ${organizationId}, Prop: ${propertyId}): ${response.status} ${response.statusText}`);
-        trendsData.push({ date: dateStr, count: 0 });
-        continue;
-      }
-      const result = await response.json() as PhoenixFormSubmissionResponse;
-      trendsData.push({ 
-        date: dateStr, 
-        count: parseInt(result.analytics?.dispatched_count || '0', 10) 
-      });
-    } catch (error) {
-      console.error(`Error fetching prop volume trends for ${dateStr} (Org: ${organizationId}, Prop: ${propertyId}):`, error);
-      trendsData.push({ date: dateStr, count: 0 });
-    }
-  }
-  return { volumeTrends: trendsData };
-}
-
+// Type Distribution reinstated as Phoenix API now provides the data (6/4/2025)
 async function fetchTypeDistribution(
   phoenixApiBaseUrl: string,
   organizationId: string,
   propertyId: string,
   dateRange?: DateRange
-): Promise<any> {
-  const serviceTypesToQuery = ["Automotive Unlocking", "Dead Battery Jump-Start", "Tire Change"];
-  const distributionData: Array<{ name: string; y: number }> = [];
-
+): Promise<{ typeDistribution: Array<{ name: string; y: number }> }> {
   const queryParams: Record<string, string | number | undefined> = {
     applicationName: 'PropertyManagerPro',
     organizationId: organizationId,
     propertyId: propertyId,
-    limit: 1,
+    limit: 1, // We only need the analytics block
   };
 
   if (dateRange) {
@@ -124,25 +85,34 @@ async function fetchTypeDistribution(
     queryParams.toDate = dateRange.endDate;
   }
 
-  for (const type of serviceTypesToQuery) {
-    const specificParams = { ...queryParams, serviceType: type };
-    const apiUrl = buildPhoenixUrl(phoenixApiBaseUrl, '/form-submissions/search/source-meta', specificParams);
-    
-    try {
-      const response = await fetch(apiUrl);
-      if (!response.ok) {
-        console.error(`Phoenix API error for prop type distribution (${type}, Org: ${organizationId}, Prop: ${propertyId}): ${response.status} ${response.statusText}`);
-        distributionData.push({ name: type, y: 0 });
-        continue;
-      }
-      const result = await response.json() as PhoenixFormSubmissionResponse;
-      distributionData.push({ name: type, y: result.meta.total });
-    } catch (error) {
-      console.error(`Error fetching prop type distribution for ${type} (Org: ${organizationId}, Prop: ${propertyId}):`, error);
-      distributionData.push({ name: type, y: 0 });
+  const apiUrl = buildPhoenixUrl(phoenixApiBaseUrl, 'form-submissions/search/source-meta', queryParams); 
+  
+  try {
+    const response = await fetch(apiUrl);
+    logger.info({apiUrl});
+    if (!response.ok) {
+      logger.error(`Phoenix API error for prop type distribution (Org: ${organizationId}, Prop: ${propertyId}): ${response.status} ${response.statusText}`, { apiUrl });
+      return { typeDistribution: [] };
     }
+    const result = await response.json() as PhoenixFormSubmissionResponse;
+
+    logger.info(`Raw serviceTypeDistribution from Phoenix for Org: ${organizationId}, Prop: ${propertyId}:`, result.analytics?.serviceTypeDistribution);
+    
+    if (result.analytics?.serviceTypeDistribution) {
+      const distributionData = result.analytics.serviceTypeDistribution.map(item => ({
+        name: item.type,
+        y: item.count,
+      }));
+      logger.info(`Processed typeDistribution for Org: ${organizationId}, Prop: ${propertyId}:`, distributionData);
+      return { typeDistribution: distributionData };
+    } else {
+      logger.warn(`serviceTypeDistribution not found in Phoenix API response analytics for Org: ${organizationId}, Prop: ${propertyId}.`, { apiUrl, analytics: result.analytics });
+      return { typeDistribution: [] };
+    }
+  } catch (error) {
+    logger.error(`Error fetching or processing prop type distribution (Org: ${organizationId}, Prop: ${propertyId}):`, { error, apiUrl });
+    return { typeDistribution: [] };
   }
-  return { typeDistribution: distributionData };
 }
 
 async function fetchOpenVsClosedRequests(
@@ -158,39 +128,38 @@ async function fetchOpenVsClosedRequests(
     applicationName: 'PropertyManagerPro',
     organizationId: organizationId,
     propertyId: propertyId,
-    limit: 1, // We only need meta.total
   };
 
   // Fetch Open Requests
   const openStatuses = 'pending,assigned,en-route,in-progress';
-  const openApiUrl = buildPhoenixUrl(phoenixApiBaseUrl, '/jobs/search/source-meta', { ...baseParams, status: openStatuses });
+  const openApiUrl = buildPhoenixUrl(phoenixApiBaseUrl, 'jobs/search/source-meta', { ...baseParams, status: openStatuses }); // Removed leading /api
   try {
     const response = await fetch(openApiUrl);
     if (response.ok) {
       const result = await response.json() as PhoenixJobResponseMinimal;
       openCount = result.meta.total;
     } else {
-      console.error(`Phoenix API error for open requests (Org: ${organizationId}, Prop: ${propertyId}): ${response.status} ${response.statusText}`);
+      logger.error(`Phoenix API error for open requests (Org: ${organizationId}, Prop: ${propertyId}): ${response.status} ${response.statusText}`, { apiUrl: openApiUrl });
     }
   } catch (error) {
-    console.error(`Error fetching open requests (Org: ${organizationId}, Prop: ${propertyId}):`, error);
+    logger.error(`Error fetching open requests (Org: ${organizationId}, Prop: ${propertyId}):`, { error, apiUrl: openApiUrl });
   }
 
   // Fetch Closed Requests
   const closedStatuses = 'completed,paid,invoiced';
   // Add dateRange here if "recently closed" is desired
   // const closedParams = dateRange ? { ...baseParams, status: closedStatuses, fromDate: dateRange.startDate, toDate: dateRange.endDate } : { ...baseParams, status: closedStatuses };
-  const closedApiUrl = buildPhoenixUrl(phoenixApiBaseUrl, '/jobs/search/source-meta', { ...baseParams, status: closedStatuses });
+  const closedApiUrl = buildPhoenixUrl(phoenixApiBaseUrl, 'jobs/search/source-meta', { ...baseParams, status: closedStatuses }); // Removed leading /api
   try {
     const response = await fetch(closedApiUrl);
     if (response.ok) {
       const result = await response.json() as PhoenixJobResponseMinimal;
       closedCount = result.meta.total;
     } else {
-      console.error(`Phoenix API error for closed requests (Org: ${organizationId}, Prop: ${propertyId}): ${response.status} ${response.statusText}`);
+      logger.error(`Phoenix API error for closed requests (Org: ${organizationId}, Prop: ${propertyId}): ${response.status} ${response.statusText}`, { apiUrl: closedApiUrl });
     }
   } catch (error) {
-    console.error(`Error fetching closed requests (Org: ${organizationId}, Prop: ${propertyId}):`, error);
+    logger.error(`Error fetching closed requests (Org: ${organizationId}, Prop: ${propertyId}):`, { error, apiUrl: closedApiUrl });
   }
 
   return { openRequests: openCount, closedRequests: closedCount };
@@ -199,21 +168,21 @@ async function fetchOpenVsClosedRequests(
 
 export const getPropertyManagerPhoenixStats = https.onCall(
   async (data: GetPropertyManagerPhoenixStatsData, context: CallableContext) => {
-    // Temporarily disabled auth check
-    // if (!context.auth) {
-    //   throw handleHttpsError('unauthenticated', 'User must be authenticated.');
-    // }
-    // const { roles, organizationId: tokenOrgId, propertyId: tokenPropId } = context.auth.token;
-    // if (!roles?.includes('property_manager')) {
-    //   throw handleHttpsError('permission-denied', 'User must be a property manager.');
-    // }
-    // if (!data.organizationId || data.organizationId !== tokenOrgId || !data.propertyId || data.propertyId !== tokenPropId) {
-    //  throw handleHttpsError('permission-denied', 'Access denied to this organization or property.');
-    // }
-
+    //  auth check
+    if (!context.auth) {
+      throw handleHttpsError('unauthenticated', 'User must be authenticated.');
+    }
+    const { roles, organizationId: tokenOrgId } = context.auth.token;
+    if (!roles?.includes('property_manager')) {
+      throw handleHttpsError('permission-denied', 'User must be a property manager.');
+    }
+    if (!data.organizationId || data.organizationId !== tokenOrgId || !data.propertyId ) {
+     throw handleHttpsError('permission-denied', 'Access denied to this organization or property.');
+    }
+    logger.info("getPropertyManagerPhoenixStats called with data:", data);
 
     if (!PHOENIX_API_URL_BASE) {
-      console.error('PHOENIX_API_URL is not configured in function environment.');
+      logger.error('PHOENIX_API_URL is not configured in function environment.');
       throw handleHttpsError('internal', 'Phoenix API configuration error.');
     }
     
@@ -224,26 +193,26 @@ export const getPropertyManagerPhoenixStats = https.onCall(
     try {
       const { organizationId, propertyId, dateRange } = data;
 
+      // Volume Trends removed. Type Distribution reinstated.
       const [
-        volumeTrendsResult,
         typeDistributionResult,
         openVsClosedResult,
       ] = await Promise.all([
-        fetchVolumeTrends(PHOENIX_API_URL_BASE, organizationId, propertyId),
         fetchTypeDistribution(PHOENIX_API_URL_BASE, organizationId, propertyId, dateRange),
         fetchOpenVsClosedRequests(PHOENIX_API_URL_BASE, organizationId, propertyId /*, dateRange for closed */),
       ]);
 
-      return {
+      const responseData = {
         success: true,
         data: {
-          ...volumeTrendsResult,
           ...typeDistributionResult,
           ...openVsClosedResult,
         },
       };
+      logger.info(`getPropertyManagerPhoenixStats successfully returned data for Org: ${organizationId}, Prop: ${propertyId}:`, responseData.data);
+      return responseData;
     } catch (error: any) {
-      console.error('Error in getPropertyManagerPhoenixStats:', error);
+      logger.error('Error in getPropertyManagerPhoenixStats:', { error, inputData: data });
       if (error.code && error.message) {
         throw error;
       }

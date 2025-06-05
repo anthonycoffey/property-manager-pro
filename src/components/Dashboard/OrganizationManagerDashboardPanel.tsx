@@ -60,19 +60,19 @@ import type {
 } from '../../types';
 
 // Define Phoenix Stats types (similar to AdminDashboardPanel)
-interface PhoenixVolumeTrendPoint {
-  date: string;
-  count: number;
-}
+// interface PhoenixVolumeTrendPoint { // Removed 6/4/2025
+//   date: string;
+//   count: number;
+// }
 
-interface PhoenixTypeDistributionPoint {
+interface PhoenixTypeDistributionPoint { // Reinstated 6/4/2025
   name: string;
   y: number;
 }
 
 interface OrgManagerPhoenixStats { // Structure for data from getOrgManagerPhoenixStats
-  volumeTrends?: PhoenixVolumeTrendPoint[];
-  typeDistribution?: PhoenixTypeDistributionPoint[];
+  // volumeTrends?: PhoenixVolumeTrendPoint[]; // Removed 6/4/2025
+  typeDistribution?: PhoenixTypeDistributionPoint[]; // Reinstated 6/4/2025
   averageCompletionTime?: number | null; // in milliseconds
 }
 
@@ -421,28 +421,28 @@ const OrganizationManagerDashboardPanel: React.FC<
   }, [dashboardStats?.campaignPerformance]);
 
   // Chart options for Phoenix Stats
-  const phoenixVolumeTrendOptions: Highcharts.Options | null = useMemo(() => {
-    if (!phoenixStats?.volumeTrends || phoenixStats.volumeTrends.length === 0) return null;
-    return {
-      title: { text: 'Service Request Volume (Phoenix)' },
-      xAxis: {
-        categories: phoenixStats.volumeTrends.map(d => d.date),
-        type: 'category',
-      },
-      yAxis: {
-        title: { text: 'Number of Dispatched Requests' },
-        allowDecimals: false,
-      },
-      series: [{
-        name: 'Dispatched Requests',
-        data: phoenixStats.volumeTrends.map(d => d.count),
-        type: 'line',
-      }],
-      accessibility: { enabled: true },
-    };
-  }, [phoenixStats?.volumeTrends]);
+  // const phoenixVolumeTrendOptions: Highcharts.Options | null = useMemo(() => { // Removed 6/4/2025
+  //   if (!phoenixStats?.volumeTrends || phoenixStats.volumeTrends.length === 0) return null;
+  //   return {
+  //     title: { text: 'Service Request Volume (Phoenix)' },
+  //     xAxis: {
+  //       categories: phoenixStats.volumeTrends.map(d => d.date),
+  //       type: 'category',
+  //     },
+  //     yAxis: {
+  //       title: { text: 'Number of Dispatched Requests' },
+  //       allowDecimals: false,
+  //     },
+  //     series: [{
+  //       name: 'Dispatched Requests',
+  //       data: phoenixStats.volumeTrends.map(d => d.count),
+  //       type: 'line',
+  //     }],
+  //     accessibility: { enabled: true },
+  //   };
+  // }, [phoenixStats?.volumeTrends]);
 
-  const phoenixTypeDistributionOptions: Highcharts.Options | null = useMemo(() => {
+  const phoenixTypeDistributionOptions: Highcharts.Options | null = useMemo(() => { // Reinstated 6/4/2025
     if (!phoenixStats?.typeDistribution || phoenixStats.typeDistribution.length === 0) return null;
     return {
       chart: { type: 'pie' },
@@ -662,7 +662,7 @@ const OrganizationManagerDashboardPanel: React.FC<
                 {/* Phoenix Stats Section */}
                 <Divider sx={{ my: 3, borderColor: 'primary.main', borderWidth: '1px', opacity: 0.5 }} />
                 <Typography variant="h6" gutterBottom sx={{ color: 'primary.main', mb: 2 }}>
-                  Phoenix Service Analytics
+                  Service Analytics
                 </Typography>
 
                 {phoenixError && (
@@ -683,7 +683,8 @@ const OrganizationManagerDashboardPanel: React.FC<
                 </Box>
                 
                 <Stack spacing={3}>
-                  {(phoenixStats?.volumeTrends && phoenixStats.volumeTrends.length > 0) || phoenixLoading ? (
+                  {/* Phoenix Volume Trends Chart - Removed 6/4/2025 */}
+                  {/* {(phoenixStats?.volumeTrends && phoenixStats.volumeTrends.length > 0) || phoenixLoading ? (
                     <Paper elevation={2} sx={{ p: 2, borderRadius: 2 }}>
                       {phoenixVolumeTrendOptions && (
                         <LineChart
@@ -693,8 +694,9 @@ const OrganizationManagerDashboardPanel: React.FC<
                         />
                       )}
                     </Paper>
-                  ) : null}
+                  ) : null} */}
 
+                  {/* Phoenix Type Distribution Chart - Reinstated 6/4/2025 */}
                   {(phoenixStats?.typeDistribution && phoenixStats.typeDistribution.length > 0) || phoenixLoading ? (
                     <Paper elevation={2} sx={{ p: 2, borderRadius: 2 }}>
                       {phoenixTypeDistributionOptions && (

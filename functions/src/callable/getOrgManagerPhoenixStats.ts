@@ -2,6 +2,7 @@ import { https } from 'firebase-functions/v1';
 import { CallableContext } from 'firebase-functions/v1/https';
 import fetch from 'node-fetch';
 import { handleHttpsError } from '../helpers/handleHttpsError.js';
+import * as logger from 'firebase-functions/logger';
 
 const PHOENIX_API_URL_BASE = process.env.PHOENIX_API_URL;
 
@@ -19,6 +20,7 @@ interface GetOrgManagerPhoenixStatsData {
 interface PhoenixAnalytics {
   total_submissions?: string;
   dispatched_count?: string;
+  serviceTypeDistribution?: Array<{ type: string; count: number }>;
   [key: string]: any;
 }
 
@@ -62,58 +64,19 @@ const buildPhoenixUrl = (baseUrl: string, path: string, params: Record<string, s
 
 // --- Individual Metric Fetchers (scoped by organizationId) ---
 
-async function fetchVolumeTrends(
-  phoenixApiBaseUrl: string,
-  organizationId: string
-): Promise<any> {
-  const trendsData = [];
-  const today = new Date();
-  
-  for (let i = 6; i >= 0; i--) {
-    const targetDate = new Date(today);
-    targetDate.setDate(today.getDate() - i);
-    const dateStr = targetDate.toISOString().split('T')[0];
+// Volume Trends removed as per user feedback (6/4/2025)
+// async function fetchVolumeTrends(...) { ... }
 
-    const apiUrl = buildPhoenixUrl(phoenixApiBaseUrl, '/form-submissions/search/source-meta', {
-      applicationName: 'PropertyManagerPro',
-      organizationId: organizationId,
-      fromDate: `${dateStr}T00:00:00.000Z`,
-      toDate: `${dateStr}T23:59:59.999Z`,
-      limit: 1,
-    });
-
-    try {
-      const response = await fetch(apiUrl);
-      if (!response.ok) {
-        console.error(`Phoenix API error for org volume trends on ${dateStr} (Org: ${organizationId}): ${response.status} ${response.statusText}`);
-        trendsData.push({ date: dateStr, count: 0 });
-        continue;
-      }
-      const result = await response.json() as PhoenixFormSubmissionResponse;
-      trendsData.push({ 
-        date: dateStr, 
-        count: parseInt(result.analytics?.dispatched_count || '0', 10) 
-      });
-    } catch (error) {
-      console.error(`Error fetching org volume trends for ${dateStr} (Org: ${organizationId}):`, error);
-      trendsData.push({ date: dateStr, count: 0 });
-    }
-  }
-  return { volumeTrends: trendsData };
-}
-
+// Type Distribution reinstated as Phoenix API now provides the data (6/4/2025)
 async function fetchTypeDistribution(
   phoenixApiBaseUrl: string,
   organizationId: string,
   dateRange?: DateRange
-): Promise<any> {
-  const serviceTypesToQuery = ["Automotive Unlocking", "Dead Battery Jump-Start", "Tire Change"];
-  const distributionData: Array<{ name: string; y: number }> = [];
-
+): Promise<{ typeDistribution: Array<{ name: string; y: number }> }> {
   const queryParams: Record<string, string | number | undefined> = {
     applicationName: 'PropertyManagerPro',
     organizationId: organizationId,
-    limit: 1,
+    limit: 1, // We only need the analytics block
   };
 
   if (dateRange) {
@@ -121,25 +84,33 @@ async function fetchTypeDistribution(
     queryParams.toDate = dateRange.endDate;
   }
 
-  for (const type of serviceTypesToQuery) {
-    const specificParams = { ...queryParams, serviceType: type };
-    const apiUrl = buildPhoenixUrl(phoenixApiBaseUrl, '/form-submissions/search/source-meta', specificParams);
-    
-    try {
-      const response = await fetch(apiUrl);
-      if (!response.ok) {
-        console.error(`Phoenix API error for org type distribution (${type}, Org: ${organizationId}): ${response.status} ${response.statusText}`);
-        distributionData.push({ name: type, y: 0 });
-        continue;
-      }
-      const result = await response.json() as PhoenixFormSubmissionResponse;
-      distributionData.push({ name: type, y: result.meta.total });
-    } catch (error) {
-      console.error(`Error fetching org type distribution for ${type} (Org: ${organizationId}):`, error);
-      distributionData.push({ name: type, y: 0 });
+  const apiUrl = buildPhoenixUrl(phoenixApiBaseUrl, 'form-submissions/search/source-meta', queryParams); 
+  
+  try {
+    const response = await fetch(apiUrl);
+    if (!response.ok) {
+      logger.error(`Phoenix API error for org type distribution (Org: ${organizationId}): ${response.status} ${response.statusText}`, { apiUrl });
+      return { typeDistribution: [] };
     }
+    const result = await response.json() as PhoenixFormSubmissionResponse;
+
+    logger.info(`Raw serviceTypeDistribution from Phoenix for Org: ${organizationId}:`, result.analytics?.serviceTypeDistribution);
+    
+    if (result.analytics?.serviceTypeDistribution) {
+      const distributionData = result.analytics.serviceTypeDistribution.map(item => ({
+        name: item.type,
+        y: item.count,
+      }));
+      logger.info(`Processed typeDistribution for Org: ${organizationId}:`, distributionData);
+      return { typeDistribution: distributionData };
+    } else {
+      logger.warn(`serviceTypeDistribution not found in Phoenix API response analytics for Org: ${organizationId}.`, { apiUrl, analytics: result.analytics });
+      return { typeDistribution: [] };
+    }
+  } catch (error) {
+    logger.error(`Error fetching or processing org type distribution (Org: ${organizationId}):`, { error, apiUrl });
+    return { typeDistribution: [] };
   }
-  return { typeDistribution: distributionData };
 }
 
 async function fetchAverageCompletionTime(
@@ -159,14 +130,14 @@ async function fetchAverageCompletionTime(
     queryParams.toDate = dateRange.endDate;   
   }
 
-  const apiUrl = buildPhoenixUrl(phoenixApiBaseUrl, '/jobs/search/source-meta', queryParams);
+  const apiUrl = buildPhoenixUrl(phoenixApiBaseUrl, 'jobs/search/source-meta', queryParams); // Removed leading /api
   let totalDurationMs = 0;
   let completedJobsCount = 0;
 
   try {
     const response = await fetch(apiUrl);
     if (!response.ok) {
-      console.error(`Phoenix API error for org avg completion time (Org: ${organizationId}): ${response.status} ${response.statusText}`);
+      logger.error(`Phoenix API error for org avg completion time (Org: ${organizationId}): ${response.status} ${response.statusText}`, { apiUrl });
       return { averageCompletionTime: null, error: 'API error' };
     }
     const result = await response.json() as PhoenixJobResponse;
@@ -194,7 +165,7 @@ async function fetchAverageCompletionTime(
     return { averageCompletionTime: averageMs };
 
   } catch (error) {
-    console.error(`Error fetching org average completion time (Org: ${organizationId}):`, error);
+    logger.error(`Error fetching org average completion time (Org: ${organizationId}):`, { error, apiUrl });
     return { averageCompletionTime: null, error: 'Processing error' };
   }
 }
@@ -212,9 +183,10 @@ export const getOrgManagerPhoenixStats = https.onCall(
     // if (!data.organizationId || !organizationIds?.includes(data.organizationId)) {
     //  throw handleHttpsError('permission-denied', 'Access denied to this organization.');
     // }
+    logger.info("getOrgManagerPhoenixStats called with data:", data);
 
     if (!PHOENIX_API_URL_BASE) {
-      console.error('PHOENIX_API_URL is not configured in function environment.');
+      logger.error('PHOENIX_API_URL is not configured in function environment.');
       throw handleHttpsError('internal', 'Phoenix API configuration error.');
     }
     
@@ -225,26 +197,26 @@ export const getOrgManagerPhoenixStats = https.onCall(
     try {
       const { organizationId, dateRange } = data;
 
+      // Volume Trends removed. Type Distribution reinstated.
       const [
-        volumeTrendsResult,
         typeDistributionResult,
         avgCompletionTimeResult,
       ] = await Promise.all([
-        fetchVolumeTrends(PHOENIX_API_URL_BASE, organizationId),
         fetchTypeDistribution(PHOENIX_API_URL_BASE, organizationId, dateRange),
         fetchAverageCompletionTime(PHOENIX_API_URL_BASE, organizationId, dateRange),
       ]);
 
-      return {
+      const responseData = {
         success: true,
         data: {
-          ...volumeTrendsResult,
           ...typeDistributionResult,
           ...avgCompletionTimeResult,
         },
       };
+      logger.info(`getOrgManagerPhoenixStats successfully returned data for Org: ${organizationId}:`, responseData.data);
+      return responseData;
     } catch (error: any) {
-      console.error('Error in getOrgManagerPhoenixStats:', error);
+      logger.error('Error in getOrgManagerPhoenixStats:', { error, inputData: data });
       if (error.code && error.message) {
         throw error;
       }

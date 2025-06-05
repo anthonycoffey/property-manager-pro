@@ -2,6 +2,7 @@ import { https } from 'firebase-functions/v1';
 import { CallableContext } from 'firebase-functions/v1/https';
 import fetch from 'node-fetch';
 import { handleHttpsError } from '../helpers/handleHttpsError.js';
+import * as logger from 'firebase-functions/logger';
 
 const PHOENIX_API_URL_BASE = process.env.PHOENIX_API_URL;
 
@@ -19,7 +20,7 @@ interface GetAdminPhoenixStatsData {
 interface PhoenixAnalytics {
   total_submissions?: string;
   dispatched_count?: string;
-  // Add other known analytics fields
+  serviceTypeDistribution?: Array<{ type: string; count: number }>;
   [key: string]: any; // Allow other properties
 }
 
@@ -66,57 +67,17 @@ const buildPhoenixUrl = (baseUrl: string, path: string, params: Record<string, s
 
 // --- Individual Metric Fetchers ---
 
-async function fetchVolumeTrends(
-  // For simplicity, let's assume a fixed period for now, e.g., daily for last 7 days
-  // In a real scenario, dateRange and granularity would be inputs
-  phoenixApiBaseUrl: string
-): Promise<any> { // Replace 'any' with a proper return type
-  const trendsData = [];
-  const today = new Date();
-  
-  for (let i = 6; i >= 0; i--) {
-    const targetDate = new Date(today);
-    targetDate.setDate(today.getDate() - i);
-    const dateStr = targetDate.toISOString().split('T')[0]; // YYYY-MM-DD
+// Volume Trends removed as per user feedback (6/4/2025)
+// async function fetchVolumeTrends(...) { ... }
 
-    const apiUrl = buildPhoenixUrl(phoenixApiBaseUrl, '/form-submissions/search/source-meta', {
-      applicationName: 'PropertyManagerPro',
-      fromDate: `${dateStr}T00:00:00.000Z`,
-      toDate: `${dateStr}T23:59:59.999Z`,
-      limit: 1, // We only need the analytics block
-    });
-
-    try {
-      const response = await fetch(apiUrl);
-      if (!response.ok) {
-        console.error(`Phoenix API error for volume trends on ${dateStr}: ${response.status} ${response.statusText}`);
-        trendsData.push({ date: dateStr, count: 0 }); // Or handle error appropriately
-        continue;
-      }
-      const result = await response.json() as PhoenixFormSubmissionResponse;
-      trendsData.push({ 
-        date: dateStr, 
-        count: parseInt(result.analytics?.dispatched_count || '0', 10) 
-      });
-    } catch (error) {
-      console.error(`Error fetching volume trends for ${dateStr}:`, error);
-      trendsData.push({ date: dateStr, count: 0 }); // Or handle error appropriately
-    }
-  }
-  return { volumeTrends: trendsData };
-}
-
+// Type Distribution reinstated as Phoenix API now provides the data (6/4/2025)
 async function fetchTypeDistribution(
   phoenixApiBaseUrl: string,
   dateRange?: DateRange
-): Promise<any> { // Replace 'any'
-  // Example: predefined list of service types relevant to PMP
-  const serviceTypesToQuery = ["Automotive Unlocking", "Dead Battery Jump-Start", "Tire Change"]; // Add more as needed
-  const distributionData: Array<{ name: string; y: number }> = [];
-
+): Promise<{ typeDistribution: Array<{ name: string; y: number }> }> {
   const queryParams: Record<string, string | number | undefined> = {
     applicationName: 'PropertyManagerPro',
-    limit: 1, // We only need meta.total
+    limit: 1, // We only need the analytics block for serviceTypeDistribution
   };
 
   if (dateRange) {
@@ -124,25 +85,33 @@ async function fetchTypeDistribution(
     queryParams.toDate = dateRange.endDate;
   }
 
-  for (const type of serviceTypesToQuery) {
-    const specificParams = { ...queryParams, serviceType: type };
-    const apiUrl = buildPhoenixUrl(phoenixApiBaseUrl, '/form-submissions/search/source-meta', specificParams);
-    
-    try {
-      const response = await fetch(apiUrl);
-      if (!response.ok) {
-        console.error(`Phoenix API error for type distribution (${type}): ${response.status} ${response.statusText}`);
-        distributionData.push({ name: type, y: 0 });
-        continue;
-      }
-      const result = await response.json() as PhoenixFormSubmissionResponse;
-      distributionData.push({ name: type, y: result.meta.total });
-    } catch (error) {
-      console.error(`Error fetching type distribution for ${type}:`, error);
-      distributionData.push({ name: type, y: 0 });
+  const apiUrl = buildPhoenixUrl(phoenixApiBaseUrl, 'form-submissions/search/source-meta', queryParams);
+
+  try {
+    const response = await fetch(apiUrl);
+    if (!response.ok) {
+      logger.error(`Phoenix API error for type distribution: ${response.status} ${response.statusText}`, { apiUrl });
+      return { typeDistribution: [] };
     }
+    const result = await response.json() as PhoenixFormSubmissionResponse;
+    
+    logger.info("Raw serviceTypeDistribution from Phoenix:", result.analytics?.serviceTypeDistribution);
+
+    if (result.analytics?.serviceTypeDistribution) {
+      const distributionData = result.analytics.serviceTypeDistribution.map(item => ({
+        name: item.type,
+        y: item.count,
+      }));
+      logger.info("Processed typeDistribution for Highcharts:", distributionData);
+      return { typeDistribution: distributionData };
+    } else {
+      logger.warn('serviceTypeDistribution not found in Phoenix API response analytics.', { apiUrl, analytics: result.analytics });
+      return { typeDistribution: [] };
+    }
+  } catch (error) {
+    logger.error('Error fetching or processing type distribution:', { error, apiUrl });
+    return { typeDistribution: [] };
   }
-  return { typeDistribution: distributionData };
 }
 
 async function fetchAverageCompletionTime(
@@ -165,7 +134,7 @@ async function fetchAverageCompletionTime(
     // For now, we'll assume fromDate/toDate on jobs endpoint filters by createdAt or a default.
   }
 
-  const apiUrl = buildPhoenixUrl(phoenixApiBaseUrl, '/jobs/search/source-meta', queryParams);
+  const apiUrl = buildPhoenixUrl(phoenixApiBaseUrl, 'jobs/search/source-meta', queryParams); // Removed leading /api
   let totalDurationMs = 0;
   let completedJobsCount = 0;
 
@@ -173,7 +142,7 @@ async function fetchAverageCompletionTime(
     // Simplified: no pagination handling for brevity in this initial draft
     const response = await fetch(apiUrl);
     if (!response.ok) {
-      console.error(`Phoenix API error for avg completion time: ${response.status} ${response.statusText}`);
+      logger.error(`Phoenix API error for avg completion time: ${response.status} ${response.statusText}`, { apiUrl });
       return { averageCompletionTime: null, error: 'API error' };
     }
     const result = await response.json() as PhoenixJobResponse;
@@ -202,7 +171,7 @@ async function fetchAverageCompletionTime(
     return { averageCompletionTime: averageMs }; // in milliseconds
 
   } catch (error) {
-    console.error('Error fetching average completion time:', error);
+    logger.error('Error fetching average completion time:', { error, apiUrl });
     return { averageCompletionTime: null, error: 'Processing error' };
   }
 }
@@ -218,37 +187,37 @@ export const getAdminPhoenixStats = https.onCall(
     // if (!roles?.includes('admin')) {
     //   throw handleHttpsError('permission-denied', 'User must be an admin.');
     // }
+    logger.info("getAdminPhoenixStats called with data:", data);
 
     if (!PHOENIX_API_URL_BASE) {
-      console.error('PHOENIX_API_URL is not configured in function environment.');
+      logger.error('PHOENIX_API_URL is not configured in function environment.');
       throw handleHttpsError('internal', 'Phoenix API configuration error.');
     }
 
     try {
-      // For now, dateRange is optional and might not be used by all sub-fetchers in this simple version
       const { dateRange } = data; 
 
       // Fetch all stats in parallel
+      // Volume Trends removed. Type Distribution reinstated.
       const [
-        volumeTrendsResult,
         typeDistributionResult,
         avgCompletionTimeResult,
       ] = await Promise.all([
-        fetchVolumeTrends(PHOENIX_API_URL_BASE),
         fetchTypeDistribution(PHOENIX_API_URL_BASE, dateRange),
         fetchAverageCompletionTime(PHOENIX_API_URL_BASE, dateRange),
       ]);
 
-      return {
+      const responseData = {
         success: true,
         data: {
-          ...volumeTrendsResult,
           ...typeDistributionResult,
           ...avgCompletionTimeResult,
         },
       };
+      logger.info("getAdminPhoenixStats successfully returned data:", responseData.data);
+      return responseData;
     } catch (error: any) {
-      console.error('Error in getAdminPhoenixStats:', error);
+      logger.error('Error in getAdminPhoenixStats:', { error, inputData: data });
       if (error.code && error.message) { // Check if it's already an HttpsError
         throw error;
       }

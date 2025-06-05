@@ -20,16 +20,12 @@ The following statistics are planned, leveraging the provided Phoenix API capabi
 
 ### 3.1. Admin Dashboard (Platform-Wide)
 
-- **Service Request Volume Trends:**
-  - Metric: Trend of dispatched service requests over time (e.g., daily, weekly, monthly).
-  - Chart: Line chart.
-  - Data Source: Phoenix API (`/form-submissions/search/source-meta`).
-  - Logic: Query with `applicationName=PropertyManagerPro`, `fromDate`, `toDate`, and `limit=1`. Use `analytics.dispatched_count` from the response for each period.
+- **Service Request Volume Trends:** (Removed 6/4/2025 - To be tracked by other means)
 - **Service Request Types Distribution:**
   - Metric: Breakdown of dispatched service requests by type.
   - Chart: Pie chart or Bar chart.
   - Data Source: Phoenix API (`/form-submissions/search/source-meta`).
-  - Logic: For a predefined list of service types, query with `applicationName=PropertyManagerPro`, `serviceType=<type_name>`, `fromDate`, `toDate`, and `limit=1`. Use `meta.total` for each type.
+  - Logic: Query with `applicationName=PropertyManagerPro`, `fromDate`, `toDate`, and `limit=1`. Use `analytics.serviceTypeDistribution` from the response.
 - **Average Service Completion Time:**
   - Metric: Average time from job creation to job completion for dispatched services.
   - Chart: KPI Card or trend line.
@@ -38,8 +34,7 @@ The following statistics are planned, leveraging the provided Phoenix API capabi
 
 ### 3.2. Organization Manager Dashboard (Scoped to Selected Organization)
 
-- **Service Request Volume Trends:**
-  - As above (Admin Dashboard), additionally filtered by `organizationId`.
+- **Service Request Volume Trends:** (Removed 6/4/2025 - To be tracked by other means)
 - **Service Request Types Distribution:**
   - As above (Admin Dashboard), additionally filtered by `organizationId`.
 - **Average Completion Time:**
@@ -51,8 +46,7 @@ The following statistics are planned, leveraging the provided Phoenix API capabi
 
 ### 3.3. Property Manager Dashboard (Scoped to Selected Property)
 
-- **Service Request Volume Trends:**
-  - As above (Admin Dashboard), additionally filtered by `organizationId` and `propertyId`.
+- **Service Request Volume Trends:** (Removed 6/4/2025 - To be tracked by other means)
 - **Service Request Types Distribution:**
   - As above (Admin Dashboard), additionally filtered by `organizationId` and `propertyId`.
 - **Open vs. Closed Requests:**
@@ -77,13 +71,13 @@ New Firebase Cloud Functions (callable) will be created, or existing ones update
 - Handling errors gracefully.
 
 - **`getAdminServiceRequestStats` (New or to be integrated into `getAdminDashboardStats`):**
-  - Fetches platform-wide service request data from Phoenix as detailed in section 3.1. This includes volume trends, type distribution, and average completion time.
+  - Fetches platform-wide service request data from Phoenix as detailed in section 3.1. This includes average service completion time and type distribution.
 - **`getOrgServiceRequestStats` (New or to be integrated into `getOrgManagerDashboardStats`):**
   - Inputs: `organizationId`, `dateRange?`
-  - Fetches service request data for the specified `organizationId` from Phoenix as detailed in section 3.2.
+  - Fetches service request data for the specified `organizationId` from Phoenix as detailed in section 3.2. This includes average service completion time and type distribution.
 - **`getPropertyManagerServiceRequestStats` (New or to be integrated into `getPropertyManagerDashboardStats`):**
   - Inputs: `organizationId`, `propertyId`, `dateRange?`
-  - Fetches service request data for the specified `propertyId` from Phoenix as detailed in section 3.3.
+  - Fetches service request data for the specified `propertyId` from Phoenix as detailed in section 3.3. This includes open/closed requests and type distribution.
 
 ### 4.2. Frontend (Dashboard Panel Updates)
 
@@ -105,15 +99,17 @@ The existing dashboard panel components will be updated:
 ## 6. Implementation Next Steps
 
 1.  **Develop Backend Cloud Functions:**
-    *   Implement the logic for `getAdminServiceRequestStats`, `getOrgServiceRequestStats`, and `getPropertyManagerServiceRequestStats` (or integrate their logic into existing dashboard stats functions).
-    *   Ensure functions correctly call the Phoenix API endpoints (`/form-submissions/search/source-meta`, `/jobs/search/source-meta`) with appropriate filters as per Section 3.
+    *   Implement the logic for `getAdminServiceRequestStats`, `getOrgServiceRequestStats`, and `getPropertyManagerServiceRequestStats` (or integrate their logic into existing dashboard stats functions) focusing on the confirmed metrics (Average Completion Time for Admin/Org, Open/Closed Requests for PM).
+    *   Ensure functions correctly call the Phoenix API endpoints (`/form-submissions/search/source-meta`, `/jobs/search/source-meta`) with appropriate filters as per the revised Section 3.
     *   Implement data transformation to prepare data for Highcharts.
-    *   Include robust error handling.
+    *   Include robust error handling and logging.
 2.  **Implement Frontend Integration:**
-    *   Update `AdminDashboardPanel.tsx`, `OrganizationManagerDashboardPanel.tsx`, and `PropertyManagerDashboardPanel.tsx`.
+    *   Update `AdminDashboardPanel.tsx`, `OrganizationManagerDashboardPanel.tsx`, and `PropertyManagerDashboardPanel.tsx` to reflect the current scope of Phoenix analytics.
+    *   Remove UI elements for "Service Request Volume Trends."
+    *   Reinstate UI elements for "Service Request Types Distribution."
+    *   Ensure remaining Phoenix stats (Average Completion Time, Open/Closed Requests) are correctly fetched and displayed.
     *   Add state management for new Phoenix-sourced statistics.
     *   Implement `useEffect` hooks to call the Cloud Functions.
-    *   Integrate new charts using existing chart wrapper components, passing the fetched and transformed data.
     *   Handle loading states and display error messages appropriately.
 3.  **Thorough Testing:**
     *   Unit test Cloud Functions where possible.

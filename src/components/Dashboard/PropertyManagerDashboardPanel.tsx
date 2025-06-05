@@ -56,19 +56,20 @@ import { getFunctions, httpsCallable } from 'firebase/functions';
 import { isAppError } from '../../utils/errorUtils';
 
 // Define Phoenix Stats types
-interface PhoenixVolumeTrendPoint {
-  date: string;
-  count: number;
-}
+// interface PhoenixVolumeTrendPoint { // Removed 6/4/2025
+//   date: string;
+//   count: number;
+// }
 
 interface PhoenixTypeDistributionPoint {
+  // Reinstated 6/4/2025
   name: string;
   y: number;
 }
 
 interface PropertyManagerPhoenixStats {
-  volumeTrends?: PhoenixVolumeTrendPoint[];
-  typeDistribution?: PhoenixTypeDistributionPoint[];
+  // volumeTrends?: PhoenixVolumeTrendPoint[]; // Removed 6/4/2025
+  typeDistribution?: PhoenixTypeDistributionPoint[]; // Reinstated 6/4/2025
   openRequests?: number;
   closedRequests?: number;
 }
@@ -154,7 +155,8 @@ const PropertyManagerDashboardPanel: React.FC<
   const [dashboardError, setDashboardError] = useState<string | null>(null);
 
   // State for Phoenix stats
-  const [phoenixStats, setPhoenixStats] = useState<PropertyManagerPhoenixStats | null>(null);
+  const [phoenixStats, setPhoenixStats] =
+    useState<PropertyManagerPhoenixStats | null>(null);
   const [phoenixLoading, setPhoenixLoading] = useState<boolean>(false);
   const [phoenixError, setPhoenixError] = useState<string | null>(null);
 
@@ -234,9 +236,14 @@ const PropertyManagerDashboardPanel: React.FC<
           // dateRange: /* pass if you add date range selection */
         });
         if ((result.data as any)?.success) {
-          setPhoenixStats((result.data as any).data as PropertyManagerPhoenixStats);
+          setPhoenixStats(
+            (result.data as any).data as PropertyManagerPhoenixStats
+          );
         } else {
-          throw new Error((result.data as any)?.message || 'Failed to fetch Phoenix stats for property');
+          throw new Error(
+            (result.data as any)?.message ||
+              'Failed to fetch Phoenix stats for property'
+          );
         }
       } catch (err: unknown) {
         console.error(
@@ -258,9 +265,10 @@ const PropertyManagerDashboardPanel: React.FC<
     if (pmTabValue === 0 && organizationId && selectedPropertyId) {
       fetchPropertyManagerStats();
       fetchPhoenixPropertyManagerStats();
-    } else { // Clear stats if conditions are not met
-        setDashboardStats(null);
-        setPhoenixStats(null);
+    } else {
+      // Clear stats if conditions are not met
+      setDashboardStats(null);
+      setPhoenixStats(null);
     }
   }, [organizationId, selectedPropertyId, pmTabValue, functionsInstance]);
 
@@ -340,49 +348,63 @@ const PropertyManagerDashboardPanel: React.FC<
   }, [dashboardStats?.campaignPerformance, selectedPropertyName]);
 
   // Chart options for Phoenix Stats
-  const phoenixVolumeTrendOptions: Highcharts.Options | null = useMemo(() => {
-    if (!phoenixStats?.volumeTrends || phoenixStats.volumeTrends.length === 0) return null;
-    return {
-      title: { text: 'Service Request Volume (Phoenix)' },
-      xAxis: {
-        categories: phoenixStats.volumeTrends.map(d => d.date),
-        type: 'category',
-      },
-      yAxis: {
-        title: { text: 'Number of Dispatched Requests' },
-        allowDecimals: false,
-      },
-      series: [{
-        name: 'Dispatched Requests',
-        data: phoenixStats.volumeTrends.map(d => d.count),
-        type: 'line',
-      }],
-      accessibility: { enabled: true },
-    };
-  }, [phoenixStats?.volumeTrends]);
+  // const phoenixVolumeTrendOptions: Highcharts.Options | null = useMemo(() => { // Removed 6/4/2025
+  //   if (!phoenixStats?.volumeTrends || phoenixStats.volumeTrends.length === 0) return null;
+  //   return {
+  //     title: { text: 'Service Request Volume (Phoenix)' },
+  //     xAxis: {
+  //       categories: phoenixStats.volumeTrends.map(d => d.date),
+  //       type: 'category',
+  //     },
+  //     yAxis: {
+  //       title: { text: 'Number of Dispatched Requests' },
+  //       allowDecimals: false,
+  //     },
+  //     series: [{
+  //       name: 'Dispatched Requests',
+  //       data: phoenixStats.volumeTrends.map(d => d.count),
+  //       type: 'line',
+  //     }],
+  //     accessibility: { enabled: true },
+  //   };
+  // }, [phoenixStats?.volumeTrends]);
 
-  const phoenixTypeDistributionOptions: Highcharts.Options | null = useMemo(() => {
-    if (!phoenixStats?.typeDistribution || phoenixStats.typeDistribution.length === 0) return null;
-    return {
-      chart: { type: 'pie' },
-      title: { text: 'Service Request Types (Phoenix)' },
-      tooltip: { pointFormat: '{series.name}: <b>{point.percentage:.1f}%</b> ({point.y})' },
-      plotOptions: {
-        pie: {
-          allowPointSelect: true,
-          cursor: 'pointer',
-          dataLabels: { enabled: true, format: '<b>{point.name}</b>: {point.y}' },
+  const phoenixTypeDistributionOptions: Highcharts.Options | null =
+    useMemo(() => {
+      // Reinstated 6/4/2025
+      if (
+        !phoenixStats?.typeDistribution ||
+        phoenixStats.typeDistribution.length === 0
+      )
+        return null;
+      return {
+        chart: { type: 'pie' },
+        title: { text: 'Service Request Types' },
+        tooltip: {
+          pointFormat:
+            '{series.name}: <b>{point.percentage:.1f}%</b> ({point.y})',
         },
-      },
-      series: [{
-        name: 'Requests',
-        colorByPoint: true,
-        data: phoenixStats.typeDistribution,
-        type: 'pie',
-      }],
-      accessibility: { enabled: true },
-    };
-  }, [phoenixStats?.typeDistribution]);
+        plotOptions: {
+          pie: {
+            allowPointSelect: true,
+            cursor: 'pointer',
+            dataLabels: {
+              enabled: true,
+              format: '<b>{point.name}</b>: {point.y}',
+            },
+          },
+        },
+        series: [
+          {
+            name: 'Requests',
+            colorByPoint: true,
+            data: phoenixStats.typeDistribution,
+            type: 'pie',
+          },
+        ],
+        accessibility: { enabled: true },
+      };
+    }, [phoenixStats?.typeDistribution]);
 
   return (
     <Container component='main' maxWidth='lg'>
@@ -456,38 +478,67 @@ const PropertyManagerDashboardPanel: React.FC<
                   {dashboardError}
                 </Alert>
               )}
-              <Typography variant='h5' gutterBottom sx={{ mb: 2 }}>
-                Stats for: {selectedPropertyName || 'Selected Property'}
-              </Typography>
               <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 3 }}>
-                <Box sx={{ flexGrow: 1, flexBasis: { xs: '100%', sm: 'calc(33.333% - 11px)' } }}>
+                <Box
+                  sx={{
+                    flexGrow: 1,
+                    flexBasis: { xs: '100%', sm: 'calc(33.333% - 11px)' },
+                  }}
+                >
                   <KpiCard
                     title='Total Residents'
-                    value={ dashboardLoading ? '...' : dashboardStats?.propertyCounts?.totalResidents ?? 'N/A' }
+                    value={
+                      dashboardLoading
+                        ? '...'
+                        : dashboardStats?.propertyCounts?.totalResidents ??
+                          'N/A'
+                    }
                     isLoading={dashboardLoading}
                     icon={<PeopleIcon />}
                   />
                 </Box>
-                <Box sx={{ flexGrow: 1, flexBasis: { xs: '100%', sm: 'calc(33.333% - 11px)' } }}>
+                <Box
+                  sx={{
+                    flexGrow: 1,
+                    flexBasis: { xs: '100%', sm: 'calc(33.333% - 11px)' },
+                  }}
+                >
                   <KpiCard
-                    title='Occupancy Rate'
-                    value={ dashboardLoading ? '...' : `${((dashboardStats?.propertyCounts?.occupancyRate ?? 0) * 100).toFixed(1)}%` }
+                    title='Residents Onboarded'
+                    value={
+                      dashboardLoading
+                        ? '...'
+                        : `${(
+                            (dashboardStats?.propertyCounts?.occupancyRate ??
+                              0) * 100
+                          ).toFixed(1)}%`
+                    }
                     unit=''
                     isLoading={dashboardLoading}
                     icon={<TrendingUpIcon />}
                   />
                 </Box>
-                <Box sx={{ flexGrow: 1, flexBasis: { xs: '100%', sm: 'calc(33.333% - 11px)' } }}>
+                <Box
+                  sx={{
+                    flexGrow: 1,
+                    flexBasis: { xs: '100%', sm: 'calc(33.333% - 11px)' },
+                  }}
+                >
                   <KpiCard
                     title='Total Units'
-                    value={ dashboardLoading ? '...' : dashboardStats?.propertyCounts?.totalUnits ?? 'N/A' }
+                    value={
+                      dashboardLoading
+                        ? '...'
+                        : dashboardStats?.propertyCounts?.totalUnits ?? 'N/A'
+                    }
                     isLoading={dashboardLoading}
                     icon={<HomeWork />}
                   />
                 </Box>
               </Box>
               {(dashboardStats?.campaignPerformance &&
-                dashboardStats.campaignPerformance.length > 0) || dashboardLoading ? (
+                dashboardStats.campaignPerformance.length > 0) ||
+              dashboardLoading ? (
                 <Paper elevation={2} sx={{ p: 2, borderRadius: 2, mt: 2 }}>
                   {campaignPerformanceOptions && (
                     <BarChart
@@ -498,13 +549,29 @@ const PropertyManagerDashboardPanel: React.FC<
                   )}
                 </Paper>
               ) : (
-                !dashboardLoading && (<Typography sx={{ mt: 2 }}>No campaign data to display for this property.</Typography>)
+                !dashboardLoading && (
+                  <Typography sx={{ mt: 2 }}>
+                    No campaign data to display for this property.
+                  </Typography>
+                )
               )}
-              
+
               {/* Phoenix Stats Section */}
-              <Divider sx={{ my: 3, borderColor: 'primary.main', borderWidth: '1px', opacity: 0.5 }} />
-              <Typography variant="h6" gutterBottom sx={{ color: 'primary.main', mb: 2 }}>
-                Phoenix Service Analytics for {selectedPropertyName || 'Selected Property'}
+              <Divider
+                sx={{
+                  my: 3,
+                  borderColor: 'primary.main',
+                  borderWidth: '1px',
+                  opacity: 0.5,
+                }}
+              />
+              <Typography
+                variant='h6'
+                gutterBottom
+                sx={{ color: 'primary.main', mb: 2 }}
+              >
+                Service Analytics for{' '}
+                {selectedPropertyName || 'Selected Property'}
               </Typography>
 
               {phoenixError && (
@@ -514,26 +581,45 @@ const PropertyManagerDashboardPanel: React.FC<
               )}
 
               <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 3 }}>
-                <Box sx={{ flexGrow: 1, flexBasis: { xs: '100%', sm: 'calc(50% - 8px)'} }}>
+                <Box
+                  sx={{
+                    flexGrow: 1,
+                    flexBasis: { xs: '100%', sm: 'calc(50% - 8px)' },
+                  }}
+                >
                   <KpiCard
-                    title="Open Service Requests"
-                    value={ phoenixLoading ? '...' : phoenixStats?.openRequests ?? 'N/A' }
+                    title='Open Service Requests'
+                    value={
+                      phoenixLoading
+                        ? '...'
+                        : phoenixStats?.openRequests ?? 'N/A'
+                    }
                     isLoading={phoenixLoading}
                     icon={<HourglassEmptyIcon />}
                   />
                 </Box>
-                <Box sx={{ flexGrow: 1, flexBasis: { xs: '100%', sm: 'calc(50% - 8px)'} }}>
+                <Box
+                  sx={{
+                    flexGrow: 1,
+                    flexBasis: { xs: '100%', sm: 'calc(50% - 8px)' },
+                  }}
+                >
                   <KpiCard
-                    title="Closed Service Requests"
-                    value={ phoenixLoading ? '...' : phoenixStats?.closedRequests ?? 'N/A' }
+                    title='Completed Service Requests'
+                    value={
+                      phoenixLoading
+                        ? '...'
+                        : phoenixStats?.closedRequests ?? 'N/A'
+                    }
                     isLoading={phoenixLoading}
                     icon={<CheckCircleOutlineIcon />}
                   />
                 </Box>
               </Box>
-              
+
               <Stack spacing={3}>
-                {(phoenixStats?.volumeTrends && phoenixStats.volumeTrends.length > 0) || phoenixLoading ? (
+                {/* Phoenix Volume Trends Chart - Removed 6/4/2025 */}
+                {/* {(phoenixStats?.volumeTrends && phoenixStats.volumeTrends.length > 0) || phoenixLoading ? (
                   <Paper elevation={2} sx={{ p: 2, borderRadius: 2 }}>
                     {phoenixVolumeTrendOptions && (
                       <LineChart
@@ -543,25 +629,32 @@ const PropertyManagerDashboardPanel: React.FC<
                       />
                     )}
                   </Paper>
-                ) : null}
+                ) : null} */}
 
-                {(phoenixStats?.typeDistribution && phoenixStats.typeDistribution.length > 0) || phoenixLoading ? (
+                {/* Phoenix Type Distribution Chart - Reinstated 6/4/2025 */}
+                {(phoenixStats?.typeDistribution &&
+                  phoenixStats.typeDistribution.length > 0) ||
+                phoenixLoading ? (
                   <Paper elevation={2} sx={{ p: 2, borderRadius: 2 }}>
                     {phoenixTypeDistributionOptions && (
                       <PieChart
                         options={phoenixTypeDistributionOptions}
                         isLoading={phoenixLoading}
-                        height="350px"
+                        height='350px'
                       />
                     )}
                   </Paper>
                 ) : null}
               </Stack>
 
-              {!(dashboardStats || dashboardLoading) && !dashboardError && 
-               !(phoenixStats || phoenixLoading) && !phoenixError && (
-                <Typography sx={{ mt: 2 }}>No dashboard data to display for this property.</Typography>
-              )}
+              {!(dashboardStats || dashboardLoading) &&
+                !dashboardError &&
+                !(phoenixStats || phoenixLoading) &&
+                !phoenixError && (
+                  <Typography sx={{ mt: 2 }}>
+                    No dashboard data to display for this property.
+                  </Typography>
+                )}
             </Box>
           ) : (
             <Alert severity='info' sx={{ mt: 2 }}>
@@ -585,7 +678,9 @@ const PropertyManagerDashboardPanel: React.FC<
               }
             />
           ) : (
-             <Alert severity='warning'>Organization context not available.</Alert>
+            <Alert severity='warning'>
+              Organization context not available.
+            </Alert>
           )}
         </TabPanel>
         <TabPanel value={pmTabValue} index={2}>
@@ -609,18 +704,12 @@ const PropertyManagerDashboardPanel: React.FC<
                 propertyId={selectedPropertyId}
                 propertyName={selectedPropertyName || undefined}
               />
-              <Box sx={{ mt: 4 }}>
-                <Typography variant='h6' gutterBottom sx={{ mb: 2 }}>
-                  Current Residents for{' '}
-                  {selectedPropertyName || 'Selected Property'}
-                </Typography>
-                <PropertyResidentsTable
-                  organizationId={organizationId}
-                  propertyId={selectedPropertyId}
-                  onEditResident={handleOpenEditResidentModal}
-                  refreshKey={refreshResidentsKey}
-                />
-              </Box>
+              <PropertyResidentsTable
+                organizationId={organizationId}
+                propertyId={selectedPropertyId}
+                onEditResident={handleOpenEditResidentModal}
+                refreshKey={refreshResidentsKey}
+              />
             </>
           ) : (
             <Alert severity='info' sx={{ mt: 2 }}>

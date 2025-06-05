@@ -43,14 +43,6 @@ interface PhoenixFormSubmissionResponse {
 //   status: string;
 // }
 
-interface PhoenixJobResponseMinimal { // For meta.total from jobs endpoint
-  meta: {
-    total: number;
-  };
-  data: any[]; // data might not be needed if only meta.total is used
-}
-
-
 const buildPhoenixUrl = (baseUrl: string, path: string, params: Record<string, string | number | undefined>): string => {
   const url = new URL(path, baseUrl);
   Object.entries(params).forEach(([key, value]) => {
@@ -72,7 +64,11 @@ async function fetchTypeDistribution(
   organizationId: string,
   propertyId: string,
   dateRange?: DateRange
-): Promise<{ typeDistribution: Array<{ name: string; y: number }> }> {
+): Promise<{
+  typeDistribution: Array<{ name: string; y: number }>;
+  total_submissions?: string;
+  dispatched_count?: string;
+}> {
   const queryParams: Record<string, string | number | undefined> = {
     applicationName: 'PropertyManagerPro',
     organizationId: organizationId,
@@ -92,79 +88,34 @@ async function fetchTypeDistribution(
     logger.info({apiUrl});
     if (!response.ok) {
       logger.error(`Phoenix API error for prop type distribution (Org: ${organizationId}, Prop: ${propertyId}): ${response.status} ${response.statusText}`, { apiUrl });
-      return { typeDistribution: [] };
+      return { typeDistribution: [], total_submissions: undefined, dispatched_count: undefined };
     }
     const result = await response.json() as PhoenixFormSubmissionResponse;
 
     logger.info(`Raw serviceTypeDistribution from Phoenix for Org: ${organizationId}, Prop: ${propertyId}:`, result.analytics?.serviceTypeDistribution);
+
+    const distributionData =
+      result.analytics &&
+      Array.isArray(result.analytics.serviceTypeDistribution)
+        ? result.analytics.serviceTypeDistribution.map((item) => ({
+            name: item.type,
+            y: item.count,
+          }))
+        : [];
     
-    if (result.analytics?.serviceTypeDistribution) {
-      const distributionData = result.analytics.serviceTypeDistribution.map(item => ({
-        name: item.type,
-        y: item.count,
-      }));
-      logger.info(`Processed typeDistribution for Org: ${organizationId}, Prop: ${propertyId}:`, distributionData);
-      return { typeDistribution: distributionData };
-    } else {
-      logger.warn(`serviceTypeDistribution not found in Phoenix API response analytics for Org: ${organizationId}, Prop: ${propertyId}.`, { apiUrl, analytics: result.analytics });
-      return { typeDistribution: [] };
-    }
+    logger.info(`Processed typeDistribution for Org: ${organizationId}, Prop: ${propertyId}:`, distributionData);
+
+    return {
+      typeDistribution: distributionData,
+      total_submissions: result.analytics?.total_submissions,
+      dispatched_count: result.analytics?.dispatched_count,
+    };
+
   } catch (error) {
     logger.error(`Error fetching or processing prop type distribution (Org: ${organizationId}, Prop: ${propertyId}):`, { error, apiUrl });
-    return { typeDistribution: [] };
+    return { typeDistribution: [], total_submissions: undefined, dispatched_count: undefined };
   }
 }
-
-async function fetchOpenVsClosedRequests(
-  phoenixApiBaseUrl: string,
-  organizationId: string,
-  propertyId: string,
-  // dateRange?: DateRange // For "recently closed" if needed
-): Promise<any> {
-  let openCount = 0;
-  let closedCount = 0;
-
-  const baseParams = {
-    applicationName: 'PropertyManagerPro',
-    organizationId: organizationId,
-    propertyId: propertyId,
-  };
-
-  // Fetch Open Requests
-  const openStatuses = 'pending,assigned,en-route,in-progress';
-  const openApiUrl = buildPhoenixUrl(phoenixApiBaseUrl, 'jobs/search/source-meta', { ...baseParams, status: openStatuses }); // Removed leading /api
-  try {
-    const response = await fetch(openApiUrl);
-    if (response.ok) {
-      const result = await response.json() as PhoenixJobResponseMinimal;
-      openCount = result.meta.total;
-    } else {
-      logger.error(`Phoenix API error for open requests (Org: ${organizationId}, Prop: ${propertyId}): ${response.status} ${response.statusText}`, { apiUrl: openApiUrl });
-    }
-  } catch (error) {
-    logger.error(`Error fetching open requests (Org: ${organizationId}, Prop: ${propertyId}):`, { error, apiUrl: openApiUrl });
-  }
-
-  // Fetch Closed Requests
-  const closedStatuses = 'completed,paid,invoiced';
-  // Add dateRange here if "recently closed" is desired
-  // const closedParams = dateRange ? { ...baseParams, status: closedStatuses, fromDate: dateRange.startDate, toDate: dateRange.endDate } : { ...baseParams, status: closedStatuses };
-  const closedApiUrl = buildPhoenixUrl(phoenixApiBaseUrl, 'jobs/search/source-meta', { ...baseParams, status: closedStatuses }); // Removed leading /api
-  try {
-    const response = await fetch(closedApiUrl);
-    if (response.ok) {
-      const result = await response.json() as PhoenixJobResponseMinimal;
-      closedCount = result.meta.total;
-    } else {
-      logger.error(`Phoenix API error for closed requests (Org: ${organizationId}, Prop: ${propertyId}): ${response.status} ${response.statusText}`, { apiUrl: closedApiUrl });
-    }
-  } catch (error) {
-    logger.error(`Error fetching closed requests (Org: ${organizationId}, Prop: ${propertyId}):`, { error, apiUrl: closedApiUrl });
-  }
-
-  return { openRequests: openCount, closedRequests: closedCount };
-}
-
 
 export const getPropertyManagerPhoenixStats = https.onCall(
   async (data: GetPropertyManagerPhoenixStatsData, context: CallableContext) => {
@@ -194,19 +145,18 @@ export const getPropertyManagerPhoenixStats = https.onCall(
       const { organizationId, propertyId, dateRange } = data;
 
       // Volume Trends removed. Type Distribution reinstated.
-      const [
-        typeDistributionResult,
-        openVsClosedResult,
-      ] = await Promise.all([
-        fetchTypeDistribution(PHOENIX_API_URL_BASE, organizationId, propertyId, dateRange),
-        fetchOpenVsClosedRequests(PHOENIX_API_URL_BASE, organizationId, propertyId /*, dateRange for closed */),
-      ]);
+      // OpenVsClosedRequests removed as per user feedback (6/5/2025)
+      const typeDistributionResult = await fetchTypeDistribution(
+        PHOENIX_API_URL_BASE,
+        organizationId,
+        propertyId,
+        dateRange
+      );
 
       const responseData = {
         success: true,
         data: {
           ...typeDistributionResult,
-          ...openVsClosedResult,
         },
       };
       logger.info(`getPropertyManagerPhoenixStats successfully returned data for Org: ${organizationId}, Prop: ${propertyId}:`, responseData.data);

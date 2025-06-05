@@ -72,7 +72,11 @@ async function fetchTypeDistribution(
   phoenixApiBaseUrl: string,
   organizationId: string,
   dateRange?: DateRange
-): Promise<{ typeDistribution: Array<{ name: string; y: number }> }> {
+): Promise<{
+  typeDistribution: Array<{ name: string; y: number }>;
+  total_submissions?: string;
+  dispatched_count?: string;
+}> {
   const queryParams: Record<string, string | number | undefined> = {
     applicationName: 'PropertyManagerPro',
     organizationId: organizationId,
@@ -90,26 +94,29 @@ async function fetchTypeDistribution(
     const response = await fetch(apiUrl);
     if (!response.ok) {
       logger.error(`Phoenix API error for org type distribution (Org: ${organizationId}): ${response.status} ${response.statusText}`, { apiUrl });
-      return { typeDistribution: [] };
+      return { typeDistribution: [], total_submissions: undefined, dispatched_count: undefined };
     }
     const result = await response.json() as PhoenixFormSubmissionResponse;
 
     logger.info(`Raw serviceTypeDistribution from Phoenix for Org: ${organizationId}:`, result.analytics?.serviceTypeDistribution);
     
-    if (result.analytics?.serviceTypeDistribution) {
-      const distributionData = result.analytics.serviceTypeDistribution.map(item => ({
-        name: item.type,
-        y: item.count,
-      }));
-      logger.info(`Processed typeDistribution for Org: ${organizationId}:`, distributionData);
-      return { typeDistribution: distributionData };
-    } else {
-      logger.warn(`serviceTypeDistribution not found in Phoenix API response analytics for Org: ${organizationId}.`, { apiUrl, analytics: result.analytics });
-      return { typeDistribution: [] };
-    }
+    const distributionData =
+      result.analytics &&
+      Array.isArray(result.analytics.serviceTypeDistribution)
+        ? result.analytics.serviceTypeDistribution.map((item) => ({
+            name: item.type,
+            y: item.count,
+          }))
+        : [];
+    logger.info(`Processed typeDistribution for Org: ${organizationId}:`, distributionData);
+    return {
+      typeDistribution: distributionData,
+      total_submissions: result.analytics?.total_submissions,
+      dispatched_count: result.analytics?.dispatched_count,
+    };
   } catch (error) {
     logger.error(`Error fetching or processing org type distribution (Org: ${organizationId}):`, { error, apiUrl });
-    return { typeDistribution: [] };
+    return { typeDistribution: [], total_submissions: undefined, dispatched_count: undefined };
   }
 }
 

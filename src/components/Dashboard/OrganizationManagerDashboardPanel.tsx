@@ -25,6 +25,8 @@ import CampaignIcon from '@mui/icons-material/Campaign';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import PeopleIcon from '@mui/icons-material/People';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp'; // Added for Phoenix KPI
+import CrisisAlert from '@mui/icons-material/CrisisAlert'; // Added
+import LocalShipping from '@mui/icons-material/LocalShipping'; // Added
 
 import OrgManagerCampaignsView from '../OrganizationManager/Campaigns/OrgManagerCampaignsView';
 import AddIcon from '@mui/icons-material/Add';
@@ -76,6 +78,8 @@ interface OrgManagerPhoenixStats {
   // volumeTrends?: PhoenixVolumeTrendPoint[]; // Removed 6/4/2025
   typeDistribution?: PhoenixTypeDistributionPoint[]; // Reinstated 6/4/2025
   averageCompletionTime?: number | null; // in milliseconds
+  total_submissions?: string; // Added
+  dispatched_count?: string; // Added
 }
 
 // Define OrgManagerDashboardStatsData type locally
@@ -696,7 +700,7 @@ const OrganizationManagerDashboardPanel: React.FC<
                     dashboardStats.campaignPerformance.conversionRates.length >
                       0) ||
                   dashboardLoading ? (
-                    <Paper elevation={2} sx={{ p: 2, borderRadius: 2 }}>
+                    <>
                       {campaignPerformanceOptions && (
                         <BarChart
                           options={campaignPerformanceOptions}
@@ -705,7 +709,7 @@ const OrganizationManagerDashboardPanel: React.FC<
                           title='Campaign Acceptance'
                         />
                       )}
-                    </Paper>
+                    </>
                   ) : (
                     !dashboardLoading && (
                       <Typography>
@@ -716,8 +720,8 @@ const OrganizationManagerDashboardPanel: React.FC<
 
                   {dashboardStats?.campaignPerformance || dashboardLoading ? (
                     <Paper
-                      elevation={2}
-                      sx={{ p: 2, borderRadius: 2, textAlign: 'center' }}
+                      elevation={0}
+                      sx={{ p: 2, borderRadius: 2, textAlign: 'center', my: 4 }}
                     >
                       <KpiCard
                         title='Active Campaigns'
@@ -742,19 +746,8 @@ const OrganizationManagerDashboardPanel: React.FC<
                 </Stack>
 
                 {/* Phoenix Stats Section */}
-                <Divider
-                  sx={{
-                    my: 3,
-                    borderColor: 'primary.main',
-                    borderWidth: '1px',
-                    opacity: 0.5,
-                  }}
-                />
-                <Typography
-                  variant='h6'
-                  gutterBottom
-                  sx={{ color: 'primary.main', mb: 2 }}
-                >
+
+                <Typography variant='h6' gutterBottom>
                   Service Analytics
                 </Typography>
 
@@ -791,6 +784,48 @@ const OrganizationManagerDashboardPanel: React.FC<
                       icon={<TrendingUpIcon />}
                     />
                   </Box>
+                  <Box
+                    sx={{
+                      flexGrow: 1,
+                      flexBasis: {
+                        xs: '100%',
+                        sm: 'calc(50% - 8px)',
+                        md: 'calc(33.333% - 11px)',
+                      },
+                    }}
+                  >
+                    <KpiCard
+                      title='Services Requested'
+                      value={
+                        phoenixLoading
+                          ? '...'
+                          : phoenixStats?.total_submissions ?? 'N/A'
+                      }
+                      isLoading={phoenixLoading}
+                      icon={<CrisisAlert />}
+                    />
+                  </Box>
+                  <Box
+                    sx={{
+                      flexGrow: 1,
+                      flexBasis: {
+                        xs: '100%',
+                        sm: 'calc(50% - 8px)',
+                        md: 'calc(33.333% - 11px)',
+                      },
+                    }}
+                  >
+                    <KpiCard
+                      title='Technicians Dispatched'
+                      value={
+                        phoenixLoading
+                          ? '...'
+                          : phoenixStats?.dispatched_count ?? 'N/A'
+                      }
+                      isLoading={phoenixLoading}
+                      icon={<LocalShipping />}
+                    />
+                  </Box>
                 </Box>
 
                 <Stack spacing={3}>
@@ -811,7 +846,7 @@ const OrganizationManagerDashboardPanel: React.FC<
                   {(phoenixStats?.typeDistribution &&
                     phoenixStats.typeDistribution.length > 0) ||
                   phoenixLoading ? (
-                    <Paper elevation={0} sx={{ p: 2, borderRadius: 2, my:4 }}>
+                    <Paper elevation={0} sx={{ p: 2, borderRadius: 2, my: 4 }}>
                       {phoenixTypeDistributionOptions && (
                         <PieChart
                           options={phoenixTypeDistributionOptions}

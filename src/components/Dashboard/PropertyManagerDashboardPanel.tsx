@@ -27,6 +27,8 @@ import PeopleIcon from '@mui/icons-material/People';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
+import CrisisAlert from '@mui/icons-material/CrisisAlert'; // Added
+import LocalShipping from '@mui/icons-material/LocalShipping'; // Added
 
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../../firebaseConfig';
@@ -70,8 +72,8 @@ interface PhoenixTypeDistributionPoint {
 interface PropertyManagerPhoenixStats {
   // volumeTrends?: PhoenixVolumeTrendPoint[]; // Removed 6/4/2025
   typeDistribution?: PhoenixTypeDistributionPoint[]; // Reinstated 6/4/2025
-  openRequests?: number;
-  closedRequests?: number;
+  total_submissions?: string;
+  dispatched_count?: string;
 }
 
 // Define PropertyManagerDashboardStatsData type locally
@@ -576,14 +578,14 @@ const PropertyManagerDashboardPanel: React.FC<
                   }}
                 >
                   <KpiCard
-                    title='Open Service Requests'
+                    title='Services Requested'
                     value={
                       phoenixLoading
                         ? '...'
-                        : phoenixStats?.openRequests ?? 'N/A'
+                        : phoenixStats?.total_submissions ?? 'N/A'
                     }
                     isLoading={phoenixLoading}
-                    icon={<HourglassEmptyIcon />}
+                    icon={<CrisisAlert />}
                   />
                 </Box>
                 <Box
@@ -593,14 +595,14 @@ const PropertyManagerDashboardPanel: React.FC<
                   }}
                 >
                   <KpiCard
-                    title='Completed Service Requests'
+                    title='Technicians Dispatched'
                     value={
                       phoenixLoading
                         ? '...'
-                        : phoenixStats?.closedRequests ?? 'N/A'
+                        : phoenixStats?.dispatched_count ?? 'N/A'
                     }
                     isLoading={phoenixLoading}
-                    icon={<CheckCircleOutlineIcon />}
+                    icon={<LocalShipping />}
                   />
                 </Box>
               </Box>

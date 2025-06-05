@@ -1,13 +1,6 @@
 import React from 'react';
 import {
   Box,
-  Typography,
-  Button,
-  Container,
-  Card,
-  CardContent,
-  CardActions,
-  CardHeader,
 } from '@mui/material';
 import { useAuth } from '../hooks/useAuth';
 
@@ -16,7 +9,6 @@ import PropertyManagerDashboardPanel from './Dashboard/PropertyManagerDashboardP
 import OrganizationManagerDashboardPanel from './Dashboard/OrganizationManagerDashboardPanel';
 import ResidentDashboard from './Resident/ResidentDashboard';
 import GuestDashboardPanel from './Dashboard/GuestDashboardPanel'; // Import the new component
-import { Cached } from '@mui/icons-material';
 
 const Dashboard: React.FC = () => {
   const { roles, organizationId, organizationIds } = useAuth();
@@ -29,7 +21,7 @@ const Dashboard: React.FC = () => {
         <OrganizationManagerDashboardPanel orgIds={organizationIds} />
       )}
 
-      {roles.includes('property_manager') && !roles.includes('organization_manager') && ( // Ensure OM doesn't also see PM panel if they have both roles for some reason
+      {roles.includes('property_manager') && (
         <PropertyManagerDashboardPanel
           organizationId={organizationId ?? null}
         />

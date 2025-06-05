@@ -38,7 +38,7 @@ const AdminCampaignsView: React.FC = () => {
   }
 
   return (
-    <Paper>
+    <Paper elevation={0}>
       <Box sx={{ mb: 2 }}>
         {/* OrganizationSelector will show its own loading/error state */}
         <OrganizationSelector

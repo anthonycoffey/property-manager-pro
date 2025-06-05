@@ -100,7 +100,7 @@ const OrgManagerCampaignsView: React.FC = () => {
   }
 
   return (
-    <Paper>
+    <Paper elevation={0}>
       {isMultiOrgManager && (
         <Box sx={{ mb: 2 }}>
           <Typography variant='subtitle1' gutterBottom>

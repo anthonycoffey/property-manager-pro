@@ -371,7 +371,6 @@ const PropertyManagerDashboardPanel: React.FC<
 
   const phoenixTypeDistributionOptions: Highcharts.Options | null =
     useMemo(() => {
-      // Reinstated 6/4/2025
       if (
         !phoenixStats?.typeDistribution ||
         phoenixStats.typeDistribution.length === 0
@@ -539,7 +538,7 @@ const PropertyManagerDashboardPanel: React.FC<
               {(dashboardStats?.campaignPerformance &&
                 dashboardStats.campaignPerformance.length > 0) ||
               dashboardLoading ? (
-                <Paper elevation={2} sx={{ p: 2, borderRadius: 2, mt: 2 }}>
+                <Paper elevation={0} sx={{ p: 2, borderRadius: 2, my: 4 }}>
                   {campaignPerformanceOptions && (
                     <BarChart
                       options={campaignPerformanceOptions}
@@ -557,19 +556,8 @@ const PropertyManagerDashboardPanel: React.FC<
               )}
 
               {/* Phoenix Stats Section */}
-              <Divider
-                sx={{
-                  my: 3,
-                  borderColor: 'primary.main',
-                  borderWidth: '1px',
-                  opacity: 0.5,
-                }}
-              />
-              <Typography
-                variant='h6'
-                gutterBottom
-                sx={{ color: 'primary.main', mb: 2 }}
-              >
+
+              <Typography variant='h6' gutterBottom>
                 Service Analytics for{' '}
                 {selectedPropertyName || 'Selected Property'}
               </Typography>
@@ -635,7 +623,7 @@ const PropertyManagerDashboardPanel: React.FC<
                 {(phoenixStats?.typeDistribution &&
                   phoenixStats.typeDistribution.length > 0) ||
                 phoenixLoading ? (
-                  <Paper elevation={2} sx={{ p: 2, borderRadius: 2 }}>
+                  <Paper elevation={0} sx={{ p: 2, borderRadius: 2, my: 4 }}>
                     {phoenixTypeDistributionOptions && (
                       <PieChart
                         options={phoenixTypeDistributionOptions}

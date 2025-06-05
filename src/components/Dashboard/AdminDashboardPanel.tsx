@@ -23,7 +23,9 @@ import {
   AssignmentInd,
   HomeWork,
   Campaign,
-  TrendingUp as TrendingUpIcon, // Added TrendingUpIcon
+  CrisisAlert,
+  LocalShipping,
+  AvTimer,
 } from '@mui/icons-material';
 
 import OrganizationSelector from '../Admin/OrganizationSelector';
@@ -54,21 +56,16 @@ import type {
   Resident as ResidentType,
 } from '../../types';
 
-// Define Phoenix Stats types
-// interface PhoenixVolumeTrendPoint { // Removed 6/4/2025
-//   date: string;
-//   count: number;
-// }
-
-interface PhoenixTypeDistributionPoint { // Reinstated 6/4/2025
+interface PhoenixTypeDistributionPoint {
   name: string;
   y: number;
 }
 
 interface AdminPhoenixStats {
-  // volumeTrends?: PhoenixVolumeTrendPoint[]; // Removed 6/4/2025
-  typeDistribution?: PhoenixTypeDistributionPoint[]; // Reinstated 6/4/2025
+  typeDistribution?: PhoenixTypeDistributionPoint[];
   averageCompletionTime?: number | null; // in milliseconds
+  total_submissions?: string;
+  dispatched_count?: string;
 }
 
 // Define AdminDashboardStats type locally
@@ -139,7 +136,9 @@ const AdminDashboardPanel: React.FC = () => {
   const [dashboardError, setDashboardError] = useState<string | null>(null);
 
   // State for Phoenix stats
-  const [phoenixStats, setPhoenixStats] = useState<AdminPhoenixStats | null>(null);
+  const [phoenixStats, setPhoenixStats] = useState<AdminPhoenixStats | null>(
+    null
+  );
   const [phoenixLoading, setPhoenixLoading] = useState<boolean>(true);
   const [phoenixError, setPhoenixError] = useState<string | null>(null);
 
@@ -291,11 +290,15 @@ const AdminDashboardPanel: React.FC = () => {
           'getAdminPhoenixStats'
         );
         // TODO: Pass appropriate dateRange if needed by the function/UI
-        const result = await getStatsFunction({ /* dateRange: ... */ });
+        const result = await getStatsFunction({
+          /* dateRange: ... */
+        });
         if ((result.data as any)?.success) {
           setPhoenixStats((result.data as any).data as AdminPhoenixStats);
         } else {
-          throw new Error((result.data as any)?.message || 'Failed to fetch Phoenix stats');
+          throw new Error(
+            (result.data as any)?.message || 'Failed to fetch Phoenix stats'
+          );
         }
       } catch (err: unknown) {
         console.error('Error fetching admin Phoenix stats:', err);
@@ -324,7 +327,7 @@ const AdminDashboardPanel: React.FC = () => {
   //     title: { text: 'Service Request Volume (Phoenix)' },
   //     xAxis: {
   //       categories: phoenixStats.volumeTrends.map(d => d.date),
-  //       type: 'category', 
+  //       type: 'category',
   //     },
   //     yAxis: {
   //       title: { text: 'Number of Dispatched Requests' },
@@ -339,28 +342,41 @@ const AdminDashboardPanel: React.FC = () => {
   //   };
   // }, [phoenixStats?.volumeTrends]);
 
-  const phoenixTypeDistributionOptions: Highcharts.Options | null = useMemo(() => { // Reinstated 6/4/2025
-    if (!phoenixStats?.typeDistribution || phoenixStats.typeDistribution.length === 0) return null;
-    return {
-      chart: { type: 'pie' },
-      title: { text: 'Service Request Types' },
-      tooltip: { pointFormat: '{series.name}: <b>{point.percentage:.1f}%</b> ({point.y})' },
-      plotOptions: {
-        pie: {
-          allowPointSelect: true,
-          cursor: 'pointer',
-          dataLabels: { enabled: true, format: '<b>{point.name}</b>: {point.y}' },
+  const phoenixTypeDistributionOptions: Highcharts.Options | null =
+    useMemo(() => {
+      if (
+        !phoenixStats?.typeDistribution ||
+        phoenixStats.typeDistribution.length === 0
+      )
+        return null;
+      return {
+        chart: { type: 'pie' },
+        title: { text: 'Service Request Types' },
+        tooltip: {
+          pointFormat:
+            '{series.name}: <b>{point.percentage:.1f}%</b> ({point.y})',
         },
-      },
-      series: [{
-        name: 'Requests',
-        colorByPoint: true,
-        data: phoenixStats.typeDistribution,
-        type: 'pie',
-      }],
-      accessibility: { enabled: true },
-    };
-  }, [phoenixStats?.typeDistribution]);
+        plotOptions: {
+          pie: {
+            allowPointSelect: true,
+            cursor: 'pointer',
+            dataLabels: {
+              enabled: true,
+              format: '<b>{point.name}</b>: {point.y}',
+            },
+          },
+        },
+        series: [
+          {
+            name: 'Requests',
+            colorByPoint: true,
+            data: phoenixStats.typeDistribution,
+            type: 'pie',
+          },
+        ],
+        accessibility: { enabled: true },
+      };
+    }, [phoenixStats?.typeDistribution]);
 
   const orgGrowthOptions: Highcharts.Options | null = useMemo(() => {
     if (
@@ -622,12 +638,13 @@ const AdminDashboardPanel: React.FC = () => {
                   dashboardStats.campaignOverview.typeBreakdown.length > 0) ||
                 dashboardLoading ? (
                   <Paper
-                    elevation={2}
+                    elevation={0}
                     sx={{
                       p: 2,
                       borderRadius: 2,
                       flexGrow: 1,
                       width: { xs: '100%', lg: 'calc(60% - 12px)' },
+                      mb: 8,
                     }}
                   >
                     {campaignTypeOptions && (
@@ -642,17 +659,16 @@ const AdminDashboardPanel: React.FC = () => {
 
                 {dashboardStats?.campaignOverview || dashboardLoading ? (
                   <Paper
-                    elevation={2}
+                    elevation={0}
                     sx={{
                       p: 2,
                       borderRadius: 2,
-                      flexGrow: 1,
                       width: { xs: '100%', lg: 'calc(40% - 12px)' },
                       display: 'flex',
                       flexDirection: 'column',
                       justifyContent: 'center',
                       alignItems: 'center',
-                      minHeight: '350px',
+                      overflow: 'hidden',
                     }}
                   >
                     <Typography variant='h6' gutterBottom align='center'>
@@ -671,6 +687,7 @@ const AdminDashboardPanel: React.FC = () => {
                         width: 'auto',
                         boxShadow: 'none',
                         p: 0,
+                        height: 'auto',
                         textAlign: 'center',
                       }}
                     />
@@ -678,7 +695,6 @@ const AdminDashboardPanel: React.FC = () => {
                       variant='body2'
                       color='text.secondary'
                       sx={{ mt: 1 }}
-                      align='center'
                     >
                       Across{' '}
                       {dashboardLoading
@@ -691,10 +707,9 @@ const AdminDashboardPanel: React.FC = () => {
                 ) : null}
               </Box>
             </Stack>
-            
+
             {/* Phoenix Stats Section */}
-            <Divider sx={{ my: 3, borderColor: 'primary.main', borderWidth: '1px', opacity: 0.5 }} />
-            <Typography variant="h5" gutterBottom sx={{ color: 'primary.main', mb: 2 }}>
+            <Typography variant='h5' gutterBottom>
               Service Analytics
             </Typography>
 
@@ -704,34 +719,73 @@ const AdminDashboardPanel: React.FC = () => {
               </Alert>
             )}
 
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 3 }}>
-              <Box
-                  sx={{
-                    flexGrow: 1,
-                    flexBasis: {
-                      xs: '100%',
-                      sm: 'calc(50% - 8px)',
-                      md: 'calc(33.333% - 11px)',
-                    },
-                    minWidth: { xs: 'calc(50% - 8px)', sm: 180 },
-                  }}
-                >
+            <Box
+              sx={{
+                display: 'flex',
+                flexDirection: 'row',
+                justifyContent: 'center',
+                gap: 2,
+                mb: 3,
+              }}
+            >
                 <KpiCard
-                  title="Avg. Service Completion Time"
+                  title='Avg. Service Completion Time'
                   value={
-                    phoenixLoading 
-                      ? '...' 
-                      : phoenixStats?.averageCompletionTime != null 
-                        ? `${(phoenixStats.averageCompletionTime / (1000 * 60)).toFixed(1)} min`
-                        : 'N/A'
+                    phoenixLoading
+                      ? '...'
+                      : phoenixStats?.averageCompletionTime != null
+                      ? `${(
+                          phoenixStats.averageCompletionTime /
+                          (1000 * 60)
+                        ).toFixed(1)} min`
+                      : 'N/A'
                   }
                   isLoading={phoenixLoading}
-                  icon={<TrendingUpIcon />}
+                  icon={<AvTimer />}
                 />
-              </Box>
+                <KpiCard
+                  title='Services Requested'
+                  value={
+                    phoenixLoading
+                      ? '...'
+                      : phoenixStats?.total_submissions
+                      ? phoenixStats.total_submissions
+                      : 'N/A'
+                  }
+                  isLoading={phoenixLoading}
+                  icon={<CrisisAlert />}
+                />
+
+                <KpiCard
+                  title='Technicians Dispatched'
+                  value={
+                    phoenixLoading
+                      ? '...'
+                      : phoenixStats?.dispatched_count
+                      ? phoenixStats.dispatched_count
+                      : 'N/A'
+                  }
+                  isLoading={phoenixLoading}
+                  icon={<LocalShipping />}
+                />
             </Box>
-            
+
             <Stack spacing={3}>
+              {/* Phoenix Type Distribution Chart - Reinstated 6/4/2025 */}
+              {(phoenixStats?.typeDistribution &&
+                phoenixStats.typeDistribution.length > 0) ||
+              phoenixLoading ? (
+                <Paper elevation={0} sx={{ p: 2, borderRadius: 2, my: 4 }}>
+                  {phoenixTypeDistributionOptions && (
+                    <PieChart
+                      options={phoenixTypeDistributionOptions}
+                      isLoading={phoenixLoading}
+                      height='350px'
+                    />
+                  )}
+                </Paper>
+              ) : null}
+
               {/* Phoenix Volume Trends Chart - Removed 6/4/2025 */}
               {/* {(phoenixStats?.volumeTrends && phoenixStats.volumeTrends.length > 0) || phoenixLoading ? (
                 <Paper elevation={2} sx={{ p: 2, borderRadius: 2 }}>
@@ -744,26 +798,15 @@ const AdminDashboardPanel: React.FC = () => {
                   )}
                 </Paper>
               ) : null} */}
-
-              {/* Phoenix Type Distribution Chart - Reinstated 6/4/2025 */}
-              {(phoenixStats?.typeDistribution && phoenixStats.typeDistribution.length > 0) || phoenixLoading ? (
-                <Paper elevation={2} sx={{ p: 2, borderRadius: 2 }}>
-                  {phoenixTypeDistributionOptions && (
-                    <PieChart
-                      options={phoenixTypeDistributionOptions}
-                      isLoading={phoenixLoading}
-                      height="350px"
-                    />
-                  )}
-                </Paper>
-              ) : null}
             </Stack>
 
             {/* Combined check for no data */}
-            {!(dashboardStats || dashboardLoading) && !dashboardError && 
-             !(phoenixStats || phoenixLoading) && !phoenixError && (
-              <Typography>No dashboard data to display.</Typography>
-            )}
+            {!(dashboardStats || dashboardLoading) &&
+              !dashboardError &&
+              !(phoenixStats || phoenixLoading) &&
+              !phoenixError && (
+                <Typography>No dashboard data to display.</Typography>
+              )}
           </Box>
         </TabPanel>
         <TabPanel value={adminTabValue} index={1}>

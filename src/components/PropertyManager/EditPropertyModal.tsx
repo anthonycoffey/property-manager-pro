@@ -25,8 +25,8 @@ import { functions } from '../../firebaseConfig';
 import { useJsApiLoader } from '@react-google-maps/api';
 import type {
   Property,
-  PropertyAddress as FullPropertyAddress,
-  AppError,
+  // PropertyAddress will be handled by using Property['address']
+  AppError, // This is now exported from types.ts
 } from '../../types';
 import { useAuth } from '../../hooks/useAuth';
 import parse from 'autosuggest-highlight/parse';
@@ -54,7 +54,8 @@ interface PlaceType {
   place_id?: string;
 }
 
-const LIBRARIES_PLACES: 'places'[] = ['places'];
+// Define LIBRARIES_TO_LOAD at the top level of the module
+const LIBRARIES_TO_LOAD: ("places" | "routes")[] = ['places', 'routes'];
 
 const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
   open,
@@ -66,11 +67,14 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
   const { currentUser, organizationId: authUserOrganizationId } = useAuth();
   const [name, setName] = useState('');
   const [propertyType, setPropertyType] = useState('');
+  // Define FullPropertyAddress using the type from Property
+  type FullPropertyAddress = NonNullable<Property['address']>;
   const [address, setAddress] = useState<FullPropertyAddress>({
     street: '',
     city: '',
     state: '',
     zip: '',
+    fullAddress: '', // Ensure all fields from the type are initialized
   });
   const [totalUnits, setTotalUnits] = useState<string>('');
   const [autocompleteValue, setAutocompleteValue] = useState<PlaceType | null>(null);
@@ -85,7 +89,8 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
   const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
   const { isLoaded, loadError } = useJsApiLoader({
     googleMapsApiKey: apiKey || '',
-    libraries: LIBRARIES_PLACES,
+    // @ts-ignore // Ignoring if 'routes' causes type issues with this specific file's context/version
+    libraries: LIBRARIES_TO_LOAD, 
   });
 
   const autocompleteService = useRef<google.maps.places.AutocompleteService | null>(null);
@@ -93,16 +98,17 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
 
   useEffect(() => {
     if (propertyData && open) {
-      setName(propertyData.name);
-      setPropertyType(propertyData.type);
-      setAddress({ // Corrected setAddress call
-        street: propertyData.address.street || '',
-        city: propertyData.address.city || '',
-        state: propertyData.address.state || '',
-        zip: propertyData.address.zip || '',
+      setName(propertyData.name || ''); // Fallback for undefined
+      setPropertyType(propertyData.type || ''); // Fallback for undefined
+      setAddress({ 
+        street: propertyData.address?.street || '',
+        city: propertyData.address?.city || '',
+        state: propertyData.address?.state || '',
+        zip: propertyData.address?.zip || '',
+        fullAddress: propertyData.address?.fullAddress || '', // Add fullAddress
       });
       setTotalUnits(propertyData.totalUnits?.toString() || '');
-      setAutocompleteInputValue(propertyData.address.street || '');
+      setAutocompleteInputValue(propertyData.address?.street || ''); // Optional chaining
       setAutocompleteValue(null); // Reset autocomplete selection when new property data comes in
     } else if (!open) {
       // Reset form when modal is closed
@@ -280,10 +286,10 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
     };
 
     if (
-      currentFullAddress.street !== (propertyData.address.street || '') ||
-      currentFullAddress.city !== (propertyData.address.city || '') ||
-      currentFullAddress.state !== (propertyData.address.state || '') ||
-      currentFullAddress.zip !== (propertyData.address.zip || '')
+      currentFullAddress.street !== (propertyData.address?.street || '') ||
+      currentFullAddress.city !== (propertyData.address?.city || '') ||
+      currentFullAddress.state !== (propertyData.address?.state || '') ||
+      currentFullAddress.zip !== (propertyData.address?.zip || '')
     ) {
       updatedPropertyDetails.address = currentFullAddress;
     }

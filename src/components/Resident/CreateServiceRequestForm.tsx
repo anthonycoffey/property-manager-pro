@@ -23,6 +23,8 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 // New imports for Google Places and Phoenix Service
 import { useJsApiLoader } from '@react-google-maps/api';
+// Define LIBRARIES_TO_LOAD at the top level of the module
+const LIBRARIES_TO_LOAD: ("places" | "routes")[] = ['places', 'routes'];
 import parse from 'autosuggest-highlight/parse';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import { debounce } from '@mui/material/utils';
@@ -100,7 +102,8 @@ const CreateServiceRequestForm: React.FC<CreateServiceRequestFormProps> = ({
   const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
   const { isLoaded, loadError } = useJsApiLoader({
     googleMapsApiKey: apiKey || '',
-    libraries: ['places'], // Removed 'as any'
+    // @ts-ignore // Ignoring if 'routes' causes type issues with this specific file's context/version
+    libraries: LIBRARIES_TO_LOAD, 
   });
 
   const autocompleteService = React.useRef<google.maps.places.AutocompleteService | null>(null);

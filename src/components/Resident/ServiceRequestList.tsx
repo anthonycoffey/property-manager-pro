@@ -8,6 +8,8 @@ import {
   List,
   ListItem,
   ListItemText,
+  ListItemSecondaryAction,
+  Button as MuiButton,
   Divider,
   Chip,
 } from '@mui/material';
@@ -21,10 +23,12 @@ import {
 } from 'firebase/firestore';
 import { db } from '../../firebaseConfig';
 import { useAuth } from '../../hooks/useAuth';
-import type { ServiceRequest, ServiceRequestStatus } from '../../types';
+import type { ServiceRequest } from '../../types'; // Removed ServiceRequestStatus as it's part of ServiceRequest
+import ServiceJobDetailModal from '../Job/ServiceJobDetailModal'; // Import the modal
 
+// Assuming ServiceRequestStatus is part of ServiceRequest type, e.g. ServiceRequest['status']
 const getStatusChipColor = (
-  status: ServiceRequestStatus
+  status: ServiceRequest['status']
 ):
   | 'default'
   | 'primary'
@@ -49,8 +53,14 @@ const getStatusChipColor = (
   }
 };
 
-const ServiceRequestListItem: React.FC<{ request: ServiceRequest }> = ({
+interface ServiceRequestListItemProps {
+  request: ServiceRequest;
+  onViewJobClick: (phoenixSubmissionId: string) => void;
+}
+
+const ServiceRequestListItem: React.FC<ServiceRequestListItemProps> = ({
   request,
+  onViewJobClick,
 }) => {
   const formatDate = (timestamp: Timestamp | Date | undefined): string => {
     if (!timestamp) return 'N/A';
@@ -67,9 +77,10 @@ const ServiceRequestListItem: React.FC<{ request: ServiceRequest }> = ({
           primary={`${request.requestType} - Submitted: ${formatDate(
             request.submittedAt
           )}`}
+          secondaryTypographyProps={{ component: 'div' }} // Ensures secondary text container is a div
           secondary={
             <Box
-              component='span'
+              component='span' // This Box is fine as it's now inside a div
               sx={{ display: 'flex', alignItems: 'center', mt: 0.5 }}
             >
               <Typography component='span' variant='body2' color='text.primary'>
@@ -84,6 +95,17 @@ const ServiceRequestListItem: React.FC<{ request: ServiceRequest }> = ({
             </Box>
           }
         />
+        {request.phoenixSubmissionId && (
+          <ListItemSecondaryAction>
+            <MuiButton
+              variant="outlined"
+              size="small"
+              onClick={() => onViewJobClick(request.phoenixSubmissionId!)}
+            >
+              View Job
+            </MuiButton>
+          </ListItemSecondaryAction>
+        )}
       </ListItem>
 
       <Divider component='li' />
@@ -96,6 +118,13 @@ const ServiceRequestList: React.FC = () => {
   const [serviceRequests, setServiceRequests] = useState<ServiceRequest[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [isJobDetailModalOpen, setIsJobDetailModalOpen] = useState<boolean>(false);
+  const [selectedPhoenixSubmissionId, setSelectedPhoenixSubmissionId] = useState<string | null>(null);
+
+  const handleViewJobClick = (phoenixSubmissionId: string) => {
+    setSelectedPhoenixSubmissionId(phoenixSubmissionId);
+    setIsJobDetailModalOpen(true);
+  };
 
   useEffect(() => {
     if (!currentUser || !organizationId) {
@@ -173,9 +202,23 @@ const ServiceRequestList: React.FC = () => {
       </Typography>
       <List sx={{ bgcolor: 'background.paper' }}>
         {serviceRequests.map((request) => (
-          <ServiceRequestListItem key={request.id} request={request} />
+          <ServiceRequestListItem
+            key={request.id}
+            request={request}
+            onViewJobClick={handleViewJobClick}
+          />
         ))}
       </List>
+      {selectedPhoenixSubmissionId && (
+        <ServiceJobDetailModal
+          isOpen={isJobDetailModalOpen}
+          onClose={() => {
+            setIsJobDetailModalOpen(false);
+            setSelectedPhoenixSubmissionId(null); // Reset when closing
+          }}
+          phoenixSubmissionId={selectedPhoenixSubmissionId}
+        />
+      )}
     </Paper>
   );
 };

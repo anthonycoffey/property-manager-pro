@@ -287,6 +287,9 @@ const ServiceJobDetailModal: React.FC<ServiceJobDetailModalProps> = ({
               </Alert>
             )}
 
+            <Typography variant='overline' display='block' gutterBottom>
+              Your Technician
+            </Typography>
             {/* Technician Info */}
             {technician && (
               <Box

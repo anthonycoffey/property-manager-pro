@@ -10,7 +10,7 @@ export interface Vehicle {
 
 export interface Resident {
   id?: string;
-  name?: string;
+  displayName?: string; // Changed from name to displayName
   email?: string;
   phone?: string;
   unitNumber?: string;
@@ -20,6 +20,8 @@ export interface Resident {
   organizationId?: string;
   propertyId?: string;
   vehicles?: Vehicle[]; // Updated to array
+  leaseStartDate?: any; // Firestore Timestamp or Date
+  leaseEndDate?: any; // Firestore Timestamp or Date
 }
 
 export interface Property {

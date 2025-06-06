@@ -1,7 +1,7 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { db } from '../firebaseAdmin.js';
-import { Timestamp } from 'firebase-admin/firestore';
-import type { Resident, AppError } from '../types.js';
+import { Timestamp, FieldValue } from 'firebase-admin/firestore'; // Added FieldValue
+import type { Resident, AppError, Vehicle } from '../types.js'; // Added Vehicle
 
 interface UpdateResidentData {
   organizationId: string;
@@ -169,6 +169,69 @@ export const updateResidentDetails = onCall(async (request) => {
         }
       }
     }
+
+    if (Object.prototype.hasOwnProperty.call(updatedData, 'vehicles')) {
+      const vehicles = updatedData.vehicles as Vehicle[] | undefined; // Cast for type safety
+
+      if (vehicles !== undefined) { // Check if vehicles is explicitly provided (could be null or an array)
+        if (vehicles === null || (Array.isArray(vehicles) && vehicles.length === 0)) {
+          // If vehicles is explicitly set to null or an empty array, treat as clearing vehicles
+          sanitizedUpdateData.vehicles = []; // Store empty array
+          // Ensure old flat fields are deleted if vehicles are being cleared
+          sanitizedUpdateData.vehicleMake = FieldValue.delete();
+          sanitizedUpdateData.vehicleModel = FieldValue.delete();
+          sanitizedUpdateData.vehicleColor = FieldValue.delete();
+          sanitizedUpdateData.licensePlate = FieldValue.delete();
+          // Note: vehicleYear was not previously handled by this function or modal
+          hasValidUpdate = true; // This is a valid update
+        } else if (Array.isArray(vehicles)) {
+          if (vehicles.length > 2) {
+            throw new HttpsError(
+              'invalid-argument',
+              'A maximum of 2 vehicles are allowed.'
+            );
+          }
+          for (const vehicle of vehicles) {
+            if (
+              !vehicle.make ||
+              !vehicle.model ||
+              !vehicle.year ||
+              !vehicle.color ||
+              !vehicle.plate
+            ) {
+              throw new HttpsError(
+                'invalid-argument',
+                'All fields (make, model, year, color, plate) are required for each vehicle.'
+              );
+            }
+            if (
+              isNaN(vehicle.year) ||
+              vehicle.year < 1900 ||
+              vehicle.year > new Date().getFullYear() + 2
+            ) {
+              throw new HttpsError(
+                'invalid-argument',
+                `Invalid year for vehicle: ${vehicle.make} ${vehicle.model}.`
+              );
+            }
+          }
+          // If vehicles array is valid and provided, ensure old flat fields are deleted
+          sanitizedUpdateData.vehicleMake = FieldValue.delete();
+          sanitizedUpdateData.vehicleModel = FieldValue.delete();
+          sanitizedUpdateData.vehicleColor = FieldValue.delete();
+          sanitizedUpdateData.licensePlate = FieldValue.delete();
+          // 'vehicles' field itself is already handled by the loop for allowedFields
+          hasValidUpdate = true; // This is a valid update
+        } else {
+          // 'vehicles' is present but not an array and not null (e.g. a string, number)
+          throw new HttpsError(
+            'invalid-argument',
+            'Invalid format for vehicles. Expected an array or null.'
+          );
+        }
+      }
+    }
+
 
     if (!hasValidUpdate) {
       throw new HttpsError(

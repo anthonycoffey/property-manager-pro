@@ -22,6 +22,7 @@ import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import LoginIcon from '@mui/icons-material/Login';
 import LogoutIcon from '@mui/icons-material/Logout';
+import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
 import MenuIcon from '@mui/icons-material/Menu';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
@@ -149,6 +150,23 @@ const AppBarComponent: React.FC<AppBarComponentProps> = ({
           </ListItem>
         )}
       </List>
+      
+      {/* Delete Account Link - directly above theme toggle */}
+      {currentUser && ( 
+        <Box> 
+          <Divider /> 
+          <List onClick={toggleDrawer(false)} onKeyDown={toggleDrawer(false)}>
+            <ListItem disablePadding>
+              <ListItemButton onClick={() => { navigate('/delete-account'); setDrawerOpen(false); }}>
+                <ListItemIcon>
+                  <DeleteForeverIcon sx={{ color: 'error.main' }} />
+                </ListItemIcon>
+                <ListItemText primary='Delete Account' />
+              </ListItemButton>
+            </ListItem>
+          </List>
+        </Box>
+      )}
       
       {/* Theme Toggle - pushed to bottom */}
       <Box> {/* Wrapper for theme toggle to prevent it from being part of the List's click handler */}

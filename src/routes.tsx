@@ -11,6 +11,7 @@ import LostPasswordPage from './pages/LostPasswordPage'; // Added import for Los
 import CampaignDetailsPage from './pages/CampaignDetailsPage'; 
 import JoinCampaignPage from './pages/JoinCampaignPage'; // Added import for JoinCampaignPage
 import PublicCampaignHandlerPage from './pages/PublicCampaignHandlerPage'; // Added for new flow
+import DeleteAccountPage from './pages/DeleteAccountPage'; // Added import for DeleteAccountPage
 
 const AppRoutes: React.FC = () => {
   return (
@@ -39,6 +40,14 @@ const AppRoutes: React.FC = () => {
       <Route path="/accept-org-manager-invitation" element={<AcceptOrgManagerInvitationPage />} />
       <Route path="/lost-password" element={<LostPasswordPage />} />
       <Route path="/demo" element={<DemoPage />} /> {/* Added public demo route */}
+      <Route
+        path="/delete-account"
+        element={
+          <ProtectedRoute>
+            <DeleteAccountPage />
+          </ProtectedRoute>
+        }
+      />
       {/* Placeholder for unauthorized access */}
       <Route path="/unauthorized" element={<div>You are not authorized to view this page.</div>} />
       {/* Add more public and protected routes as needed */}

@@ -279,7 +279,7 @@ const GuestDashboardPanel: React.FC = () => {
   const cardPadding = { p: 2 }; // Reduced padding for CardContent and CardActions
 
   return (
-    <Container component='main' maxWidth='sm'>
+    <Container component='main' maxWidth='md'>
       <Box
         sx={{
           display: 'flex',

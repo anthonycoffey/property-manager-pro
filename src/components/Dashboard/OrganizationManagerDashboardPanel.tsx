@@ -515,7 +515,7 @@ const OrganizationManagerDashboardPanel: React.FC<
   );
 
   return (
-    <Container component='main' maxWidth='lg'>
+    <Container component='main' maxWidth='xl'>
       <Paper sx={{ p: { xs: 1, sm: 2 }, mb: 4 }} elevation={3}>
         <Box
           sx={{
@@ -726,7 +726,7 @@ const OrganizationManagerDashboardPanel: React.FC<
                           options={campaignPerformanceOptions}
                           isLoading={dashboardLoading}
                           height='350px'
-                          title='Campaign Acceptance'
+                          // title='Campaign Acceptance'
                         />
                       )}
                     </>
@@ -766,10 +766,6 @@ const OrganizationManagerDashboardPanel: React.FC<
                 </Stack>
 
                 {/* Phoenix Stats Section */}
-
-                <Typography variant='h6' gutterBottom>
-                  Service Analytics
-                </Typography>
 
                 {phoenixError && (
                   <Alert severity='error' sx={{ mb: 2 }}>

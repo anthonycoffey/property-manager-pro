@@ -27,6 +27,7 @@ import PeopleIcon from '@mui/icons-material/People';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import CrisisAlert from '@mui/icons-material/CrisisAlert'; // Added
 import LocalShipping from '@mui/icons-material/LocalShipping'; // Added
+import AvTimer from '@mui/icons-material/AvTimer'; // Added for Avg Completion Time
 
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../../firebaseConfig';
@@ -63,6 +64,7 @@ interface PropertyManagerPhoenixStats {
   typeDistribution?: PhoenixTypeDistributionPoint[];
   total_submissions?: string;
   dispatched_count?: string;
+  averageCompletionTime?: number | null; // Added
 }
 
 interface PropertyManagerPhoenixStatsResponse {
@@ -402,7 +404,7 @@ const PropertyManagerDashboardPanel: React.FC<
     }, [phoenixStats?.typeDistribution]);
 
   return (
-    <Container component='main' maxWidth='lg'>
+    <Container component='main' maxWidth='xl'>
       <Paper elevation={3} sx={{ mb: 4, p: { xs: 1, sm: 2 } }}>
         <Box
           sx={{
@@ -451,7 +453,12 @@ const PropertyManagerDashboardPanel: React.FC<
 
         <TabPanel value={pmTabValue} index={0}>
           {/* Outer Box for relative positioning of spinner */}
-          <Box sx={{ position: 'relative', minHeight: '300px' /* Adjust as needed for initial empty state */ }}>
+          <Box
+            sx={{
+              position: 'relative',
+              minHeight: '300px' /* Adjust as needed for initial empty state */,
+            }}
+          >
             {(dashboardLoading || phoenixLoading) && (
               <Box
                 sx={{
@@ -478,157 +485,189 @@ const PropertyManagerDashboardPanel: React.FC<
             <Typography variant='h6' gutterBottom sx={{ mb: 2 }}>
               Property Dashboard Overview
             </Typography>
-          {organizationId ? (
-            <PropertySelectorDropdown
-              organizationId={organizationId}
-              selectedPropertyId={selectedPropertyId}
-              onPropertyChange={handlePropertySelect}
-              key={refreshPropertiesKey}
-            />
-          ) : (
-            <Alert severity='warning'>
-              Organization not identified. Cannot select property.
-            </Alert>
-          )}
+            {organizationId ? (
+              <PropertySelectorDropdown
+                organizationId={organizationId}
+                selectedPropertyId={selectedPropertyId}
+                onPropertyChange={handlePropertySelect}
+                key={refreshPropertiesKey}
+              />
+            ) : (
+              <Alert severity='warning'>
+                Organization not identified. Cannot select property.
+              </Alert>
+            )}
 
-          {selectedPropertyId && organizationId ? (
-            <Box sx={{ mt: 2 }}>
-              {dashboardError && (
-                <Alert severity='error' sx={{ mb: 2 }}>
-                  {dashboardError}
-                </Alert>
-              )}
-              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 3 }}>
-                <Box
-                  sx={{
-                    flexGrow: 1,
-                    flexBasis: { xs: '100%', sm: 'calc(33.333% - 11px)' },
-                  }}
-                >
-                  <KpiCard
-                    title='Total Residents'
-                    value={
-                      dashboardLoading
-                        ? '...'
-                        : dashboardStats?.propertyCounts?.totalResidents ??
-                          'N/A'
-                    }
-                    isLoading={dashboardLoading}
-                    icon={<PeopleIcon />}
-                  />
-                </Box>
-                <Box
-                  sx={{
-                    flexGrow: 1,
-                    flexBasis: { xs: '100%', sm: 'calc(33.333% - 11px)' },
-                  }}
-                >
-                  <KpiCard
-                    title='Residents Onboarded'
-                    value={
-                      dashboardLoading
-                        ? '...'
-                        : `${(
-                            (dashboardStats?.propertyCounts?.occupancyRate ??
-                              0) * 100
-                          ).toFixed(1)}%`
-                    }
-                    unit=''
-                    isLoading={dashboardLoading}
-                    icon={<TrendingUpIcon />}
-                  />
-                </Box>
-                <Box
-                  sx={{
-                    flexGrow: 1,
-                    flexBasis: { xs: '100%', sm: 'calc(33.333% - 11px)' },
-                  }}
-                >
-                  <KpiCard
-                    title='Total Units'
-                    value={
-                      dashboardLoading
-                        ? '...'
-                        : dashboardStats?.propertyCounts?.totalUnits ?? 'N/A'
-                    }
-                    isLoading={dashboardLoading}
-                    icon={<HomeWork />}
-                  />
-                </Box>
-              </Box>
-              {(dashboardStats?.campaignPerformance &&
-                dashboardStats.campaignPerformance.length > 0) ||
-              dashboardLoading ? (
-                <Paper elevation={0} sx={{ p: 2, borderRadius: 2, my: 4 }}>
-                  {campaignPerformanceOptions && (
-                    <BarChart
-                      options={campaignPerformanceOptions}
+            {selectedPropertyId && organizationId ? (
+              <Box sx={{ mt: 2 }}>
+                {dashboardError && (
+                  <Alert severity='error' sx={{ mb: 2 }}>
+                    {dashboardError}
+                  </Alert>
+                )}
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 3 }}>
+                  <Box
+                    sx={{
+                      flexGrow: 1,
+                      flexBasis: { xs: '100%', sm: 'calc(33.333% - 11px)' },
+                    }}
+                  >
+                    <KpiCard
+                      title='Total Residents'
+                      value={
+                        dashboardLoading
+                          ? '...'
+                          : dashboardStats?.propertyCounts?.totalResidents ??
+                            'N/A'
+                      }
                       isLoading={dashboardLoading}
-                      height='350px'
+                      icon={<PeopleIcon />}
                     />
-                  )}
-                </Paper>
-              ) : (
-                !dashboardLoading && (
-                  <Typography sx={{ mt: 2 }}>
-                    No campaign data to display for this property.
-                  </Typography>
-                )
-              )}
-
-              {/* Phoenix Stats Section */}
-
-              <Typography variant='h6' gutterBottom>
-                Service Analytics for{' '}
-                {selectedPropertyName || 'Selected Property'}
-              </Typography>
-
-              {phoenixError && (
-                <Alert severity='error' sx={{ mb: 2 }}>
-                  {phoenixError}
-                </Alert>
-              )}
-
-              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 3 }}>
-                <Box
-                  sx={{
-                    flexGrow: 1,
-                    flexBasis: { xs: '100%', sm: 'calc(50% - 8px)' },
-                  }}
-                >
-                  <KpiCard
-                    title='Services Requested'
-                    value={
-                      phoenixLoading
-                        ? '...'
-                        : phoenixStats?.total_submissions ?? 'N/A'
-                    }
-                    isLoading={phoenixLoading}
-                    icon={<CrisisAlert />}
-                  />
+                  </Box>
+                  <Box
+                    sx={{
+                      flexGrow: 1,
+                      flexBasis: { xs: '100%', sm: 'calc(33.333% - 11px)' },
+                    }}
+                  >
+                    <KpiCard
+                      title='Residents Onboarded'
+                      value={
+                        dashboardLoading
+                          ? '...'
+                          : `${(
+                              (dashboardStats?.propertyCounts?.occupancyRate ??
+                                0) * 100
+                            ).toFixed(1)}%`
+                      }
+                      unit=''
+                      isLoading={dashboardLoading}
+                      icon={<TrendingUpIcon />}
+                    />
+                  </Box>
+                  <Box
+                    sx={{
+                      flexGrow: 1,
+                      flexBasis: { xs: '100%', sm: 'calc(33.333% - 11px)' },
+                    }}
+                  >
+                    <KpiCard
+                      title='Total Units'
+                      value={
+                        dashboardLoading
+                          ? '...'
+                          : dashboardStats?.propertyCounts?.totalUnits ?? 'N/A'
+                      }
+                      isLoading={dashboardLoading}
+                      icon={<HomeWork />}
+                    />
+                  </Box>
                 </Box>
-                <Box
-                  sx={{
-                    flexGrow: 1,
-                    flexBasis: { xs: '100%', sm: 'calc(50% - 8px)' },
-                  }}
-                >
-                  <KpiCard
-                    title='Technicians Dispatched'
-                    value={
-                      phoenixLoading
-                        ? '...'
-                        : phoenixStats?.dispatched_count ?? 'N/A'
-                    }
-                    isLoading={phoenixLoading}
-                    icon={<LocalShipping />}
-                  />
-                </Box>
-              </Box>
+                {(dashboardStats?.campaignPerformance &&
+                  dashboardStats.campaignPerformance.length > 0) ||
+                dashboardLoading ? (
+                  <Paper elevation={0} sx={{ p: 2, borderRadius: 2, mb: 8 }}>
+                    {campaignPerformanceOptions && (
+                      <BarChart
+                        options={campaignPerformanceOptions}
+                        isLoading={dashboardLoading}
+                        height='350px'
+                      />
+                    )}
+                  </Paper>
+                ) : (
+                  !dashboardLoading && (
+                    <Typography sx={{ mt: 2 }}>
+                      No campaign data to display for this property.
+                    </Typography>
+                  )
+                )}
 
-              <Stack spacing={3}>
-                {/* Phoenix Volume Trends Chart - Removed 6/4/2025 */}
-                {/* {(phoenixStats?.volumeTrends && phoenixStats.volumeTrends.length > 0) || phoenixLoading ? (
+                {/* Phoenix Stats Section */}
+
+                {phoenixError && (
+                  <Alert severity='error' sx={{ mb: 2 }}>
+                    {phoenixError}
+                  </Alert>
+                )}
+
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 3 }}>
+                  <Box
+                    sx={{
+                      flexGrow: 1,
+                      flexBasis: {
+                        xs: '100%',
+                        sm: 'calc(50% - 8px)',
+                        md: 'calc(33.333% - 11px)',
+                      },
+                      minWidth: { sm: 180 },
+                    }}
+                  >
+                    <KpiCard
+                      title='Services Requested'
+                      value={
+                        phoenixLoading
+                          ? '...'
+                          : phoenixStats?.total_submissions ?? 'N/A'
+                      }
+                      isLoading={phoenixLoading}
+                      icon={<CrisisAlert />}
+                    />
+                  </Box>
+                  <Box
+                    sx={{
+                      flexGrow: 1,
+                      flexBasis: {
+                        xs: '100%',
+                        sm: 'calc(50% - 8px)',
+                        md: 'calc(33.333% - 11px)',
+                      },
+                      minWidth: { sm: 180 },
+                    }}
+                  >
+                    <KpiCard
+                      title='Technicians Dispatched'
+                      value={
+                        phoenixLoading
+                          ? '...'
+                          : phoenixStats?.dispatched_count ?? 'N/A'
+                      }
+                      isLoading={phoenixLoading}
+                      icon={<LocalShipping />}
+                    />
+                  </Box>
+                  <Box
+                    sx={{
+                      flexGrow: 1,
+                      flexBasis: {
+                        xs: '100%',
+                        sm: 'calc(50% - 8px)',
+                        md: 'calc(33.333% - 11px)',
+                      },
+                      minWidth: { sm: 180 },
+                    }}
+                  >
+                    <KpiCard
+                      title='Avg. Service Completion Time'
+                      value={
+                        phoenixLoading
+                          ? '...'
+                          : phoenixStats?.averageCompletionTime != null
+                          ? `${(
+                              phoenixStats.averageCompletionTime /
+                              (1000 * 60)
+                            ).toFixed(1)} min`
+                          : 'N/A'
+                      }
+                      isLoading={phoenixLoading}
+                      icon={<AvTimer />}
+                    />
+                  </Box>
+                </Box>
+
+                <Stack spacing={3}>
+                  {/* Phoenix Volume Trends Chart - Removed 6/4/2025 */}
+                  {/* {(phoenixStats?.volumeTrends && phoenixStats.volumeTrends.length > 0) || phoenixLoading ? (
                   <Paper elevation={2} sx={{ p: 2, borderRadius: 2 }}>
                     {phoenixVolumeTrendOptions && (
                       <LineChart
@@ -640,37 +679,38 @@ const PropertyManagerDashboardPanel: React.FC<
                   </Paper>
                 ) : null} */}
 
-                {/* Phoenix Type Distribution Chart - Reinstated 6/4/2025 */}
-                {(phoenixStats?.typeDistribution &&
-                  phoenixStats.typeDistribution.length > 0) ||
-                phoenixLoading ? (
-                  <Paper elevation={0} sx={{ p: 2, borderRadius: 2, my: 4 }}>
-                    {phoenixTypeDistributionOptions && (
-                      <PieChart
-                        options={phoenixTypeDistributionOptions}
-                        isLoading={phoenixLoading}
-                        height='350px'
-                      />
-                    )}
-                  </Paper>
-                ) : null}
-              </Stack>
+                  {/* Phoenix Type Distribution Chart - Reinstated 6/4/2025 */}
+                  {(phoenixStats?.typeDistribution &&
+                    phoenixStats.typeDistribution.length > 0) ||
+                  phoenixLoading ? (
+                    <Paper elevation={0} sx={{ p: 2, borderRadius: 2, my: 4 }}>
+                      {phoenixTypeDistributionOptions && (
+                        <PieChart
+                          options={phoenixTypeDistributionOptions}
+                          isLoading={phoenixLoading}
+                          height='350px'
+                        />
+                      )}
+                    </Paper>
+                  ) : null}
+                </Stack>
 
-              {!(dashboardStats || dashboardLoading) &&
-                !dashboardError &&
-                !(phoenixStats || phoenixLoading) &&
-                !phoenixError && (
-                  <Typography sx={{ mt: 2 }}>
-                    No dashboard data to display for this property.
-                  </Typography>
-                )}
-            </Box>
-          ) : (
-            <Alert severity='info' sx={{ mt: 2 }}>
-              Please select a property to view its dashboard.
-            </Alert>
-          )}
-          </Box> {/* This was the missing closing tag */}
+                {!(dashboardStats || dashboardLoading) &&
+                  !dashboardError &&
+                  !(phoenixStats || phoenixLoading) &&
+                  !phoenixError && (
+                    <Typography sx={{ mt: 2 }}>
+                      No dashboard data to display for this property.
+                    </Typography>
+                  )}
+              </Box>
+            ) : (
+              <Alert severity='info' sx={{ mt: 2 }}>
+                Please select a property to view its dashboard.
+              </Alert>
+            )}
+          </Box>{' '}
+          {/* This was the missing closing tag */}
         </TabPanel>
 
         <TabPanel value={pmTabValue} index={1}>

@@ -179,17 +179,16 @@ async function fetchAverageCompletionTime(
 
 export const getOrgManagerPhoenixStats = https.onCall(
   async (data: GetOrgManagerPhoenixStatsData, context: CallableContext) => {
-    // Temporarily disabled auth check
-    // if (!context.auth) {
-    //   throw handleHttpsError('unauthenticated', 'User must be authenticated.');
-    // }
-    // const { roles, organizationIds } = context.auth.token;
-    // if (!roles?.includes('organization_manager')) {
-    //   throw handleHttpsError('permission-denied', 'User must be an organization manager.');
-    // }
-    // if (!data.organizationId || !organizationIds?.includes(data.organizationId)) {
-    //  throw handleHttpsError('permission-denied', 'Access denied to this organization.');
-    // }
+    if (!context.auth) {
+      throw handleHttpsError('unauthenticated', 'User must be authenticated.');
+    }
+    const { roles, organizationIds } = context.auth.token;
+    if (!roles?.includes('organization_manager')) {
+      throw handleHttpsError('permission-denied', 'User must be an organization manager.');
+    }
+    if (!data.organizationId || !organizationIds?.includes(data.organizationId)) {
+     throw handleHttpsError('permission-denied', 'Access denied to this organization.');
+    }
     logger.info("getOrgManagerPhoenixStats called with data:", data);
 
     if (!PHOENIX_API_URL_BASE) {

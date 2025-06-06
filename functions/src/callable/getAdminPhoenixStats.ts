@@ -214,14 +214,13 @@ async function fetchAverageCompletionTime(
 
 export const getAdminPhoenixStats = https.onCall(
   async (data: GetAdminPhoenixStatsData, context: CallableContext) => {
-    // Temporarily disabled auth check for development as per plan
-    // if (!context.auth) {
-    //   throw handleHttpsError('unauthenticated', 'User must be authenticated.');
-    // }
-    // const { roles } = context.auth.token;
-    // if (!roles?.includes('admin')) {
-    //   throw handleHttpsError('permission-denied', 'User must be an admin.');
-    // }
+    if (!context.auth) {
+      throw handleHttpsError('unauthenticated', 'User must be authenticated.');
+    }
+    const { roles } = context.auth.token;
+    if (!roles?.includes('admin')) {
+      throw handleHttpsError('permission-denied', 'User must be an admin.');
+    }
     logger.info('getAdminPhoenixStats called with data:', data);
 
     if (!PHOENIX_API_URL_BASE) {

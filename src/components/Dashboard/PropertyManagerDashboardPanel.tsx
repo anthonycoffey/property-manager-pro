@@ -13,6 +13,7 @@ import {
   IconButton,
   Container,
   Stack,
+  CircularProgress,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import CloseIcon from '@mui/icons-material/Close';
@@ -449,9 +450,34 @@ const PropertyManagerDashboardPanel: React.FC<
         </Box>
 
         <TabPanel value={pmTabValue} index={0}>
-          <Typography variant='h6' gutterBottom sx={{ mb: 2 }}>
-            Property Dashboard Overview
-          </Typography>
+          {/* Outer Box for relative positioning of spinner */}
+          <Box sx={{ position: 'relative', minHeight: '300px' /* Adjust as needed for initial empty state */ }}>
+            {(dashboardLoading || phoenixLoading) && (
+              <Box
+                sx={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  backgroundColor: (theme) =>
+                    theme.palette.mode === 'light'
+                      ? 'rgba(255, 255, 255, 0.7)'
+                      : 'rgba(0, 0, 0, 0.7)',
+                  zIndex: 2,
+                }}
+              >
+                <CircularProgress />
+              </Box>
+            )}
+            {/* Original Content - ensure it's not rendered or hidden if you prefer not to show it under spinner */}
+            {/* For simplicity, overlay covers it. If content flashes, can add !loading check here too */}
+            <Typography variant='h6' gutterBottom sx={{ mb: 2 }}>
+              Property Dashboard Overview
+            </Typography>
           {organizationId ? (
             <PropertySelectorDropdown
               organizationId={organizationId}
@@ -644,6 +670,7 @@ const PropertyManagerDashboardPanel: React.FC<
               Please select a property to view its dashboard.
             </Alert>
           )}
+          </Box> {/* This was the missing closing tag */}
         </TabPanel>
 
         <TabPanel value={pmTabValue} index={1}>

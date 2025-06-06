@@ -11,6 +11,7 @@ import {
   Snackbar,
   Alert,
   Container,
+  CircularProgress,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import DashboardIcon from '@mui/icons-material/Dashboard';
@@ -542,7 +543,28 @@ const AdminDashboardPanel: React.FC = () => {
         </Box>
 
         <TabPanel value={adminTabValue} index={0}>
-          <Box sx={{ flexGrow: 1 }}>
+          <Box sx={{ flexGrow: 1, position: 'relative' }}> {/* Added position: 'relative' */}
+            {(dashboardLoading || phoenixLoading) && (
+              <Box
+                sx={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  backgroundColor: (theme) => 
+                    theme.palette.mode === 'light' 
+                      ? 'rgba(255, 255, 255, 0.7)' 
+                      : 'rgba(0, 0, 0, 0.7)',
+                  zIndex: 2, // Ensure spinner is on top of content
+                }}
+              >
+                <CircularProgress />
+              </Box>
+            )}
             {dashboardError && (
               <Alert severity='error' sx={{ mb: 2 }}>
                 {dashboardError}

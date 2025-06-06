@@ -60,25 +60,16 @@ import type {
   Resident as ResidentType,
 } from '../../types';
 
-// Define Phoenix Stats types (similar to AdminDashboardPanel)
-// interface PhoenixVolumeTrendPoint { // Removed 6/4/2025
-//   date: string;
-//   count: number;
-// }
-
 interface PhoenixTypeDistributionPoint {
-  // Reinstated 6/4/2025
   name: string;
   y: number;
 }
 
 interface OrgManagerPhoenixStats {
-  // Structure for data from getOrgManagerPhoenixStats
-  // volumeTrends?: PhoenixVolumeTrendPoint[]; // Removed 6/4/2025
-  typeDistribution?: PhoenixTypeDistributionPoint[]; // Reinstated 6/4/2025
+  typeDistribution?: PhoenixTypeDistributionPoint[];
   averageCompletionTime?: number | null; // in milliseconds
-  total_submissions?: string; // Added
-  dispatched_count?: string; // Added
+  total_submissions?: string;
+  dispatched_count?: string;
 }
 
 // Define OrgManagerPhoenixStatsResponse type
@@ -618,10 +609,31 @@ const OrganizationManagerDashboardPanel: React.FC<
                   icon={<ChatBubbleOutlineIcon />}
                   {...a11yProps(4)}
                 />
-              </Tabs>
+            </Tabs>
             </Box>
             <TabPanel value={tabValue} index={0}>
-              <Box sx={{ flexGrow: 1 }}>
+              <Box sx={{ flexGrow: 1, position: 'relative', minHeight: '300px' /* Adjust as needed */ }}>
+                {(dashboardLoading || phoenixLoading) && (
+                  <Box
+                    sx={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      backgroundColor: (theme) =>
+                        theme.palette.mode === 'light'
+                          ? 'rgba(255, 255, 255, 0.7)'
+                          : 'rgba(0, 0, 0, 0.7)',
+                      zIndex: 2,
+                    }}
+                  >
+                    <CircularProgress />
+                  </Box>
+                )}
                 {dashboardError && (
                   <Alert severity='error' sx={{ mb: 2 }}>
                     {dashboardError}

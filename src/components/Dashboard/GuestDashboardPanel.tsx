@@ -6,12 +6,7 @@ import {
   Container,
   Card,
   CardContent,
-  CardActions,
   CardHeader,
-  // List, // No longer using List for main profile display
-  // ListItem,
-  // ListItemIcon,
-  // ListItemText,
   Divider,
   CircularProgress,
   TextField,
@@ -20,9 +15,7 @@ import {
   Dialog,
   DialogActions,
   DialogContent,
-  DialogContentText,
   DialogTitle,
-  IconButton,
   InputAdornment,
   Stack, // For icon and title alignment
 } from '@mui/material';
@@ -32,39 +25,29 @@ import {
   MailOutline,
   VerifiedUserOutlined,
   // Edit, // Icon for CardHeader
-  DeleteForever,
   Save,
-  WarningAmberOutlined,
   Visibility,
   VisibilityOff,
   AccountCircle, // Icon for Profile CardHeader
-  ManageAccounts, // Icon for Account Management CardHeader
 } from '@mui/icons-material';
 import { useAuth } from '../../hooks/useAuth';
 import {
   updateProfile,
-  deleteUser,
   reauthenticateWithCredential,
   EmailAuthProvider,
   updatePassword,
   sendEmailVerification,
 } from 'firebase/auth';
-import { auth } from '../../firebaseConfig';
 
 const handleReload = () => {
   window.location.reload();
 };
 
 const GuestDashboardPanel: React.FC = () => {
-  const { currentUser, loading, signOutUser } = useAuth();
+  const { currentUser, loading } = useAuth();
 
   const [displayName, setDisplayName] = useState('');
   const [editLoading, setEditLoading] = useState(false);
-
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [deleteLoading, setDeleteLoading] = useState(false);
-  const [passwordForDelete, setPasswordForDelete] = useState('');
-  const [showPasswordForDelete, setShowPasswordForDelete] = useState(false);
 
   const [changePasswordDialogOpen, setChangePasswordDialogOpen] =
     useState(false);
@@ -129,13 +112,6 @@ const GuestDashboardPanel: React.FC = () => {
     } finally {
       setEditLoading(false);
     }
-  };
-
-  const handleDeleteAccountOpen = () => setDeleteDialogOpen(true);
-  const handleDeleteAccountClose = () => {
-    setDeleteDialogOpen(false);
-    setPasswordForDelete('');
-    setShowPasswordForDelete(false);
   };
 
   const handleChangePasswordOpen = () => setChangePasswordDialogOpen(true);
@@ -214,50 +190,6 @@ const GuestDashboardPanel: React.FC = () => {
       showSnackbar(errorMessage, 'error');
     } finally {
       setChangePasswordLoading(false);
-    }
-  };
-
-  const handleDeleteAccountConfirm = async () => {
-    if (!currentUser || !currentUser.email) {
-      showSnackbar('User or user email not available.', 'error');
-      return;
-    }
-    if (!passwordForDelete) {
-      showSnackbar('Password is required to delete your account.', 'error');
-      return;
-    }
-    setDeleteLoading(true);
-    try {
-      const credential = EmailAuthProvider.credential(
-        currentUser.email,
-        passwordForDelete
-      );
-      await reauthenticateWithCredential(currentUser, credential);
-      await deleteUser(currentUser);
-      showSnackbar(
-        'Account deleted successfully. You will be logged out.',
-        'success'
-      );
-      setDeleteDialogOpen(false);
-      if (signOutUser) await signOutUser();
-      else auth.signOut();
-    } catch (error: unknown) {
-      let errorMessage = 'Failed to delete account.';
-      if (error instanceof Error) {
-        const firebaseError = error as { code?: string; message: string };
-        if (firebaseError.code === 'auth/wrong-password') {
-          errorMessage = 'Incorrect password.';
-        } else if (firebaseError.code === 'auth/requires-recent-login') {
-          errorMessage =
-            'This operation is sensitive and requires recent authentication. Please log out, log back in, and try again.';
-        } else {
-          errorMessage = firebaseError.message || errorMessage;
-        }
-      }
-      showSnackbar(errorMessage, 'error');
-    } finally {
-      setDeleteLoading(false);
-      setPasswordForDelete('');
     }
   };
 
@@ -426,47 +358,6 @@ const GuestDashboardPanel: React.FC = () => {
             </Button>
           </CardContent>
         </Card>
-        {currentUser && (
-          <Card
-            sx={{ width: '100%', borderColor: 'error.main' }}
-            variant='outlined'
-          >
-            <CardHeader
-              avatar={<ManageAccounts sx={{ color: 'error.main' }} />}
-              title='Delete Account'
-              subheader='Danger Zone'
-              slotProps={{
-                title: {
-                  align: 'left',
-                  color: 'error.main',
-                  fontWeight: 'bold',
-                },
-                subheader: { color: 'error', align: 'left' },
-              }}
-            
-            />
-            <CardContent sx={{ ...cardPadding, pt: 1 }}>
-              <Typography variant='body2' sx={{ mb: 1.5 }}>
-                Permanently delete your account and all of your associated data. This
-                action is irreversible.
-              </Typography>
-            </CardContent>
-            <CardActions
-              sx={{ justifyContent: 'center', ...cardPadding, pt: 0 }}
-            >
-              <Button
-                variant='contained'
-                color='error'
-                onClick={handleDeleteAccountOpen}
-                startIcon={<DeleteForever />}
-                disabled={deleteLoading}
-                fullWidth
-              >
-                Delete My Account
-              </Button>
-            </CardActions>
-          </Card>
-        )}
       </Box>
 
       <Dialog
@@ -584,82 +475,6 @@ const GuestDashboardPanel: React.FC = () => {
             sx={{ flexGrow: 1, ml: 0.5 }}
           >
             {changePasswordLoading ? 'Updating...' : 'Update Password'}
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      <Dialog
-        open={deleteDialogOpen}
-        onClose={handleDeleteAccountClose}
-        maxWidth='xs'
-        fullWidth
-      >
-        <DialogTitle sx={{ textAlign: 'center', pt: 2, pb: 1 }}>
-          <WarningAmberOutlined
-            sx={{
-              color: 'warning.main',
-              fontSize: 30,
-              verticalAlign: 'middle',
-              mr: 0.5,
-            }}
-          />
-          Confirm Account Deletion
-        </DialogTitle>
-        <DialogContent sx={{ pt: 1 }}>
-          <DialogContentText sx={{ textAlign: 'center', mb: 1 }}>
-            This action is permanent. To confirm, please enter your password.
-          </DialogContentText>
-          <TextField
-            autoFocus
-            margin='dense'
-            id='passwordForDelete'
-            label='Password'
-            type={showPasswordForDelete ? 'text' : 'password'}
-            fullWidth
-            variant='standard'
-            value={passwordForDelete}
-            onChange={(e) => setPasswordForDelete(e.target.value)}
-            disabled={deleteLoading}
-            InputProps={{
-              endAdornment: (
-                <InputAdornment position='end'>
-                  <IconButton
-                    onClick={() =>
-                      setShowPasswordForDelete(!showPasswordForDelete)
-                    }
-                    edge='end'
-                  >
-                    {showPasswordForDelete ? <VisibilityOff /> : <Visibility />}
-                  </IconButton>
-                </InputAdornment>
-              ),
-            }}
-          />
-        </DialogContent>
-        <DialogActions sx={{ pb: 2, justifyContent: 'space-around' }}>
-          <Button
-            onClick={handleDeleteAccountClose}
-            color='inherit'
-            disabled={deleteLoading}
-            sx={{ flexGrow: 1, mr: 0.5 }}
-          >
-            Cancel
-          </Button>
-          <Button
-            onClick={handleDeleteAccountConfirm}
-            color='error'
-            variant='contained'
-            disabled={deleteLoading || !passwordForDelete}
-            startIcon={
-              deleteLoading ? (
-                <CircularProgress size={20} color='inherit' />
-              ) : (
-                <DeleteForever />
-              )
-            }
-            sx={{ flexGrow: 1, ml: 0.5 }}
-          >
-            {deleteLoading ? 'Deleting...' : 'Delete My Account'}
           </Button>
         </DialogActions>
       </Dialog>

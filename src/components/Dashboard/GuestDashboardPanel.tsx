@@ -120,8 +120,12 @@ const GuestDashboardPanel: React.FC = () => {
     try {
       await updateProfile(currentUser, { displayName: displayName.trim() });
       showSnackbar('Display name updated successfully!', 'success');
-    } catch (error: any) {
-      showSnackbar(error.message || 'Failed to update display name.', 'error');
+    } catch (error: unknown) {
+      let message = 'Failed to update display name.';
+      if (error instanceof Error) {
+        message = error.message;
+      }
+      showSnackbar(message, 'error');
     } finally {
       setEditLoading(false);
     }
@@ -156,11 +160,12 @@ const GuestDashboardPanel: React.FC = () => {
         'Verification email sent! Please check your inbox.',
         'success'
       );
-    } catch (error: any) {
-      showSnackbar(
-        error.message || 'Failed to send verification email.',
-        'error'
-      );
+    } catch (error: unknown) {
+      let message = 'Failed to send verification email.';
+      if (error instanceof Error) {
+        message = error.message;
+      }
+      showSnackbar(message, 'error');
     }
   };
 
@@ -191,14 +196,21 @@ const GuestDashboardPanel: React.FC = () => {
       await updatePassword(currentUser, newPassword);
       showSnackbar('Password updated successfully!', 'success');
       handleChangePasswordClose();
-    } catch (error: any) {
+    } catch (error: unknown) {
       let errorMessage = 'Failed to change password.';
-      if (error.code === 'auth/wrong-password')
-        errorMessage = 'Incorrect current password.';
-      else if (error.code === 'auth/requires-recent-login')
-        errorMessage =
-          'This operation requires recent authentication. Please log out, log back in, and try again.';
-      else errorMessage = error.message || errorMessage;
+      if (error instanceof Error) {
+        // Firebase errors often have a 'code' property, but it's not standard on Error.
+        // We can check for it dynamically.
+        const firebaseError = error as { code?: string; message: string };
+        if (firebaseError.code === 'auth/wrong-password') {
+          errorMessage = 'Incorrect current password.';
+        } else if (firebaseError.code === 'auth/requires-recent-login') {
+          errorMessage =
+            'This operation requires recent authentication. Please log out, log back in, and try again.';
+        } else {
+          errorMessage = firebaseError.message || errorMessage;
+        }
+      }
       showSnackbar(errorMessage, 'error');
     } finally {
       setChangePasswordLoading(false);
@@ -229,14 +241,19 @@ const GuestDashboardPanel: React.FC = () => {
       setDeleteDialogOpen(false);
       if (signOutUser) await signOutUser();
       else auth.signOut();
-    } catch (error: any) {
+    } catch (error: unknown) {
       let errorMessage = 'Failed to delete account.';
-      if (error.code === 'auth/wrong-password')
-        errorMessage = 'Incorrect password.';
-      else if (error.code === 'auth/requires-recent-login')
-        errorMessage =
-          'This operation is sensitive and requires recent authentication. Please log out, log back in, and try again.';
-      else errorMessage = error.message || errorMessage;
+      if (error instanceof Error) {
+        const firebaseError = error as { code?: string; message: string };
+        if (firebaseError.code === 'auth/wrong-password') {
+          errorMessage = 'Incorrect password.';
+        } else if (firebaseError.code === 'auth/requires-recent-login') {
+          errorMessage =
+            'This operation is sensitive and requires recent authentication. Please log out, log back in, and try again.';
+        } else {
+          errorMessage = firebaseError.message || errorMessage;
+        }
+      }
       showSnackbar(errorMessage, 'error');
     } finally {
       setDeleteLoading(false);

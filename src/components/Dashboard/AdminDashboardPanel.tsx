@@ -68,6 +68,13 @@ interface AdminPhoenixStats {
   dispatched_count?: string;
 }
 
+// Define AdminPhoenixStatsResponse type
+interface AdminPhoenixStatsResponse {
+  success: boolean;
+  data?: AdminPhoenixStats;
+  message?: string;
+}
+
 // Define AdminDashboardStats type locally
 interface GrowthDataPoint {
   period: string;
@@ -293,11 +300,13 @@ const AdminDashboardPanel: React.FC = () => {
         const result = await getStatsFunction({
           /* dateRange: ... */
         });
-        if ((result.data as any)?.success) {
-          setPhoenixStats((result.data as any).data as AdminPhoenixStats);
+        const responseData = result.data as AdminPhoenixStatsResponse;
+
+        if (responseData?.success && responseData.data) {
+          setPhoenixStats(responseData.data);
         } else {
           throw new Error(
-            (result.data as any)?.message || 'Failed to fetch Phoenix stats'
+            responseData?.message || 'Failed to fetch Phoenix stats'
           );
         }
       } catch (err: unknown) {

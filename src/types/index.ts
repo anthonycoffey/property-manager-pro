@@ -306,7 +306,7 @@ export interface Job {
   Car: CarData;
   Payments: PaymentData[];
   Invoices: InvoiceData[];
-  Discounts: any[]; // Define if structure is known
+  Discounts: unknown[]; // Define if structure is known
   Payouts: PayoutData[];
   dispatcher: PhoenixUser;
   assignedTechnician: PhoenixUser;
@@ -417,8 +417,8 @@ export type ServiceRequestStatus =
   description: string;
   residentNotes?: string;
   status: ServiceRequestStatus;
-  submittedAt: any; // Firestore Timestamp
-  serviceDateTime?: any; // Firestore Timestamp or ISO string
+  submittedAt: Timestamp | Date; // Firestore Timestamp
+  serviceDateTime?: Timestamp | Date | string | null; // Firestore Timestamp or ISO string
   phone?: string;
   serviceLocation?: string; // Full address string
   serviceLocationData?: {
@@ -432,6 +432,6 @@ export type ServiceRequestStatus =
   };
   smsConsent?: boolean;
   phoenixSubmissionId?: string | null; // ID from Phoenix API
-  completedAt?: any; // Firestore Timestamp
+  completedAt?: Timestamp | Date | string | null; // Firestore Timestamp
   organizationId: string; // Added for easier querying/rules
 }

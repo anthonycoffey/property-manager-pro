@@ -81,6 +81,13 @@ interface OrgManagerPhoenixStats {
   dispatched_count?: string; // Added
 }
 
+// Define OrgManagerPhoenixStatsResponse type
+interface OrgManagerPhoenixStatsResponse {
+  success: boolean;
+  data?: OrgManagerPhoenixStats;
+  message?: string;
+}
+
 // Define OrgManagerDashboardStatsData type locally
 interface CampaignPerformanceData {
   campaignName: string;
@@ -294,11 +301,13 @@ const OrganizationManagerDashboardPanel: React.FC<
           organizationId: selectedOrgId,
           /* dateRange: ... */
         });
-        if ((result.data as any)?.success) {
-          setPhoenixStats((result.data as any).data as OrgManagerPhoenixStats);
+        const responseData = result.data as OrgManagerPhoenixStatsResponse;
+
+        if (responseData?.success && responseData.data) {
+          setPhoenixStats(responseData.data);
         } else {
           throw new Error(
-            (result.data as any)?.message ||
+            responseData?.message ||
               'Failed to fetch Phoenix stats for organization'
           );
         }

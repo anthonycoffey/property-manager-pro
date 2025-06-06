@@ -64,6 +64,12 @@ interface PropertyManagerPhoenixStats {
   dispatched_count?: string;
 }
 
+interface PropertyManagerPhoenixStatsResponse {
+  success: boolean;
+  data?: PropertyManagerPhoenixStats;
+  message?: string;
+}
+
 interface PropertyCampaignPerformanceData {
   campaignName: string;
   accepted: number;
@@ -224,13 +230,13 @@ const PropertyManagerDashboardPanel: React.FC<
           propertyId: selectedPropertyId,
           // dateRange: /* pass if you add date range selection */
         });
-        if ((result.data as any)?.success) {
-          setPhoenixStats(
-            (result.data as any).data as PropertyManagerPhoenixStats
-          );
+        const responseData = result.data as PropertyManagerPhoenixStatsResponse;
+
+        if (responseData?.success && responseData.data) {
+          setPhoenixStats(responseData.data);
         } else {
           throw new Error(
-            (result.data as any)?.message ||
+            responseData?.message ||
               'Failed to fetch Phoenix stats for property'
           );
         }

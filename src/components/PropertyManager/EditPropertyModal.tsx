@@ -88,7 +88,6 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
   const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
   const { isLoaded, loadError } = useJsApiLoader({
     googleMapsApiKey: apiKey || '',
-    // @ts-ignore // Ignoring if 'routes' causes type issues with this specific file's context/version
     libraries: LIBRARIES_TO_LOAD, 
   });
 

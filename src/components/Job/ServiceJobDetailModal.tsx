@@ -15,10 +15,15 @@ import {
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 // ShareIcon was removed from the plan, but if it's needed, it should be imported.
-// import ShareIcon from '@mui/icons-material/Share'; 
+// import ShareIcon from '@mui/icons-material/Share';
 import SmsIcon from '@mui/icons-material/Sms';
 import PhoneIcon from '@mui/icons-material/Phone';
-import { GoogleMap, Marker, DirectionsRenderer, useJsApiLoader } from '@react-google-maps/api'; // Add DirectionsRenderer
+import {
+  GoogleMap,
+  Marker,
+  DirectionsRenderer,
+  useJsApiLoader,
+} from '@react-google-maps/api'; // Add DirectionsRenderer
 
 import type { Job } from '../../types'; // Assuming Job type is in src/types
 import JobStatusStepper from './JobStatusStepper.tsx';
@@ -27,7 +32,7 @@ import JobDetailsDisplay from './JobDetailsDisplay.tsx';
 
 // Define librariesToLoad outside the component to prevent re-creation on each render.
 // 'routes' library is often used for DirectionsService.
-const LIBRARIES_TO_LOAD: ("places" | "routes")[] = ['places', 'routes'];
+const LIBRARIES_TO_LOAD: ('places' | 'routes')[] = ['places', 'routes'];
 
 const mapContainerStyle = {
   width: '100%',
@@ -60,13 +65,12 @@ const ServiceJobDetailModal: React.FC<ServiceJobDetailModalProps> = ({
   // ETA and distance would typically come from a directions service
   const [eta, setEta] = useState<string>('Calculating...'); // Make dynamic
   const [distance, setDistance] = useState<string>('Calculating...'); // Make dynamic
-  const [directions, setDirections] = useState<google.maps.DirectionsResult | null>(null);
+  const [directions, setDirections] =
+    useState<google.maps.DirectionsResult | null>(null);
   const theme = useTheme(); // For accessing theme colors
-
 
   const { isLoaded, loadError } = useJsApiLoader({
     googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '',
-    // @ts-ignore // Ignoring if exact type for 'routes' causes issues with installed @types
     libraries: LIBRARIES_TO_LOAD,
   });
 
@@ -75,7 +79,7 @@ const ServiceJobDetailModal: React.FC<ServiceJobDetailModalProps> = ({
     setDirections(null);
     setEta('Calculating...');
     setDistance('Calculating...');
-    
+
     if (isOpen && phoenixSubmissionId) {
       const fetchJobData = async () => {
         setIsLoading(true);
@@ -95,8 +99,12 @@ const ServiceJobDetailModal: React.FC<ServiceJobDetailModalProps> = ({
           }
           const data: Job = await response.json();
           setJobData(data);
-        } catch (err: any) {
-          setError(err.message || 'An unexpected error occurred.');
+        } catch (err: unknown) {
+          if (err instanceof Error) {
+            setError(err.message);
+          } else {
+            setError('An unexpected error occurred.');
+          }
         } finally {
           setIsLoading(false);
         }
@@ -117,7 +125,12 @@ const ServiceJobDetailModal: React.FC<ServiceJobDetailModalProps> = ({
         lng: jobData.Address.lng,
       };
 
-      if (technicianLoc.lat && technicianLoc.lng && addressLoc.lat && addressLoc.lng) {
+      if (
+        technicianLoc.lat &&
+        technicianLoc.lng &&
+        addressLoc.lat &&
+        addressLoc.lng
+      ) {
         const directionsService = new google.maps.DirectionsService();
         const request: google.maps.DirectionsRequest = {
           origin: new google.maps.LatLng(technicianLoc.lat, technicianLoc.lng),
@@ -174,8 +187,11 @@ const ServiceJobDetailModal: React.FC<ServiceJobDetailModalProps> = ({
       case 'completed':
         return 3;
       case 'canceled':
+        return 3;
+      case 'cancelled':
+        return 3;
       default:
-        return 0; // Or a specific step for canceled
+        return 3; // Or a specific step for canceled
     }
   };
 
@@ -212,6 +228,65 @@ const ServiceJobDetailModal: React.FC<ServiceJobDetailModalProps> = ({
         )}
         {jobData && !isLoading && !error && (
           <>
+            {/* Map */}
+            {isLoaded && serviceAddress && technician && (
+              <Box sx={mapContainerStyle}>
+                <GoogleMap
+                  mapContainerStyle={{ width: '100%', height: '100%' }}
+                  center={{ lat: serviceAddress.lat, lng: serviceAddress.lng }}
+                  zoom={12}
+                  options={{
+                    styles: customMapStyles,
+                    zoomControl: false,
+                    mapTypeControl: false,
+                    streetViewControl: false,
+                    fullscreenControl: false,
+                  }}
+                >
+                  {/* Technician Marker (using default pin for now) */}
+                  {technician.latitude && technician.longitude && (
+                    <Marker
+                      position={{
+                        lat: technician.latitude,
+                        lng: technician.longitude,
+                      }}
+                      title='Technician'
+                    />
+                  )}
+                  {/* Service Address Marker (using default pin for now) */}
+                  {serviceAddress.lat && serviceAddress.lng && (
+                    <Marker
+                      position={{
+                        lat: serviceAddress.lat,
+                        lng: serviceAddress.lng,
+                      }}
+                      title='Service Location'
+                    />
+                  )}
+
+                  {/* Directions Polyline */}
+                  {directions && (
+                    <DirectionsRenderer
+                      directions={directions}
+                      options={{
+                        suppressMarkers: true, // We are using our own markers above
+                        polylineOptions: {
+                          strokeColor: theme.palette.primary.main,
+                          strokeOpacity: 0.8,
+                          strokeWeight: 5,
+                        },
+                      }}
+                    />
+                  )}
+                </GoogleMap>
+              </Box>
+            )}
+            {loadError && (
+              <Alert severity='warning'>
+                Map or Directions could not be loaded.
+              </Alert>
+            )}
+
             {/* Technician Info */}
             {technician && (
               <Box
@@ -258,57 +333,6 @@ const ServiceJobDetailModal: React.FC<ServiceJobDetailModalProps> = ({
 
             {/* Status Stepper */}
             <JobStatusStepper currentStep={getCurrentStep()} />
-
-            {/* Map */}
-            {isLoaded && serviceAddress && technician && (
-              <Box sx={mapContainerStyle}>
-                <GoogleMap
-                  mapContainerStyle={{ width: '100%', height: '100%' }}
-                  center={{ lat: serviceAddress.lat, lng: serviceAddress.lng }}
-                  zoom={12}
-                  options={{
-                    styles: customMapStyles,
-                    zoomControl: false,
-                    mapTypeControl: false,
-                    streetViewControl: false,
-                    fullscreenControl: false,
-                  }}
-                >
-                  {/* Technician Marker (using default pin for now) */}
-                  {technician.latitude && technician.longitude && (
-                    <Marker
-                      position={{ lat: technician.latitude, lng: technician.longitude }}
-                      title="Technician"
-                    />
-                  )}
-                  {/* Service Address Marker (using default pin for now) */}
-                  {serviceAddress.lat && serviceAddress.lng && (
-                    <Marker
-                      position={{ lat: serviceAddress.lat, lng: serviceAddress.lng }}
-                      title="Service Location"
-                    />
-                  )}
-
-                  {/* Directions Polyline */}
-                  {directions && (
-                    <DirectionsRenderer
-                      directions={directions}
-                      options={{
-                        suppressMarkers: true, // We are using our own markers above
-                        polylineOptions: {
-                          strokeColor: theme.palette.primary.main, 
-                          strokeOpacity: 0.8,
-                          strokeWeight: 5,
-                        },
-                      }}
-                    />
-                  )}
-                </GoogleMap>
-              </Box>
-            )}
-            {loadError && (
-              <Alert severity='warning'>Map or Directions could not be loaded.</Alert>
-            )}
 
             {/* Job Details Display */}
             <JobDetailsDisplay job={jobData} />

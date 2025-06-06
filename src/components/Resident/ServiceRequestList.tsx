@@ -48,8 +48,6 @@ const getStatusChipColor = (
       return 'success';
     case 'cancelled':
       return 'error';
-    case 'on_hold':
-      return 'warning';
     default:
       return 'default';
   }

@@ -72,7 +72,6 @@ const CreatePropertyForm: React.FC<CreatePropertyFormProps> = ({
 
   const { isLoaded, loadError } = useJsApiLoader({
     googleMapsApiKey: apiKey || '',
-    // @ts-ignore // Ignoring if 'routes' causes type issues with this specific file's context/version
     libraries: LIBRARIES_TO_LOAD,
   });
 

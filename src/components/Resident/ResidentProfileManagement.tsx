@@ -151,13 +151,20 @@ const ResidentProfileManagement: React.FC = () => {
       setSuccessMessage('Profile updated successfully!');
     } catch (err: unknown) {
       console.error('Error updating profile:', err);
-      if (err instanceof Error && (err as any).details) { // HttpsError has details
-        setError((err as any).details.message || 'Failed to update profile.');
-      } else if (err instanceof Error) {
-        setError(err.message || 'Failed to update profile. Please try again.');
+      let specificMessage = 'Failed to update profile. Please try again.';
+      if (err instanceof Error) {
+        // Attempt to access Firebase HttpsError specific properties
+        // It's safer to check for properties than to cast directly to a potentially incorrect type.
+        const errorWithDetails = err as { details?: { message?: string } }; // More flexible check
+        if (errorWithDetails.details && typeof errorWithDetails.details.message === 'string') {
+          specificMessage = errorWithDetails.details.message;
+        } else {
+          specificMessage = err.message; // Fallback to the main error message
+        }
       } else {
-        setError('An unexpected error occurred while updating profile.');
+        specificMessage = 'An unexpected error occurred while updating profile.';
       }
+      setError(specificMessage);
     } finally {
       setSaving(false);
     }

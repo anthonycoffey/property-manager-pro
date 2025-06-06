@@ -63,7 +63,7 @@ const ResidentDashboard: React.FC = () => {
   }
 
   return (
-    <Container component='main' maxWidth='lg'>
+    <Container component='main' maxWidth='xl'>
       <Paper
         sx={{ p: 2, display: 'flex', flexDirection: 'column' }}
         elevation={6}

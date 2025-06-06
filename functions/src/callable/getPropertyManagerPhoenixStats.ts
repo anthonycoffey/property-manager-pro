@@ -35,13 +35,23 @@ interface PhoenixFormSubmissionResponse {
   analytics?: PhoenixAnalytics;
 }
 
-// Note: PhoenixJobResponse is not strictly needed here if not fetching jobs for avg completion time
-// interface PhoenixJob {
-//   id: number | string;
-//   createdAt: string; // ISO string
-//   completedAt?: string | null; // ISO string
-//   status: string;
-// }
+interface PhoenixJob {
+  id: number | string;
+  createdAt: string; // ISO string
+  completedAt?: string | null; // ISO string
+  status: string;
+  // other job fields if needed by logic
+}
+
+interface PhoenixJobResponse {
+  data: PhoenixJob[];
+  meta: {
+    total: number;
+    currentPage: number;
+    limit: number;
+    lastPage: number;
+  };
+}
 
 const buildPhoenixUrl = (baseUrl: string, path: string, params: Record<string, string | number | undefined>): string => {
   const url = new URL(path, baseUrl);
@@ -117,6 +127,79 @@ async function fetchTypeDistribution(
   }
 }
 
+async function fetchAverageCompletionTime(
+  phoenixApiBaseUrl: string,
+  organizationId: string,
+  propertyId: string,
+  dateRange?: DateRange
+): Promise<{ averageCompletionTime: number | null; error?: string }> {
+  const queryParams: Record<string, string | number | undefined> = {
+    applicationName: 'PropertyManagerPro',
+    organizationId: organizationId,
+    propertyId: propertyId,
+    status: 'completed,paid,invoiced', // Assuming API handles comma-separated list for IN clause
+    limit: 100, // Fetch a decent number of jobs, handle pagination if necessary for full accuracy
+  };
+
+  if (dateRange) {
+    // Assuming API filters by completedAt within this range.
+    // If not, client-side filtering post-fetch would be needed or API enhancement.
+    queryParams.fromDate = dateRange.startDate;
+    queryParams.toDate = dateRange.endDate;
+  }
+
+  const apiUrl = buildPhoenixUrl(phoenixApiBaseUrl, 'jobs/search/source-meta', queryParams);
+  let totalDurationMs = 0;
+  let completedJobsCount = 0;
+
+  try {
+    const response = await fetch(apiUrl);
+    if (!response.ok) {
+      logger.error(
+        `Phoenix API error for property avg completion time (Org: ${organizationId}, Prop: ${propertyId}): ${response.status} ${response.statusText}`,
+        { apiUrl }
+      );
+      return { averageCompletionTime: null, error: 'API error' };
+    }
+    const result = (await response.json()) as PhoenixJobResponse;
+
+    result.data.forEach((job) => {
+      if (job.completedAt && job.createdAt) {
+        // Additional client-side filtering for dateRange if API's fromDate/toDate is on createdAt
+        if (dateRange) {
+          const completedTimestamp = new Date(job.completedAt).getTime();
+          if (
+            completedTimestamp < new Date(dateRange.startDate).getTime() ||
+            completedTimestamp > new Date(dateRange.endDate).getTime()
+          ) {
+            return; // Skip job if its completion is outside the dateRange
+          }
+        }
+        const durationMs =
+          new Date(job.completedAt).getTime() -
+          new Date(job.createdAt).getTime();
+        if (durationMs > 0) {
+          // Ensure positive duration
+          totalDurationMs += durationMs;
+          completedJobsCount++;
+        }
+      }
+    });
+
+    if (completedJobsCount === 0) {
+      return { averageCompletionTime: 0 }; // Or null if preferred for no data
+    }
+    const averageMs = totalDurationMs / completedJobsCount;
+    return { averageCompletionTime: averageMs }; // in milliseconds
+  } catch (error) {
+    logger.error(
+      `Error fetching property average completion time (Org: ${organizationId}, Prop: ${propertyId}):`,
+      { error, apiUrl }
+    );
+    return { averageCompletionTime: null, error: 'Processing error' };
+  }
+}
+
 export const getPropertyManagerPhoenixStats = https.onCall(
   async (data: GetPropertyManagerPhoenixStatsData, context: CallableContext) => {
     //  auth check
@@ -146,17 +229,29 @@ export const getPropertyManagerPhoenixStats = https.onCall(
 
       // Volume Trends removed. Type Distribution reinstated.
       // OpenVsClosedRequests removed as per user feedback (6/5/2025)
-      const typeDistributionResult = await fetchTypeDistribution(
-        PHOENIX_API_URL_BASE,
-        organizationId,
-        propertyId,
-        dateRange
-      );
+      
+      // Fetch all stats in parallel
+      const [typeDistributionResult, avgCompletionTimeResult] =
+        await Promise.all([
+          fetchTypeDistribution(
+            PHOENIX_API_URL_BASE,
+            organizationId,
+            propertyId,
+            dateRange
+          ),
+          fetchAverageCompletionTime(
+            PHOENIX_API_URL_BASE,
+            organizationId,
+            propertyId,
+            dateRange
+          ),
+        ]);
 
       const responseData = {
         success: true,
         data: {
           ...typeDistributionResult,
+          ...avgCompletionTimeResult, // Merge average completion time result
         },
       };
       logger.info(`getPropertyManagerPhoenixStats successfully returned data for Org: ${organizationId}, Prop: ${propertyId}:`, responseData.data);

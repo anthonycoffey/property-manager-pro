@@ -46,7 +46,6 @@ import ChatView from '../Chat/ChatView';
 
 // Import Chart Components
 import KpiCard from './Charts/KpiCard';
-import LineChart from './Charts/LineChart';
 import PieChart from './Charts/PieChart';
 
 // Firebase functions
@@ -388,59 +387,6 @@ const AdminDashboardPanel: React.FC = () => {
       };
     }, [phoenixStats?.typeDistribution]);
 
-  const orgGrowthOptions: Highcharts.Options | null = useMemo(() => {
-    if (
-      !dashboardStats?.growthTrends?.organizations ||
-      dashboardStats.growthTrends.organizations.length === 0
-    )
-      return null;
-    return {
-      title: { text: 'Organization Growth' },
-      xAxis: {
-        categories: dashboardStats.growthTrends.organizations.map(
-          (d) => d.period
-        ),
-        type: 'category',
-      },
-      yAxis: {
-        title: { text: 'Number of Organizations' },
-        allowDecimals: false,
-      },
-      series: [
-        {
-          name: 'Organizations',
-          data: dashboardStats.growthTrends.organizations.map((d) => d.count),
-          type: 'line',
-        },
-      ],
-      accessibility: { enabled: true },
-    };
-  }, [dashboardStats?.growthTrends?.organizations]);
-
-  const residentGrowthOptions: Highcharts.Options | null = useMemo(() => {
-    if (
-      !dashboardStats?.growthTrends?.residents ||
-      dashboardStats.growthTrends.residents.length === 0
-    )
-      return null;
-    return {
-      title: { text: 'Resident Growth' },
-      xAxis: {
-        categories: dashboardStats.growthTrends.residents.map((d) => d.period),
-        type: 'category',
-      },
-      yAxis: { title: { text: 'Number of Residents' }, allowDecimals: false },
-      series: [
-        {
-          name: 'Residents',
-          data: dashboardStats.growthTrends.residents.map((d) => d.count),
-          type: 'line',
-        },
-      ],
-      accessibility: { enabled: true },
-    };
-  }, [dashboardStats?.growthTrends?.residents]);
-
   const campaignTypeOptions: Highcharts.Options | null = useMemo(() => {
     if (
       !dashboardStats?.campaignOverview?.typeBreakdown ||
@@ -543,7 +489,9 @@ const AdminDashboardPanel: React.FC = () => {
         </Box>
 
         <TabPanel value={adminTabValue} index={0}>
-          <Box sx={{ flexGrow: 1, position: 'relative' }}> {/* Added position: 'relative' */}
+          <Box sx={{ p: { xs: 1, sm: 2, md: 3 }, position: 'relative' }}>
+            {' '}
+            {/* MODIFIED: Added padding */}
             {(dashboardLoading || phoenixLoading) && (
               <Box
                 sx={{
@@ -555,9 +503,9 @@ const AdminDashboardPanel: React.FC = () => {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  backgroundColor: (theme) => 
-                    theme.palette.mode === 'light' 
-                      ? 'rgba(255, 255, 255, 0.7)' 
+                  backgroundColor: (theme) =>
+                    theme.palette.mode === 'light'
+                      ? 'rgba(255, 255, 255, 0.7)'
                       : 'rgba(0, 0, 0, 0.7)',
                   zIndex: 2, // Ensure spinner is on top of content
                 }}
@@ -570,94 +518,74 @@ const AdminDashboardPanel: React.FC = () => {
                 {dashboardError}
               </Alert>
             )}
-
-            <Box
-              sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 3, mt: 2 }}
-            >
-              {[
-                {
-                  title: 'Total Organizations',
-                  value: dashboardStats?.platformCounts?.organizations,
-                  icon: <Business />,
-                  isLoading: dashboardLoading,
-                },
-                {
-                  title: 'Total Properties',
-                  value: dashboardStats?.platformCounts?.properties,
-                  icon: <HomeWork />,
-                  isLoading: dashboardLoading,
-                },
-                {
-                  title: 'Org Managers',
-                  value: dashboardStats?.platformCounts?.organizationManagers,
-                  icon: <Group />,
-                  isLoading: dashboardLoading,
-                },
-                {
-                  title: 'Property Managers',
-                  value: dashboardStats?.platformCounts?.propertyManagers,
-                  icon: <AssignmentInd />,
-                  isLoading: dashboardLoading,
-                },
-                {
-                  title: 'Total Residents',
-                  value: dashboardStats?.platformCounts?.residents,
-                  icon: <PeopleIcon />,
-                  isLoading: dashboardLoading,
-                },
-              ].map((kpi) => (
-                <Box
-                  key={kpi.title}
-                  sx={{
-                    flexGrow: 1,
-                    flexBasis: {
-                      xs: '100%',
-                      sm: 'calc(50% - 8px)',
-                      md: 'calc(33.333% - 11px)',
-                      lg: 'calc(20% - 13px)',
-                    },
-                    minWidth: { xs: 'calc(50% - 8px)', sm: 180 },
-                  }}
-                >
-                  <KpiCard
-                    title={kpi.title}
-                    value={kpi.isLoading ? '...' : kpi.value ?? 'N/A'}
-                    isLoading={kpi.isLoading}
-                    icon={kpi.icon}
-                  />
-                </Box>
-              ))}
-            </Box>
-
-            <Stack spacing={3}>
-              {(dashboardStats?.growthTrends?.organizations &&
-                dashboardStats.growthTrends.organizations.length > 0) ||
-              dashboardLoading ? (
-                <Paper elevation={2} sx={{ p: 2, borderRadius: 2 }}>
-                  {orgGrowthOptions && (
-                    <LineChart
-                      options={orgGrowthOptions}
-                      isLoading={dashboardLoading}
-                      height='350px'
+            {/* Section 1: Platform Overview */}
+            <Box sx={{ mb: 4 }}>
+              <Typography variant='h5' gutterBottom sx={{ mb: 2 }}>
+                Platform Overview
+              </Typography>
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
+                {' '}
+                {/* MODIFIED: Removed mt, mb from here */}
+                {[
+                  {
+                    title: 'Total Organizations',
+                    value: dashboardStats?.platformCounts?.organizations,
+                    icon: <Business />,
+                    isLoading: dashboardLoading,
+                  },
+                  {
+                    title: 'Total Properties',
+                    value: dashboardStats?.platformCounts?.properties,
+                    icon: <HomeWork />,
+                    isLoading: dashboardLoading,
+                  },
+                  {
+                    title: 'Org Managers',
+                    value: dashboardStats?.platformCounts?.organizationManagers,
+                    icon: <Group />,
+                    isLoading: dashboardLoading,
+                  },
+                  {
+                    title: 'Property Managers',
+                    value: dashboardStats?.platformCounts?.propertyManagers,
+                    icon: <AssignmentInd />,
+                    isLoading: dashboardLoading,
+                  },
+                  {
+                    title: 'Total Residents',
+                    value: dashboardStats?.platformCounts?.residents,
+                    icon: <PeopleIcon />,
+                    isLoading: dashboardLoading,
+                  },
+                ].map((kpi) => (
+                  <Box
+                    key={kpi.title}
+                    sx={{
+                      flexGrow: 1,
+                      flexBasis: {
+                        xs: '100%',
+                        sm: 'calc(50% - 8px)',
+                        md: 'calc(33.333% - 11px)',
+                        lg: 'calc(20% - 13px)',
+                      },
+                      minWidth: { xs: 'calc(50% - 8px)', sm: 180 },
+                    }}
+                  >
+                    <KpiCard
+                      title={kpi.title}
+                      value={kpi.isLoading ? '...' : kpi.value ?? 'N/A'}
+                      isLoading={kpi.isLoading}
+                      icon={kpi.icon}
                     />
-                  )}
-                </Paper>
-              ) : null}
-
-              {(dashboardStats?.growthTrends?.residents &&
-                dashboardStats.growthTrends.residents.length > 0) ||
-              dashboardLoading ? (
-                <Paper elevation={2} sx={{ p: 2, borderRadius: 2 }}>
-                  {residentGrowthOptions && (
-                    <LineChart
-                      options={residentGrowthOptions}
-                      isLoading={dashboardLoading}
-                      height='350px'
-                    />
-                  )}
-                </Paper>
-              ) : null}
-
+                  </Box>
+                ))}
+              </Box>{' '}
+              {/* This Box is for KPIs, closing it here. */}
+            </Box>{' '}
+            {/* Closes "Platform Overview" section Box */}
+            <Divider sx={{ my: 4 }} />
+            {/* Section 2: Campaign Performance */}
+            <Box sx={{ mb: 8 }}>
               <Box
                 sx={{
                   display: 'flex',
@@ -668,16 +596,16 @@ const AdminDashboardPanel: React.FC = () => {
                 {(dashboardStats?.campaignOverview?.typeBreakdown &&
                   dashboardStats.campaignOverview.typeBreakdown.length > 0) ||
                 dashboardLoading ? (
-                  <Paper
-                    elevation={0}
+                  <Box
                     sx={{
                       p: 2,
                       borderRadius: 2,
                       flexGrow: 1,
                       width: { xs: '100%', lg: 'calc(60% - 12px)' },
-                      mb: 8,
                     }}
                   >
+                    {' '}
+                    {/* MODIFIED: Removed Paper, mb: 8 */}
                     {campaignTypeOptions && (
                       <PieChart
                         options={campaignTypeOptions}
@@ -685,12 +613,11 @@ const AdminDashboardPanel: React.FC = () => {
                         height='350px'
                       />
                     )}
-                  </Paper>
+                  </Box>
                 ) : null}
 
                 {dashboardStats?.campaignOverview || dashboardLoading ? (
-                  <Paper
-                    elevation={0}
+                  <Box
                     sx={{
                       p: 2,
                       borderRadius: 2,
@@ -702,6 +629,8 @@ const AdminDashboardPanel: React.FC = () => {
                       overflow: 'hidden',
                     }}
                   >
+                    {' '}
+                    {/* MODIFIED: Removed Paper */}
                     <Typography variant='h6' gutterBottom align='center'>
                       Campaign Engagement
                     </Typography>
@@ -734,91 +663,126 @@ const AdminDashboardPanel: React.FC = () => {
                           0}{' '}
                       campaigns
                     </Typography>
-                  </Paper>
+                  </Box>
                 ) : null}
+              </Box>{' '}
+              {/* Closes campaign charts Box */}
+            </Box>{' '}
+            {/* Closes "Campaign Performance" section Box */}
+            <Divider sx={{ my: 4 }} />
+            {/* Section 3: Service Request Analytics (Phoenix) */}
+            <Box sx={{ mb: 3 }}>
+              {phoenixError && (
+                <Alert severity='error' sx={{ mb: 2 }}>
+                  {phoenixError}
+                </Alert>
+              )}
+              <Box
+                sx={{
+                  display: 'flex',
+                  flexWrap: 'wrap', // Allow cards to wrap
+                  justifyContent: 'center', // Center items or rows of items
+                  gap: 2,
+                  mb: 3,
+                }}
+              >
+                <Box
+                  sx={{
+                    flexGrow: 1,
+                    flexBasis: {
+                      xs: '100%',
+                      sm: 'calc(50% - 8px)',
+                      md: 'calc(33.333% - 11px)',
+                    },
+                    minWidth: 270,
+                  }}
+                >
+                  <KpiCard
+                    title='Avg. Service Completion Time'
+                    value={
+                      phoenixLoading
+                        ? '...'
+                        : phoenixStats?.averageCompletionTime != null
+                        ? `${(
+                            phoenixStats.averageCompletionTime /
+                            (1000 * 60)
+                          ).toFixed(1)} min`
+                        : 'N/A'
+                    }
+                    isLoading={phoenixLoading}
+                    icon={<AvTimer />}
+                  />
+                </Box>
+                <Box
+                  sx={{
+                    flexGrow: 1,
+                    flexBasis: {
+                      xs: '100%',
+                      sm: 'calc(50% - 8px)',
+                      md: 'calc(33.333% - 11px)',
+                    },
+                    minWidth: 270,
+                  }}
+                >
+                  <KpiCard
+                    title='Services Requested'
+                    value={
+                      phoenixLoading
+                        ? '...'
+                        : phoenixStats?.total_submissions
+                        ? phoenixStats.total_submissions
+                        : 'N/A'
+                    }
+                    isLoading={phoenixLoading}
+                    icon={<CrisisAlert />}
+                  />
+                </Box>
+                <Box
+                  sx={{
+                    flexGrow: 1,
+                    flexBasis: {
+                      xs: '100%',
+                      sm: 'calc(50% - 8px)',
+                      md: 'calc(33.333% - 11px)',
+                    },
+                    minWidth: 270,
+                  }}
+                >
+                  <KpiCard
+                    title='Technicians Dispatched'
+                    value={
+                      phoenixLoading
+                        ? '...'
+                        : phoenixStats?.dispatched_count
+                        ? phoenixStats.dispatched_count
+                        : 'N/A'
+                    }
+                    isLoading={phoenixLoading}
+                    icon={<LocalShipping />}
+                  />
+                </Box>
               </Box>
-            </Stack>
 
-            {/* Phoenix Stats Section */}
-            <Typography variant='h5' gutterBottom>
-              Service Analytics
-            </Typography>
+              <Stack spacing={3}>
+                {/* Phoenix Type Distribution Chart - Reinstated 6/4/2025 */}
+                {(phoenixStats?.typeDistribution &&
+                  phoenixStats.typeDistribution.length > 0) ||
+                phoenixLoading ? (
+                  <Box sx={{ p: 2, borderRadius: 2, mt: 2 }}>
+                    {' '}
+                    {/* MODIFIED: Removed Paper, changed my:4 to mt:2 */}
+                    {phoenixTypeDistributionOptions && (
+                      <PieChart
+                        options={phoenixTypeDistributionOptions}
+                        isLoading={phoenixLoading}
+                        height='350px'
+                      />
+                    )}
+                  </Box>
+                ) : null}
 
-            {phoenixError && (
-              <Alert severity='error' sx={{ mb: 2 }}>
-                {phoenixError}
-              </Alert>
-            )}
-
-            <Box
-              sx={{
-                display: 'flex',
-                flexDirection: 'row',
-                justifyContent: 'center',
-                gap: 2,
-                mb: 3,
-              }}
-            >
-                <KpiCard
-                  title='Avg. Service Completion Time'
-                  value={
-                    phoenixLoading
-                      ? '...'
-                      : phoenixStats?.averageCompletionTime != null
-                      ? `${(
-                          phoenixStats.averageCompletionTime /
-                          (1000 * 60)
-                        ).toFixed(1)} min`
-                      : 'N/A'
-                  }
-                  isLoading={phoenixLoading}
-                  icon={<AvTimer />}
-                />
-                <KpiCard
-                  title='Services Requested'
-                  value={
-                    phoenixLoading
-                      ? '...'
-                      : phoenixStats?.total_submissions
-                      ? phoenixStats.total_submissions
-                      : 'N/A'
-                  }
-                  isLoading={phoenixLoading}
-                  icon={<CrisisAlert />}
-                />
-
-                <KpiCard
-                  title='Technicians Dispatched'
-                  value={
-                    phoenixLoading
-                      ? '...'
-                      : phoenixStats?.dispatched_count
-                      ? phoenixStats.dispatched_count
-                      : 'N/A'
-                  }
-                  isLoading={phoenixLoading}
-                  icon={<LocalShipping />}
-                />
-            </Box>
-
-            <Stack spacing={3}>
-              {/* Phoenix Type Distribution Chart - Reinstated 6/4/2025 */}
-              {(phoenixStats?.typeDistribution &&
-                phoenixStats.typeDistribution.length > 0) ||
-              phoenixLoading ? (
-                <Paper elevation={0} sx={{ p: 2, borderRadius: 2, my: 4 }}>
-                  {phoenixTypeDistributionOptions && (
-                    <PieChart
-                      options={phoenixTypeDistributionOptions}
-                      isLoading={phoenixLoading}
-                      height='350px'
-                    />
-                  )}
-                </Paper>
-              ) : null}
-
-              {/* Phoenix Volume Trends Chart - Removed 6/4/2025 */}
-              {/* {(phoenixStats?.volumeTrends && phoenixStats.volumeTrends.length > 0) || phoenixLoading ? (
+                {/* Phoenix Volume Trends Chart - Removed 6/4/2025 */}
+                {/* {(phoenixStats?.volumeTrends && phoenixStats.volumeTrends.length > 0) || phoenixLoading ? (
                 <Paper elevation={2} sx={{ p: 2, borderRadius: 2 }}>
                   {phoenixVolumeTrendOptions && (
                     <LineChart
@@ -829,15 +793,18 @@ const AdminDashboardPanel: React.FC = () => {
                   )}
                 </Paper>
               ) : null} */}
-            </Stack>
+              </Stack>
 
-            {/* Combined check for no data */}
-            {!(dashboardStats || dashboardLoading) &&
-              !dashboardError &&
-              !(phoenixStats || phoenixLoading) &&
-              !phoenixError && (
-                <Typography>No dashboard data to display.</Typography>
-              )}
+              {/* Combined check for no data */}
+              {!(dashboardStats || dashboardLoading) &&
+                !dashboardError &&
+                !(phoenixStats || phoenixLoading) &&
+                !phoenixError && (
+                  <Typography sx={{ mt: 2 }}>
+                    No dashboard data to display.
+                  </Typography> /* Added sx={{mt:2}} */
+                )}
+            </Box>
           </Box>
         </TabPanel>
         <TabPanel value={adminTabValue} index={1}>

@@ -146,7 +146,7 @@ const ServiceRequestList: React.FC = () => {
   }
 
   return (
-    <Paper elevation={0} sx={{ p: 2 }}>
+    <>
       <Typography variant='h6' gutterBottom sx={{ mb: 2 }}>
         Your Service Requests
       </Typography>
@@ -225,7 +225,7 @@ const ServiceRequestList: React.FC = () => {
           phoenixSubmissionId={selectedPhoenixSubmissionId}
         />
       )}
-    </Paper>
+    </>
   );
 };
 

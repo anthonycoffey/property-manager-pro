@@ -17,18 +17,18 @@ import {
   DialogContent,
   DialogTitle,
   InputAdornment,
-  Stack, // For icon and title alignment
+  IconButton,
+  Stack,
 } from '@mui/material';
 import {
   Cached,
   PersonOutline,
   MailOutline,
   VerifiedUserOutlined,
-  // Edit, // Icon for CardHeader
   Save,
   Visibility,
   VisibilityOff,
-  AccountCircle, // Icon for Profile CardHeader
+  AccountCircle,
 } from '@mui/icons-material';
 import { useAuth } from '../../hooks/useAuth';
 import {
@@ -222,11 +222,7 @@ const GuestDashboardPanel: React.FC = () => {
         }}
       >
         <Card sx={{ width: '100%', mb: 2 }}>
-          <CardHeader
-            avatar={<AccountCircle />}
-            title='Your Account Profile'
-         
-          />
+          <CardHeader avatar={<AccountCircle />} title='Your Account Profile' />
           <CardContent sx={cardPadding}>
             <Typography variant='body2' sx={{ mb: 2, textAlign: 'center' }}>
               Welcome,{' '}
@@ -380,6 +376,7 @@ const GuestDashboardPanel: React.FC = () => {
             value={currentPassword}
             onChange={(e) => setCurrentPassword(e.target.value)}
             disabled={changePasswordLoading}
+            
             InputProps={{
               endAdornment: (
                 <InputAdornment position='end'>

@@ -73,6 +73,8 @@
     *   `react-select` (for advanced dropdown/select components)
     *   `qrcode.react` (for generating QR codes for public campaign links)
     *   `zod` (for schema validation, e.g., phone numbers)
+    *   `highcharts` (for charting)
+    *   `highcharts-react-official` (React wrapper for Highcharts)
     *   Routing library (e.g., `react-router-dom`) - *Not explicitly mentioned but essential for a multi-page app.*
 *   **Backend (Cloud Functions - Node.js example):**
     *   `firebase-admin` (for server-side Firebase access)

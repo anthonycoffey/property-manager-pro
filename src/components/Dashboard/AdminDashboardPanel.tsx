@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Box,
   Typography,
@@ -11,17 +11,23 @@ import {
   Snackbar,
   Alert,
   Container,
+  CircularProgress,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
+import DashboardIcon from '@mui/icons-material/Dashboard';
+import PeopleIcon from '@mui/icons-material/People';
 import {
   AdminPanelSettings,
   ChatBubbleOutline as ChatBubbleOutlineIcon,
-  Business, // Added icon for Organizations
-  Group, // Added icon for Organization Managers
-  AssignmentInd, // Added icon for Property Managers
-  HomeWork, // Added icon for Properties & Residents
-  Campaign, // Added icon for Campaigns
-} from '@mui/icons-material'; // Added ChatBubbleOutlineIcon
+  Business,
+  Group,
+  AssignmentInd,
+  HomeWork,
+  Campaign,
+  CrisisAlert,
+  LocalShipping,
+  AvTimer,
+} from '@mui/icons-material';
 
 import OrganizationSelector from '../Admin/OrganizationSelector';
 import PropertyManagerManagement from '../Admin/PropertyManagerManagement';
@@ -35,12 +41,65 @@ import EditPropertyModal from '../PropertyManager/EditPropertyModal';
 import PropertyResidentsTable from '../PropertyManager/PropertyResidentsTable';
 import InviteResidentForm from '../PropertyManager/InviteResidentForm';
 import EditResidentModal from '../PropertyManager/EditResidentModal';
-import AdminCampaignsView from '../Admin/Campaigns/AdminCampaignsView'; // Added
-import ChatView from '../Chat/ChatView'; // Import ChatView
+import AdminCampaignsView from '../Admin/Campaigns/AdminCampaignsView';
+import ChatView from '../Chat/ChatView';
+
+// Import Chart Components
+import KpiCard from './Charts/KpiCard';
+import LineChart from './Charts/LineChart';
+import PieChart from './Charts/PieChart';
+
+// Firebase functions
+import { getFunctions, httpsCallable } from 'firebase/functions';
+import { isAppError } from '../../utils/errorUtils';
 import type {
   Property as PropertyType,
   Resident as ResidentType,
 } from '../../types';
+
+interface PhoenixTypeDistributionPoint {
+  name: string;
+  y: number;
+}
+
+interface AdminPhoenixStats {
+  typeDistribution?: PhoenixTypeDistributionPoint[];
+  averageCompletionTime?: number | null; // in milliseconds
+  total_submissions?: string;
+  dispatched_count?: string;
+}
+
+// Define AdminPhoenixStatsResponse type
+interface AdminPhoenixStatsResponse {
+  success: boolean;
+  data?: AdminPhoenixStats;
+  message?: string;
+}
+
+// Define AdminDashboardStats type locally
+interface GrowthDataPoint {
+  period: string;
+  count: number;
+}
+
+interface AdminDashboardStatsData {
+  platformCounts: {
+    organizations: number;
+    properties: number;
+    propertyManagers: number;
+    organizationManagers: number;
+    residents: number;
+  };
+  growthTrends?: {
+    organizations?: GrowthDataPoint[];
+    residents?: GrowthDataPoint[];
+  };
+  campaignOverview?: {
+    totalCampaigns: number;
+    totalAccepted: number;
+    typeBreakdown: { type: string; count: number }[];
+  };
+}
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -50,7 +109,6 @@ interface TabPanelProps {
 
 function TabPanel(props: TabPanelProps) {
   const { children, value, index, ...other } = props;
-
   return (
     <div
       role='tabpanel'
@@ -59,7 +117,9 @@ function TabPanel(props: TabPanelProps) {
       aria-labelledby={`simple-tab-${index}`}
       {...other}
     >
-      {value === index && <Box sx={{ p: 3 }}>{children}</Box>}
+      {value === index && (
+        <Box sx={{ p: { xs: 1, sm: 2, md: 3 } }}>{children}</Box>
+      )}
     </div>
   );
 }
@@ -77,14 +137,26 @@ const AdminDashboardPanel: React.FC = () => {
     null
   );
   const [isAddOrgModalOpen, setIsAddOrgModalOpen] = useState(false);
-  // Property Modals
+
+  const [dashboardStats, setDashboardStats] =
+    useState<AdminDashboardStatsData | null>(null);
+  const [dashboardLoading, setDashboardLoading] = useState<boolean>(true);
+  const [dashboardError, setDashboardError] = useState<string | null>(null);
+
+  // State for Phoenix stats
+  const [phoenixStats, setPhoenixStats] = useState<AdminPhoenixStats | null>(
+    null
+  );
+  const [phoenixLoading, setPhoenixLoading] = useState<boolean>(true);
+  const [phoenixError, setPhoenixError] = useState<string | null>(null);
+
+  const functionsInstance = getFunctions();
   const [isCreatePropertyModalOpen, setIsCreatePropertyModalOpen] =
     useState(false);
   const [isEditPropertyModalOpen, setIsEditPropertyModalOpen] = useState(false);
   const [propertyToEdit, setPropertyToEdit] = useState<PropertyType | null>(
     null
   );
-  // Residents Modals & State
   const [isManageResidentsModalOpen, setIsManageResidentsModalOpen] =
     useState(false);
   const [propertyForResidents, setPropertyForResidents] =
@@ -94,7 +166,6 @@ const AdminDashboardPanel: React.FC = () => {
     null
   );
   const [refreshResidentsListKey, setRefreshResidentsListKey] = useState(0);
-
   const [refreshOrgListKey, setRefreshOrgListKey] = useState(0);
   const [refreshPropertiesListKey, setRefreshPropertiesListKey] = useState(0);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
@@ -103,32 +174,21 @@ const AdminDashboardPanel: React.FC = () => {
     'success' | 'error' | 'info' | 'warning'
   >('success');
 
-  const handleAdminOrgChange = (orgId: string | null) => {
+  const handleAdminOrgChange = (orgId: string | null) =>
     setSelectedAdminOrgId(orgId);
-  };
-
-  const handleOpenAddOrgModal = () => {
-    setIsAddOrgModalOpen(true);
-  };
-
-  const handleCloseAddOrgModal = () => {
-    setIsAddOrgModalOpen(false);
-  };
-
-  const handleOpenCreatePropertyModal = () => {
+  const handleOpenAddOrgModal = () => setIsAddOrgModalOpen(true);
+  const handleCloseAddOrgModal = () => setIsAddOrgModalOpen(false);
+  const handleOpenCreatePropertyModal = () =>
     setIsCreatePropertyModalOpen(true);
-  };
-
-  const handleCloseCreatePropertyModal = () => {
+  const handleCloseCreatePropertyModal = () =>
     setIsCreatePropertyModalOpen(false);
-  };
 
   const handlePropertyCreated = () => {
     setSnackbarMessage('Property created successfully!');
     setSnackbarSeverity('success');
     setSnackbarOpen(true);
     setIsCreatePropertyModalOpen(false);
-    setRefreshPropertiesListKey((prev) => prev + 1); // Refresh list
+    setRefreshPropertiesListKey((prev) => prev + 1);
   };
 
   const handlePropertyUpdated = () => {
@@ -137,7 +197,7 @@ const AdminDashboardPanel: React.FC = () => {
     setSnackbarOpen(true);
     setIsEditPropertyModalOpen(false);
     setPropertyToEdit(null);
-    setRefreshPropertiesListKey((prev) => prev + 1); // Refresh list
+    setRefreshPropertiesListKey((prev) => prev + 1);
   };
 
   const handleOpenEditPropertyModal = (property: PropertyType) => {
@@ -151,7 +211,6 @@ const AdminDashboardPanel: React.FC = () => {
   };
 
   const handleManageResidents = (property: PropertyType) => {
-    // Changed to accept full property
     setPropertyForResidents(property);
     setIsManageResidentsModalOpen(true);
   };
@@ -175,8 +234,7 @@ const AdminDashboardPanel: React.FC = () => {
     setSnackbarMessage('Resident invited successfully!');
     setSnackbarSeverity('success');
     setSnackbarOpen(true);
-    setRefreshResidentsListKey((prev) => prev + 1); // Refresh resident list
-    // Note: InviteResidentForm might need an onCancel to close a sub-modal if it's in one
+    setRefreshResidentsListKey((prev) => prev + 1);
   };
 
   const handleResidentUpdated = () => {
@@ -185,12 +243,11 @@ const AdminDashboardPanel: React.FC = () => {
     setSnackbarOpen(true);
     setIsEditResidentModalOpen(false);
     setResidentToEdit(null);
-    setRefreshResidentsListKey((prev) => prev + 1); // Refresh resident list
+    setRefreshResidentsListKey((prev) => prev + 1);
   };
 
-  const handlePropertiesUpdate = () => {
+  const handlePropertiesUpdate = () =>
     setRefreshPropertiesListKey((prev) => prev + 1);
-  };
 
   const handleOrganizationCreated = (orgId: string) => {
     setSnackbarMessage(`Organization created successfully with ID: ${orgId}`);
@@ -207,9 +264,224 @@ const AdminDashboardPanel: React.FC = () => {
     setAdminTabValue(newValue);
   };
 
+  useEffect(() => {
+    const fetchAdminStats = async () => {
+      setDashboardLoading(true);
+      setDashboardError(null);
+      try {
+        const getStatsFunction = httpsCallable(
+          functionsInstance,
+          'getAdminDashboardStats'
+        );
+        const result = await getStatsFunction({});
+        setDashboardStats(result.data as AdminDashboardStatsData);
+      } catch (err: unknown) {
+        console.error('Error fetching admin dashboard stats:', err);
+        let errorMessage = 'Failed to load dashboard statistics.';
+        if (isAppError(err)) {
+          errorMessage = err.message;
+        } else if (err instanceof Error) {
+          errorMessage = err.message;
+        }
+        setDashboardError(errorMessage);
+      } finally {
+        setDashboardLoading(false);
+      }
+    };
+
+    const fetchPhoenixAdminStats = async () => {
+      setPhoenixLoading(true);
+      setPhoenixError(null);
+      try {
+        const getStatsFunction = httpsCallable(
+          functionsInstance,
+          'getAdminPhoenixStats'
+        );
+        // TODO: Pass appropriate dateRange if needed by the function/UI
+        const result = await getStatsFunction({
+          /* dateRange: ... */
+        });
+        const responseData = result.data as AdminPhoenixStatsResponse;
+
+        if (responseData?.success && responseData.data) {
+          setPhoenixStats(responseData.data);
+        } else {
+          throw new Error(
+            responseData?.message || 'Failed to fetch Phoenix stats'
+          );
+        }
+      } catch (err: unknown) {
+        console.error('Error fetching admin Phoenix stats:', err);
+        let errorMessage = 'Failed to load Phoenix dashboard statistics.';
+        if (isAppError(err)) {
+          errorMessage = err.message;
+        } else if (err instanceof Error) {
+          errorMessage = err.message;
+        }
+        setPhoenixError(errorMessage);
+      } finally {
+        setPhoenixLoading(false);
+      }
+    };
+
+    if (adminTabValue === 0) {
+      fetchAdminStats();
+      fetchPhoenixAdminStats();
+    }
+  }, [adminTabValue, functionsInstance]);
+
+  // Chart options for Phoenix Stats
+  // const phoenixVolumeTrendOptions: Highcharts.Options | null = useMemo(() => { // Removed 6/4/2025
+  //   if (!phoenixStats?.volumeTrends || phoenixStats.volumeTrends.length === 0) return null;
+  //   return {
+  //     title: { text: 'Service Request Volume (Phoenix)' },
+  //     xAxis: {
+  //       categories: phoenixStats.volumeTrends.map(d => d.date),
+  //       type: 'category',
+  //     },
+  //     yAxis: {
+  //       title: { text: 'Number of Dispatched Requests' },
+  //       allowDecimals: false,
+  //     },
+  //     series: [{
+  //       name: 'Dispatched Requests',
+  //       data: phoenixStats.volumeTrends.map(d => d.count),
+  //       type: 'line',
+  //     }],
+  //     accessibility: { enabled: true },
+  //   };
+  // }, [phoenixStats?.volumeTrends]);
+
+  const phoenixTypeDistributionOptions: Highcharts.Options | null =
+    useMemo(() => {
+      if (
+        !phoenixStats?.typeDistribution ||
+        phoenixStats.typeDistribution.length === 0
+      )
+        return null;
+      return {
+        chart: { type: 'pie' },
+        title: { text: 'Service Request Types' },
+        tooltip: {
+          pointFormat:
+            '{series.name}: <b>{point.percentage:.1f}%</b> ({point.y})',
+        },
+        plotOptions: {
+          pie: {
+            allowPointSelect: true,
+            cursor: 'pointer',
+            dataLabels: {
+              enabled: true,
+              format: '<b>{point.name}</b>: {point.y}',
+            },
+          },
+        },
+        series: [
+          {
+            name: 'Requests',
+            colorByPoint: true,
+            data: phoenixStats.typeDistribution,
+            type: 'pie',
+          },
+        ],
+        accessibility: { enabled: true },
+      };
+    }, [phoenixStats?.typeDistribution]);
+
+  const orgGrowthOptions: Highcharts.Options | null = useMemo(() => {
+    if (
+      !dashboardStats?.growthTrends?.organizations ||
+      dashboardStats.growthTrends.organizations.length === 0
+    )
+      return null;
+    return {
+      title: { text: 'Organization Growth' },
+      xAxis: {
+        categories: dashboardStats.growthTrends.organizations.map(
+          (d) => d.period
+        ),
+        type: 'category',
+      },
+      yAxis: {
+        title: { text: 'Number of Organizations' },
+        allowDecimals: false,
+      },
+      series: [
+        {
+          name: 'Organizations',
+          data: dashboardStats.growthTrends.organizations.map((d) => d.count),
+          type: 'line',
+        },
+      ],
+      accessibility: { enabled: true },
+    };
+  }, [dashboardStats?.growthTrends?.organizations]);
+
+  const residentGrowthOptions: Highcharts.Options | null = useMemo(() => {
+    if (
+      !dashboardStats?.growthTrends?.residents ||
+      dashboardStats.growthTrends.residents.length === 0
+    )
+      return null;
+    return {
+      title: { text: 'Resident Growth' },
+      xAxis: {
+        categories: dashboardStats.growthTrends.residents.map((d) => d.period),
+        type: 'category',
+      },
+      yAxis: { title: { text: 'Number of Residents' }, allowDecimals: false },
+      series: [
+        {
+          name: 'Residents',
+          data: dashboardStats.growthTrends.residents.map((d) => d.count),
+          type: 'line',
+        },
+      ],
+      accessibility: { enabled: true },
+    };
+  }, [dashboardStats?.growthTrends?.residents]);
+
+  const campaignTypeOptions: Highcharts.Options | null = useMemo(() => {
+    if (
+      !dashboardStats?.campaignOverview?.typeBreakdown ||
+      dashboardStats.campaignOverview.typeBreakdown.length === 0
+    )
+      return null;
+    return {
+      chart: { type: 'pie' },
+      title: { text: 'Campaign Types Distribution' },
+      tooltip: {
+        pointFormat:
+          '{series.name}: <b>{point.percentage:.1f}%</b> ({point.y})',
+      },
+      plotOptions: {
+        pie: {
+          allowPointSelect: true,
+          cursor: 'pointer',
+          dataLabels: {
+            enabled: true,
+            format: '<b>{point.name}</b>: {point.percentage:.1f} %',
+          },
+        },
+      },
+      series: [
+        {
+          name: 'Campaigns',
+          colorByPoint: true,
+          data: dashboardStats.campaignOverview.typeBreakdown.map((item) => ({
+            name: item.type.replace('_', ' ').toUpperCase(),
+            y: item.count,
+          })),
+          type: 'pie',
+        },
+      ],
+      accessibility: { enabled: true },
+    };
+  }, [dashboardStats?.campaignOverview?.typeBreakdown]);
+
   return (
-    <Container component='main' maxWidth='lg'>
-      <Paper elevation={6} sx={{ mb: 4, p: 2 }}>
+    <Container component='main' maxWidth='xl'>
+      <Paper elevation={3} sx={{ mb: 4, p: { xs: 1, sm: 2 } }}>
         <Box
           sx={{
             display: 'flex',
@@ -219,12 +491,8 @@ const AdminDashboardPanel: React.FC = () => {
             mb: 2,
           }}
         >
-          <Stack direction='row' alignItems='center'>
-            <AdminPanelSettings
-              fontSize='large'
-              color='primary'
-              sx={{ mr: 1 }}
-            />
+          <Stack direction='row' alignItems='center' spacing={1}>
+            <AdminPanelSettings fontSize='large' color='primary' />
             <Typography variant='h4' color='primary'>
               Admin Dashboard
             </Typography>
@@ -233,10 +501,7 @@ const AdminDashboardPanel: React.FC = () => {
             variant='contained'
             startIcon={<AddIcon />}
             onClick={handleOpenAddOrgModal}
-            sx={{
-              width: { xs: '100%', sm: 'auto' },
-              mt: { xs: 2, sm: 0 },
-            }}
+            sx={{ width: { xs: '100%', sm: 'auto' }, mt: { xs: 2, sm: 0 } }}
           >
             Add Organization
           </Button>
@@ -251,44 +516,342 @@ const AdminDashboardPanel: React.FC = () => {
             scrollButtons='auto'
             allowScrollButtonsMobile
           >
-            <Tab label='Organizations' icon={<Business />} {...a11yProps(0)} />
+            <Tab label='Dashboard' icon={<DashboardIcon />} {...a11yProps(0)} />
+            <Tab label='Organizations' icon={<Business />} {...a11yProps(1)} />
             <Tab
               label='Organization Managers'
               icon={<Group />}
-              {...a11yProps(1)}
+              {...a11yProps(2)}
             />
             <Tab
               label='Property Managers'
               icon={<AssignmentInd />}
-              {...a11yProps(2)}
+              {...a11yProps(3)}
             />
             <Tab
               label='Properties & Residents'
               icon={<HomeWork />}
-              {...a11yProps(3)}
+              {...a11yProps(4)}
             />
-            <Tab label='Campaigns' icon={<Campaign />} {...a11yProps(4)} />
+            <Tab label='Campaigns' icon={<Campaign />} {...a11yProps(5)} />
             <Tab
               label='AI Assistant'
               icon={<ChatBubbleOutlineIcon />}
-              {...a11yProps(5)}
+              {...a11yProps(6)}
             />
           </Tabs>
         </Box>
+
         <TabPanel value={adminTabValue} index={0}>
-          <OrganizationManagementPanel key={refreshOrgListKey} />
+          <Box sx={{ flexGrow: 1, position: 'relative' }}> {/* Added position: 'relative' */}
+            {(dashboardLoading || phoenixLoading) && (
+              <Box
+                sx={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  backgroundColor: (theme) => 
+                    theme.palette.mode === 'light' 
+                      ? 'rgba(255, 255, 255, 0.7)' 
+                      : 'rgba(0, 0, 0, 0.7)',
+                  zIndex: 2, // Ensure spinner is on top of content
+                }}
+              >
+                <CircularProgress />
+              </Box>
+            )}
+            {dashboardError && (
+              <Alert severity='error' sx={{ mb: 2 }}>
+                {dashboardError}
+              </Alert>
+            )}
+
+            <Box
+              sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 3, mt: 2 }}
+            >
+              {[
+                {
+                  title: 'Total Organizations',
+                  value: dashboardStats?.platformCounts?.organizations,
+                  icon: <Business />,
+                  isLoading: dashboardLoading,
+                },
+                {
+                  title: 'Total Properties',
+                  value: dashboardStats?.platformCounts?.properties,
+                  icon: <HomeWork />,
+                  isLoading: dashboardLoading,
+                },
+                {
+                  title: 'Org Managers',
+                  value: dashboardStats?.platformCounts?.organizationManagers,
+                  icon: <Group />,
+                  isLoading: dashboardLoading,
+                },
+                {
+                  title: 'Property Managers',
+                  value: dashboardStats?.platformCounts?.propertyManagers,
+                  icon: <AssignmentInd />,
+                  isLoading: dashboardLoading,
+                },
+                {
+                  title: 'Total Residents',
+                  value: dashboardStats?.platformCounts?.residents,
+                  icon: <PeopleIcon />,
+                  isLoading: dashboardLoading,
+                },
+              ].map((kpi) => (
+                <Box
+                  key={kpi.title}
+                  sx={{
+                    flexGrow: 1,
+                    flexBasis: {
+                      xs: '100%',
+                      sm: 'calc(50% - 8px)',
+                      md: 'calc(33.333% - 11px)',
+                      lg: 'calc(20% - 13px)',
+                    },
+                    minWidth: { xs: 'calc(50% - 8px)', sm: 180 },
+                  }}
+                >
+                  <KpiCard
+                    title={kpi.title}
+                    value={kpi.isLoading ? '...' : kpi.value ?? 'N/A'}
+                    isLoading={kpi.isLoading}
+                    icon={kpi.icon}
+                  />
+                </Box>
+              ))}
+            </Box>
+
+            <Stack spacing={3}>
+              {(dashboardStats?.growthTrends?.organizations &&
+                dashboardStats.growthTrends.organizations.length > 0) ||
+              dashboardLoading ? (
+                <Paper elevation={2} sx={{ p: 2, borderRadius: 2 }}>
+                  {orgGrowthOptions && (
+                    <LineChart
+                      options={orgGrowthOptions}
+                      isLoading={dashboardLoading}
+                      height='350px'
+                    />
+                  )}
+                </Paper>
+              ) : null}
+
+              {(dashboardStats?.growthTrends?.residents &&
+                dashboardStats.growthTrends.residents.length > 0) ||
+              dashboardLoading ? (
+                <Paper elevation={2} sx={{ p: 2, borderRadius: 2 }}>
+                  {residentGrowthOptions && (
+                    <LineChart
+                      options={residentGrowthOptions}
+                      isLoading={dashboardLoading}
+                      height='350px'
+                    />
+                  )}
+                </Paper>
+              ) : null}
+
+              <Box
+                sx={{
+                  display: 'flex',
+                  flexDirection: { xs: 'column', lg: 'row' },
+                  gap: 3,
+                }}
+              >
+                {(dashboardStats?.campaignOverview?.typeBreakdown &&
+                  dashboardStats.campaignOverview.typeBreakdown.length > 0) ||
+                dashboardLoading ? (
+                  <Paper
+                    elevation={0}
+                    sx={{
+                      p: 2,
+                      borderRadius: 2,
+                      flexGrow: 1,
+                      width: { xs: '100%', lg: 'calc(60% - 12px)' },
+                      mb: 8,
+                    }}
+                  >
+                    {campaignTypeOptions && (
+                      <PieChart
+                        options={campaignTypeOptions}
+                        isLoading={dashboardLoading}
+                        height='350px'
+                      />
+                    )}
+                  </Paper>
+                ) : null}
+
+                {dashboardStats?.campaignOverview || dashboardLoading ? (
+                  <Paper
+                    elevation={0}
+                    sx={{
+                      p: 2,
+                      borderRadius: 2,
+                      width: { xs: '100%', lg: 'calc(40% - 12px)' },
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      overflow: 'hidden',
+                    }}
+                  >
+                    <Typography variant='h6' gutterBottom align='center'>
+                      Campaign Engagement
+                    </Typography>
+                    <KpiCard
+                      title='Total Accepted Invitations'
+                      value={
+                        dashboardLoading
+                          ? '...'
+                          : dashboardStats?.campaignOverview?.totalAccepted ??
+                            'N/A'
+                      }
+                      isLoading={dashboardLoading}
+                      sx={{
+                        width: 'auto',
+                        boxShadow: 'none',
+                        p: 0,
+                        height: 'auto',
+                        textAlign: 'center',
+                      }}
+                    />
+                    <Typography
+                      variant='body2'
+                      color='text.secondary'
+                      sx={{ mt: 1 }}
+                    >
+                      Across{' '}
+                      {dashboardLoading
+                        ? '...'
+                        : dashboardStats?.campaignOverview?.totalCampaigns ??
+                          0}{' '}
+                      campaigns
+                    </Typography>
+                  </Paper>
+                ) : null}
+              </Box>
+            </Stack>
+
+            {/* Phoenix Stats Section */}
+            <Typography variant='h5' gutterBottom>
+              Service Analytics
+            </Typography>
+
+            {phoenixError && (
+              <Alert severity='error' sx={{ mb: 2 }}>
+                {phoenixError}
+              </Alert>
+            )}
+
+            <Box
+              sx={{
+                display: 'flex',
+                flexDirection: 'row',
+                justifyContent: 'center',
+                gap: 2,
+                mb: 3,
+              }}
+            >
+                <KpiCard
+                  title='Avg. Service Completion Time'
+                  value={
+                    phoenixLoading
+                      ? '...'
+                      : phoenixStats?.averageCompletionTime != null
+                      ? `${(
+                          phoenixStats.averageCompletionTime /
+                          (1000 * 60)
+                        ).toFixed(1)} min`
+                      : 'N/A'
+                  }
+                  isLoading={phoenixLoading}
+                  icon={<AvTimer />}
+                />
+                <KpiCard
+                  title='Services Requested'
+                  value={
+                    phoenixLoading
+                      ? '...'
+                      : phoenixStats?.total_submissions
+                      ? phoenixStats.total_submissions
+                      : 'N/A'
+                  }
+                  isLoading={phoenixLoading}
+                  icon={<CrisisAlert />}
+                />
+
+                <KpiCard
+                  title='Technicians Dispatched'
+                  value={
+                    phoenixLoading
+                      ? '...'
+                      : phoenixStats?.dispatched_count
+                      ? phoenixStats.dispatched_count
+                      : 'N/A'
+                  }
+                  isLoading={phoenixLoading}
+                  icon={<LocalShipping />}
+                />
+            </Box>
+
+            <Stack spacing={3}>
+              {/* Phoenix Type Distribution Chart - Reinstated 6/4/2025 */}
+              {(phoenixStats?.typeDistribution &&
+                phoenixStats.typeDistribution.length > 0) ||
+              phoenixLoading ? (
+                <Paper elevation={0} sx={{ p: 2, borderRadius: 2, my: 4 }}>
+                  {phoenixTypeDistributionOptions && (
+                    <PieChart
+                      options={phoenixTypeDistributionOptions}
+                      isLoading={phoenixLoading}
+                      height='350px'
+                    />
+                  )}
+                </Paper>
+              ) : null}
+
+              {/* Phoenix Volume Trends Chart - Removed 6/4/2025 */}
+              {/* {(phoenixStats?.volumeTrends && phoenixStats.volumeTrends.length > 0) || phoenixLoading ? (
+                <Paper elevation={2} sx={{ p: 2, borderRadius: 2 }}>
+                  {phoenixVolumeTrendOptions && (
+                    <LineChart
+                      options={phoenixVolumeTrendOptions}
+                      isLoading={phoenixLoading}
+                      height="350px"
+                    />
+                  )}
+                </Paper>
+              ) : null} */}
+            </Stack>
+
+            {/* Combined check for no data */}
+            {!(dashboardStats || dashboardLoading) &&
+              !dashboardError &&
+              !(phoenixStats || phoenixLoading) &&
+              !phoenixError && (
+                <Typography>No dashboard data to display.</Typography>
+              )}
+          </Box>
         </TabPanel>
         <TabPanel value={adminTabValue} index={1}>
+          <OrganizationManagementPanel key={refreshOrgListKey} />
+        </TabPanel>
+        <TabPanel value={adminTabValue} index={2}>
           <Typography variant='h6' gutterBottom>
             Invite Organization Managers
           </Typography>
           <InviteOrganizationManagerForm />
-
           <Divider sx={{ my: 4 }} />
-
           <OrganizationManagerAssignments />
         </TabPanel>
-        <TabPanel value={adminTabValue} index={2}>
+        <TabPanel value={adminTabValue} index={3}>
           <OrganizationSelector
             selectedOrganizationId={selectedAdminOrgId}
             onOrganizationChange={handleAdminOrgChange}
@@ -302,7 +865,7 @@ const AdminDashboardPanel: React.FC = () => {
             </Typography>
           )}
         </TabPanel>
-        <TabPanel value={adminTabValue} index={3}>
+        <TabPanel value={adminTabValue} index={4}>
           <OrganizationSelector
             selectedOrganizationId={selectedAdminOrgId}
             onOrganizationChange={handleAdminOrgChange}
@@ -319,10 +882,10 @@ const AdminDashboardPanel: React.FC = () => {
                 Create Property
               </Button>
               <OrganizationPropertiesList
-                key={refreshPropertiesListKey} // Add key for re-fetching
+                key={refreshPropertiesListKey}
                 organizationId={selectedAdminOrgId}
                 onEditProperty={handleOpenEditPropertyModal}
-                onManageResidents={handleManageResidents} // Directly use the handler
+                onManageResidents={handleManageResidents}
                 onPropertiesUpdate={handlePropertiesUpdate}
               />
             </>
@@ -332,15 +895,11 @@ const AdminDashboardPanel: React.FC = () => {
             </Typography>
           )}
         </TabPanel>
-        <TabPanel value={adminTabValue} index={4}>
+        <TabPanel value={adminTabValue} index={5}>
           <AdminCampaignsView />
         </TabPanel>
-        <TabPanel value={adminTabValue} index={5}>
-          <Box
-            sx={{
-              minHeight: '400px',
-            }}
-          >
+        <TabPanel value={adminTabValue} index={6}>
+          <Box sx={{ minHeight: '400px' }}>
             <ChatView />
           </Box>
         </TabPanel>
@@ -367,7 +926,7 @@ const AdminDashboardPanel: React.FC = () => {
 
         {propertyToEdit && selectedAdminOrgId && (
           <EditPropertyModal
-            propertyData={propertyToEdit} // Corrected prop name
+            propertyData={propertyToEdit}
             organizationId={selectedAdminOrgId}
             open={isEditPropertyModalOpen}
             onClose={handleCloseEditPropertyModal}
@@ -375,13 +934,11 @@ const AdminDashboardPanel: React.FC = () => {
           />
         )}
 
-        {/* Modal for Managing Residents */}
         {propertyForResidents && selectedAdminOrgId && (
           <AddOrganizationModal
             open={isManageResidentsModalOpen}
             onClose={handleCloseManageResidentsModal}
             title={`Residents for Property: ${propertyForResidents.name}`}
-            // maxWidth="lg" // Consider making it larger
           >
             <Box>
               <Typography variant='h6' gutterBottom>
@@ -391,8 +948,7 @@ const AdminDashboardPanel: React.FC = () => {
                 organizationId={selectedAdminOrgId}
                 propertyId={propertyForResidents.id}
                 propertyName={propertyForResidents.name}
-                onInvitationSent={handleResidentInvited} // Corrected prop name
-                // onCancel could be added if InviteResidentForm is complex enough to need its own cancel
+                onInvitationSent={handleResidentInvited}
               />
               <Divider sx={{ my: 2 }} />
               <Typography variant='h6' gutterBottom>

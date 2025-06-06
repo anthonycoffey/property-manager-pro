@@ -29,16 +29,12 @@ export interface PropertyAddress {
   zip: string;
   // country?: string; // Optional, if needed
 }
-
-export interface Property {
-  id: string; // Firestore document ID
-  name: string;
-  address: PropertyAddress;
-  type: string; // e.g., "residential", "commercial"
-  managedBy?: string; // UID of the property manager
-  organizationId: string; // ID of the organization this property belongs to
-  createdAt?: Timestamp | Date; // Optional, depending on how it's handled client-side
-  // Add any other relevant property fields
+export interface Vehicle {
+  make: string;
+  model: string;
+  year: number;
+  color: string;
+  plate: string;
 }
 
 export interface Resident {
@@ -54,20 +50,22 @@ export interface Resident {
   invitedBy?: string; // UID of the user who invited them
   createdAt: Timestamp | Date;
   // Vehicle Information
-  vehicleMake?: string;
-  vehicleModel?: string;
-  vehicleColor?: string;
-  licensePlate?: string;
+  vehicles?: Vehicle[];
   // Add other resident-specific fields as needed
 }
 
-export type ServiceRequestStatus = 
-  | 'submitted' 
-  | 'in_progress' 
-  | 'completed' 
-  | 'cancelled' 
-  | 'on_hold';
-
+export interface Property {
+  id: string; // Firestore document ID
+  name: string;
+  address: PropertyAddress;
+  type: string; // e.g., "residential", "commercial"
+  managedBy?: string; // UID of the property manager
+  organizationId: string; // ID of the organization this property belongs to
+  createdAt?: Timestamp | Date; // Optional, depending on how it's handled client-side
+  totalUnits?: number; // Total number of rentable units in the property
+  // Add any other relevant property fields
+ // other fields
+}
 export interface Organization {
   id: string; // Firestore document ID
   name: string;
@@ -76,32 +74,250 @@ export interface Organization {
   status: string; // e.g., "active", "trial", "suspended"
 }
 
-export interface ServiceRequest {
-  id: string; // Firestore document ID
-  organizationId: string;
-  propertyId: string;
-  residentId: string; // UID of the resident making the request
-  residentName?: string; // Denormalized for easier display
-  unitNumber?: string; // Denormalized for easier display
-  requestType: string; // e.g., "maintenance", "amenity_booking", "general_inquiry"
-  description: string;
-  status: ServiceRequestStatus;
-  submittedAt: Timestamp | Date;
-  serviceDateTime?: Timestamp | Date; // Desired date and time of service
-  phone?: string; // Contact phone for the service
-  serviceLocation?: string; // Location where service is needed
-  residentNotes?: string; // Initial notes from the resident
-  assignedTo?: string; // UID of an org user (PM or staff)
-  assignedToName?: string; // Denormalized
-  completedAt?: Timestamp | Date;
-  notes?: Array<{ // This is more for a log of updates by staff/system
-    userId: string;
-    userName: string;
-    note: string;
-    timestamp: Timestamp | Date;
-  }>;
-  // Add other relevant fields like priority, images, etc.
+export interface UserProfile {
+  uid: string;
+  email: string | null;
+  displayName: string | null;
+  roles: string[];
+  organizationId?: string; // For single-org users
+  organizationIds?: string[]; // For multi-org users (like org managers)
+  propertyId?: string; // For residents
+  // other custom claims or profile data
 }
+
+// Types for Service Request Job Details (Phoenix API Response)
+
+export interface LocationPoint {
+  crs: {
+    type: string;
+    properties: {
+      name: string;
+    };
+  };
+  type: string;
+  coordinates: [number, number]; // [longitude, latitude]
+}
+
+export interface PhoenixUser {
+  fullName: string;
+  id: number;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  roles: string[];
+  referralCode: string | null;
+  referralCodeUsed: number;
+  otp: string | null;
+  otpExpiration: string | null;
+  banned: boolean;
+  isOnline: boolean;
+  latitude: number;
+  longitude: number;
+  location: LocationPoint;
+  lastGeolocationUpdate: string; // ISO Date string
+  darkMode: boolean;
+  avatar: string;
+  onboarded: boolean;
+  createdAt: string; // ISO Date string
+  updatedAt: string; // ISO Date string
+  deletedAt: string | null; // ISO Date string
+}
+
+export interface AddressData {
+  short: string;
+  id: number;
+  address_1: string;
+  address_2: string | null;
+  city: string;
+  state: string;
+  zipcode: string; // API shows number, but zipcode can have leading zeros
+  lat: number;
+  lng: number;
+  createdAt: string; // ISO Date string
+  updatedAt: string; // ISO Date string
+}
+
+export interface CarData {
+  concat: string;
+  id: number;
+  make: string;
+  model: string;
+  year: number;
+  color: string;
+  plate: string;
+  vin: string | null;
+  CustomerId: number;
+  createdAt: string; // ISO Date string
+  updatedAt: string; // ISO Date string
+}
+
+export interface PaymentData {
+  id: number;
+  amount: number;
+  received: number;
+  tip: number;
+  type: string;
+  termsAccepted: boolean;
+  signature: string | null;
+  printedName: string | null;
+  ipAddress: string | null;
+  transactionId: string | null;
+  authorizationCode: string | null;
+  refundAmount: number | null;
+  collectedAmount: number | null;
+  voidedAt: string | null; // ISO Date string
+  status: string | null;
+  createdAt: string; // ISO Date string
+  updatedAt: string; // ISO Date string
+  JobId: number;
+  UserId: number;
+  voidedById: number | null;
+}
+
+export interface InvoiceData {
+  id: number;
+  linkCode: string;
+  status: string;
+  total: number;
+  createdAt: string; // ISO Date string
+  updatedAt: string; // ISO Date string
+  JobId: number;
+}
+
+export interface PayoutData {
+  id: number;
+  amount: number;
+  type: string;
+  transactionId: string | null;
+  createdAt: string; // ISO Date string
+  updatedAt: string; // ISO Date string
+  JobId: number;
+  PaycheckId: number | null;
+  UserId: number;
+  User: PhoenixUser;
+}
+
+export interface CustomerPhoneData {
+  id: number;
+  number: string;
+  note: string | null;
+  createdAt: string; // ISO Date string
+  updatedAt: string; // ISO Date string
+  CustomerId: number;
+}
+
+export interface CustomerData {
+  fullName: string;
+  concat: string;
+  id: number;
+  firstName: string;
+  lastName: string;
+  email: string;
+  createdAt: string; // ISO Date string
+  updatedAt: string; // ISO Date string
+  defaultPhoneId: number;
+  CustomerPhones: CustomerPhoneData[];
+  defaultPhone: CustomerPhoneData;
+}
+
+export interface ServiceData {
+  id: number;
+  name: string;
+  description: string;
+  payoutRate: number;
+  payoutMinimum: number;
+  price: number;
+  isDefault: boolean | null;
+  isInternal: boolean;
+  createdAt: string; // ISO Date string
+  updatedAt: string; // ISO Date string
+  deletedAt: string | null; // ISO Date string
+}
+
+export interface JobLineItemData {
+  id: number;
+  price: number;
+  createdAt: string; // ISO Date string
+  updatedAt: string; // ISO Date string
+  JobId: number;
+  ServiceId: number;
+  Service: ServiceData;
+}
+
+export interface JobActionData {
+  id: number;
+  action: string; // This can contain HTML
+  createdAt: string; // ISO Date string
+  updatedAt: string; // ISO Date string
+  JobId: number;
+  UserId: number;
+  User: PhoenixUser;
+}
+
+export interface ProxyData {
+  // Structure based on technician tracker Vue component
+  ProxyNumber?: {
+    number: string;
+  };
+  // other proxy fields if known
+}
+
+export interface Job {
+  id: number;
+  status:
+    | 'pending'
+    | 'assigned'
+    | 'en-route'
+    | 'in-progress'
+    | 'completed'
+    | 'canceled'
+    | string; // Allow other strings for future statuses
+  paymentStatus: string;
+  linkCode: string;
+  arrivalTime: string; // ISO Date string
+  completedAt: string | null; // ISO Date string
+  canceledAt: string | null; // ISO Date string
+  notes: string;
+  taskSid: string | null;
+  conversationSid: string | null;
+  flexInteractionSid: string | null;
+  referralCode: string | null;
+  sourceMeta: {
+    resident: {
+      uid: string;
+      email: string;
+      displayName: string;
+    };
+    propertyId: string;
+    organizationId: string;
+    applicationName: string;
+  };
+  createdAt: string; // ISO Date string
+  updatedAt: string; // ISO Date string
+  deletedAt: string | null; // ISO Date string
+  CarId: number;
+  CustomerId: number;
+  FormSubmissionId: number;
+  dispatcherId: number;
+  assignedTechnicianId: number;
+  AddressId: number;
+  Address: AddressData;
+  Car: CarData;
+  Payments: PaymentData[];
+  Invoices: InvoiceData[];
+  Discounts: unknown[]; // Define if structure is known
+  Payouts: PayoutData[];
+  dispatcher: PhoenixUser;
+  assignedTechnician: PhoenixUser;
+  Customer: CustomerData;
+  JobLineItems: JobLineItemData[];
+  JobActions: JobActionData[];
+  proxy: ProxyData | null;
+  // JobComments: JobCommentData[]; // Or any[]
+  // JobFiles: any[]; // Define if structure is known
+}
+
 
 export type CampaignStatus = 
   | 'active' 
@@ -181,4 +397,41 @@ export interface DeleteCampaignData {
   campaignId: string;
   organizationId: string;
   propertyId: string;
+}
+
+
+export type ServiceRequestStatus =
+  | 'submitted' 
+  | 'in_progress' 
+  | 'completed' 
+  | 'cancelled' 
+  | 'on_hold';
+
+  export interface ServiceRequest {
+  id?: string;
+  propertyId: string;
+  residentId: string;
+  residentName?: string;
+  unitNumber?: string;
+  requestType: string; // Comma-separated string of service names
+  description: string;
+  residentNotes?: string;
+  status: ServiceRequestStatus;
+  submittedAt: Timestamp | Date; // Firestore Timestamp
+  serviceDateTime?: Timestamp | Date | string | null; // Firestore Timestamp or ISO string
+  phone?: string;
+  serviceLocation?: string; // Full address string
+  serviceLocationData?: {
+    // Structured address from Google Places
+    address_1?: string;
+    city?: string;
+    state?: string;
+    country?: string;
+    zipcode?: string;
+    fullAddress?: string;
+  };
+  smsConsent?: boolean;
+  phoenixSubmissionId?: string | null; // ID from Phoenix API
+  completedAt?: Timestamp | Date | string | null; // Firestore Timestamp
+  organizationId: string; // Added for easier querying/rules
 }

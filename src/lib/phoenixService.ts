@@ -54,7 +54,7 @@ export async function getPhoenixServices(includeInternal: boolean = false): Prom
         console.error('Failed to parse Phoenix API error response as JSON:', jsonParseError);
         // errorDetails will default to response.statusText if JSON parsing fails
       }
-      const errorMessage = `Failed to fetch Phoenix services: ${response.status} ${errorDetails}`;
+      const errorMessage = `Failed to fetch services data: ${response.status} ${errorDetails}`;
       console.error(errorMessage);
       throw new Error(errorMessage);
     }
@@ -62,7 +62,7 @@ export async function getPhoenixServices(includeInternal: boolean = false): Prom
     const result: PhoenixServicesApiResponse = await response.json();
     
     if (!result || !Array.isArray(result.data)) {
-      const errorMessage = 'Invalid response structure from Phoenix services API.';
+      const errorMessage = 'Invalid response structure from Services API.';
       console.error(errorMessage, result);
       throw new Error(errorMessage);
     }
@@ -70,9 +70,9 @@ export async function getPhoenixServices(includeInternal: boolean = false): Prom
     return includeInternal ? result.data : result.data.filter(service => !service.isInternal);
   } catch (error) {
     // Log the error if it's not one we've already constructed
-    if (!(error instanceof Error && error.message.startsWith('Failed to fetch Phoenix services')) &&
+    if (!(error instanceof Error && error.message.startsWith('Failed to fetch services')) &&
         !(error instanceof Error && error.message.startsWith('VITE_PHOENIX_API_URL is not configured'))) {
-      console.error('An unexpected error occurred while fetching Phoenix services:', error);
+      console.error('An unexpected error occurred while fetching services:', error);
     }
     // Re-throw the original or a generic error
     throw error instanceof Error ? error : new Error('An unexpected error occurred while fetching services.');

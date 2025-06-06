@@ -13,16 +13,17 @@ The application employs a modern web architecture with a React-based frontend an
   - **`react-select`:** Used for advanced select/dropdown functionality, such as multi-select and enhanced searchability.
   - **State Management:**
     - **React Context API:** For global state accessible by many components (e.g., user authentication status, current theme).
-  - **Charting/Visualization:** **Highcharts** is used for analytics and reporting features.
+  - **Charting/Visualization:** **Highcharts** (with `highcharts-react-official`) is used for analytics and reporting features in dashboards.
   - **Data Fetching:** Primarily uses the standard Fetch API for client-side data fetching, encapsulated in service modules (e.g., `src/lib/phoenixService.ts`). The architecture is open to integrating React Query in the future.
   - **Schema Validation:** Uses `zod` for validating form inputs.
 
 - **Backend (Firebase):**
   - **Firebase Authentication:** Manages user sign-up, login, and session management. Custom claims are used to implement Role-Based Access Control (RBAC).
-  - **Cloud Firestore:** NoSQL database for storing all application data. Real-time capabilities are leveraged for dynamic dashboards. Firestore Security Rules are critical for data integrity and access control.
+  - **Cloud Firestore:** NoSQL database for storing all application data. Real-time capabilities are leveraged for dynamic dashboards. Firestore Security Rules are critical for data integrity and access control. Firestore Indexes are defined in `firestore.indexes.json` to support complex queries (including collection group queries for dashboards).
   - **Firebase Cloud Functions:** Provide server-side logic for:
-    - Backend API endpoints.
+    - Backend API endpoints (callable functions).
     - Business rule enforcement.
+    - Data aggregation for dashboards (e.g., `getAdminDashboardStats`).
     - Integrations with third-party services (e.g., Phoenix API, Twilio API, CRM).
     - Scheduled tasks and background processing (e.g., CSV imports, monthly service count resets).
   - **`firestore-send-email` Extension:** Leveraged for sending templated emails.
@@ -59,7 +60,7 @@ The application employs a modern web architecture with a React-based frontend an
     - **Subcollections:**
       - **`users`**: Profiles for org staff. Fields: `displayName`, `email`, `organizationRoles`, `permissions?`, `invitedBy?`, `createdAt`.
       - **`properties`**: Property details. Fields: `name`, `address` (object: `street`, `city`, `state`, `zip`), `type`, `managedBy`, `createdAt`.
-        - **Subcollection `residents`**: Resident profiles. Fields: `displayName`, `email`, `unitNumber`, `roles`, `leaseStartDate?`, `leaseEndDate?`, `invitedBy?`, `createdAt`, vehicle info, etc.
+        - **Subcollection `residents`**: Resident profiles. Fields: `displayName`, `email`, `unitNumber`, `roles`, `leaseStartDate?`, `leaseEndDate?`, `invitedBy?`, `createdAt`, `vehicles?` (array of up to 2 vehicle objects: `{ make: string, model: string, year: number, color: string, plate: string }`), etc.
       - **`invitations`**: Org-specific user/resident invites. Fields: `email`, `rolesToAssign`, `organizationIds`, `targetPropertyId?`, `status`, `createdBy`, `createdAt`, `expiresAt`, `campaignId?`.
       - **`campaigns`**: Resident invitation campaigns. Fields: `campaignName`, `campaignType`, `status`, `rolesToAssign`, `createdBy`, `createdAt`, `organizationId`, `propertyId`, `id` (self-ID), `maxUses?`, `totalAccepted`, `expiresAt?`, CSV/public link specific fields.
       - **`services`** (Subcollection: `organizations/{organizationId}/services`)
@@ -90,7 +91,9 @@ The application employs a modern web architecture with a React-based frontend an
 
 - **API Design (Cloud Functions):**
   - Granular and secure functions.
-  - **`createServiceRequest` (Callable Function - Updated):**
+  - **`createProperty` / `updateProperty` (Callable Functions - Updated):**
+    - Modified to accept and store/update a `totalUnits: number` field for properties, representing the total number of rentable units.
+- **`createServiceRequest` (Callable Function - Updated):**
     - **Purpose:** Handles creation of new service requests from residents.
     - **Inputs (from client `CreateServiceRequestForm.tsx`):**
         - `organizationId: string`
@@ -115,11 +118,27 @@ The application employs a modern web architecture with a React-based frontend an
             - Does NOT write to Firestore.
             - Logs the error and returns an appropriate error message to the client.
     - **Output:** `{ success: boolean, serviceRequestId?: string, message?: string }`.
+  - **Dashboard Statistics Functions (New):**
+    - **`getAdminDashboardStats` (Callable Function):**
+        - **Purpose:** Aggregates platform-wide statistics (e.g., total organizations, properties, users by role; user/org growth trends; overall campaign performance).
+        - **Inputs:** Optional `dateRange`.
+        - **Output:** Structured JSON data for admin dashboard charts.
+    - **`getOrgManagerDashboardStats` (Callable Function):**
+        - **Purpose:** Aggregates statistics for a specific organization (e.g., total properties, residents, PMs within the org; campaign performance for the org).
+        - **Inputs:** `organizationId`, optional `dateRange`.
+        - **Output:** Structured JSON data for organization manager dashboard charts.
+    - **`getPropertyManagerDashboardStats` (Callable Function):**
+        - **Purpose:** Aggregates statistics for a specific property (e.g., total residents, occupancy rate, campaign performance for the property).
+        - **Inputs:** `organizationId`, `propertyId`, optional `dateRange`.
+        - **Output:** Structured JSON data for property manager dashboard charts.
+    - **Aggregation Strategy:** These functions initially perform direct aggregation. A hybrid approach is planned, where denormalized counters (updated by Firestore triggers) will be iteratively introduced for frequently accessed or computationally expensive statistics to improve scalability. Functions will preferentially read counters if available, falling back to direct queries.
   - Other functions include Invitation Campaign functions, Organization Management functions, etc.
 
 - **Client-Side API Service Modules (New Pattern):**
     - For client-side interactions with external APIs (e.g., fetching data for UI population), encapsulate API call logic within dedicated service modules.
     - **Example:** `src/lib/phoenixService.ts` contains `getPhoenixServices()` to fetch service types from the Phoenix API (`GET /services`) for use in forms.
+    - **Generic Chart Wrapper Components (New Pattern):**
+        - Reusable React components created in `src/components/Dashboard/Charts/` (e.g., `KpiCard.tsx`, `LineChart.tsx`, `BarChart.tsx`, `PieChart.tsx`, `GaugeChart.tsx`) to encapsulate Highcharts logic and ensure consistent chart presentation across dashboards.
 
 - **Address Autocompletion (Google Places API):**
   - Implemented in forms like `CreateServiceRequestForm.tsx` and `EditPropertyModal.tsx`.
@@ -131,14 +150,65 @@ The application employs a modern web architecture with a React-based frontend an
 - **Advanced UI Components (New Pattern):**
     - **`react-select`:** Utilized for dropdowns requiring advanced features like multi-select, enhanced search, and custom styling (e.g., service type selection in `CreateServiceRequestForm.tsx`).
     - Styled to integrate with MUI theme, including z-index management for dropdown menus.
+    - needs dark/light mode support
 
-- **Other Patterns:** Hybrid Rendering, Firebase Storage Usage, State Management Strategy, Data Fetching, Analytics, TypeScript Best Practices, Error Handling Patterns remain largely as previously documented.
+- **Other Patterns:** Hybrid Rendering, Firebase Storage Usage, State Management Strategy, Data Fetching, Analytics, TypeScript Best Practices, Production-ready solutions with a focus on long-term usage and maintainability.
 
 ## 3. Component Relationships & Data Flow (Illustrative)
 
-- **Authentication Flow:** (As previously documented)
-- **Invitation Campaign Flows:** (As previously documented)
-- **Data Display (e.g., Property List):** (As previously documented)
+*   **Authentication Flow:**
+    1.  User interacts with Login/Signup Form (Client Component).
+    2.  Credentials sent to Firebase Authentication. User record is created.
+    3.  The `functions/src/auth/processSignUp.ts` Cloud Function (an `onCreate` auth trigger) executes:
+        *   If the user is a Super Admin (based on email), it sets `roles: ['admin']` custom claim and creates a profile in `admins/{uid}`.
+        *   For **all other users**, it does nothing further, intentionally deferring claim and profile setup to specific invitation-handling callable functions to avoid race conditions.
+    4.  If the sign-up is via an invitation, a callable function like `signUpWithInvitation.ts` or `signUpWithOrgManagerInvitation.ts` is then invoked by the frontend. This function:
+        *   Validates the invitation.
+        *   Sets the appropriate custom claims (e.g., `organization_manager`, `property_manager`, `resident` and associated `organizationId(s)`, `propertyId`). These claims will overwrite any (though none are set by `processSignUp` for non-admins) or establish the primary claims for the user.
+        *   Creates the necessary user profile(s) in Firestore (e.g., in `organizations/{orgId}/users/{uid}`, `organizations/{orgId}/properties/{propId}/residents/{uid}`, and for `signUpWithOrgManagerInvitation.ts`, also in `admins/{uid}`).
+    5.  Firebase Auth ID token (with the final, correct role claims) is available to the client.
+    6.  Client-side routing and UI adapt based on the role.
+    7.  Firestore Security Rules validate the role claim for data operations.
+
+*   **Invitation Campaign Flow (CSV Import - New):**
+    1.  PM/OM/Admin uses frontend UI (`CreateCampaignModal`) to define a "csv_import" campaign (name, limits, expiry) and uploads a CSV file.
+    2.  Frontend uploads CSV to Firebase Storage (`campaign_csvs_pending/`).
+    3.  Frontend calls `createCampaign` Cloud Function with campaign details and `storageFilePath`.
+    4.  `createCampaign` function:
+        a.  Creates `campaigns/{campaignId}` document in Firestore.
+        b.  Downloads and parses CSV from Storage.
+        c.  For each valid row, creates an `invitations/{invitationId}` document (linked to `campaignId`). This triggers an email via `firestore-send-email`.
+        d.  Updates campaign with `totalInvitedFromCsv` and status.
+        e.  Moves processed CSV to `campaign_csvs_processed/` in Storage.
+    5.  Resident receives email, clicks link to `AcceptInvitationPage`.
+    6.  Resident signs up. `signUpWithInvitation` function is called.
+    7.  `signUpWithInvitation` processes user creation, updates invitation status, and updates the linked campaign's `totalAccepted` and `status`.
+    8.  PM/OM/Admin can view campaign status and list in `CampaignsTable`.
+
+*   **Invitation Campaign Flow (Public Link/QR Code - New):**
+    1.  PM/OM/Admin uses frontend UI (`CreateCampaignModal`) to define a "public_link" campaign (name, limits, expiry).
+    2.  Frontend calls `createCampaign` Cloud Function.
+    3.  `createCampaign` function:
+        a.  Creates `campaigns/{campaignId}` document.
+        b.  Generates and stores an `accessUrl` which is a frontend URL (e.g., `https://your-app-domain.web.app/join-public-campaign?campaign={campaignId}`).
+        c.  Returns `campaignId` and `accessUrl` to frontend.
+    4.  Frontend displays `accessUrl` and generates/displays a QR code from it.
+    5.  User clicks the public link or scans QR code, hitting the frontend `accessUrl`.
+    6.  The `PublicCampaignHandlerPage.tsx` (at `/join-public-campaign`) loads:
+        a.  It extracts the `campaignId` from the URL.
+        b.  It calls the `processPublicCampaignLink` callable Cloud Function with the `campaignId`.
+        c.  The `processPublicCampaignLink` function validates the campaign, creates an `invitations/{invitationId}` document (linked to `campaignId`), and returns the new `invitationId`, `campaignId`, and `organizationId`.
+        d.  `PublicCampaignHandlerPage.tsx` receives these details and programmatically navigates the user to `JoinCampaignPage` (e.g., `/join-campaign?invitationId=...&campaignId=...&organizationId=...`).
+    7.  Resident signs up via `JoinCampaignPage.tsx`. `signUpWithInvitation` function is called.
+    8.  `signUpWithInvitation` processes user creation, updates invitation status, and updates the linked campaign's `totalAccepted` and `status`.
+    9.  PM/OM/Admin can view campaign status and list in `CampaignsTable`.
+
+*   **Data Display (e.g., Property List for Property Manager):**
+    1.  Property Manager navigates to the "My Properties" page.
+    2.  This page might utilize a React Server Component.
+    3.  The Server Component fetches properties from Firestore where `propertyManagerId` matches the logged-in user's UID.
+    4.  The initial HTML is rendered on the server and sent to the client.
+    5.  Client Components hydrate and handle any subsequent interactions (e.g., opening a property detail view, which might then fetch more data client-side).
 
 - **Service Request Flow (Updated):**
     1.  **Frontend (`CreateServiceRequestForm.tsx`):**
@@ -172,6 +242,22 @@ The application employs a modern web architecture with a React-based frontend an
     3.  **Frontend:** Displays result via Snackbar, closes dialog on success.
     4.  **Twilio & Webhook:** Twilio places the call and requests TwiML instructions from the webhook.
 
+- **Dashboard Statistics Flow (New):**
+    1.  **Frontend (e.g., `AdminDashboardPanel.tsx`):**
+        a.  On component mount or tab activation, a `useEffect` hook triggers a data fetching function.
+        b.  The function calls the relevant Firebase Callable Function (e.g., `getAdminDashboardStats`, passing necessary parameters like `organizationId` or `dateRange` if applicable).
+        c.  Loading state is set to true.
+    2.  **Backend (e.g., `getAdminDashboardStats` Cloud Function):**
+        a.  Receives request, authenticates user, validates inputs.
+        b.  Performs Firestore queries (direct aggregation or reads denormalized counters).
+        c.  Processes and structures data into JSON format suitable for Highcharts.
+        d.  Returns data or an error.
+    3.  **Frontend:**
+        a.  Receives data or error from the Cloud Function.
+        b.  Updates state with the fetched statistics or error message.
+        c.  Sets loading state to false.
+        d.  Passes the statistics and chart configurations (derived using `useMemo`) to generic chart wrapper components (`KpiCard`, `LineChart`, etc.) for rendering.
+        e.  Displays loading skeletons or error messages as appropriate.
 ---
 
 ## 4. Scalability and Maintainability

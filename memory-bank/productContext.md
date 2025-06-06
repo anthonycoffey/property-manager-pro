@@ -18,14 +18,14 @@ This project aims to provide a modern, efficient, and scalable solution for prop
 The application should provide a seamless and intuitive experience tailored to each user role:
 
 *   **Super Administrators (`admin`):**
-    *   **Global Oversight:** A comprehensive dashboard to monitor the entire system, manage organizations, invite/assign Organization Managers, oversee all property portfolios at a high level, and access system-wide analytics.
+    *   **Global Oversight:** A comprehensive dashboard (now with a dedicated "Dashboard" tab) to monitor the entire system, including key platform metrics (total organizations, properties, users by role), user growth trends, and campaign effectiveness. Also provides tools to manage organizations, invite/assign Organization Managers, and oversee all property portfolios.
     *   **System Configuration:** Tools for managing core system settings (if any).
     *   **Top-Level Support:** Easy access to all data (organizations, users, properties, residents, services, invitation campaigns) for customer support and troubleshooting across the platform.
     *   **Organization Management:** Tools for creating, viewing, editing, and deactivating organizations.
     *   **Campaign Oversight (Implemented):** Ability to view and manage resident invitation campaigns across all organizations (`AdminCampaignsView.tsx`).
 
 *   **Organization Managers (`organization_manager`):**
-    *   **Scoped Oversight:** A dedicated dashboard to manage their assigned organization(s). If managing multiple, an easy way to switch context.
+    *   **Scoped Oversight:** A dedicated dashboard (now with a "Dashboard" tab) to manage their assigned organization(s), displaying key metrics for the selected organization (total properties, residents, property managers) and campaign performance. If managing multiple organizations, an easy way to switch context is provided.
     *   **Staff Management:** Intuitive tools for inviting, viewing, and managing Property Managers and other staff within their organization(s).
     *   **Property Portfolio Management:** Tools for adding, editing, and removing properties within their organization(s).
     *   **Resident & Service Oversight:** Ability to view resident information and service request data within their organization(s) for management and support.
@@ -33,7 +33,7 @@ The application should provide a seamless and intuitive experience tailored to e
     *   **Reporting:** Access to reports and analytics specific to their organization(s), including campaign performance.
 
 *   **Property Managers (`property_manager`):**
-    *   **Centralized Control:** A dedicated dashboard to manage their assigned properties within a specific organization, view resident information, track service requests, and manage invitations for residents to their properties.
+    *   **Centralized Control:** A dedicated dashboard (now with a "Dashboard" tab) to manage their assigned properties. After selecting a property, it displays key property-specific metrics (total residents, occupancy rate, total units) and campaign performance for that property. Also provides tools to view resident information, track service requests, and manage invitations.
     *   **Streamlined Resident Onboarding:** Powerful and flexible tools for resident invitations through "Campaigns":
         *   Bulk import of residents via CSV files.
         *   Generation of shareable public links and QR codes for open invitations.

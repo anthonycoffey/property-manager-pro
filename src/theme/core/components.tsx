@@ -85,27 +85,6 @@ const MuiOutlinedInput: Components<Theme>['MuiOutlinedInput'] = {
   },
 };
 
-const MuiPaper: Components<Theme>['MuiPaper'] = {
-  defaultProps: {
-    // As in material-kit-react
-    elevation: 0,
-  },
-  styleOverrides: {
-    root: {
-      // As in material-kit-react
-      backgroundImage: 'none',
-    },
-    outlined: ({ theme }) => ({
-      // As in material-kit-react
-      borderColor: varAlpha(
-        (theme.palette.grey as GreyColorsWithChannels)['500Channel'] ||
-          '145, 158, 171',
-        0.16
-      ),
-    }),
-  },
-};
-
 const MuiTableCell: Components<Theme>['MuiTableCell'] = {
   styleOverrides: {
     head: ({ theme }) => {
@@ -236,7 +215,6 @@ export const components: Components<Theme> = {
   MuiCard,
   MuiCardHeader,
   MuiOutlinedInput,
-  MuiPaper,
   MuiTableCell,
   MuiTable,
   MuiTableRow,

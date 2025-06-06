@@ -17,6 +17,7 @@ interface UpdatePropertyData {
     address?: FullPropertyAddress; // Updated to full address
     type?: string;
     managedBy?: string;
+    totalUnits?: number; // Added totalUnits
     // Add other property fields as necessary
   };
 }
@@ -84,8 +85,16 @@ export const updateProperty = onCall(async (request) => {
     const cleanUpdateData: { [key: string]: any } = {}; // More flexible for dot notation updates
     if (updatedData.name !== undefined) cleanUpdateData.name = updatedData.name;
     if (updatedData.type !== undefined) cleanUpdateData.type = updatedData.type;
-    if (updatedData.managedBy !== undefined)
-      cleanUpdateData.managedBy = updatedData.managedBy;
+    if (updatedData.managedBy !== undefined) cleanUpdateData.managedBy = updatedData.managedBy;
+    if (updatedData.totalUnits !== undefined) {
+      if (typeof updatedData.totalUnits === 'number' && updatedData.totalUnits > 0) {
+        cleanUpdateData.totalUnits = updatedData.totalUnits;
+      } else {
+        // Optionally throw an error if totalUnits is provided but invalid
+        // For now, we'll just ignore invalid totalUnits in an update
+        console.warn(`Invalid totalUnits value received for property ${propertyId}: ${updatedData.totalUnits}. Skipping update for this field.`);
+      }
+    }
 
     // Handle address updates carefully to update individual fields or the whole object
     if (updatedData.address) {

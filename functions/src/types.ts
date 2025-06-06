@@ -189,13 +189,5 @@ export interface ServiceRequest {
   serviceLocationData?: ServiceLocationAddress; // Optional: store the structured address
   smsConsent?: boolean; // Store SMS consent
   phoenixSubmissionId?: string | null; // Store ID from Phoenix API
-  assignedTo?: string; 
-  assignedToName?: string; 
   completedAt?: Timestamp | Date | FirebaseFirestore.FieldValue; // Allow FieldValue
-  notes?: Array<{ // This is more for a log of updates by staff/system
-    userId: string;
-    userName: string;
-    note: string;
-    timestamp: Timestamp | Date | FirebaseFirestore.FieldValue; // Allow FieldValue
-  }>;
 }

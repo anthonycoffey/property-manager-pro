@@ -68,7 +68,12 @@ const convertToDateOrNull = (
 
 // Define a type for formData to include vehicles explicitly
 // All fields from Resident should be optional, except vehicles which is required for the form's state.
-interface ResidentFormData extends Partial<Resident> {
+// Explicitly type fields managed directly by the form state for better type safety.
+interface ResidentFormData extends Omit<Partial<Resident>, 'displayName' | 'unitNumber' | 'leaseStartDate' | 'leaseEndDate' | 'vehicles'> {
+  displayName: string;
+  unitNumber: string;
+  leaseStartDate: Date | null;
+  leaseEndDate: Date | null;
   vehicles: Vehicle[]; // vehicles is required in the form state, even if empty
 }
 
@@ -320,7 +325,7 @@ const EditResidentModal: React.FC<EditResidentModalProps> = ({
                 />
                 <DatePicker
                   label='Lease Start Date'
-                  value={formData.leaseStartDate || null}
+                  value={formData.leaseStartDate}
                   onChange={(newValue) => handleDateChange('leaseStartDate', newValue)}
                   disabled={loading}
                   slotProps={{ textField: { fullWidth: true, margin: 'dense', sx: { flex: 1 } } }}
@@ -329,7 +334,7 @@ const EditResidentModal: React.FC<EditResidentModalProps> = ({
               <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2 }}>
                 <DatePicker
                   label='Lease End Date'
-                  value={formData.leaseEndDate || null}
+                  value={formData.leaseEndDate}
                   onChange={(newValue) => handleDateChange('leaseEndDate', newValue)}
                   disabled={loading}
                   slotProps={{ textField: { fullWidth: true, margin: 'dense', sx: { flex: 1 } } }}

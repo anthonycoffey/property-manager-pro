@@ -48,7 +48,6 @@ import { collection, query, where, getDocs } from 'firebase/firestore';
 // Chart Components
 import KpiCard from './Charts/KpiCard';
 import BarChart from './Charts/BarChart';
-import LineChart from './Charts/LineChart'; // Added for Phoenix Volume Trends
 import PieChart from './Charts/PieChart'; // Added for Phoenix Type Distribution
 
 // Firebase functions

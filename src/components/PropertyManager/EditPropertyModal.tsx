@@ -74,7 +74,6 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
     city: '',
     state: '',
     zip: '',
-    fullAddress: '', // Ensure all fields from the type are initialized
   });
   const [totalUnits, setTotalUnits] = useState<string>('');
   const [autocompleteValue, setAutocompleteValue] = useState<PlaceType | null>(null);
@@ -105,7 +104,6 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
         city: propertyData.address?.city || '',
         state: propertyData.address?.state || '',
         zip: propertyData.address?.zip || '',
-        fullAddress: propertyData.address?.fullAddress || '', // Add fullAddress
       });
       setTotalUnits(propertyData.totalUnits?.toString() || '');
       setAutocompleteInputValue(propertyData.address?.street || ''); // Optional chaining

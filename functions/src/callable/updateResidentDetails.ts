@@ -1,6 +1,6 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { db } from '../firebaseAdmin.js';
-import { Timestamp, FieldValue } from 'firebase-admin/firestore'; // Added FieldValue
+import { Timestamp } from 'firebase-admin/firestore'; // Added FieldValue
 import type { Resident, AppError, Vehicle } from '../types.js'; // Added Vehicle
 
 interface UpdateResidentData {
@@ -177,12 +177,6 @@ export const updateResidentDetails = onCall(async (request) => {
         if (vehicles === null || (Array.isArray(vehicles) && vehicles.length === 0)) {
           // If vehicles is explicitly set to null or an empty array, treat as clearing vehicles
           sanitizedUpdateData.vehicles = []; // Store empty array
-          // Ensure old flat fields are deleted if vehicles are being cleared
-          sanitizedUpdateData.vehicleMake = FieldValue.delete();
-          sanitizedUpdateData.vehicleModel = FieldValue.delete();
-          sanitizedUpdateData.vehicleColor = FieldValue.delete();
-          sanitizedUpdateData.licensePlate = FieldValue.delete();
-          // Note: vehicleYear was not previously handled by this function or modal
           hasValidUpdate = true; // This is a valid update
         } else if (Array.isArray(vehicles)) {
           if (vehicles.length > 2) {
@@ -215,11 +209,6 @@ export const updateResidentDetails = onCall(async (request) => {
               );
             }
           }
-          // If vehicles array is valid and provided, ensure old flat fields are deleted
-          sanitizedUpdateData.vehicleMake = FieldValue.delete();
-          sanitizedUpdateData.vehicleModel = FieldValue.delete();
-          sanitizedUpdateData.vehicleColor = FieldValue.delete();
-          sanitizedUpdateData.licensePlate = FieldValue.delete();
           // 'vehicles' field itself is already handled by the loop for allowedFields
           hasValidUpdate = true; // This is a valid update
         } else {

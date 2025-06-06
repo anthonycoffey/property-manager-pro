@@ -13,7 +13,6 @@ import {
   IconButton,
   Container,
   Stack,
-  Divider,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import CloseIcon from '@mui/icons-material/Close';
@@ -25,8 +24,6 @@ import Campaign from '@mui/icons-material/Campaign';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import PeopleIcon from '@mui/icons-material/People';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
-import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
-import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
 import CrisisAlert from '@mui/icons-material/CrisisAlert'; // Added
 import LocalShipping from '@mui/icons-material/LocalShipping'; // Added
 
@@ -50,33 +47,23 @@ import ChatView from '../Chat/ChatView';
 // Chart Components
 import KpiCard from './Charts/KpiCard';
 import BarChart from './Charts/BarChart';
-import LineChart from './Charts/LineChart';
 import PieChart from './Charts/PieChart';
 
 // Firebase functions
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { isAppError } from '../../utils/errorUtils';
 
-// Define Phoenix Stats types
-// interface PhoenixVolumeTrendPoint { // Removed 6/4/2025
-//   date: string;
-//   count: number;
-// }
-
 interface PhoenixTypeDistributionPoint {
-  // Reinstated 6/4/2025
   name: string;
   y: number;
 }
 
 interface PropertyManagerPhoenixStats {
-  // volumeTrends?: PhoenixVolumeTrendPoint[]; // Removed 6/4/2025
-  typeDistribution?: PhoenixTypeDistributionPoint[]; // Reinstated 6/4/2025
+  typeDistribution?: PhoenixTypeDistributionPoint[];
   total_submissions?: string;
   dispatched_count?: string;
 }
 
-// Define PropertyManagerDashboardStatsData type locally
 interface PropertyCampaignPerformanceData {
   campaignName: string;
   accepted: number;

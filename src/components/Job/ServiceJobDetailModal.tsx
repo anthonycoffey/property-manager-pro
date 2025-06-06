@@ -11,7 +11,6 @@ import {
   Box,
   Avatar,
   Button as MuiButton, // Renamed to avoid conflict if 'Button' is used elsewhere
-  Link,
   useTheme, // Import useTheme
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
@@ -20,8 +19,6 @@ import CloseIcon from '@mui/icons-material/Close';
 import SmsIcon from '@mui/icons-material/Sms';
 import PhoneIcon from '@mui/icons-material/Phone';
 import { GoogleMap, Marker, DirectionsRenderer, useJsApiLoader } from '@react-google-maps/api'; // Add DirectionsRenderer
-import LocalShippingIcon from '@mui/icons-material/LocalShipping';
-import LocationOnIcon from '@mui/icons-material/LocationOn';
 
 import type { Job } from '../../types'; // Assuming Job type is in src/types
 import JobStatusStepper from './JobStatusStepper.tsx';
@@ -31,16 +28,6 @@ import JobDetailsDisplay from './JobDetailsDisplay.tsx';
 // Define librariesToLoad outside the component to prevent re-creation on each render.
 // 'routes' library is often used for DirectionsService.
 const LIBRARIES_TO_LOAD: ("places" | "routes")[] = ['places', 'routes'];
-
-// Placeholder for date formatting - replace with actual utility
-const formatDateTime = (isoString: string | null | undefined) => {
-  if (!isoString) return 'N/A';
-  try {
-    return new Date(isoString).toLocaleString();
-  } catch (e) {
-    return 'Invalid Date';
-  }
-};
 
 const mapContainerStyle = {
   width: '100%',
@@ -76,13 +63,6 @@ const ServiceJobDetailModal: React.FC<ServiceJobDetailModalProps> = ({
   const [directions, setDirections] = useState<google.maps.DirectionsResult | null>(null);
   const theme = useTheme(); // For accessing theme colors
 
-  // Attempt to use a more specific type for libraries.
-  // The exact type might depend on the version of @types/google.maps or @react-google-maps/api
-  // Common valid library names include 'places', 'drawing', 'geometry', 'visualization', 'routes', 'marker'.
-  // 'directions' is often part of 'routes' or available directly.
-  // If `google.maps.Libraries` is not found, a direct union type is an alternative.
-  // Trying 'routes' as it often includes DirectionsService.
-  // const librariesToLoad: Array<"places" | "routes"> = ['places', 'routes']; // Moved outside
 
   const { isLoaded, loadError } = useJsApiLoader({
     googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '',

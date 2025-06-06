@@ -2,7 +2,6 @@ import React from 'react';
 import {
   Box,
   Typography,
-  // Grid, // Will be replaced by Box with flex
   Paper,
   Table,
   TableBody,
@@ -12,9 +11,8 @@ import {
   TableRow,
   Link as MuiLink,
   Button as MuiButton,
-  Divider,
 } from '@mui/material';
-import type { Job, InvoiceData } from '../../types'; // Assuming Job type is in src/types
+import type { Job } from '../../types'; // Assuming Job type is in src/types
 
 // Placeholder for date formatting - replace with actual utility from project if available
 const formatDateTime = (isoString: string | null | undefined) => {

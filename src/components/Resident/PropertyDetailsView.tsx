@@ -94,7 +94,7 @@ const PropertyDetailsView: React.FC = () => {
           Property Information
         </Typography>
       </Box>
-      <List sx={{ width: '100%', bgcolor: 'background.paper' }}>
+      <List>
         <ListItem>
           <ListItemIcon>
             <PersonIcon />
@@ -122,12 +122,21 @@ const PropertyDetailsView: React.FC = () => {
               primary='Address'
               secondary={
                 <>
-                  <Typography component='span' variant='body2' color='text.primary'>
+                  <Typography
+                    component='span'
+                    variant='body2'
+                    color='text.primary'
+                  >
                     {propertyDetails.address.street}
                   </Typography>
                   <br />
-                  <Typography component='span' variant='body2' color='text.primary'>
-                    {propertyDetails.address.city}, {propertyDetails.address.state}{' '}
+                  <Typography
+                    component='span'
+                    variant='body2'
+                    color='text.primary'
+                  >
+                    {propertyDetails.address.city},{' '}
+                    {propertyDetails.address.state}{' '}
                     {propertyDetails.address.zip}
                   </Typography>
                 </>

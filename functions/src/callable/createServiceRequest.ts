@@ -70,7 +70,8 @@ export const createServiceRequest = https.onCall(
     }
 
     if (
-      !data.serviceTypes || data.serviceTypes.length === 0 || // Updated validation
+      !data.serviceTypes ||
+      data.serviceTypes.length === 0 || // Updated validation
       !data.serviceLocationAddress ||
       !data.serviceLocationAddress.fullAddress?.trim() ||
       !data.serviceDateTime ||
@@ -81,11 +82,16 @@ export const createServiceRequest = https.onCall(
         'At least one service type, service location, service date/time, and phone are required.'
       );
     }
-    
+
     const PHOENIX_API_URL_BACKEND = process.env.PHOENIX_API_URL;
     if (!PHOENIX_API_URL_BACKEND) {
-      console.error('PHOENIX_API_URL is not configured in function environment.');
-      throw handleHttpsError('internal', 'Phoenix API configuration error. Please contact support.');
+      console.error(
+        'PHOENIX_API_URL is not configured in function environment.'
+      );
+      throw handleHttpsError(
+        'internal',
+        'Phoenix API configuration error. Please contact support.'
+      );
     }
 
     // Fetch resident's unitNumber and potentially a more definitive displayName
@@ -97,7 +103,7 @@ export const createServiceRequest = https.onCall(
     );
     try {
       const residentDocSnap = await residentDocRef.get();
-      
+
       if (residentDocSnap.exists) {
         const residentData = residentDocSnap.data() as Resident;
         residentDisplayName = residentData.displayName || residentDisplayName;
@@ -125,13 +131,13 @@ export const createServiceRequest = https.onCall(
       // For Firestore, store a comma-separated list of names, or just the first one.
       // Alternatively, update ServiceRequest type to store an array of names/objects.
       // For now, using a comma-separated string of names.
-      requestType: data.serviceTypes.map(st => st.value).join(', '), 
-      description: data.description?.trim() || '', 
+      requestType: data.serviceTypes.map((st) => st.value).join(', '),
+      description: data.description?.trim() || '',
       residentNotes: data.residentNotes?.trim(),
       serviceDateTime: new Date(data.serviceDateTime), // Store as Timestamp
       phone: data.phone?.trim(),
       // Store structured address or just the full string, or both
-      serviceLocation: data.serviceLocationAddress.fullAddress, 
+      serviceLocation: data.serviceLocationAddress.fullAddress,
       serviceLocationData: data.serviceLocationAddress, // Optional: store the whole object
       status: 'submitted' as ServiceRequestStatus,
       submittedAt: FirebaseAdminFieldValue.serverTimestamp(),
@@ -139,7 +145,7 @@ export const createServiceRequest = https.onCall(
       // phoenixSubmissionId: phoenixSubmissionId, // Store Phoenix ID
       // assignedTo, completedAt, notes will be set later
     };
-    
+
     // 1. Construct Phoenix API Payload
     // Prepare resident data for sourceMeta
     const residentDataForMeta = {
@@ -149,64 +155,82 @@ export const createServiceRequest = https.onCall(
     };
 
     const sourceMeta = {
-      applicationName: "PropertyManagerPro",
+      applicationName: 'PropertyManagerPro',
       organizationId: data.organizationId, // from input data
-      propertyId: data.propertyId,       // from input data
+      propertyId: data.propertyId, // from input data
       resident: residentDataForMeta,
     };
 
     const phoenixPayload = {
       submission: [
-        { name: "full_name", value: residentDisplayName },
-        { name: "phone", value: data.phone ? data.phone.trim() : "" }, // Consider formatting phone: formatPhoneNumber(data.phone)
-        { name: "sms_consent", value: data.smsConsent },
-        { name: "email", value: context.auth.token.email || "" },
-        { name: "service_time", value: data.serviceDateTime }, // ISO string
-        { 
-          name: "location", 
+        { name: 'full_name', value: residentDisplayName },
+        { name: 'phone', value: data.phone ? data.phone.trim() : '' }, // Consider formatting phone: formatPhoneNumber(data.phone)
+        { name: 'sms_consent', value: data.smsConsent },
+        { name: 'email', value: context.auth.token.email || '' },
+        { name: 'service_time', value: data.serviceDateTime }, // ISO string
+        {
+          name: 'location',
           value: data.serviceLocationAddress.fullAddress,
-          obj: { // Ensure this structure matches Phoenix expectations
+          obj: {
+            // Ensure this structure matches Phoenix expectations
             address_1: data.serviceLocationAddress.address_1,
             city: data.serviceLocationAddress.city,
             state: data.serviceLocationAddress.state,
             country: data.serviceLocationAddress.country,
             zipcode: data.serviceLocationAddress.zipcode,
-          }
+          },
         },
-        { name: "car_year", value: "" },
-        { name: "car_make", value: "" },
-        { name: "car_model", value: "" },
-        { name: "car_color", value: "" },
-        { 
-          name: "service_type", 
-          value: data.serviceTypes // Directly use the array of {id, value} from frontend
+        { name: 'car_year', value: '' },
+        { name: 'car_make', value: '' },
+        { name: 'car_model', value: '' },
+        { name: 'car_color', value: '' },
+        {
+          name: 'service_type',
+          value: data.serviceTypes, // Directly use the array of {id, value} from frontend
         },
-        { name: "notes", value: data.residentNotes || "" }
+        { name: 'notes', value: data.residentNotes || '' },
       ],
-      source: "PropertyManagerPro", // Standardized source name
+      source: 'PropertyManagerPro', // Standardized source name
       sourceMeta: sourceMeta, // Add the new sourceMeta object
       completed: false,
-      submitted: true
+      submitted: true,
     };
 
     try {
       // 2. Call Phoenix API First
-      const phoenixResponse = await fetch(`${PHOENIX_API_URL_BACKEND}/form-submission`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(phoenixPayload),
-      });
+      const phoenixResponse = await fetch(
+        `${PHOENIX_API_URL_BACKEND}/form-submission`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(phoenixPayload),
+        }
+      );
 
       if (phoenixResponse.status !== 201) {
         // Type errorBody more specifically with a cast
-        const errorBody = await phoenixResponse.json().catch(() => ({ message: 'Unknown error structure from Phoenix API' })) as { message?: string; error?: any };
+        const errorBody = (await phoenixResponse
+          .json()
+          .catch(() => ({
+            message: 'Unknown error structure from Phoenix API',
+          }))) as { message?: string; error?: any };
         console.error('Phoenix API error:', phoenixResponse.status, errorBody);
-        const phoenixErrorMessage = errorBody?.message || (typeof errorBody?.error === 'string' ? errorBody.error : phoenixResponse.statusText);
-        throw handleHttpsError('internal', `Phoenix API submission failed: ${phoenixErrorMessage}`);
+        const phoenixErrorMessage =
+          errorBody?.message ||
+          (typeof errorBody?.error === 'string'
+            ? errorBody.error
+            : phoenixResponse.statusText);
+        throw handleHttpsError(
+          'internal',
+          `Phoenix API submission failed: ${phoenixErrorMessage}`
+        );
       }
-      
+
       // Type phoenixResult more specifically with a cast
-      const phoenixResult = await phoenixResponse.json() as { id?: string | number; [key: string]: any };
+      const phoenixResult = (await phoenixResponse.json()) as {
+        id?: string | number;
+        [key: string]: any;
+      };
       const phoenixSubmissionId = phoenixResult?.id;
 
       // 3. If Phoenix call successful, save to Firestore
@@ -214,22 +238,26 @@ export const createServiceRequest = https.onCall(
         ...newServiceRequest,
         phoenixSubmissionId: phoenixSubmissionId || null, // Store Phoenix ID
       };
-      
-      const docRef = await serviceRequestCollectionRef.add(serviceRequestWithPhoenixId);
+
+      const docRef = await serviceRequestCollectionRef.add(
+        serviceRequestWithPhoenixId
+      );
       return {
         success: true,
         serviceRequestId: docRef.id,
-        message: 'Service request created successfully and submitted to Phoenix.',
+        message:
+          "Service request created successfully and submitted to Rescue Rescue Rob's Roadside",
       };
-
     } catch (error: any) {
       console.error('Error in createServiceRequest:', error);
-      if (error.code && error.message) { // Check if it's already an HttpsError
+      if (error.code && error.message) {
+        // Check if it's already an HttpsError
         throw error;
       }
       throw handleHttpsError(
         'internal',
-        error.message || 'An internal error occurred during service request processing.'
+        error.message ||
+          'An internal error occurred during service request processing.'
       );
     }
   }

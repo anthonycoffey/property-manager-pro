@@ -10,12 +10,10 @@ import {
   Alert,
   Box,
   Avatar,
-  Button as MuiButton, // Renamed to avoid conflict if 'Button' is used elsewhere
-  useTheme, // Import useTheme
+  Button as MuiButton,
+  useTheme,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
-// ShareIcon was removed from the plan, but if it's needed, it should be imported.
-// import ShareIcon from '@mui/icons-material/Share';
 import SmsIcon from '@mui/icons-material/Sms';
 import PhoneIcon from '@mui/icons-material/Phone';
 import {
@@ -23,15 +21,12 @@ import {
   Marker,
   DirectionsRenderer,
   useJsApiLoader,
-} from '@react-google-maps/api'; // Add DirectionsRenderer
+} from '@react-google-maps/api';
 
-import type { Job } from '../../types'; // Assuming Job type is in src/types
+import type { Job } from '../../types';
 import JobStatusStepper from './JobStatusStepper.tsx';
 import JobDetailsDisplay from './JobDetailsDisplay.tsx';
-// import { formatDateTime } from '../../utils/dateUtils'; // Placeholder for date formatting
 
-// Define librariesToLoad outside the component to prevent re-creation on each render.
-// 'routes' library is often used for DirectionsService.
 const LIBRARIES_TO_LOAD: ('places' | 'routes')[] = ['places', 'routes'];
 
 const mapContainerStyle = {
@@ -86,6 +81,7 @@ const ServiceJobDetailModal: React.FC<ServiceJobDetailModalProps> = ({
         setError(null);
         setJobData(null);
         try {
+          // TODO: replace hardcoded url with VITE_PHOENIX_API_URL
           const response = await fetch(
             `https://phoenix-staging-data-3d6054f8c3ef.herokuapp.com/jobs/public/search/${phoenixSubmissionId}`
           );

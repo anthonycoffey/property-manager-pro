@@ -15,6 +15,7 @@ import ApartmentIcon from '@mui/icons-material/Apartment';
 import PersonIcon from '@mui/icons-material/Person';
 import BuildIcon from '@mui/icons-material/Build';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
+import TestimonialCard from '../Marketing/TestimonialCard'; // Added
 import PropertyDetailsView from './PropertyDetailsView';
 import ResidentProfileManagement from './ResidentProfileManagement';
 import CreateServiceRequestForm from './CreateServiceRequestForm';
@@ -129,6 +130,85 @@ const ResidentDashboard: React.FC = () => {
             <ChatView />
           </Box>
         </TabPanel>
+
+        {/* Testimonials Section */}
+        <Box
+          sx={{
+            mt: 4,
+            p: 2,
+            backgroundColor: 'background.default',
+            borderRadius: 1,
+          }}
+        >
+          <Typography
+            variant='h5'
+            gutterBottom
+            sx={{ mb: 2, textAlign: 'center' }}
+          >
+            What Other Residents Are Saying
+          </Typography>
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: { xs: 'column', md: 'row' },
+              gap: 2,
+              justifyContent: 'center',
+              alignItems: 'stretch',
+            }}
+          >
+            <TestimonialCard
+              quote='Friendly fast service 😊🙏'
+              author='Samalam C'
+              authorRole='Resident'
+            />
+            <TestimonialCard
+              quote='He did amazing!! Very professional!!'
+              author='A&A kidz'
+              authorRole='Resident'
+            />
+          </Box>
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: { xs: 'column', sm: 'row' },
+              gap: 2,
+              justifyContent: 'center',
+              alignItems: 'center',
+              mt: 3,
+            }}
+          >
+            <Box
+              component='img'
+              src='/review1.png'
+              alt='5.0 rating'
+              sx={{
+                width: { xs: 100, sm: 140 },
+                height: 'auto',
+                borderRadius: 2,
+              }}
+            />
+            <Box
+              component='img'
+              src='/review2.png'
+              alt='35 years experience'
+              sx={{
+                width: { xs: 100, sm: 140 },
+                height: 'auto',
+                borderRadius: 2,
+              }}
+            />
+            <Box
+              component='img'
+              src='/review3.png'
+              alt='satisfaction guaranteed'
+              sx={{
+                width: { xs: 100, sm: 140 },
+                height: 'auto',
+                borderRadius: 2,
+              }}
+            />
+          </Box>
+        </Box>
       </Paper>
     </Container>
   );

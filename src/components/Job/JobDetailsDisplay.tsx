@@ -11,8 +11,10 @@ import {
   TableRow,
   Link as MuiLink,
   Button as MuiButton,
+  IconButton,
 } from '@mui/material';
 import type { Job } from '../../types';
+import { Phone, Sms } from '@mui/icons-material';
 
 const formatDateTime = (isoString: string | null | undefined) => {
   if (!isoString) return 'N/A';
@@ -151,25 +153,34 @@ const JobDetailsDisplay: React.FC<JobDetailsDisplayProps> = ({ job }) => {
         <Box sx={{ flex: 1, width: { xs: '100%', md: '50%' } }}>
           <Paper elevation={1} sx={{ p: 2, height: '100%' }}>
             {dispatcher && (
-              <>
-                <Typography variant='overline' display='block' gutterBottom>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                <Box>
+                  <Typography variant='overline' display='block' gutterBottom>
                   Dispatcher
-                </Typography>
-                <Typography variant='h6' gutterBottom>
+                  </Typography>
+                  <Typography variant='h6' gutterBottom>
                   {dispatcher.fullName}
-                </Typography>
-                {/* Contact buttons for dispatcher - using static number */}
-                <MuiButton
-                  variant='outlined'
-                  href={`sms:${dispatchNumber}`}
-                  sx={{ mr: 1 }}
-                >
-                  SMS
-                </MuiButton>
-                <MuiButton variant='outlined' href={`tel:${dispatchNumber}`}>
-                  Call
-                </MuiButton>
-              </>
+                  </Typography>
+                </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', ml: 'auto' }}>
+                  <IconButton
+                  component={dispatchNumber ? 'a' : 'button'}
+                  aria-label='sms dispatcher'
+                  disabled={!dispatchNumber}
+                  href={dispatchNumber ? `sms:${dispatchNumber}` : undefined}
+                  >
+                  <Sms />
+                  </IconButton>
+                  <IconButton
+                  component={dispatchNumber ? 'a' : 'button'}
+                  aria-label='call dispatcher'
+                  disabled={!dispatchNumber}
+                  href={dispatchNumber ? `tel:${dispatchNumber}` : undefined}
+                  >
+                  <Phone />
+                  </IconButton>
+                </Box>
+                </Box>
             )}
           </Paper>
         </Box>

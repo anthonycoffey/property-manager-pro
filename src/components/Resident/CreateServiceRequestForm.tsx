@@ -558,12 +558,7 @@ const CreateServiceRequestForm: React.FC<CreateServiceRequestFormProps> = ({
               styles={{
                 control: (baseStyles, state) => ({
                   ...baseStyles,
-                  borderColor: state.isFocused 
-                    ? theme.palette.primary.main 
-                    : (servicesError ? theme.palette.error.main : 'rgba(0, 0, 0, 0.23)'),
-                  '&:hover': {
-                    borderColor: state.isFocused ? theme.palette.primary.main : 'rgba(0, 0, 0, 0.87)',
-                  },
+             
                   boxShadow: state.isFocused ? `0 0 0 1px ${theme.palette.primary.main}` : 'none',
                   minHeight: '56px', // Match MUI TextField height
                   backgroundColor: theme.palette.background.paper, // Ensure background for dark/light mode

@@ -49,6 +49,7 @@ export interface Resident {
   leaseEndDate?: Timestamp | Date | null;
   invitedBy?: string; // UID of the user who invited them
   createdAt: Timestamp | Date;
+  phone?: string; // Resident's primary contact phone number
   // Vehicle Information
   vehicles?: Vehicle[];
   // Add other resident-specific fields as needed
@@ -432,6 +433,7 @@ export type ServiceRequestStatus =
   };
   smsConsent?: boolean;
   phoenixSubmissionId?: string | null; // ID from Phoenix API
+  isOffPremise?: boolean; // New: Indicates if the request was for an off-premise location
   completedAt?: Timestamp | Date | string | null; // Firestore Timestamp
   organizationId: string; // Added for easier querying/rules
 }

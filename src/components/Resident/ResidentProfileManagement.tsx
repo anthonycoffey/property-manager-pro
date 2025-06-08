@@ -150,21 +150,6 @@ const ResidentProfileManagement: React.FC = () => {
     }
   };
 
-  const handleVehicleChange = (
-    index: number,
-    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
-    const { name, value } = event.target;
-    const updatedVehicles = [...profile.vehicles];
-
-    updatedVehicles[index] = {
-      ...updatedVehicles[index],
-      [name]:
-        name === 'year' ? (value === '' ? '' : parseInt(value, 10)) : value,
-    };
-    setProfile((prev) => ({ ...prev, vehicles: updatedVehicles }));
-  };
-
   const handleAddVehicle = () => {
     // This function will now open the dialog
     if (profile.vehicles.length < 2) {

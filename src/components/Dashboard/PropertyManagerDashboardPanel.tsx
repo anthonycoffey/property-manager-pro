@@ -838,7 +838,7 @@ const PropertyManagerDashboardPanel: React.FC<
             flexDirection: { xs: 'column', sm: 'row', md: 'row' },
             justifyContent: { xs: 'center', md: 'flex-end' },
             alignItems: 'center',
-            gap: { xs: 1, sm: 2, md: 2 },
+            gap: { xs: 1, sm: 4, md: 10 },
             mt: { xs: 2, md: 0 },
             width: { xs: '100%', md: 'auto' },
           }}

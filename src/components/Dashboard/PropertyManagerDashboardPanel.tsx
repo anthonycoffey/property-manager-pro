@@ -809,70 +809,69 @@ const PropertyManagerDashboardPanel: React.FC<
               borderRadius: 1,
             }}
           >
-            <Typography
-              variant='h5'
-              gutterBottom
-              sx={{ mb: 2, textAlign: 'center' }}
-            >
-              What Our Clients Say
-            </Typography>
             <Box
               sx={{
-          display: 'flex',
-          flexDirection: { xs: 'column', md: 'row' },
-          alignItems: { xs: 'stretch', md: 'flex-start' },
-          gap: { xs: 2, md: 4 },
-          width: '100%',
+                display: 'flex',
+                flexDirection: { xs: 'column', md: 'row' },
+                alignItems: { xs: 'stretch', md: 'flex-start' },
+                gap: { xs: 2, md: 4 },
+                width: '100%',
               }}
             >
-              <Box sx={{ flex: 1, display: 'flex', justifyContent: { xs: 'center', md: 'flex-start' } }}>
-          <TestimonialCard
-            quote='Robert and his team were amazing!! Our residents really loved the customer service they had during our on site event. Mark was exceptional!'
-            author='Amanda Martin'
-            authorRole='Property Manager'
-          />
+              <Box
+                sx={{
+                  flex: 1,
+                  display: 'flex',
+                  justifyContent: { xs: 'center', md: 'flex-start' },
+                }}
+              >
+                <TestimonialCard
+                  quote='Robert and his team were amazing!! Our residents really loved the customer service they had during our on site event. Mark was exceptional!'
+                  author='Amanda Martin'
+                  authorRole='Property Manager'
+                />
               </Box>
               <Box
-          sx={{
-            display: 'flex',
-            flexDirection: { xs: 'column', sm: 'row', md: 'row' },
-            justifyContent: { xs: 'center', md: 'flex-end' },
-            alignItems: 'center',
-            gap: { xs: 1, sm: 4, md: 10 },
-            mt: { xs: 2, md: 0 },
-            width: { xs: '100%', md: 'auto' },
-          }}
+                sx={{
+                  display: 'flex',
+                  flexDirection: { xs: 'column', sm: 'row', md: 'row' },
+                  justifyContent: { xs: 'center', md: 'flex-end' },
+                  alignItems: 'center',
+                  gap: { xs: 1, sm: 4, md: 10 },
+                  mt: { xs: 2, md: 0 },
+                  width: { xs: '100%', md: 'auto' },
+                }}
               >
-          <Box
-            component='img'
-            src='/review1.png'
-            alt='5.0 rating'
-            sx={{
-              width: { xs: 100, sm: 140 },
-              height: 'auto',
-              borderRadius: 2,
-            }}
-          />
-          <Box
-            component='img'
-            src='/review2.png'
-            alt='35 years experience'
-            sx={{
-              width: { xs: 100, sm: 140 },
-              height: 'auto',
-              borderRadius: 2,
-            }}
-          />
-          <Box
-            component='img'
-            src='/review3.png'
-            alt='satisfaction guaranteed'
-            sx={{
-              width: { xs: 100, sm: 140 },
-              height: 'auto',
-              borderRadius: 2,
-            }}
-          />
+                <Box
+                  component='img'
+                  src='/review1.png'
+                  alt='5.0 rating'
+                  sx={{
+                    width: { xs: 100, sm: 140 },
+                    height: 'auto',
+                    borderRadius: 2,
+                  }}
+                />
+                <Box
+                  component='img'
+                  src='/review2.png'
+                  alt='35 years experience'
+                  sx={{
+                    width: { xs: 100, sm: 140 },
+                    height: 'auto',
+                    borderRadius: 2,
+                  }}
+                />
+                <Box
+                  component='img'
+                  src='/review3.png'
+                  alt='satisfaction guaranteed'
+                  sx={{
+                    width: { xs: 100, sm: 140 },
+                    height: 'auto',
+                    borderRadius: 2,
+                  }}
+                />
               </Box>
             </Box>
           </Box>

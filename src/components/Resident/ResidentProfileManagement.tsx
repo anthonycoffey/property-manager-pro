@@ -75,6 +75,22 @@ const ResidentProfileManagement: React.FC = () => {
     { make: '', model: '', year: 0, color: '', plate: '' }
   );
 
+  // Phone number formatting utility
+  const formatPhoneNumberOnInput = useCallback((value: string): string => {
+    if (!value) return value;
+    const phoneNumber = value.replace(/[^\d]/g, '');
+    const phoneNumberLength = phoneNumber.length;
+
+    if (phoneNumberLength < 4) return phoneNumber;
+    if (phoneNumberLength < 7) {
+      return `(${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(3)}`;
+    }
+    return `(${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(
+      3,
+      6
+    )}-${phoneNumber.slice(6, 10)}`;
+  }, []);
+
   const residentDocPath =
     organizationId && propertyId && currentUser?.uid
       ? `organizations/${organizationId}/properties/${propertyId}/residents/${currentUser.uid}`
@@ -101,7 +117,7 @@ const ResidentProfileManagement: React.FC = () => {
             displayName: data.displayName,
             email: data.email,
             unitNumber: data.unitNumber,
-            phone: data.phone || '', // Set phone from fetched data
+            phone: formatPhoneNumberOnInput(data.phone || ''), // Format phone on load
             vehicles: Array.isArray(data.vehicles) ? data.vehicles : [],
           });
         } else {
@@ -118,23 +134,7 @@ const ResidentProfileManagement: React.FC = () => {
     if (currentUser) {
       fetchProfile();
     }
-  }, [currentUser, residentDocPath]);
-
-  // Phone number formatting utility (duplicated for now)
-  const formatPhoneNumberOnInput = useCallback((value: string): string => {
-    if (!value) return value;
-    const phoneNumber = value.replace(/[^\d]/g, '');
-    const phoneNumberLength = phoneNumber.length;
-
-    if (phoneNumberLength < 4) return phoneNumber;
-    if (phoneNumberLength < 7) {
-      return `(${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(3)}`;
-    }
-    return `(${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(
-      3,
-      6
-    )}-${phoneNumber.slice(6, 10)}`;
-  }, []);
+  }, [currentUser, residentDocPath, formatPhoneNumberOnInput]);
 
   const handleProfileChange = (
     event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>

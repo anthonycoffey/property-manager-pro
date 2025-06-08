@@ -171,7 +171,7 @@ const ResidentDashboard: React.FC = () => {
             sx={{
               display: 'flex',
               flexDirection: { xs: 'column', sm: 'row' },
-              gap: 2,
+              gap: { xs: 1, sm: 2, md: 10 },
               justifyContent: 'center',
               alignItems: 'center',
               mt: 3,

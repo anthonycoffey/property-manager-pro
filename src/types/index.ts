@@ -432,6 +432,7 @@ export type ServiceRequestStatus =
   };
   smsConsent?: boolean;
   phoenixSubmissionId?: string | null; // ID from Phoenix API
+  isOffPremise?: boolean; // New: Indicates if the request was for an off-premise location
   completedAt?: Timestamp | Date | string | null; // Firestore Timestamp
   organizationId: string; // Added for easier querying/rules
 }

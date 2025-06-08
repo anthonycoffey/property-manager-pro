@@ -32,6 +32,7 @@ interface CreateServiceRequestData {
   smsConsent: boolean;
   serviceLocationAddress: ServiceLocationAddress;
   serviceTypes: Array<{ id: number | string; value: string }>; // Updated for multi-select
+  isOffPremiseRequest?: boolean; // New field
 }
 
 export const createServiceRequest = https.onCall(
@@ -142,6 +143,7 @@ export const createServiceRequest = https.onCall(
       status: 'submitted' as ServiceRequestStatus,
       submittedAt: FirebaseAdminFieldValue.serverTimestamp(),
       smsConsent: data.smsConsent, // Store consent
+      isOffPremise: data.isOffPremiseRequest || false, // Store off-premise status
       // phoenixSubmissionId: phoenixSubmissionId, // Store Phoenix ID
       // assignedTo, completedAt, notes will be set later
     };

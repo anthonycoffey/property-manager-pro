@@ -189,5 +189,6 @@ export interface ServiceRequest {
   serviceLocationData?: ServiceLocationAddress; // Optional: store the structured address
   smsConsent?: boolean; // Store SMS consent
   phoenixSubmissionId?: string | null; // Store ID from Phoenix API
+  isOffPremise?: boolean; // New: Indicates if the request was for an off-premise location
   completedAt?: Timestamp | Date | FirebaseFirestore.FieldValue; // Allow FieldValue
 }

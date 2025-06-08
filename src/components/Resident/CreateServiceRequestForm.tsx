@@ -6,6 +6,7 @@ import {
   Button,
   CircularProgress,
   Alert,
+  Switch, // New for off-premise toggle
   // FormControl, // Keep for FormControlLabel - Removed as unused
   // InputLabel, // Keep for other TextFields - Removed as unused
   // MenuItem, // No longer needed if MUI Select is fully replaced
@@ -24,15 +25,20 @@ import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 // New imports for Google Places and Phoenix Service
 import { useJsApiLoader } from '@react-google-maps/api';
 // Define LIBRARIES_TO_LOAD at the top level of the module
-const LIBRARIES_TO_LOAD: ("places" | "routes")[] = ['places', 'routes'];
+const LIBRARIES_TO_LOAD: ('places' | 'routes')[] = ['places', 'routes'];
 import parse from 'autosuggest-highlight/parse';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import { debounce } from '@mui/material/utils';
-import { getPhoenixServices, type PhoenixService } from '../../lib/phoenixService';
+import {
+  getPhoenixServices,
+  type PhoenixService,
+} from '../../lib/phoenixService';
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 import { useAuth } from '../../hooks/useAuth';
 import { httpsCallable } from 'firebase/functions';
-import { functions } from '../../firebaseConfig';
+import { functions, db } from '../../firebaseConfig'; // Added db
+import { doc, getDoc } from 'firebase/firestore'; // Added doc, getDoc
+import type { Property } from '../../types'; // Added Property type
 
 interface CreateServiceRequestFormProps {
   onServiceRequestSubmitted: () => void;
@@ -83,16 +89,29 @@ const CreateServiceRequestForm: React.FC<CreateServiceRequestFormProps> = ({
   const [smsConsent, setSmsConsent] = useState<boolean>(false);
   const [phoenixServices, setPhoenixServices] = useState<PhoenixService[]>([]);
   // For multi-select, store an array of selected option objects or just their values/IDs
-  const [selectedPhoenixServices, setSelectedPhoenixServices] = useState<ReadonlyArray<{ value: number; label: string }>>([]);
+  const [selectedPhoenixServices, setSelectedPhoenixServices] = useState<
+    ReadonlyArray<{ value: number; label: string }>
+  >([]);
   const [servicesLoading, setServicesLoading] = useState<boolean>(true);
   const [servicesError, setServicesError] = useState<string | null>(null);
 
   // Google Places Autocomplete state
-  const [autocompleteValue, setAutocompleteValue] = useState<PlaceType | null>(null);
+  const [autocompleteValue, setAutocompleteValue] = useState<PlaceType | null>(
+    null
+  );
   const [autocompleteInputValue, setAutocompleteInputValue] = useState('');
-  const [autocompleteOptions, setAutocompleteOptions] = useState<readonly PlaceType[]>([]);
-  const [serviceLocationObject, setServiceLocationObject] = useState<object | null>(null);
+  const [autocompleteOptions, setAutocompleteOptions] = useState<
+    readonly PlaceType[]
+  >([]);
+  const [serviceLocationObject, setServiceLocationObject] = useState<
+    object | null
+  >(null);
 
+  // New state for property address pre-population and off-premise toggle
+  const [isOffPremise, setIsOffPremise] = useState<boolean>(false);
+  const [propertyFullAddressString, setPropertyFullAddressString] = useState<string | null>(null);
+  const [isLoadingPropertyAddress, setIsLoadingPropertyAddress] = useState<boolean>(false);
+  const [propertyAddressError, setPropertyAddressError] = useState<string | null>(null);
 
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -102,12 +121,12 @@ const CreateServiceRequestForm: React.FC<CreateServiceRequestFormProps> = ({
   const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
   const { isLoaded, loadError } = useJsApiLoader({
     googleMapsApiKey: apiKey || '',
-    libraries: LIBRARIES_TO_LOAD, 
+    libraries: LIBRARIES_TO_LOAD,
   });
 
-  const autocompleteService = React.useRef<google.maps.places.AutocompleteService | null>(null);
+  const autocompleteService =
+    React.useRef<google.maps.places.AutocompleteService | null>(null);
   const geocoderService = React.useRef<google.maps.Geocoder | null>(null);
-
 
   useEffect(() => {
     setResidentName(currentUser?.displayName || '');
@@ -138,15 +157,133 @@ const CreateServiceRequestForm: React.FC<CreateServiceRequestFormProps> = ({
 
   // Effect to initialize Google Maps services
   useEffect(() => {
-    if (isLoaded && window.google && window.google.maps && window.google.maps.places) {
+    if (
+      isLoaded &&
+      window.google &&
+      window.google.maps &&
+      window.google.maps.places
+    ) {
       if (!autocompleteService.current) {
-        autocompleteService.current = new window.google.maps.places.AutocompleteService();
+        autocompleteService.current =
+          new window.google.maps.places.AutocompleteService();
       }
       if (!geocoderService.current) {
         geocoderService.current = new window.google.maps.Geocoder();
       }
     }
   }, [isLoaded]);
+
+  // Effect to fetch and pre-populate property address
+  useEffect(() => {
+    const fetchAndSetPropertyAddress = async () => {
+      if (currentUser && organizationId && propertyId && isLoaded && geocoderService.current) {
+        if (isOffPremise) { // If user toggled to off-premise, don't auto-fetch/fill.
+          // Optionally clear fields if desired when toggling to off-premise,
+          // or let user type over. For now, just return.
+          return;
+        }
+
+        setIsLoadingPropertyAddress(true);
+        setPropertyAddressError(null);
+        // Clear previous values before attempting to set new ones
+        // setPropertyFullAddressString(null); 
+        // setAutocompleteInputValue(''); 
+        // setAutocompleteValue(null);
+        // setServiceLocationObject(null);
+
+
+        try {
+          const propertyDocRef = doc(db, 'organizations', organizationId, 'properties', propertyId);
+          const propertyDocSnap = await getDoc(propertyDocRef);
+
+          if (propertyDocSnap.exists()) {
+            const propertyData = propertyDocSnap.data() as Property;
+            if (propertyData.address && propertyData.address.street && propertyData.address.city && propertyData.address.state && propertyData.address.zip) {
+              const { street, city, state, zip } = propertyData.address;
+              const fullAddress = `${street}, ${city}, ${state} ${zip}`;
+              
+              setPropertyFullAddressString(fullAddress);
+              setAutocompleteInputValue(fullAddress); 
+
+              geocoderService.current.geocode({ address: fullAddress }, (results, geocodeStatus) => {
+                if (geocodeStatus === google.maps.GeocoderStatus.OK && results && results[0]) {
+                  const place = results[0];
+                  const placeTypeResult: PlaceType = {
+                    description: place.formatted_address || fullAddress,
+                    structured_formatting: {
+                      main_text: results[0].address_components?.find(c => c.types.includes('street_number'))?.long_name + ' ' + results[0].address_components?.find(c => c.types.includes('route'))?.long_name || street,
+                      secondary_text: results[0].address_components?.find(c => c.types.includes('locality'))?.long_name || city,
+                      main_text_matched_substrings: [], 
+                    },
+                    place_id: place.place_id,
+                  };
+                  setAutocompleteValue(placeTypeResult);
+                  setAutocompleteOptions(placeTypeResult ? [placeTypeResult] : []);
+
+                  let streetNumber = '';
+                  let routeValue = ''; // Renamed to avoid conflict with 'route' in scope
+                  let currentCity = '';
+                  let currentState = '';
+                  let currentPostalCode = '';
+                  let currentCountry = '';
+
+                  place.address_components?.forEach((component) => {
+                    const types = component.types;
+                    if (types.includes('street_number')) streetNumber = component.long_name;
+                    if (types.includes('route')) routeValue = component.long_name;
+                    if (types.includes('locality')) currentCity = component.long_name;
+                    else if (types.includes('postal_town') && !currentCity) currentCity = component.long_name;
+                    else if (types.includes('sublocality_level_1') && !currentCity) currentCity = component.long_name;
+                    if (types.includes('administrative_area_level_1')) currentState = component.short_name;
+                    if (types.includes('postal_code')) currentPostalCode = component.long_name;
+                    if (types.includes('country')) currentCountry = component.short_name;
+                  });
+                  const fullStreet = streetNumber ? `${streetNumber} ${routeValue}`.trim() : routeValue.trim();
+                  setServiceLocationObject({
+                    address_1: fullStreet,
+                    city: currentCity,
+                    state: currentState,
+                    zipcode: currentPostalCode,
+                    country: currentCountry,
+                    fullAddress: place.formatted_address || fullAddress,
+                  });
+                } else {
+                  console.error('Geocoding pre-filled property address failed: ' + geocodeStatus);
+                  setPropertyAddressError('Could not verify your property address. Please enter address manually or use the "off-premise" toggle.');
+                  setPropertyFullAddressString(null); 
+                  setAutocompleteValue(null);
+                  setServiceLocationObject(null);
+                  setAutocompleteInputValue(''); // Clear input if geocoding fails
+                }
+              });
+            } else {
+              setPropertyAddressError('Your property address details are incomplete. Please enter address manually or use the "off-premise" toggle.');
+               setAutocompleteInputValue(''); 
+            }
+          } else {
+            setPropertyAddressError('Your property details could not be found. Please enter address manually or use the "off-premise" toggle.');
+             setAutocompleteInputValue(''); 
+          }
+        } catch (err) {
+          console.error('Error fetching property details:', err);
+          setPropertyAddressError('Failed to load your property address. Please enter address manually or use the "off-premise" toggle.');
+           setAutocompleteInputValue(''); 
+        } finally {
+          setIsLoadingPropertyAddress(false);
+        }
+      } else if (!propertyId && !isLoadingPropertyAddress && !isOffPremise) {
+         // No propertyId associated, or user explicitly wants off-premise
+        setPropertyFullAddressString(null);
+        setAutocompleteInputValue('');
+        setAutocompleteValue(null);
+        setServiceLocationObject(null);
+        // setPropertyAddressError(null); // Clear any previous errors
+      }
+    };
+
+    fetchAndSetPropertyAddress();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentUser, organizationId, propertyId, isLoaded, isOffPremise]); // Rerun if isOffPremise changes
 
   const formatPhoneNumberOnInput = useCallback((value: string): string => {
     if (!value) return value;
@@ -157,7 +294,10 @@ const CreateServiceRequestForm: React.FC<CreateServiceRequestFormProps> = ({
     if (phoneNumberLength < 7) {
       return `(${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(3)}`;
     }
-    return `(${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(3, 6)}-${phoneNumber.slice(6, 10)}`;
+    return `(${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(
+      3,
+      6
+    )}-${phoneNumber.slice(6, 10)}`;
   }, []);
 
   // Debounced function to fetch place predictions
@@ -187,15 +327,34 @@ const CreateServiceRequestForm: React.FC<CreateServiceRequestFormProps> = ({
   useEffect(() => {
     let active = true;
 
-    if (!autocompleteService.current || autocompleteInputValue === '' || (autocompleteValue && autocompleteInputValue === autocompleteValue.description)) {
+    // If address is pre-filled from property and not off-premise,
+    // and input hasn't changed from the pre-filled string, keep existing options.
+    if (propertyFullAddressString && !isOffPremise && autocompleteInputValue === propertyFullAddressString && autocompleteValue) {
+      setAutocompleteOptions([autocompleteValue]);
+      return undefined;
+    }
+
+    if (
+      !autocompleteService.current ||
+      autocompleteInputValue === '' ||
+      (autocompleteValue &&
+        autocompleteInputValue === autocompleteValue.description && !isOffPremise) // also check !isOffPremise here
+    ) {
       setAutocompleteOptions(autocompleteValue ? [autocompleteValue] : []);
       return undefined;
     }
 
     fetchPlacePredictions(
-      { input: autocompleteInputValue, componentRestrictions: { country: 'us' } },
+      {
+        input: autocompleteInputValue,
+        componentRestrictions: { country: 'us' },
+      },
       (results, status) => {
-        if (active && status === google.maps.places.PlacesServiceStatus.OK && results) {
+        if (
+          active &&
+          status === google.maps.places.PlacesServiceStatus.OK &&
+          results
+        ) {
           const newOptions: PlaceType[] = results.map((p) => ({
             description: p.description,
             structured_formatting: p.structured_formatting,
@@ -203,7 +362,7 @@ const CreateServiceRequestForm: React.FC<CreateServiceRequestFormProps> = ({
           }));
           setAutocompleteOptions(newOptions);
         } else if (active) {
-           // Handle ZERO_RESULTS or other statuses by clearing options or showing existing value
+          // Handle ZERO_RESULTS or other statuses by clearing options or showing existing value
           setAutocompleteOptions(autocompleteValue ? [autocompleteValue] : []);
         }
       }
@@ -215,25 +374,28 @@ const CreateServiceRequestForm: React.FC<CreateServiceRequestFormProps> = ({
   }, [autocompleteInputValue, autocompleteValue, fetchPlacePredictions]);
 
   const handleAutocompleteChange = useCallback(
-    (
-      _event: React.SyntheticEvent,
-      newValue: PlaceType | null
-    ) => {
-      setAutocompleteOptions(newValue ? [newValue, ...autocompleteOptions] : autocompleteOptions);
+    (_event: React.SyntheticEvent, newValue: PlaceType | null) => {
+      setAutocompleteOptions(
+        newValue ? [newValue, ...autocompleteOptions] : autocompleteOptions
+      );
       setAutocompleteValue(newValue);
       // Clear our custom serviceLocation state if the autocomplete is cleared
       if (!newValue) {
-          // setServiceLocation(''); // Clear the old string-based location - Removed as serviceLocation is unused
-          setServiceLocationObject(null); // Clear the new object-based location
-          // setAutocompleteInputValue(''); // Keep input value if user is still typing, or clear if desired
-          return;
+        // setServiceLocation(''); // Clear the old string-based location - Removed as serviceLocation is unused
+        setServiceLocationObject(null); // Clear the new object-based location
+        // setAutocompleteInputValue(''); // Keep input value if user is still typing, or clear if desired
+        return;
       }
 
       if (newValue && newValue.place_id && geocoderService.current) {
         geocoderService.current.geocode(
           { placeId: newValue.place_id },
           (results, geocodeStatus) => {
-            if (geocodeStatus === google.maps.GeocoderStatus.OK && results && results[0]) {
+            if (
+              geocodeStatus === google.maps.GeocoderStatus.OK &&
+              results &&
+              results[0]
+            ) {
               const place = results[0];
               let streetNumber = '';
               let route = '';
@@ -244,19 +406,29 @@ const CreateServiceRequestForm: React.FC<CreateServiceRequestFormProps> = ({
 
               place.address_components?.forEach((component) => {
                 const types = component.types;
-                if (types.includes('street_number')) streetNumber = component.long_name;
+                if (types.includes('street_number'))
+                  streetNumber = component.long_name;
                 if (types.includes('route')) route = component.long_name;
-                if (types.includes('locality')) currentCity = component.long_name;
-                else if (types.includes('postal_town') && !currentCity) currentCity = component.long_name; // Fallback for some UK addresses
-                else if (types.includes('sublocality_level_1') && !currentCity) currentCity = component.long_name; // Fallback
+                if (types.includes('locality'))
+                  currentCity = component.long_name;
+                else if (types.includes('postal_town') && !currentCity)
+                  currentCity = component.long_name;
+                // Fallback for some UK addresses
+                else if (types.includes('sublocality_level_1') && !currentCity)
+                  currentCity = component.long_name; // Fallback
 
-                if (types.includes('administrative_area_level_1')) currentState = component.short_name;
-                if (types.includes('postal_code')) currentPostalCode = component.long_name;
-                if (types.includes('country')) currentCountry = component.short_name;
+                if (types.includes('administrative_area_level_1'))
+                  currentState = component.short_name;
+                if (types.includes('postal_code'))
+                  currentPostalCode = component.long_name;
+                if (types.includes('country'))
+                  currentCountry = component.short_name;
               });
 
-              const fullStreet = streetNumber ? `${streetNumber} ${route}`.trim() : route.trim();
-              
+              const fullStreet = streetNumber
+                ? `${streetNumber} ${route}`.trim()
+                : route.trim();
+
               setServiceLocationObject({
                 address_1: fullStreet,
                 city: currentCity,
@@ -277,128 +449,135 @@ const CreateServiceRequestForm: React.FC<CreateServiceRequestFormProps> = ({
           }
         );
       } else if (newValue) {
-          // If no place_id, use description (less ideal)
-          setServiceLocationObject({ fullAddress: newValue.description });
-          // setServiceLocation(newValue.description); // Removed as serviceLocation is unused
+        // If no place_id, use description (less ideal)
+        setServiceLocationObject({ fullAddress: newValue.description });
+        // setServiceLocation(newValue.description); // Removed as serviceLocation is unused
       }
     },
-    [autocompleteOptions, setAutocompleteOptions, setAutocompleteValue, setServiceLocationObject]
+    [
+      autocompleteOptions,
+      setAutocompleteOptions,
+      setAutocompleteValue,
+      setServiceLocationObject,
+    ]
   );
 
-  const handleSubmit = useCallback(async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    if (!currentUser || !organizationId || !propertyId) {
-      setError(
-        'User not properly authenticated or missing organization/property association.'
+  const handleSubmit = useCallback(
+    async (event: React.FormEvent<HTMLFormElement>) => {
+      event.preventDefault();
+      if (!currentUser || !organizationId || !propertyId) {
+        setError(
+          'User not properly authenticated or missing organization/property association.'
+        );
+        return;
+      }
+      if (
+        selectedPhoenixServices.length === 0 || // Updated validation for multi-select
+        !serviceLocationObject || // Updated validation
+        !serviceDateTime ||
+        !phone.trim()
+      ) {
+        const missingFields = [];
+        if (selectedPhoenixServices.length === 0)
+          missingFields.push('service type');
+        if (!serviceLocationObject) missingFields.push('service location');
+        if (!serviceDateTime) missingFields.push('service date/time');
+        if (!phone.trim()) missingFields.push('contact phone');
+
+        setError(`Please select/provide: ${missingFields.join(', ')}.`);
+        return;
+      }
+
+      setSubmitting(true);
+      setError(null);
+      setSuccessMessage(null);
+
+      // Prepare serviceTypes for backend: array of {id, value}
+      const serviceTypesForSubmission = selectedPhoenixServices.map(
+        (service) => ({
+          id: service.value, // service.value holds the id
+          value: service.label, // service.label holds the name
+        })
       );
-      return;
-    }
-    if (
-      selectedPhoenixServices.length === 0 || // Updated validation for multi-select
-      !serviceLocationObject ||    // Updated validation
-      !serviceDateTime ||
-      !phone.trim()
-    ) {
-      const missingFields = [];
-      if (selectedPhoenixServices.length === 0) missingFields.push('service type');
-      if (!serviceLocationObject) missingFields.push('service location');
-      if (!serviceDateTime) missingFields.push('service date/time');
-      if (!phone.trim()) missingFields.push('contact phone');
-      
-      setError(
-        `Please select/provide: ${missingFields.join(', ')}.`
-      );
-      return;
-    }
 
-    setSubmitting(true);
-    setError(null);
-    setSuccessMessage(null);
+      const dataToSubmit = {
+        organizationId,
+        propertyId,
+        residentNotes: residentNotes.trim(),
+        serviceDateTime: serviceDateTime ? serviceDateTime.toISOString() : null,
+        phone: phone.trim(),
+        description: '', // Keep if backend uses it, or remove. For now, keep.
 
-    // Prepare serviceTypes for backend: array of {id, value}
-    const serviceTypesForSubmission = selectedPhoenixServices.map(service => ({
-      id: service.value, // service.value holds the id
-      value: service.label // service.label holds the name
-    }));
-
-    const dataToSubmit = {
-      organizationId,
-      propertyId,
-      residentNotes: residentNotes.trim(),
-      serviceDateTime: serviceDateTime ? serviceDateTime.toISOString() : null,
-      phone: phone.trim(),
-      description: '', // Keep if backend uses it, or remove. For now, keep.
-
-      // New fields for Phoenix integration
-      smsConsent: smsConsent,
-      serviceLocationAddress: serviceLocationObject, // This is the structured address object
+        // New fields for Phoenix integration
+        smsConsent: smsConsent,
+        serviceLocationAddress: serviceLocationObject, // This is the structured address object
       // serviceTypeId: selectedPhoenixServiceId, // Replaced by serviceTypesForSubmission
       // serviceTypeValue: selectedServiceName, // Replaced by serviceTypesForSubmission
       serviceTypes: serviceTypesForSubmission, // Array of {id, value} objects
+      isOffPremiseRequest: (!!propertyFullAddressString && !propertyAddressError && isOffPremise) || (!propertyFullAddressString && !propertyAddressError), // True if prop address was available and toggle is on, OR if no prop address was available (implies off-premise by default)
     };
 
     try {
-      const createServiceRequest = httpsCallable(
-        functions,
-        'createServiceRequest'
-      );
-      const result = await createServiceRequest(dataToSubmit);
-      const responseData = result.data as CreateServiceRequestCallableResponse;
+        const createServiceRequest = httpsCallable(
+          functions,
+          'createServiceRequest'
+        );
+        const result = await createServiceRequest(dataToSubmit);
+        const responseData =
+          result.data as CreateServiceRequestCallableResponse;
 
-      if (responseData.success) {
-        setSuccessMessage(
-          responseData.message || 'Service request submitted successfully!'
-        );
-        // Reset new fields
-        setSelectedPhoenixServices([]); // Reset for multi-select
-        setAutocompleteValue(null);
-        setAutocompleteInputValue('');
-        setServiceLocationObject(null);
-        // setServiceLocation(''); // Also clear the old string state if it's still used by autocomplete display - Removed as serviceLocation is unused
-        setSmsConsent(false);
-        // Reset existing fields
-        setServiceDateTime(new Date());
-        setResidentNotes('');
-        setPhone(''); // This will be reset
-        onServiceRequestSubmitted();
-      } else {
-        setError(responseData.message || 'Failed to submit service request.');
+        if (responseData.success) {
+          setSuccessMessage(
+            responseData.message || 'Service request submitted successfully!'
+          );
+          // Reset new fields
+          setSelectedPhoenixServices([]); // Reset for multi-select
+          setAutocompleteValue(null);
+          setAutocompleteInputValue('');
+          setServiceLocationObject(null);
+          // setServiceLocation(''); // Also clear the old string state if it's still used by autocomplete display - Removed as serviceLocation is unused
+          setSmsConsent(false);
+          // Reset existing fields
+          setServiceDateTime(new Date());
+          setResidentNotes('');
+          setPhone(''); // This will be reset
+          onServiceRequestSubmitted();
+        } else {
+          setError(responseData.message || 'Failed to submit service request.');
+        }
+      } catch (err: unknown) {
+        console.error('Error submitting service request:', err);
+        if (err instanceof Error) {
+          setError(
+            err.message || 'An unexpected error occurred. Please try again.'
+          );
+        } else {
+          setError('An unexpected error occurred. Please try again.');
+        }
+      } finally {
+        setSubmitting(false);
       }
-    } catch (err: unknown) {
-      console.error('Error submitting service request:', err);
-      if (err instanceof Error) {
-        setError(
-          err.message || 'An unexpected error occurred. Please try again.'
-        );
-      } else {
-        setError('An unexpected error occurred. Please try again.');
-      }
-    } finally {
-      setSubmitting(false);
-    }
-  }, [
-    currentUser, 
-    organizationId, 
-    propertyId, 
-    selectedPhoenixServices, 
-    serviceLocationObject, 
-    serviceDateTime, 
-    phone, 
-    residentNotes, 
-    smsConsent, 
-    onServiceRequestSubmitted,
-    // setError, setSuccessMessage, setSubmitting, setSelectedPhoenixServices, 
-    // setAutocompleteValue, setAutocompleteInputValue, setServiceLocationObject, 
-    // setSmsConsent, setServiceDateTime, setResidentNotes, setPhone (state setters are stable)
-  ]);
+    },
+    [
+      currentUser,
+      organizationId,
+      propertyId,
+      selectedPhoenixServices,
+      serviceLocationObject,
+      serviceDateTime,
+      phone,
+      residentNotes,
+      smsConsent,
+      onServiceRequestSubmitted,
+      // setError, setSuccessMessage, setSubmitting, setSelectedPhoenixServices,
+      // setAutocompleteValue, setAutocompleteInputValue, setServiceLocationObject,
+      // setSmsConsent, setServiceDateTime, setResidentNotes, setPhone (state setters are stable)
+    ]
+  );
 
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
-      <Box
-        component='form'
-        onSubmit={handleSubmit}
-        noValidate
-      >
+      <Box component='form' onSubmit={handleSubmit} noValidate>
         {/* <Typography variant='h5' gutterBottom sx={{ mb: 2 }}>
           Service Request Form
         </Typography> */}
@@ -448,7 +627,9 @@ const CreateServiceRequestForm: React.FC<CreateServiceRequestFormProps> = ({
               name='phone'
               value={phone}
               onChange={(e) => {
-                const formattedPhoneNumber = formatPhoneNumberOnInput(e.target.value);
+                const formattedPhoneNumber = formatPhoneNumberOnInput(
+                  e.target.value
+                );
                 setPhone(formattedPhoneNumber);
               }}
               required
@@ -467,7 +648,7 @@ const CreateServiceRequestForm: React.FC<CreateServiceRequestFormProps> = ({
 
           {/* Google Places Autocomplete for Service Location */}
           {isLoaded && apiKey && (
-            <Autocomplete<PlaceType, false, false, false> 
+            <Autocomplete<PlaceType, false, false, false>
               id='google-maps-service-location'
               sx={{ width: '100%' }}
               getOptionLabel={(option) => option.description}
@@ -490,20 +671,47 @@ const CreateServiceRequestForm: React.FC<CreateServiceRequestFormProps> = ({
                   fullWidth
                   required
                   error={!serviceLocationObject && submitting} // Example error state
-                  helperText={!serviceLocationObject && submitting ? 'Service location is required.' : ''}
-                  disabled={submitting || !isLoaded}
+                  helperText={
+                    !serviceLocationObject && submitting && !isLoadingPropertyAddress
+                      ? 'Service location is required.'
+                      : propertyAddressError || '' // Display property address error here as well
+                  }
+                  disabled={submitting || !isLoaded || isLoadingPropertyAddress || (!!propertyFullAddressString && !isOffPremise && !propertyAddressError)}
+                  InputProps={{
+                    ...params.InputProps,
+                    readOnly: !!propertyFullAddressString && !isOffPremise && !propertyAddressError && !isLoadingPropertyAddress,
+                  }}
                 />
               )}
+              disabled={isLoadingPropertyAddress || (!!propertyFullAddressString && !isOffPremise && !propertyAddressError)} // Disable Autocomplete itself
               renderOption={(props, option) => {
-                const matches = option.structured_formatting.main_text_matched_substrings || [];
+                const matches =
+                  option.structured_formatting.main_text_matched_substrings ||
+                  [];
                 const parts = parse(
                   option.structured_formatting.main_text,
-                  matches.map((match) => [match.offset, match.offset + match.length])
+                  matches.map((match) => [
+                    match.offset,
+                    match.offset + match.length,
+                  ])
                 );
                 return (
                   <li {...props} key={option.place_id || option.description}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
-                      <Box sx={{ display: 'flex', width: 44, justifyContent: 'center', alignItems: 'center' }}>
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        width: '100%',
+                      }}
+                    >
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          width: 44,
+                          justifyContent: 'center',
+                          alignItems: 'center',
+                        }}
+                      >
                         <LocationOnIcon sx={{ color: 'text.secondary' }} />
                       </Box>
                       <Box sx={{ flexGrow: 1, wordWrap: 'break-word' }}>
@@ -526,40 +734,129 @@ const CreateServiceRequestForm: React.FC<CreateServiceRequestFormProps> = ({
               }}
             />
           )}
-          {(!isLoaded && !loadError && apiKey) && (
-             <Box sx={{ display: 'flex', justifyContent: 'center', my: 1, alignItems: 'center' }}>
-                <CircularProgress size={20} sx={{mr: 1}} /> 
-                <Typography variant="caption">Loading address search...</Typography>
+          {!isLoaded && !loadError && apiKey && (
+            <Box
+              sx={{
+                display: 'flex',
+                justifyContent: 'center',
+                my: 1,
+                alignItems: 'center',
+              }}
+            >
+              <CircularProgress size={20} sx={{ mr: 1 }} />
+              <Typography variant='caption'>
+                Loading address search...
+              </Typography>
             </Box>
           )}
-          {loadError && <Alert severity="error" sx={{mb:1}}>Error loading Google Maps: {loadError.message}</Alert>}
-          {!apiKey && <Alert severity="warning" sx={{mb:1}}>Google Maps API key is missing. Address search is disabled.</Alert>}
+          {isLoadingPropertyAddress && (
+            <Box sx={{ display: 'flex', justifyContent: 'center', my: 1, alignItems: 'center' }}>
+              <CircularProgress size={20} sx={{mr: 1}} /> 
+              <Typography variant="caption">Loading property address...</Typography>
+            </Box>
+          )}
+          {propertyAddressError && !isLoadingPropertyAddress && (
+            <Alert severity='warning' sx={{ mb: 1 }}> 
+              {propertyAddressError}
+            </Alert>
+          )}
+          {loadError && (
+            <Alert severity='error' sx={{ mb: 1 }}>
+              Error loading Google Maps: {loadError.message}
+            </Alert>
+          )}
+          {!apiKey && (
+            <Alert severity='warning' sx={{ mb: 1 }}>
+              Google Maps API key is missing. Address search is disabled.
+            </Alert>
+          )}
 
+          {/* Off-premise toggle */}
+          {propertyFullAddressString && !propertyAddressError && !isLoadingPropertyAddress && (
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={isOffPremise}
+                  onChange={(e) => {
+                    const newIsOffPremise = e.target.checked;
+                    setIsOffPremise(newIsOffPremise);
+                    if (!newIsOffPremise) {
+                      // If toggling back to on-premise, re-apply property address
+                      if (propertyFullAddressString) {
+                        setAutocompleteInputValue(propertyFullAddressString);
+                        // Re-trigger geocoding by clearing autocompleteValue, effect will pick it up
+                        // Or directly call the geocode logic if it's extracted
+                        // For simplicity, the main useEffect will re-run due to isOffPremise change
+                      }
+                    } else {
+                      // Toggling to off-premise: clear the fields for new input
+                      setAutocompleteInputValue('');
+                      setAutocompleteValue(null);
+                      setServiceLocationObject(null);
+                      setAutocompleteOptions([]);
+                    }
+                  }}
+                  name="isOffPremise"
+                  color="primary"
+                  disabled={submitting || isLoadingPropertyAddress}
+                />
+              }
+              label="Use a different service location (off-premise)"
+              sx={{ mb: 1 }}
+            />
+          )}
 
           {/* Service Type Dropdown using ReactSelect */}
-          <Box sx={{ my: 1 }}> {/* Add some margin if needed */}
-            <Typography variant="caption" display="block" sx={{ mb: 0.5, color: servicesError ? theme.palette.error.main : 'text.secondary' }}>
+          <Box sx={{ my: 1 }}>
+            {' '}
+            {/* Add some margin if needed */}
+            <Typography
+              variant='caption'
+              display='block'
+              sx={{
+                mb: 0.5,
+                color: servicesError
+                  ? theme.palette.error.main
+                  : 'text.secondary',
+              }}
+            >
               Service Type*
             </Typography>
             <ReactSelect
-              inputId="phoenix-service-type-react-select"
-              options={phoenixServices.map(service => ({ value: service.id, label: service.name }))}
+              inputId='phoenix-service-type-react-select'
+              options={phoenixServices.map((service) => ({
+                value: service.id,
+                label: service.name,
+              }))}
               value={selectedPhoenixServices}
               onChange={(selectedOptions) => {
-                setSelectedPhoenixServices(selectedOptions as ReadonlyArray<{ value: number; label: string }>);
+                setSelectedPhoenixServices(
+                  selectedOptions as ReadonlyArray<{
+                    value: number;
+                    label: string;
+                  }>
+                );
               }}
               isMulti // Enable multi-select
               isClearable // Already enabled, ensure it stays
               isSearchable // True by default, can be explicit
               isLoading={servicesLoading}
               isDisabled={submitting || servicesLoading || !!servicesError}
-              placeholder={servicesLoading ? "Loading services..." : servicesError ? "Error loading services" : "Select service type(s)..."}
+              placeholder={
+                servicesLoading
+                  ? 'Loading services...'
+                  : servicesError
+                  ? 'Error loading services'
+                  : 'Select service type(s)...'
+              }
               closeMenuOnSelect={false} // Useful for multi-select
               styles={{
                 control: (baseStyles, state) => ({
                   ...baseStyles,
-             
-                  boxShadow: state.isFocused ? `0 0 0 1px ${theme.palette.primary.main}` : 'none',
+
+                  boxShadow: state.isFocused
+                    ? `0 0 0 1px ${theme.palette.primary.main}`
+                    : 'none',
                   minHeight: '56px', // Match MUI TextField height
                   backgroundColor: theme.palette.background.paper, // Ensure background for dark/light mode
                   borderRadius: theme.shape.borderRadius, // Added to match MUI TextField
@@ -571,13 +868,13 @@ const CreateServiceRequestForm: React.FC<CreateServiceRequestFormProps> = ({
                 }),
                 option: (baseStyles, state) => ({
                   ...baseStyles,
-                  backgroundColor: state.isSelected 
-                    ? theme.palette.primary.main 
-                    : state.isFocused 
-                    ? theme.palette.action.hover 
+                  backgroundColor: state.isSelected
+                    ? theme.palette.primary.main
+                    : state.isFocused
+                    ? theme.palette.action.hover
                     : theme.palette.background.paper,
-                  color: state.isSelected 
-                    ? theme.palette.primary.contrastText 
+                  color: state.isSelected
+                    ? theme.palette.primary.contrastText
                     : theme.palette.text.primary,
                   '&:active': {
                     backgroundColor: theme.palette.primary.dark,
@@ -591,7 +888,8 @@ const CreateServiceRequestForm: React.FC<CreateServiceRequestFormProps> = ({
                   ...baseStyles,
                   color: theme.palette.text.primary,
                 }),
-                singleValue: (baseStyles) => ({ // Though this is multi-select, good to have if ever switched
+                singleValue: (baseStyles) => ({
+                  // Though this is multi-select, good to have if ever switched
                   ...baseStyles,
                   color: theme.palette.text.primary,
                 }),
@@ -613,21 +911,25 @@ const CreateServiceRequestForm: React.FC<CreateServiceRequestFormProps> = ({
                 }),
               }}
             />
-            {servicesError && <Typography color="error" variant="caption" sx={{mt: 0.5}}>{servicesError}</Typography>}
+            {servicesError && (
+              <Typography color='error' variant='caption' sx={{ mt: 0.5 }}>
+                {servicesError}
+              </Typography>
+            )}
           </Box>
-          
+
           {/* SMS Consent Checkbox */}
           <FormControlLabel
             control={
               <Checkbox
                 checked={smsConsent}
                 onChange={(e) => setSmsConsent(e.target.checked)}
-                name="smsConsent"
-                color="primary"
+                name='smsConsent'
+                color='primary'
                 disabled={submitting}
               />
             }
-            label="I consent to receive SMS messages regarding this service request."
+            label='I consent to receive SMS messages regarding this service request.'
           />
 
           <TextField

@@ -25,6 +25,7 @@ import {
   Save as SaveIcon,
   AddCircleOutline as AddCircleOutlineIcon,
   DeleteOutline as DeleteOutlineIcon, // Changed from RemoveCircleOutlineIcon
+  Phone as PhoneIcon, // Added for phone field
 } from '@mui/icons-material';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../../firebaseConfig';
@@ -32,19 +33,22 @@ import { useAuth } from '../../hooks/useAuth';
 import type { Resident, Vehicle } from '../../types';
 import { httpsCallable } from 'firebase/functions';
 import { functions } from '../../firebaseConfig';
+import { useCallback } from 'react'; // Added for useCallback
 
 interface UpdateResidentProfilePayload {
   vehicles?: Vehicle[];
+  phone?: string; // Added phone
 }
 
 const ResidentProfileManagement: React.FC = () => {
   const { currentUser, organizationId, propertyId } = useAuth();
   const [profile, setProfile] = useState<
-    Partial<Resident> & { vehicles: Vehicle[] }
+    Partial<Resident> & { vehicles: Vehicle[]; phone: string } // Added phone to state type
   >({
     displayName: '',
     email: '',
     unitNumber: '',
+    phone: '', // Initialize phone
     vehicles: [],
   });
   const [loading, setLoading] = useState<boolean>(true);
@@ -78,6 +82,7 @@ const ResidentProfileManagement: React.FC = () => {
             displayName: data.displayName,
             email: data.email,
             unitNumber: data.unitNumber,
+            phone: data.phone || '', // Set phone from fetched data
             vehicles: Array.isArray(data.vehicles) ? data.vehicles : [],
           });
         } else {
@@ -95,6 +100,36 @@ const ResidentProfileManagement: React.FC = () => {
       fetchProfile();
     }
   }, [currentUser, residentDocPath]);
+
+  // Phone number formatting utility (duplicated for now)
+  const formatPhoneNumberOnInput = useCallback((value: string): string => {
+    if (!value) return value;
+    const phoneNumber = value.replace(/[^\d]/g, '');
+    const phoneNumberLength = phoneNumber.length;
+
+    if (phoneNumberLength < 4) return phoneNumber;
+    if (phoneNumberLength < 7) {
+      return `(${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(3)}`;
+    }
+    return `(${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(
+      3,
+      6
+    )}-${phoneNumber.slice(6, 10)}`;
+  }, []);
+
+  const handleProfileChange = (
+    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    const { name, value } = event.target;
+    if (name === 'phone') {
+      setProfile((prev) => ({
+        ...prev,
+        [name]: formatPhoneNumberOnInput(value),
+      }));
+    } else {
+      setProfile((prev) => ({ ...prev, [name]: value }));
+    }
+  };
 
   const handleVehicleChange = (
     index: number,
@@ -172,6 +207,7 @@ const ResidentProfileManagement: React.FC = () => {
 
     const dataToUpdate: UpdateResidentProfilePayload = {
       vehicles: profile.vehicles,
+      phone: profile.phone.replace(/[^\d]/g, ''), // Send unformatted phone to backend
     };
 
     try {
@@ -234,34 +270,62 @@ const ResidentProfileManagement: React.FC = () => {
           {error}
         </Alert>
       )}
-      <List sx={{ mb: 3 }}>
-        <ListItem>
-          <ListItemIcon>
-            <BadgeIcon />
-          </ListItemIcon>
-          <ListItemText
-            primary='Name'
-            secondary={profile.displayName || 'N/A'}
-          />
-        </ListItem>
-        <ListItem>
-          <ListItemIcon>
-            <EmailIcon />
-          </ListItemIcon>
-          <ListItemText primary='Email' secondary={profile.email || 'N/A'} />
-        </ListItem>
-        <ListItem>
-          <ListItemIcon>
-            <MeetingRoomIcon />
-          </ListItemIcon>
-          <ListItemText
-            primary='Unit'
-            secondary={profile.unitNumber || 'N/A'}
-          />
-        </ListItem>
-      </List>
-      {/* Form now wraps the Paper and the submit button will be outside/after this Paper */}
+      {/* Form now wraps the List and the Paper for vehicles */}
       <Box component='form' onSubmit={handleSubmit} noValidate>
+        <List sx={{ mb: 1 }}> {/* Reduced bottom margin for the list */}
+          <ListItem>
+            <ListItemIcon>
+              <BadgeIcon />
+            </ListItemIcon>
+            <ListItemText
+              primary='Name'
+              secondary={profile.displayName || 'N/A'}
+            />
+          </ListItem>
+          <ListItem>
+            <ListItemIcon>
+              <EmailIcon />
+            </ListItemIcon>
+            <ListItemText primary='Email' secondary={profile.email || 'N/A'} />
+          </ListItem>
+          <ListItem>
+            <ListItemIcon>
+              <MeetingRoomIcon />
+            </ListItemIcon>
+            <ListItemText
+              primary='Unit'
+              secondary={profile.unitNumber || 'N/A'}
+            />
+          </ListItem>
+          {/* Phone Number Display/Edit within ListItem */}
+          <ListItem
+            sx={{ 
+              flexDirection: 'column', // Stack icon and textfield vertically on small screens if needed
+              alignItems: 'flex-start', // Align items to the start
+              pt: 1, // Add some padding top
+              pb: 2 // Add some padding bottom
+            }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
+              <ListItemIcon sx={{minWidth: '40px'}}> {/* Adjust minWidth for icon */}
+                <PhoneIcon />
+              </ListItemIcon>
+              <TextField
+                fullWidth
+                variant="outlined" // Or standard / filled as preferred
+                label="Contact Phone"
+                name="phone"
+                value={profile.phone}
+                onChange={handleProfileChange}
+                disabled={saving || loading}
+                inputProps={{ maxLength: 14 }}
+                size="small" // Make textfield a bit smaller to fit list item context
+                sx={{ maxWidth: '250px' }} // Added maxWidth
+              />
+            </Box>
+          </ListItem>
+        </List>
+        
         <Paper elevation={5} sx={{ p: 3, mt: 2 }}>
           <Box
             sx={{

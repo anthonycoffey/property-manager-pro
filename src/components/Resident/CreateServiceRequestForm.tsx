@@ -38,7 +38,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { httpsCallable } from 'firebase/functions';
 import { functions, db } from '../../firebaseConfig'; // Added db
 import { doc, getDoc } from 'firebase/firestore'; // Added doc, getDoc
-import type { Property } from '../../types'; // Added Property type
+import type { Property, Resident } from '../../types'; // Added Property, Resident type
 
 interface CreateServiceRequestFormProps {
   onServiceRequestSubmitted: () => void;
@@ -76,8 +76,10 @@ const CreateServiceRequestForm: React.FC<CreateServiceRequestFormProps> = ({
   const [residentName, setResidentName] = useState(
     currentUser?.displayName || ''
   );
-  const [phone, setPhone] = useState('');
+  const [phone, setPhone] = useState(''); // This will be the form's phone state
   const [email, setEmail] = useState(currentUser?.email || '');
+  const [residentProfileData, setResidentProfileData] = useState<Resident | null>(null); // To store fetched resident profile
+
   // const [serviceLocation, setServiceLocation] = useState(''); // Kept for now, as handleAutocompleteChange updates it. Could be removed if Autocomplete directly drives display. - Removed as unused
   // const [requestType, setRequestType] = useState<string>(''); // Replaced by selectedPhoenixServiceId
   const [serviceDateTime, setServiceDateTime] = useState<Date | null>(
@@ -128,10 +130,61 @@ const CreateServiceRequestForm: React.FC<CreateServiceRequestFormProps> = ({
     React.useRef<google.maps.places.AutocompleteService | null>(null);
   const geocoderService = React.useRef<google.maps.Geocoder | null>(null);
 
+  const formatPhoneNumberOnInput = useCallback((value: string): string => {
+    if (!value) return value;
+    const phoneNumber = value.replace(/[^\d]/g, '');
+    const phoneNumberLength = phoneNumber.length;
+
+    if (phoneNumberLength < 4) return phoneNumber;
+    if (phoneNumberLength < 7) {
+      return `(${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(3)}`;
+    }
+    return `(${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(
+      3,
+      6
+    )}-${phoneNumber.slice(6, 10)}`;
+  }, []);
+
   useEffect(() => {
     setResidentName(currentUser?.displayName || '');
     setEmail(currentUser?.email || '');
-  }, [currentUser]);
+    // Pre-fill phone from fetched resident profile if available
+    if (residentProfileData?.phone) {
+      setPhone(formatPhoneNumberOnInput(residentProfileData.phone));
+    } else {
+      // If no phone in profile, or profile not yet fetched, ensure form phone is clear or based on other logic
+      // For now, if a user manually typed something before profile load, it might be overwritten.
+      // Consider if phone should only be set once, or if profile load always dictates it.
+      // Current behavior: profile load (or lack of phone in it) will dictate.
+      setPhone(''); // Clear phone if not in profile or profile not loaded
+    }
+  }, [currentUser, residentProfileData, formatPhoneNumberOnInput]);
+
+
+  // Effect to fetch resident's full profile for additional details like phone
+  useEffect(() => {
+    const fetchResidentProfile = async () => {
+      if (currentUser?.uid && organizationId && propertyId) {
+        try {
+          const residentDocRef = doc(db, 'organizations', organizationId, 'properties', propertyId, 'residents', currentUser.uid);
+          const residentDocSnap = await getDoc(residentDocRef);
+          if (residentDocSnap.exists()) {
+            setResidentProfileData(residentDocSnap.data() as Resident);
+          } else {
+            console.log('No such resident document!');
+            setResidentProfileData(null);
+          }
+        } catch (error) {
+          console.error("Error fetching resident profile:", error);
+          setResidentProfileData(null);
+        }
+      } else {
+        setResidentProfileData(null); // Clear if no user/org/prop
+      }
+    };
+
+    fetchResidentProfile();
+  }, [currentUser?.uid, organizationId, propertyId]);
 
   // Effect to fetch Phoenix services
   useEffect(() => {
@@ -285,21 +338,6 @@ const CreateServiceRequestForm: React.FC<CreateServiceRequestFormProps> = ({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUser, organizationId, propertyId, isLoaded, isOffPremise]); // Rerun if isOffPremise changes
 
-  const formatPhoneNumberOnInput = useCallback((value: string): string => {
-    if (!value) return value;
-    const phoneNumber = value.replace(/[^\d]/g, '');
-    const phoneNumberLength = phoneNumber.length;
-
-    if (phoneNumberLength < 4) return phoneNumber;
-    if (phoneNumberLength < 7) {
-      return `(${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(3)}`;
-    }
-    return `(${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(
-      3,
-      6
-    )}-${phoneNumber.slice(6, 10)}`;
-  }, []);
-
   // Debounced function to fetch place predictions
   const fetchPlacePredictions = useMemo(
     () =>
@@ -371,7 +409,7 @@ const CreateServiceRequestForm: React.FC<CreateServiceRequestFormProps> = ({
     return () => {
       active = false;
     };
-  }, [autocompleteInputValue, autocompleteValue, fetchPlacePredictions]);
+  }, [autocompleteInputValue, autocompleteValue, fetchPlacePredictions, isOffPremise, propertyFullAddressString]);
 
   const handleAutocompleteChange = useCallback(
     (_event: React.SyntheticEvent, newValue: PlaceType | null) => {
@@ -569,6 +607,9 @@ const CreateServiceRequestForm: React.FC<CreateServiceRequestFormProps> = ({
       residentNotes,
       smsConsent,
       onServiceRequestSubmitted,
+      isOffPremise,
+      propertyAddressError,
+      propertyFullAddressString
       // setError, setSuccessMessage, setSubmitting, setSelectedPhoenixServices,
       // setAutocompleteValue, setAutocompleteInputValue, setServiceLocationObject,
       // setSmsConsent, setServiceDateTime, setResidentNotes, setPhone (state setters are stable)

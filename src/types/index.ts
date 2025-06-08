@@ -49,6 +49,7 @@ export interface Resident {
   leaseEndDate?: Timestamp | Date | null;
   invitedBy?: string; // UID of the user who invited them
   createdAt: Timestamp | Date;
+  phone?: string; // Resident's primary contact phone number
   // Vehicle Information
   vehicles?: Vehicle[];
   // Add other resident-specific fields as needed

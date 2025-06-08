@@ -7,6 +7,7 @@ import { FieldValue } from 'firebase-admin/firestore'; // Import FieldValue
 
 interface UpdateResidentProfileData {
   vehicles?: Vehicle[];
+  phone?: string; // Added phone
   // Add other updatable fields here if needed in the future
 }
 
@@ -77,6 +78,24 @@ export const updateResidentProfile = https.onCall(
         updatePayload.vehicleModel = FieldValue.delete();
         updatePayload.vehicleColor = FieldValue.delete();
         updatePayload.licensePlate = FieldValue.delete();
+      }
+
+      // Handle phone update
+      if (data.phone !== undefined) {
+        changesMade = true;
+        if (typeof data.phone !== 'string') {
+          throw handleHttpsError('invalid-argument', 'Phone number must be a string.');
+        }
+        // Basic validation for unformatted phone (digits only, expected from frontend)
+        const phoneDigits = data.phone.replace(/[^\d]/g, '');
+        if (phoneDigits.length > 0 && phoneDigits.length < 7) { // Arbitrary minimum, e.g. 7 for local, 10 for full
+            throw handleHttpsError('invalid-argument', 'Phone number seems too short.');
+        }
+        if (phoneDigits.length > 15) { // Arbitrary maximum
+             throw handleHttpsError('invalid-argument', 'Phone number seems too long.');
+        }
+        updatePayload.phone = phoneDigits; // Store only digits or the formatted string as per preference
+                                          // Storing raw digits (data.phone) as sent by client
       }
       
       // Example for other potential fields (if any are added to UpdateResidentProfileData in the future)

@@ -159,8 +159,9 @@ export interface Resident {
   roles: string[]; 
   leaseStartDate?: Timestamp | Date;
   leaseEndDate?: Timestamp | Date;
-  invitedBy?: string; 
+  invitedBy?: string;
   createdAt: Timestamp | Date;
+  phone?: string; // Resident's primary contact phone number
   vehicles?: Vehicle[];
 }
 

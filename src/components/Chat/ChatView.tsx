@@ -125,6 +125,7 @@ const ChatView: React.FC = () => {
         elevation={5}
         sx={{
           minHeight: '50vh', // Or adjust as needed
+          maxHeight: '75vh',
           display: 'flex',
           flexDirection: 'column',
           overflow: 'hidden',

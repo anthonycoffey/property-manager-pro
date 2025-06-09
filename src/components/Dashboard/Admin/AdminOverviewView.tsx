@@ -20,6 +20,10 @@ import {
   LocalShipping,
   AvTimer,
   People as PeopleIcon,
+  NotificationsActive as NotificationsActiveIcon, // For Active Campaigns
+  // UploadFile as UploadFileIcon, // Removed
+  // Percent as PercentIcon, // Removed
+  CheckCircleOutline as CheckCircleOutlineIcon, // For Total Accepted Invitations
 } from '@mui/icons-material';
 
 import { Link as RouterLink } from 'react-router-dom';
@@ -56,6 +60,9 @@ interface AdminDashboardStatsData {
     totalCampaigns: number;
     totalAccepted: number;
     typeBreakdown: { type: string; count: number }[];
+    activeCampaigns?: number;
+    // csvInvitationsSent?: number; // Removed
+    // csvAcceptanceRate?: number; // Removed
   };
 }
 
@@ -360,11 +367,98 @@ const AdminOverviewView: React.FC = () => {
           Campaign Performance
         </Typography>
         <Stack
-          direction={{ xs: 'column', lg: 'row' }}
+          direction={{ xs: 'column', md: 'row' }} // Changed lg to md for earlier row layout
           spacing={3}
-          alignItems='center'
+          alignItems={{ xs: 'center', md: 'flex-start' }} // Align items to start for row layout
         >
-          <Box sx={{ width: { xs: '100%', lg: '60%' }, p: 1 }}>
+          {/* KPIs Column */}
+          <Box
+            sx={{
+              width: { xs: '100%', md: '40%' }, // KPIs take 40% on medium screens and up
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 2,
+            }}
+          >
+            {dashboardStats?.campaignOverview || dashboardLoading ? (
+              <>
+                <Box sx={{ textAlign: 'center' }}>
+                  {' '}
+                  {/* Group KpiCard and its subtext */}
+                  <KpiCard
+                    title='Total Accepted Invitations'
+                    value={
+                      dashboardLoading
+                        ? '...'
+                        : dashboardStats?.campaignOverview?.totalAccepted ??
+                          'N/A'
+                    }
+                    isLoading={dashboardLoading}
+                    icon={<CheckCircleOutlineIcon />}
+                    // sx={{ mb: 0.5 }} // Optional: if spacing adjustment needed before subtext
+                  />
+                  <Typography
+                    variant='body2'
+                    color='text.secondary'
+                    sx={{ mt: 0.5 }} // Adjusted margin for closer proximity to the card
+                  >
+                    Across{' '}
+                    {dashboardLoading
+                      ? '...'
+                      : dashboardStats?.campaignOverview?.totalCampaigns ??
+                        0}{' '}
+                    campaigns
+                  </Typography>
+                </Box>
+                <KpiCard
+                  title='Active Campaigns'
+                  value={
+                    dashboardLoading
+                      ? '...'
+                      : dashboardStats?.campaignOverview?.activeCampaigns ??
+                        'N/A'
+                  }
+                  isLoading={dashboardLoading}
+                  icon={<NotificationsActiveIcon />}
+                />
+                {/* 
+                <KpiCard
+                  title='Invitations Sent via CSV Import'
+                  value={
+                    dashboardLoading
+                      ? '...'
+                      : dashboardStats?.campaignOverview?.csvInvitationsSent ??
+                        'N/A'
+                  }
+                  isLoading={dashboardLoading}
+                  icon={<UploadFileIcon />}
+                />
+                <KpiCard
+                  title='Acceptance Rate of CSV Campaigns'
+                  value={
+                    dashboardLoading
+                      ? '...'
+                      : dashboardStats?.campaignOverview?.csvAcceptanceRate != null
+                      ? `${dashboardStats.campaignOverview.csvAcceptanceRate.toFixed(1)}%`
+                      : 'N/A'
+                  }
+                  isLoading={dashboardLoading}
+                  icon={<PercentIcon />}
+                />
+                */}
+              </>
+            ) : (
+              !dashboardLoading && <Typography>No campaign data.</Typography>
+            )}
+          </Box>
+
+          {/* Pie Chart Column */}
+          <Box
+            sx={{
+              width: { xs: '100%', md: '60%' }, // Pie chart takes 60% on medium screens and up
+              p: 1,
+            }}
+          >
             {(dashboardStats?.campaignOverview?.typeBreakdown &&
               dashboardStats.campaignOverview.typeBreakdown.length > 0) ||
             dashboardLoading ? (
@@ -373,57 +467,28 @@ const AdminOverviewView: React.FC = () => {
                   <PieChart
                     options={campaignTypeOptions}
                     isLoading={dashboardLoading}
-                    height='350px'
+                    height='350px' // Consider adjusting height if needed
                   />
                 )}
               </Box>
             ) : (
               !dashboardLoading && (
-                <Typography>No campaign type data.</Typography>
+                <Typography sx={{ textAlign: { xs: 'center', md: 'left' } }}>
+                  No campaign type data.
+                </Typography>
               )
             )}
-          </Box>
-          <Box
-            sx={{ width: { xs: '100%', lg: '40%' }, p: 1, textAlign: 'center' }}
-          >
-            {dashboardStats?.campaignOverview || dashboardLoading ? (
-              <Paper elevation={0} sx={{ p: 1 }}>
-                <KpiCard
-                  title='Total Accepted Invitations'
-                  value={
-                    dashboardLoading
-                      ? '...'
-                      : dashboardStats?.campaignOverview?.totalAccepted ?? 'N/A'
-                  }
-                  isLoading={dashboardLoading}
-                />
-                <Typography
-                  variant='body2'
-                  color='text.secondary'
-                  sx={{ mt: 1 }}
-                >
-                  Across{' '}
-                  {dashboardLoading
-                    ? '...'
-                    : dashboardStats?.campaignOverview?.totalCampaigns ??
-                      0}{' '}
-                  campaigns
-                </Typography>
-              </Paper>
-            ) : null}
           </Box>
         </Stack>
       </Box>
 
-      <Divider
-        sx={{ my: 4, opacity: dashboardLoading || phoenixLoading ? 0.3 : 1 }}
-      />
+      <Divider sx={{ mt: 10, mb: 4 }} />
 
       <Box
         sx={{ mb: 3, opacity: dashboardLoading || phoenixLoading ? 0.3 : 1 }}
       >
         <Typography variant='h5' gutterBottom sx={{ mb: 2 }}>
-          Service Request Analytics (Phoenix)
+          Service Request Analytics
         </Typography>
         {phoenixError && (
           <Alert severity='error' sx={{ mb: 2 }}>

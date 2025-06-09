@@ -8,7 +8,7 @@ import Button from '@mui/material/Button';
 import Box from '@mui/material/Box';
 import CircularProgress from '@mui/material/CircularProgress';
 import Alert from '@mui/material/Alert';
-import { Typography } from '@mui/material';
+import { Typography, Stack } from '@mui/material';
 import { PersonAdd } from '@mui/icons-material';
 
 interface InvitePropertyManagerFormProps {
@@ -121,31 +121,30 @@ const InvitePropertyManagerForm: React.FC<InvitePropertyManagerFormProps> = ({
           {success}
         </Alert>
       )}
-      <Box
-        sx={{
-          display: 'flex',
-          flexDirection: { xs: 'column', sm: 'row' },
-          gap: 2,
-          alignItems: { xs: 'stretch', sm: 'center' },
-        }}
+
+      <Stack
+        direction={{ xs: 'column', sm: 'row' }}
+        spacing={2}
+        alignItems={{ sm: 'flex-end' }} // Align items to the bottom when in a row
+        sx={{ mt: 2 }} // Add some margin top for spacing from alerts
       >
         <TextField
           label='Property Manager Name'
           value={inviteeName}
           onChange={(e) => setInviteeName(e.target.value)}
-          margin='none'
+          margin='none' // Stack component handles spacing
           disabled={loading}
-          sx={{ flexGrow: 1 }}
+          sx={{ flexGrow: 1, width: '100%' }} // Ensure full width when stacked, grow in row
         />
         <TextField
           label='Property Manager Email'
           type='email'
           value={inviteeEmail}
           onChange={(e) => setInviteeEmail(e.target.value)}
-          margin='none'
+          margin='none' // Stack component handles spacing
           required
           disabled={loading}
-          sx={{ flexGrow: 1 }}
+          sx={{ flexGrow: 1, width: '100%' }} // Ensure full width when stacked, grow in row
         />
         <Button
           size='large'
@@ -154,14 +153,14 @@ const InvitePropertyManagerForm: React.FC<InvitePropertyManagerFormProps> = ({
           color='primary'
           disabled={loading}
           sx={{
-            flexGrow: 1,
-            minWidth: { xs: '100%', sm: 'auto' },
+            width: { xs: '100%', sm: 'auto' }, // Full width on small, auto on larger
+            minWidth: { sm: '180px' }, // Ensure a minimum width for the button in row layout
           }}
           startIcon={<PersonAdd />}
         >
           {loading ? <CircularProgress size={24} /> : 'Invite Manager'}
         </Button>
-      </Box>
+      </Stack>
     </Box>
   );
 };

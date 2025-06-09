@@ -20,7 +20,9 @@ import {
   Paper,
   IconButton,
   Chip,
+  Button, // Added Button
 } from '@mui/material';
+import AddIcon from '@mui/icons-material/Add'; // Added AddIcon
 // AddOrganizationModal will be handled by the parent (Dashboard)
 import EditOrganizationModal from './EditOrganizationModal';
 import DeleteOrganizationDialog from './DeleteOrganizationDialog'; // Added import
@@ -55,15 +57,25 @@ const deleteOrganizationCallable = httpsCallable(
 // openAddModal: () => void;
 // }
 
+interface OrganizationManagementPanelProps {
+  onOpenAddModal: () => void;
+  refreshTrigger: number; // Added refreshTrigger prop
+}
+
 // forwardRef is no longer needed for Add Modal logic
-const OrganizationManagementPanel: React.FC = () => {
+const OrganizationManagementPanel: React.FC<
+  OrganizationManagementPanelProps
+> = ({ onOpenAddModal, refreshTrigger }) => {
   const { currentUser } = useAuth();
   // const [isAddModalOpen, setIsAddModalOpen] = useState(false); // Will be managed by Dashboard
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingOrganization, setEditingOrganization] =
     useState<Organization | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false); // Added state
-  const [deletingOrgInfo, setDeletingOrgInfo] = useState<{ id: string; name: string } | null>(null); // Added state
+  const [deletingOrgInfo, setDeletingOrgInfo] = useState<{
+    id: string;
+    name: string;
+  } | null>(null); // Added state
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [loading, setLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState<Record<string, boolean>>(
@@ -130,7 +142,7 @@ const OrganizationManagementPanel: React.FC = () => {
 
   useEffect(() => {
     fetchOrganizations();
-  }, [fetchOrganizations]);
+  }, [fetchOrganizations, refreshTrigger]); // Added refreshTrigger to dependency array
 
   const handleOpenEditModal = (org: Organization) => {
     setEditingOrganization(org);
@@ -213,7 +225,24 @@ const OrganizationManagementPanel: React.FC = () => {
   };
 
   return (
-    <Box>
+    <Paper sx={{ p: { xs: 1, sm: 2, lg: 3 } }}>
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'flex-end',
+          alignItems: 'center',
+          mb: 2,
+        }}
+      >
+        <Button
+          variant='contained'
+          startIcon={<AddIcon />}
+          onClick={onOpenAddModal}
+        >
+          Add Organization
+        </Button>
+      </Box>
+
       {loading && (
         <Box sx={{ display: 'flex', justifyContent: 'center', my: 3 }}>
           <CircularProgress />
@@ -348,8 +377,8 @@ const OrganizationManagementPanel: React.FC = () => {
           {snackbarMessage}
         </Alert>
       </Snackbar>
-    </Box>
+    </Paper>
   );
-}; // Changed from forwardRef
+};
 
 export default OrganizationManagementPanel;

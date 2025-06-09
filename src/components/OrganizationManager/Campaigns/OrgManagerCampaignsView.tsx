@@ -1,80 +1,22 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { Box, Typography, CircularProgress, Paper } from '@mui/material';
+import React, { useState, useEffect } from 'react';
+import { Box, Typography, Paper, Alert } from '@mui/material';
 import { useAuth } from '../../../hooks/useAuth';
-import { collection, query, where, getDocs } from 'firebase/firestore';
-import { db } from '../../../firebaseConfig';
-import OrganizationSelector from '../../Admin/OrganizationSelector'; // Reusing Admin's Org Selector
+import { useOrgManagerContext } from '../../../hooks/useOrgManagerContext';
 import PropertySelectorDropdown from '../../PropertyManager/PropertySelectorDropdown';
 import PropertyCampaignsView from '../../PropertyManager/Campaigns/PropertyCampaignsView';
 
-interface Organization {
-  id: string;
-  name: string;
-  // Add other relevant fields if needed
-}
-
 const OrgManagerCampaignsView: React.FC = () => {
   const { currentUser } = useAuth();
-  const [organizations, setOrganizations] = useState<Organization[]>([]);
-  const [selectedOrganizationId, setSelectedOrganizationId] = useState<
-    string | null
-  >(null);
+  const { selectedOrgId, selectedOrganization } = useOrgManagerContext();
+
   const [selectedPropertyId, setSelectedPropertyId] = useState<string | null>(
     null
   );
-  const [loadingOrgs, setLoadingOrgs] = useState<boolean>(false);
-  const [errorOrgs, setErrorOrgs] = useState<string | null>(null);
 
-  const managedOrgIds = useMemo(
-    () => (currentUser?.customClaims?.organizationIds as string[]) || [],
-    [currentUser]
-  );
-  const isMultiOrgManager = managedOrgIds.length > 1;
-  const isSingleOrgManager = managedOrgIds.length === 1;
-
+  // Reset selectedPropertyId when selectedOrgId (from context) changes
   useEffect(() => {
-    if (isSingleOrgManager) {
-      setSelectedOrganizationId(managedOrgIds[0]);
-    } else if (isMultiOrgManager) {
-      setLoadingOrgs(true);
-      setErrorOrgs(null);
-      const fetchOrganizations = async () => {
-        try {
-          if (managedOrgIds.length === 0) {
-            setOrganizations([]);
-            setLoadingOrgs(false);
-            return;
-          }
-          // Fetch details for only the organizations the OM manages
-          const orgsQuery = query(
-            collection(db, 'organizations'),
-            where('__name__', 'in', managedOrgIds)
-          );
-          const querySnapshot = await getDocs(orgsQuery);
-          const fetchedOrganizations = querySnapshot.docs.map((doc) => ({
-            id: doc.id,
-            name: doc.data().name as string,
-          }));
-          setOrganizations(fetchedOrganizations);
-        } catch (err) {
-          console.error('Error fetching organizations:', err);
-          setErrorOrgs('Failed to load organizations.');
-        } finally {
-          setLoadingOrgs(false);
-        }
-      };
-      fetchOrganizations();
-    } else {
-      // No organizations assigned
-      setOrganizations([]);
-      setSelectedOrganizationId(null);
-    }
-  }, [currentUser, isSingleOrgManager, isMultiOrgManager, managedOrgIds]);
-
-  const handleOrganizationChange = (orgId: string | null) => {
-    setSelectedOrganizationId(orgId);
-    setSelectedPropertyId(null); // Reset property when org changes
-  };
+    setSelectedPropertyId(null);
+  }, [selectedOrgId]);
 
   const handlePropertyChange = (propertyId: string | null) => {
     setSelectedPropertyId(propertyId);
@@ -85,80 +27,46 @@ const OrgManagerCampaignsView: React.FC = () => {
     !currentUser.customClaims?.roles?.includes('organization_manager')
   ) {
     return (
-      <Typography color='error'>
+      <Alert severity='error' sx={{ m: 2 }}>
         Access Denied. You are not an Organization Manager.
-      </Typography>
+      </Alert>
     );
   }
 
-  if (managedOrgIds.length === 0 && !isMultiOrgManager) {
+  if (!selectedOrgId || !selectedOrganization) {
+    // This message is now primarily handled by the parent OrganizationManagerDashboardPanel
+    // but can serve as a fallback if this component is rendered without a selected org.
     return (
-      <Typography>
-        You are not assigned to any organizations to manage campaigns.
-      </Typography>
+      <Alert severity='info' sx={{ m: 2 }}>
+        Please select an organization from the dropdown above to manage
+        campaigns.
+      </Alert>
     );
   }
 
   return (
-    <Paper elevation={0}>
-      {isMultiOrgManager && (
-        <Box sx={{ mb: 2 }}>
-          <Typography variant='subtitle1' gutterBottom>
-            Select Organization:
-          </Typography>
-          {/* OrganizationSelector will show its own loading/error state based on managedOrgIds */}
-          <OrganizationSelector
-            selectedOrganizationId={selectedOrganizationId}
-            onOrganizationChange={handleOrganizationChange}
-            managedOrganizationIds={managedOrgIds}
-            label='Select Managed Organization'
-          />
-          {/* The OrganizationSelector itself will display messages like "No organizations found..." */}
-          {/* So, the specific loading/error/empty states for 'organizations' in this component might be redundant if selector handles it well */}
-          {/* However, keeping a general loading/error for the initial fetch of managedOrgIds might still be useful if that fetch was complex */}
-          {/* For now, assuming OrganizationSelector handles its display based on managedOrgIds */}
-          {loadingOrgs && (
-            <CircularProgress
-              size={24}
-              sx={{
-                display: organizations.length > 0 ? 'none' : 'block',
-                margin: 'auto',
-              }}
-            />
-          )}
-          {errorOrgs && <Typography color='error'>{errorOrgs}</Typography>}
-          {/* This specific check might be redundant if OrganizationSelector handles empty states based on managedOrgIds */}
-          {/* {!loadingOrgs && !errorOrgs && organizations.length === 0 && managedOrgIds.length > 0 && (
-            <Typography>No organizations found for your assigned IDs.</Typography>
-          )} */}
-        </Box>
-      )}
+    <Paper elevation={0} sx={{ p: { xs: 1, sm: 2, lg: 3 } }}>
+      <Typography variant='h5' gutterBottom>
+        Campaigns for {selectedOrganization.name}
+      </Typography>
 
-      {selectedOrganizationId && (
-        <Box sx={{ mb: 2 }}>
-          <PropertySelectorDropdown
-            organizationId={selectedOrganizationId}
-            selectedPropertyId={selectedPropertyId}
-            onPropertyChange={handlePropertyChange}
-            label='Properties'
-          />
-        </Box>
-      )}
+      <Box sx={{ mb: 2, mt: 2 }}>
+        <PropertySelectorDropdown
+          organizationId={selectedOrgId} // selectedOrgId is guaranteed to be non-null here
+          selectedPropertyId={selectedPropertyId}
+          onPropertyChange={handlePropertyChange}
+          label='Select Property for Campaigns'
+        />
+      </Box>
 
-      {selectedOrganizationId && selectedPropertyId && (
+      {selectedPropertyId ? (
         <PropertyCampaignsView
-          organizationId={selectedOrganizationId}
+          organizationId={selectedOrgId} // selectedOrgId is guaranteed to be non-null
           propertyId={selectedPropertyId}
         />
-      )}
-      {selectedOrganizationId && !selectedPropertyId && (
+      ) : (
         <Typography sx={{ mt: 2 }}>
-          Please select a property to view campaigns.
-        </Typography>
-      )}
-      {!selectedOrganizationId && isMultiOrgManager && (
-        <Typography sx={{ mt: 2 }}>
-          Please select an organization to manage campaigns.
+          Please select a property to view and manage its campaigns.
         </Typography>
       )}
     </Paper>

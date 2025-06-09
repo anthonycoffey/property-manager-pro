@@ -3,6 +3,8 @@ import { db } from '../firebaseAdmin.js';
 import { handleHttpsError } from '../helpers/handleHttpsError.js';
 // import { PropertyData, Campaign } from '../types'; // Assuming types are defined
 
+
+
 interface DateRange {
   start: string; // ISO string
   end: string;   // ISO string
@@ -28,8 +30,9 @@ interface AdminDashboardStats {
   campaignOverview?: {
     totalCampaigns: number;
     totalAccepted: number;
-    // conversionRate: number; // To be calculated based on a clear definition of "potential"
     typeBreakdown: { type: string; count: number }[];
+    activeCampaigns?: number;
+    // conversionRate: number; // To be calculated based on a clear definition of "potential"
   };
 }
 
@@ -110,15 +113,24 @@ export const getAdminDashboardStats = onCall(async (request) => {
       totalCampaigns: campaignsSnapshot.size,
       totalAccepted: 0,
       typeBreakdown: [],
+      activeCampaigns: 0,
     };
     const typeCounts: { [key: string]: number } = {};
+    let activeCampaignsCount = 0;
+
     campaignsSnapshot.forEach(doc => {
-      const campaign = doc.data(); // as Campaign; // Assuming Campaign type
+      const campaign = doc.data() as any; // Using 'any' for simplicity, assuming Campaign structure
       stats.campaignOverview!.totalAccepted += campaign.totalAccepted || 0;
       typeCounts[campaign.campaignType] = (typeCounts[campaign.campaignType] || 0) + 1;
-    });
-    stats.campaignOverview.typeBreakdown = Object.entries(typeCounts).map(([type, count]) => ({ type, count }));
 
+      if (campaign.status === 'active') {
+        activeCampaignsCount++;
+      }
+    });
+
+    stats.campaignOverview.typeBreakdown = Object.entries(typeCounts).map(([type, count]) => ({ type, count }));
+    stats.campaignOverview.activeCampaigns = activeCampaignsCount;
+    
     return stats;
 
   } catch (error) {

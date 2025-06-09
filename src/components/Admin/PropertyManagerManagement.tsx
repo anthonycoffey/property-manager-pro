@@ -354,11 +354,8 @@ const PropertyManagerManagement: React.FC<PropertyManagerManagementProps> = ({
   };
 
   return (
-    <Box sx={{ p: 3 }}>
-      {/* <Typography variant="h5" gutterBottom>
-        Property Manager Management
-      </Typography> */}{' '}
-      {/* Title Removed */}
+    <Box sx={{ mt: 2 }}>
+    
       {!organizationId && (
         <Alert severity='info' sx={{ mb: 2 }}>
           Please select an organization from the dropdown above to view and

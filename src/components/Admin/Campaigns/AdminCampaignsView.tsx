@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Box, Typography, Paper, Divider } from '@mui/material';
+import { Box, Typography, Paper } from '@mui/material';
 import { useAuth } from '../../../hooks/useAuth';
 import OrganizationSelector from '../OrganizationSelector'; // Standard Admin Org Selector
 import PropertySelectorDropdown from '../../PropertyManager/PropertySelectorDropdown';
@@ -38,7 +38,7 @@ const AdminCampaignsView: React.FC = () => {
   }
 
   return (
-    <Paper elevation={0}>
+    <Paper sx={{ p: { xs: 1, sm: 2, lg: 3 } }}>
       <Box sx={{ mb: 2 }}>
         {/* OrganizationSelector will show its own loading/error state */}
         <OrganizationSelector
@@ -48,7 +48,6 @@ const AdminCampaignsView: React.FC = () => {
         />
       </Box>
 
-      <Divider sx={{ my: 2 }} />
       {selectedOrganizationId && (
         <Box sx={{ mb: 2 }}>
           <PropertySelectorDropdown

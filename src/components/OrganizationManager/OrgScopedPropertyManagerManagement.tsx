@@ -359,7 +359,7 @@ const OrgScopedPropertyManagerManagement: React.FC<
   }
 
   return (
-    <Box>
+    <>
       <Box sx={{ mb: 4 }}>
         <InvitePropertyManagerForm selectedOrganizationId={organizationId} />
       </Box>
@@ -605,7 +605,7 @@ const OrgScopedPropertyManagerManagement: React.FC<
           {snackbarMessage}
         </Alert>
       </Snackbar>
-    </Box>
+    </>
   );
 };
 

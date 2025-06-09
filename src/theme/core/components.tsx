@@ -213,7 +213,7 @@ const MuiRadio: Components<Theme>['MuiRadio'] = {
 // --- Dialog Component Overrides ---
 const MuiDialog: Components<Theme>['MuiDialog'] = {
   styleOverrides: {
-    paper: ({ theme, ownerState }: { theme: Theme; ownerState: DialogProps }) => ({
+    paper: ({ theme }: { theme: Theme; ownerState: DialogProps }) => ({
       [theme.breakpoints.down('sm')]: {
         margin: theme.spacing(2),
         width: `calc(100% - ${theme.spacing(4)})`, // Account for new margins

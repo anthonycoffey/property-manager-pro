@@ -28,7 +28,6 @@ const TestimonialCard: React.FC<TestimonialCardProps> = ({
       maxWidth: { xs: '100%', lg: '50%' },
       m: 2,
       boxShadow: 3,
-      borderRadius: 2,
       display: 'flex',
       flexDirection: 'column',
       justifyContent: 'space-between',

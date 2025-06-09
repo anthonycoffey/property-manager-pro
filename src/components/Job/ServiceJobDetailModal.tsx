@@ -295,7 +295,6 @@ const ServiceJobDetailModal: React.FC<ServiceJobDetailModalProps> = ({
                   mb: 2,
                   p: 2,
                   border: '1px solid #eee',
-                  borderRadius: 1,
                 }}
               >
                 <Avatar

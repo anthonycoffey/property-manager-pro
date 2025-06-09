@@ -741,7 +741,7 @@ const OrganizationManagerDashboardPanel: React.FC<
                   {dashboardStats?.campaignPerformance || dashboardLoading ? (
                     <Paper
                       elevation={0}
-                      sx={{ p: 2, borderRadius: 2, textAlign: 'center', my: 4 }}
+                      sx={{ p: 2, textAlign: 'center', my: 4 }}
                     >
                       <KpiCard
                         title='Active Campaigns'
@@ -845,24 +845,12 @@ const OrganizationManagerDashboardPanel: React.FC<
                 </Box>
 
                 <Stack spacing={3}>
-                  {/* Phoenix Volume Trends Chart - Removed 6/4/2025 */}
-                  {/* {(phoenixStats?.volumeTrends && phoenixStats.volumeTrends.length > 0) || phoenixLoading ? (
-                    <Paper elevation={2} sx={{ p: 2, borderRadius: 2 }}>
-                      {phoenixVolumeTrendOptions && (
-                        <LineChart
-                          options={phoenixVolumeTrendOptions}
-                          isLoading={phoenixLoading}
-                          height="350px"
-                        />
-                      )}
-                    </Paper>
-                  ) : null} */}
-
+   
                   {/* Phoenix Type Distribution Chart - Reinstated 6/4/2025 */}
                   {(phoenixStats?.typeDistribution &&
                     phoenixStats.typeDistribution.length > 0) ||
                   phoenixLoading ? (
-                    <Paper elevation={0} sx={{ p: 2, borderRadius: 2, my: 4 }}>
+                    <Paper elevation={0} sx={{ p: 2, my: 4 }}>
                       {phoenixTypeDistributionOptions && (
                         <PieChart
                           options={phoenixTypeDistributionOptions}

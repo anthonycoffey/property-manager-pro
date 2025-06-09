@@ -513,7 +513,6 @@ const CreatePropertyForm: React.FC<CreatePropertyFormProps> = ({
             px: 2,
             border: '1px solid',
             borderColor: 'divider',
-            borderRadius: 1,
           }}
         >
           <Typography variant='caption'>Selected Address:</Typography>

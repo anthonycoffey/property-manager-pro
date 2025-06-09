@@ -567,7 +567,7 @@ const PropertyManagerDashboardPanel: React.FC<
                 {(dashboardStats?.campaignPerformance &&
                   dashboardStats.campaignPerformance.length > 0) ||
                 dashboardLoading ? (
-                  <Paper elevation={0} sx={{ p: 2, borderRadius: 2, mb: 8 }}>
+                  <Paper elevation={0} sx={{ p: 2, mb: 8 }}>
                     {campaignPerformanceOptions && (
                       <BarChart
                         options={campaignPerformanceOptions}
@@ -667,24 +667,13 @@ const PropertyManagerDashboardPanel: React.FC<
                 </Box>
 
                 <Stack spacing={3}>
-                  {/* Phoenix Volume Trends Chart - Removed 6/4/2025 */}
-                  {/* {(phoenixStats?.volumeTrends && phoenixStats.volumeTrends.length > 0) || phoenixLoading ? (
-                  <Paper elevation={2} sx={{ p: 2, borderRadius: 2 }}>
-                    {phoenixVolumeTrendOptions && (
-                      <LineChart
-                        options={phoenixVolumeTrendOptions}
-                        isLoading={phoenixLoading}
-                        height="350px"
-                      />
-                    )}
-                  </Paper>
-                ) : null} */}
+
 
                   {/* Phoenix Type Distribution Chart - Reinstated 6/4/2025 */}
                   {(phoenixStats?.typeDistribution &&
                     phoenixStats.typeDistribution.length > 0) ||
                   phoenixLoading ? (
-                    <Paper elevation={0} sx={{ p: 2, borderRadius: 2, my: 4 }}>
+                    <Paper elevation={0} sx={{ p: 2, my: 4 }}>
                       {phoenixTypeDistributionOptions && (
                         <PieChart
                           options={phoenixTypeDistributionOptions}
@@ -806,7 +795,6 @@ const PropertyManagerDashboardPanel: React.FC<
               mt: 4,
               p: { xs: 1, sm: 2, md: 3 },
               backgroundColor: 'background.default',
-              borderRadius: 1,
             }}
           >
             <Box
@@ -849,7 +837,6 @@ const PropertyManagerDashboardPanel: React.FC<
                   sx={{
                     width: { xs: 100, sm: 140 },
                     height: 'auto',
-                    borderRadius: 2,
                   }}
                 />
                 <Box
@@ -859,7 +846,6 @@ const PropertyManagerDashboardPanel: React.FC<
                   sx={{
                     width: { xs: 100, sm: 140 },
                     height: 'auto',
-                    borderRadius: 2,
                   }}
                 />
                 <Box
@@ -869,7 +855,6 @@ const PropertyManagerDashboardPanel: React.FC<
                   sx={{
                     width: { xs: 100, sm: 140 },
                     height: 'auto',
-                    borderRadius: 2,
                   }}
                 />
               </Box>

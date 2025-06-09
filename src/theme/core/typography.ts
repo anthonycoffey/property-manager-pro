@@ -88,27 +88,32 @@ export const typography: MuiTypographyVariantsOptions & TypographyCustom = { // 
     fontWeight: 600,
     lineHeight: 1.5,
     fontSize: pxToRem(16),
+    ...responsiveFontSizes({ xs: 14, sm: 15 }),
   },
   subtitle2: {
     // fontFamily: primaryFont,
     fontWeight: 600,
     lineHeight: 22 / 14,
     fontSize: pxToRem(14),
+    ...responsiveFontSizes({ xs: 13, sm: 13 }),
   },
   body1: {
     // fontFamily: primaryFont,
     lineHeight: 1.5,
     fontSize: pxToRem(16),
+    ...responsiveFontSizes({ xs: 14, sm: 15 }),
   },
   body2: {
     // fontFamily: primaryFont,
     lineHeight: 22 / 14,
     fontSize: pxToRem(14),
+    ...responsiveFontSizes({ xs: 13, sm: 13 }),
   },
   caption: {
     // fontFamily: primaryFont,
     lineHeight: 1.5,
     fontSize: pxToRem(12),
+    ...responsiveFontSizes({ xs: 11 }),
   },
   overline: {
     // fontFamily: primaryFont,
@@ -116,6 +121,7 @@ export const typography: MuiTypographyVariantsOptions & TypographyCustom = { // 
     lineHeight: 1.5,
     fontSize: pxToRem(12),
     textTransform: 'uppercase',
+    ...responsiveFontSizes({ xs: 11 }),
   },
   button: {
     // fontFamily: primaryFont,
@@ -123,5 +129,6 @@ export const typography: MuiTypographyVariantsOptions & TypographyCustom = { // 
     lineHeight: 24 / 14,
     fontSize: pxToRem(14),
     textTransform: 'unset', // material-kit-react has this
+    ...responsiveFontSizes({ xs: 13 }),
   },
 };

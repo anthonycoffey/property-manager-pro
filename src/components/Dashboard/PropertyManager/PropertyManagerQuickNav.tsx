@@ -7,7 +7,7 @@ import {
   CardContent,
 } from '@mui/material';
 import { Link as RouterLink } from 'react-router-dom';
-import { usePropertyManagerContext } from '../../../contexts/PropertyManagerContext';
+import { usePropertyManagerContext } from '../../../hooks/usePropertyManagerContext';
 import { navigationItems } from '../../../config/navigationConfig';
 import type { NavItemConfig } from '../../../config/navigationConfig';
 

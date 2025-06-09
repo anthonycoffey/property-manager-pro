@@ -4,7 +4,7 @@ import InviteResidentForm from '../../PropertyManager/InviteResidentForm';
 import PropertyResidentsTable from '../../PropertyManager/PropertyResidentsTable';
 import EditResidentModal from '../../PropertyManager/EditResidentModal';
 import type { Resident as ResidentType } from '../../../types';
-import { usePropertyManagerContext } from '../../../contexts/PropertyManagerContext';
+import { usePropertyManagerContext } from '../../../hooks/usePropertyManagerContext';
 import { useAuth } from '../../../hooks/useAuth';
 
 const PropertyManagerResidentsView: React.FC = () => {

@@ -3,7 +3,7 @@ import { Box, Typography, Alert } from '@mui/material';
 import PropertyManagerPropertiesList from '../../PropertyManager/PropertyManagerPropertiesList';
 import EditPropertyModal from '../../PropertyManager/EditPropertyModal'; // If edit is triggered from here
 import type { Property as PropertyType } from '../../../types';
-import { usePropertyManagerContext } from '../../../contexts/PropertyManagerContext';
+import { usePropertyManagerContext } from '../../../hooks/usePropertyManagerContext';
 import { useAuth } from '../../../hooks/useAuth';
 
 const PropertyManagerMyPropertiesView: React.FC = () => {

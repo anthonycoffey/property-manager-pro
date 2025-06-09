@@ -1,24 +1,9 @@
-import React, { createContext, useContext, useState } from 'react';
-import type { ReactNode } from 'react'; // Import ReactNode as type
-import type { Organization } from '../types'; // Assuming Organization type is in src/types
+import React, { useState } from 'react'; // Removed useContext, createContext
+import type { ReactNode } from 'react';
+import type { Organization } from '../types';
+import { OrgManagerContext } from './OrgManagerContextDefinition'; // Import from new definition file
 
-interface OrgManagerContextType {
-  selectedOrgId: string | null;
-  setSelectedOrgId: (orgId: string | null) => void;
-  organizations: Organization[];
-  setOrganizations: (orgs: Organization[]) => void;
-  selectedOrganization: Organization | null; // To easily access name, createdBy etc.
-}
-
-const OrgManagerContext = createContext<OrgManagerContextType | undefined>(undefined);
-
-export const useOrgManagerContext = () => {
-  const context = useContext(OrgManagerContext);
-  if (!context) {
-    throw new Error('useOrgManagerContext must be used within an OrgManagerProvider');
-  }
-  return context;
-};
+// OrgManagerContextType and OrgManagerContext are now imported
 
 interface OrgManagerProviderProps {
   children: ReactNode;
@@ -31,10 +16,14 @@ export const OrgManagerProvider: React.FC<OrgManagerProviderProps> = ({
   initialOrgs = [],
   initialSelectedOrgId = null,
 }) => {
-  const [organizations, setOrganizations] = useState<Organization[]>(initialOrgs);
-  const [selectedOrgId, setSelectedOrgId] = useState<string | null>(initialSelectedOrgId);
+  const [organizations, setOrganizations] =
+    useState<Organization[]>(initialOrgs);
+  const [selectedOrgId, setSelectedOrgId] = useState<string | null>(
+    initialSelectedOrgId
+  );
 
-  const selectedOrganization = organizations.find(org => org.id === selectedOrgId) || null;
+  const selectedOrganization =
+    organizations.find((org) => org.id === selectedOrgId) || null;
 
   return (
     <OrgManagerContext.Provider

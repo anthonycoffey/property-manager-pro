@@ -24,7 +24,7 @@ import type {
   Resident as ResidentType,
 } from '../../../types';
 
-import { useOrgManagerContext } from '../../../contexts/OrgManagerContext';
+import { useOrgManagerContext } from '../../../hooks/useOrgManagerContext';
 
 // interface OrgManagerPropertiesViewProps {
 //   selectedOrgId: string | null; // Will come from context

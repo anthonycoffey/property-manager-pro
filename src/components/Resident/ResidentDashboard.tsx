@@ -1,16 +1,22 @@
 import React from 'react';
-import { Box, Typography, Paper, Container, Divider } from '@mui/material';
-import { Outlet, useLocation } from 'react-router-dom'; // Import Outlet & useLocation
+import { Box, Typography, Paper, Divider, CircularProgress } from '@mui/material';
+import { Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import TestimonialCard from '../Marketing/TestimonialCard';
-import ResidentQuickNav from './ResidentQuickNav'; // Import ResidentQuickNav
+import ResidentQuickNav from './ResidentQuickNav';
 
 const ResidentDashboard: React.FC = () => {
   const { currentUser } = useAuth();
-  const location = useLocation(); // Get current location
+  const location = useLocation();
 
   if (!currentUser) {
-    return <Typography>Loading resident data...</Typography>;
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 200 }}>
+        <Box component="span" sx={{ display: 'flex' }}>
+          <CircularProgress />
+        </Box>
+      </Box>
+    );
   }
 
   return (

@@ -73,7 +73,6 @@ const ResidentProfileManagement: React.FC = () => {
             setResidentData({
               displayName: currentUser.displayName || '',
               email: currentUser.email || '',
-              phone: (currentUser as any).phone || '', // Corrected: use phone, cast if needed from currentUser
             });
             setVehicles([]);
             setError('Profile not found, please complete your details.');

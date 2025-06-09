@@ -1,7 +1,6 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   Box,
-  Typography,
   Paper,
   Button,
   Alert,
@@ -10,28 +9,18 @@ import {
   DialogContent,
   IconButton,
   Container,
-  Stack,
   Divider,
-  Card,
-  CardActionArea,
-  CardContent, // Added for testimonial section
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import CloseIcon from '@mui/icons-material/Close';
-import DomainAddIcon from '@mui/icons-material/DomainAdd';
 import { Outlet, useLocation } from 'react-router-dom'; // useLocation already here, good.
-
-import { doc, getDoc } from 'firebase/firestore';
-import { db } from '../../firebaseConfig';
 
 import PropertySelectorDropdown from '../PropertyManager/PropertySelectorDropdown';
 import CreatePropertyForm from '../PropertyManager/CreatePropertyForm';
 import TestimonialCard from '../Marketing/TestimonialCard'; // For testimonial section
 
-import {
-  PropertyManagerProvider,
-  usePropertyManagerContext,
-} from '../../contexts/PropertyManagerContext';
+import { PropertyManagerProvider } from '../../contexts/PropertyManagerContext';
+import { usePropertyManagerContext } from '../../hooks/usePropertyManagerContext'; // Corrected import path
 import { useAuth } from '../../hooks/useAuth';
 import PropertyManagerQuickNav from './PropertyManager/PropertyManagerQuickNav';
 
@@ -44,36 +33,13 @@ const PropertyManagerDashboardContent: React.FC<
 > = ({ organizationId }) => {
   const { selectedPropertyId, setSelectedPropertyId, setSelectedPropertyName } =
     usePropertyManagerContext();
-  const location = useLocation(); // Add useLocation here
+  const location = useLocation();
   const { pathname } = location;
   const aiAssistancePath = '/dashboard/property-manager/ai-assistant';
 
-
-  
   const [isCreatePropertyModalOpen, setIsCreatePropertyModalOpen] =
     useState(false);
-  // const [organizationName, setOrganizationName] = useState<string | null>(null);
   const [refreshPropertiesKey, setRefreshPropertiesKey] = useState(0);
-
-  // useEffect(() => {
-  //   const fetchOrgName = async () => {
-  //     if (organizationId) {
-  //       try {
-  //         const orgDocRef = doc(db, 'organizations', organizationId);
-  //         const orgDocSnap = await getDoc(orgDocRef);
-  //         setOrganizationName(
-  //           orgDocSnap.exists() ? orgDocSnap.data()?.name || 'N/A' : 'N/A'
-  //         );
-  //       } catch (error) {
-  //         console.error('Error fetching organization name:', error);
-  //         setOrganizationName('Error');
-  //       }
-  //     } else {
-  //       setOrganizationName('Your Organization');
-  //     }
-  //   };
-  //   fetchOrgName();
-  // }, [organizationId]);
 
   const handlePropertySelect = useCallback(
     (propertyId: string | null, propertyName?: string | null) => {
@@ -106,7 +72,6 @@ const PropertyManagerDashboardContent: React.FC<
   return (
     <>
       <Paper elevation={3} sx={{ mb: 4, p: { xs: 1, sm: 2 } }}>
-        {/* Conditionally render PropertySelectorDropdown */}
         {pathname !== aiAssistancePath && (
           <>
             <Box
@@ -118,7 +83,6 @@ const PropertyManagerDashboardContent: React.FC<
                 mb: 2,
               }}
             >
-
               <Button
                 variant='contained'
                 startIcon={<AddIcon />}
@@ -249,28 +213,17 @@ const PropertyManagerDashboardContent: React.FC<
 const PropertyManagerDashboardPanel: React.FC<
   PropertyManagerDashboardPanelProps
 > = (props) => {
-  const location = useLocation(); // Get current location
+  const location = useLocation();
   const { organizationId: authOrganizationId } = useAuth();
-  // Use prop if provided, otherwise fallback to auth's organizationId
   const currentOrganizationId =
     props.organizationId || authOrganizationId || null;
 
-  // We need selectedPropertyId from context to decide if QuickNav should render
-  // This means PropertyManagerQuickNav itself cannot be the one consuming the context
-  // if the panel needs to make a decision based on context values *before* rendering QuickNav.
-  // However, QuickNav *does* consume the context.
-  // A simple way is to let QuickNav render and handle its disabled state if no property is selected.
-  // The conditional rendering here will be based on the *page* (overview) and if an org is present.
-
   return (
     <PropertyManagerProvider>
-      {/* <Container component="main" maxWidth="xl" > */}
-      {/* Conditionally render QuickNav for overview page */}
       {location.pathname === '/dashboard/property-manager/overview' &&
         currentOrganizationId && <PropertyManagerQuickNav />}
 
       <PropertyManagerDashboardContent organizationId={currentOrganizationId} />
-      {/* </Container> */}
     </PropertyManagerProvider>
   );
 };

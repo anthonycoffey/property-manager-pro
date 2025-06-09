@@ -13,11 +13,8 @@ import {
   Alert,
   type SelectChangeEvent,
   Container,
-  Stack,
-  Divider, // Added for visual separation
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
-import BusinessIcon from '@mui/icons-material/Business';
 import { Outlet, useLocation } from 'react-router-dom'; // For rendering child routes
 import OrgManagerQuickNav from './OrganizationManager/OrgManagerQuickNav'; // Import QuickNav
 
@@ -26,10 +23,8 @@ import AddOrganizationModal from '../Admin/AddOrganizationModal'; // For "Add Or
 import { db } from '../../firebaseConfig';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import type { Organization, AppError } from '../../types';
-import {
-  OrgManagerProvider,
-  useOrgManagerContext,
-} from '../../contexts/OrgManagerContext';
+import { OrgManagerProvider } from '../../contexts/OrgManagerContext';
+import { useOrgManagerContext } from '../../hooks/useOrgManagerContext'; // Corrected import path
 
 // This component will now act as a layout and context provider for the Org Manager section.
 // The actual content for each "tab" will be rendered via <Outlet /> from child routes.

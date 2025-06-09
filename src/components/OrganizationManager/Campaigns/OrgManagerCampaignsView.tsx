@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Typography, Paper, Alert } from '@mui/material';
 import { useAuth } from '../../../hooks/useAuth';
-import { useOrgManagerContext } from '../../../contexts/OrgManagerContext';
+import { useOrgManagerContext } from '../../../hooks/useOrgManagerContext';
 import PropertySelectorDropdown from '../../PropertyManager/PropertySelectorDropdown';
 import PropertyCampaignsView from '../../PropertyManager/Campaigns/PropertyCampaignsView';
 

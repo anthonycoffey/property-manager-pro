@@ -6,9 +6,6 @@ import {
   Alert,
   CircularProgress,
   Paper,
-  Card,
-  CardActionArea,
-  CardContent,
   Divider, // Added Divider
 } from '@mui/material';
 import HomeWorkIcon from '@mui/icons-material/HomeWork';
@@ -26,7 +23,7 @@ import PieChart from '../Charts/PieChart';
 // Firebase functions
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { isAppError } from '../../../utils/errorUtils';
-import { useOrgManagerContext } from '../../../contexts/OrgManagerContext';
+import { useOrgManagerContext } from '../../../hooks/useOrgManagerContext';
 
 // Types (mirroring OrganizationManagerDashboardPanel)
 interface CampaignPerformanceData {

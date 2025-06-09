@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Box, Typography, Paper, Divider } from '@mui/material';
+import { Box, Typography, Paper } from '@mui/material';
 import { useAuth } from '../../../hooks/useAuth';
 import OrganizationSelector from '../OrganizationSelector'; // Standard Admin Org Selector
 import PropertySelectorDropdown from '../../PropertyManager/PropertySelectorDropdown';

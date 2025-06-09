@@ -9,7 +9,6 @@ import {
   Card,
   CardActionArea,
   CardContent,
-  Paper, // Added Paper back
 } from '@mui/material';
 import {
   Business,

@@ -6,9 +6,6 @@ import {
   CircularProgress,
   Paper,
   Stack,
-  Card,
-  CardActionArea,
-  CardContent,
   Divider,
 } from '@mui/material';
 import PeopleIcon from '@mui/icons-material/People';
@@ -26,7 +23,7 @@ import PieChart from '../Charts/PieChart';
 
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { isAppError } from '../../../utils/errorUtils';
-import { usePropertyManagerContext } from '../../../contexts/PropertyManagerContext';
+import { usePropertyManagerContext } from '../../../hooks/usePropertyManagerContext';
 
 interface PropertyCampaignPerformanceData {
   campaignName: string;

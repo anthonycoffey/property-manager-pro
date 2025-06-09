@@ -1,7 +1,7 @@
 import React from 'react';
-import { Box, Alert, Paper } from '@mui/material';
+import {  Alert, Paper } from '@mui/material';
 import OrgScopedPropertyManagerManagement from '../../OrganizationManager/OrgScopedPropertyManagerManagement';
-import { useOrgManagerContext } from '../../../contexts/OrgManagerContext';
+import { useOrgManagerContext } from '../../../hooks/useOrgManagerContext';
 
 const OrgManagerStaffView: React.FC = () => {
   const { selectedOrgId, selectedOrganization } = useOrgManagerContext();

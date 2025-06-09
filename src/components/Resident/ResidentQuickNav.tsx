@@ -5,7 +5,6 @@ import {
   Card,
   CardActionArea,
   CardContent,
-  Divider,
 } from '@mui/material';
 import { Link as RouterLink } from 'react-router-dom';
 import { navigationItems } from '../../config/navigationConfig';

@@ -42,6 +42,8 @@ const OrganizationManagerDashboardContent: React.FC<
   OrganizationManagerDashboardPanelProps
 > = () => {
   const location = useLocation(); // Get current location
+  const { pathname } = location; // Destructure pathname
+  const aiAssistancePath = '/dashboard/organization-manager/ai-assistant'; // Define AI path
   const { currentUser, organizationIds } = useAuth();
   // Context values will be used by child Outlet components
   const {
@@ -187,27 +189,17 @@ const OrganizationManagerDashboardContent: React.FC<
 
   return (
     <>
-      <Paper sx={{ p: { xs: 1, sm: 2 }, mb: 4 }} elevation={3}>
+      {/* Button to add new organization */}
+      {pathname !== aiAssistancePath && (
         <Box
           sx={{
             display: 'flex',
             flexDirection: { xs: 'column', sm: 'row' },
-            justifyContent: 'space-between',
+            justifyContent: 'flex-end',
             alignItems: { xs: 'flex-start', sm: 'center' },
             mb: organizations.length > 0 ? 0 : 2,
           }}
         >
-          <Stack
-            direction='row'
-            alignItems='center'
-            spacing={1}
-            sx={{ mb: { xs: 1, sm: 0 } }}
-          >
-            <BusinessIcon fontSize='large' color='primary' />
-            <Typography variant='h4' color='primary'>
-              Organization Management
-            </Typography>
-          </Stack>
           <Button
             variant='contained'
             startIcon={<AddIcon />}
@@ -217,12 +209,15 @@ const OrganizationManagerDashboardContent: React.FC<
             Add Organization
           </Button>
         </Box>
+      )}
 
-        {/* Conditionally render QuickNav for overview page - MOVED HERE */}
-        {location.pathname === '/dashboard/organization-manager/overview' &&
-          selectedOrgId && <OrgManagerQuickNav />}
+      {/* Conditionally render QuickNav for overview page - MOVED HERE */}
+      {location.pathname === '/dashboard/organization-manager/overview' &&
+        selectedOrgId && <OrgManagerQuickNav />}
 
-        {organizations.length > 0 ? (
+      {/* Conditionally render Organization Selector and "no orgs" message */}
+      {pathname !== aiAssistancePath && organizations.length > 0 ? (
+        <Paper sx={{ p: { xs: 1, sm: 2 }, my: 4 }} elevation={3}>
           <FormControl fullWidth margin='normal' sx={{ mt: 2 }}>
             <InputLabel id='om-org-selector-label'>
               Select Organization to Manage
@@ -241,35 +236,33 @@ const OrganizationManagerDashboardContent: React.FC<
               ))}
             </Select>
           </FormControl>
-        ) : (
-          !loading && ( // Only show if not loading and no orgs
-            <Typography sx={{ p: 2, textAlign: 'center' }}>
-              You are not currently managing any organizations. You can create
-              one using the "Add Organization" button.
-            </Typography>
-          )
-        )}
+        </Paper>
+      ) : (
+        pathname !== aiAssistancePath &&
+        !loading &&
+        organizations.length === 0 && (
+          // Only show this message if not on AI path, not loading, and no orgs
+          <Typography sx={{ p: 2, textAlign: 'center' }}>
+            You are not currently managing any organizations. You can create one
+            using the "Add Organization" button.
+          </Typography>
+        )
+      )}
 
-        {selectedOrganization && (
-          <Alert severity='info' sx={{ mt: 1, mb: 2 }}>
-            Managing Organization: <strong>{selectedOrganization.name}</strong>
+      {/* Child routes will render here, consuming context for selectedOrgId */}
+      {pathname === aiAssistancePath ? (
+        <Outlet /> // Always render Outlet for AI assistance route
+      ) : selectedOrgId ? (
+        <Outlet /> // For other routes, render Outlet only if an org is selected
+      ) : (
+        organizations.length > 0 &&
+        !loading && ( // This condition remains for non-AI paths
+          <Alert severity='info' sx={{ mt: 2 }}>
+            Please select an organization to see more options.
           </Alert>
-        )}
-
-        <Divider sx={{ my: 2 }} />
-
-        {/* Child routes will render here, consuming context for selectedOrgId */}
-        {selectedOrgId ? (
-          <Outlet />
-        ) : (
-          organizations.length > 0 &&
-          !loading && (
-            <Alert severity='info' sx={{ mt: 2 }}>
-              Please select an organization to see more options.
-            </Alert>
-          )
-        )}
-      </Paper>
+        )
+      )}
+      {/* </Paper> */}
 
       <AddOrganizationModal
         open={isAddOrgModalOpen}

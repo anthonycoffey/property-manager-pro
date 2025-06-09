@@ -124,7 +124,7 @@ const ChatView: React.FC = () => {
       <Paper
         elevation={5}
         sx={{
-          height: '40vh', // Or adjust as needed
+          minHeight: '50vh', // Or adjust as needed
           display: 'flex',
           flexDirection: 'column',
           overflow: 'hidden',

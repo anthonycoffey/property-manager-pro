@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Typography, Divider, Box, Paper } from '@mui/material';
+import { Typography, Divider, Box, Paper, Alert } from '@mui/material';
 import OrganizationSelector from '../../Admin/OrganizationSelector';
 import PropertyManagerManagement from '../../Admin/PropertyManagerManagement';
 
@@ -14,18 +14,16 @@ const AdminPropertyManagersView: React.FC = () => {
 
   return (
     <Paper sx={{ p: { xs: 1, sm: 2, lg: 3 } }}>
-
       <OrganizationSelector
         selectedOrganizationId={selectedAdminOrgId}
         onOrganizationChange={handleAdminOrgChange}
       />
-      <Divider sx={{ my: 4 }} />
       {selectedAdminOrgId ? (
         <PropertyManagerManagement organizationId={selectedAdminOrgId} />
       ) : (
-        <Typography>
+        <Alert severity='info' sx={{ mt: 2 }}>
           Select an organization to view and manage its property managers.
-        </Typography>
+        </Alert>
       )}
     </Paper>
   );

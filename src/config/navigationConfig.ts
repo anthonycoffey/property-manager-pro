@@ -46,7 +46,7 @@ export const navigationItems: NavItemConfig[] = [
     roles: ['admin'],
   },
   {
-    text: 'Org Managers',
+    text: 'Org. Managers',
     icon: GroupIcon,
     path: '/dashboard/admin/org-managers',
     roles: ['admin'],

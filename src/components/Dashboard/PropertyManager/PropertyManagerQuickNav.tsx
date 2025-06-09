@@ -22,9 +22,6 @@ const PropertyManagerQuickNav: React.FC = () => {
 
   return (
     <>
-      <Typography variant='h5' gutterBottom sx={{ mb: 3 }}>
-        Manage Property
-      </Typography>
       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 4 }}>
         {propertyManagerNavItems.map((item: NavItemConfig) => (
           <Box
@@ -47,7 +44,9 @@ const PropertyManagerQuickNav: React.FC = () => {
                 component={RouterLink}
                 to={item.path.replace(':propertyId', selectedPropertyId || '')}
                 sx={{ flexGrow: 1 }}
-                disabled={!selectedPropertyId && item.path.includes(':propertyId')}
+                disabled={
+                  !selectedPropertyId && item.path.includes(':propertyId')
+                }
               >
                 <CardContent sx={{ textAlign: 'center', p: 3 }}>
                   <item.icon sx={{ fontSize: 48, mb: 2 }} color='primary' />

@@ -19,7 +19,7 @@ import {
 import AddIcon from '@mui/icons-material/Add';
 import CloseIcon from '@mui/icons-material/Close';
 import DomainAddIcon from '@mui/icons-material/DomainAdd';
-import { Outlet, useLocation } from 'react-router-dom'; // Added useLocation
+import { Outlet, useLocation } from 'react-router-dom'; // useLocation already here, good.
 
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../../firebaseConfig';
@@ -44,31 +44,36 @@ const PropertyManagerDashboardContent: React.FC<
 > = ({ organizationId }) => {
   const { selectedPropertyId, setSelectedPropertyId, setSelectedPropertyName } =
     usePropertyManagerContext();
+  const location = useLocation(); // Add useLocation here
+  const { pathname } = location;
+  const aiAssistancePath = '/dashboard/property-manager/ai-assistant';
 
+
+  
   const [isCreatePropertyModalOpen, setIsCreatePropertyModalOpen] =
     useState(false);
-  const [organizationName, setOrganizationName] = useState<string | null>(null);
+  // const [organizationName, setOrganizationName] = useState<string | null>(null);
   const [refreshPropertiesKey, setRefreshPropertiesKey] = useState(0);
 
-  useEffect(() => {
-    const fetchOrgName = async () => {
-      if (organizationId) {
-        try {
-          const orgDocRef = doc(db, 'organizations', organizationId);
-          const orgDocSnap = await getDoc(orgDocRef);
-          setOrganizationName(
-            orgDocSnap.exists() ? orgDocSnap.data()?.name || 'N/A' : 'N/A'
-          );
-        } catch (error) {
-          console.error('Error fetching organization name:', error);
-          setOrganizationName('Error');
-        }
-      } else {
-        setOrganizationName('Your Organization');
-      }
-    };
-    fetchOrgName();
-  }, [organizationId]);
+  // useEffect(() => {
+  //   const fetchOrgName = async () => {
+  //     if (organizationId) {
+  //       try {
+  //         const orgDocRef = doc(db, 'organizations', organizationId);
+  //         const orgDocSnap = await getDoc(orgDocRef);
+  //         setOrganizationName(
+  //           orgDocSnap.exists() ? orgDocSnap.data()?.name || 'N/A' : 'N/A'
+  //         );
+  //       } catch (error) {
+  //         console.error('Error fetching organization name:', error);
+  //         setOrganizationName('Error');
+  //       }
+  //     } else {
+  //       setOrganizationName('Your Organization');
+  //     }
+  //   };
+  //   fetchOrgName();
+  // }, [organizationId]);
 
   const handlePropertySelect = useCallback(
     (propertyId: string | null, propertyName?: string | null) => {
@@ -101,42 +106,44 @@ const PropertyManagerDashboardContent: React.FC<
   return (
     <>
       <Paper elevation={3} sx={{ mb: 4, p: { xs: 1, sm: 2 } }}>
-        <Box
-          sx={{
-            display: 'flex',
-            flexDirection: { xs: 'column', sm: 'row' },
-            justifyContent: 'space-between',
-            alignItems: { xs: 'flex-start', sm: 'center' },
-            mb: 2,
-          }}
-        >
-          <Stack direction='row' alignItems='center' spacing={1}>
-            <DomainAddIcon fontSize='large' color='primary' />
-            <Typography variant='h4' color='primary'>
-              {organizationName || 'Property Management'}
-            </Typography>
-          </Stack>
-          <Button
-            variant='contained'
-            startIcon={<AddIcon />}
-            onClick={handleOpenCreatePropertyModal}
-            sx={{ width: { xs: '100%', sm: 'auto' }, mt: { xs: 2, sm: 0 } }}
-          >
-            Add Property
-          </Button>
-        </Box>
+        {/* Conditionally render PropertySelectorDropdown */}
+        {pathname !== aiAssistancePath && (
+          <>
+            <Box
+              sx={{
+                display: 'flex',
+                flexDirection: { xs: 'column', sm: 'row' },
+                justifyContent: 'flex-end',
+                alignItems: { xs: 'flex-start', sm: 'center' },
+                mb: 2,
+              }}
+            >
 
-        <PropertySelectorDropdown
-          organizationId={organizationId}
-          selectedPropertyId={selectedPropertyId}
-          onPropertyChange={handlePropertySelect}
-          key={`prop-selector-${refreshPropertiesKey}`}
-          label='Select Property to Manage'
-        />
+              <Button
+                variant='contained'
+                startIcon={<AddIcon />}
+                onClick={handleOpenCreatePropertyModal}
+                sx={{ width: { xs: '100%', sm: 'auto' }, mt: { xs: 2, sm: 0 } }}
+              >
+                Add Property
+              </Button>
+            </Box>
+
+            <PropertySelectorDropdown
+              organizationId={organizationId}
+              selectedPropertyId={selectedPropertyId}
+              onPropertyChange={handlePropertySelect}
+              key={`prop-selector-${refreshPropertiesKey}`}
+              label='Select Property to Manage'
+            />
+          </>
+        )}
 
         <Box sx={{ mt: 2 }}>
-          {selectedPropertyId ? (
-            <Outlet />
+          {pathname === aiAssistancePath ? (
+            <Outlet /> // Always render Outlet for AI assistance route
+          ) : selectedPropertyId ? (
+            <Outlet /> // For other routes, render Outlet only if a property is selected
           ) : (
             <Alert severity='info' sx={{ mt: 2 }}>
               Please select a property from the dropdown to see more options.

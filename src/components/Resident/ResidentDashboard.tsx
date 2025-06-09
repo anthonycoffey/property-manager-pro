@@ -24,7 +24,7 @@ const ResidentDashboard: React.FC = () => {
         <Outlet />
       </Paper>
 
-      <Divider sx={{ my: 6, borderColor: 'secondary.main' }} />
+      <Divider sx={{ mt: 8 }} />
       {/* Testimonials Section */}
       <Box
         sx={{

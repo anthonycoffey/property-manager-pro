@@ -6,6 +6,7 @@ import {
   Button,
   Snackbar,
   Alert,
+  Paper,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 
@@ -147,7 +148,7 @@ const OrgManagerPropertiesView: React.FC = () => {
   }
 
   return (
-    <Box sx={{ p: { xs: 1, sm: 2, lg: 3 } }}>
+    <Paper sx={{ p: { xs: 1, sm: 2, lg: 3 } }}>
       <Typography variant='h5' gutterBottom sx={{ mb: 2 }}>
         Properties & Residents for {selectedOrganization.name}
       </Typography>
@@ -249,7 +250,7 @@ const OrgManagerPropertiesView: React.FC = () => {
           {snackbarMessage}
         </Alert>
       </Snackbar>
-    </Box>
+    </Paper>
   );
 };
 

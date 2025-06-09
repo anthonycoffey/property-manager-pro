@@ -311,7 +311,7 @@ const AdminOverviewView: React.FC = () => {
               isLoading: dashboardLoading,
             },
             {
-              title: 'Org Managers',
+              title: 'Org. Managers',
               value: dashboardStats?.platformCounts?.organizationManagers,
               icon: <Group />,
               isLoading: dashboardLoading,

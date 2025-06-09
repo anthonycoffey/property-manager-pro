@@ -34,7 +34,7 @@ export const navigationItems: NavItemConfig[] = [
   // --- Admin Links ---
   // Corresponds to AdminDashboardPanel tabs
   {
-    text: 'Overview',
+    text: 'Dashboard',
     icon: DashboardIcon,
     path: '/dashboard/admin/overview',
     roles: ['admin'],
@@ -80,13 +80,13 @@ export const navigationItems: NavItemConfig[] = [
   // Corresponds to OrganizationManagerDashboardPanel tabs
   // Paths will need to incorporate :orgId or views will handle org selection
   {
-    text: 'Org. Overview',
+    text: 'Dashboard',
     icon: DashboardIcon,
     path: '/dashboard/organization-manager/overview', // Page will need org selector or use :orgId
     roles: ['organization_manager'],
   },
   {
-    text: 'Staff (PMs)',
+    text: 'Staff',
     icon: AssignmentIndIcon,
     path: '/dashboard/organization-manager/staff', // Page will need org selector or use :orgId
     roles: ['organization_manager'],
@@ -114,7 +114,7 @@ export const navigationItems: NavItemConfig[] = [
   // Corresponds to PropertyManagerDashboardPanel tabs
   // Paths will need to incorporate :propertyId or views will handle property selection
   {
-    text: 'Prop. Overview',
+    text: 'Dashboard',
     icon: DashboardIcon,
     path: '/dashboard/property-manager/overview', // Page will need property selector
     roles: ['property_manager'],

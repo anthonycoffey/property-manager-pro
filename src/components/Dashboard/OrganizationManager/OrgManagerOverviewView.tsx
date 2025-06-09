@@ -17,9 +17,6 @@ import AssignmentIndIcon from '@mui/icons-material/AssignmentInd';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import CrisisAlertIcon from '@mui/icons-material/CrisisAlert';
 import LocalShippingIcon from '@mui/icons-material/LocalShipping';
-import { Link as RouterLink } from 'react-router-dom';
-import { navigationItems } from '../../../config/navigationConfig';
-import type { NavItemConfig } from '../../../config/navigationConfig';
 
 // Chart Components
 import KpiCard from '../Charts/KpiCard';
@@ -82,12 +79,6 @@ const OrgManagerOverviewView: React.FC = () => {
   const [phoenixError, setPhoenixError] = useState<string | null>(null);
 
   const functionsInstance = getFunctions();
-
-  const orgManagerNavItems = navigationItems.filter(
-    (item) =>
-      item.roles.includes('organization_manager') &&
-      item.path !== '/dashboard/organization-manager/overview'
-  );
 
   useEffect(() => {
     const fetchOrgManagerStats = async () => {
@@ -443,46 +434,7 @@ const OrgManagerOverviewView: React.FC = () => {
           )}
       </Box>
 
-      {/* Quick Navigation Links */}
-      <Divider sx={{ my: 4 }} />
-      <Typography variant='h5' gutterBottom sx={{ mb: 3 }}>
-        Manage Organization
-      </Typography>
-      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
-        {orgManagerNavItems.map((item: NavItemConfig) => (
-          <Box
-            key={item.text}
-            sx={{
-              flexGrow: 1,
-              flexBasis: {
-                xs: '100%',
-                sm: 'calc(50% - 8px)',
-                md: 'calc(33.333% - 11px)',
-              },
-              minWidth: { xs: 'calc(50% - 8px)', sm: 180 },
-            }}
-          >
-            <Card
-              sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}
-            >
-              <CardActionArea
-                component={RouterLink}
-                to={item.path.replace(':orgId', selectedOrgId)}
-                sx={{ flexGrow: 1 }}
-              >
-                {' '}
-                {/* Assuming paths might need :orgId */}
-                <CardContent sx={{ textAlign: 'center', p: 3 }}>
-                  <item.icon sx={{ fontSize: 48, mb: 2 }} color='primary' />
-                  <Typography gutterBottom variant='h6' component='div'>
-                    {item.text}
-                  </Typography>
-                </CardContent>
-              </CardActionArea>
-            </Card>
-          </Box>
-        ))}
-      </Box>
+
     </Box>
   );
 };

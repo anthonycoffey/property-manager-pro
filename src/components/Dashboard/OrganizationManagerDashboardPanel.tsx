@@ -18,7 +18,8 @@ import {
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import BusinessIcon from '@mui/icons-material/Business';
-import { Outlet } from 'react-router-dom'; // For rendering child routes
+import { Outlet, useLocation } from 'react-router-dom'; // For rendering child routes
+import OrgManagerQuickNav from './OrganizationManager/OrgManagerQuickNav'; // Import QuickNav
 
 import { useAuth } from '../../hooks/useAuth';
 import AddOrganizationModal from '../Admin/AddOrganizationModal'; // For "Add Organization" button
@@ -40,6 +41,7 @@ interface OrganizationManagerDashboardPanelProps {
 const OrganizationManagerDashboardContent: React.FC<
   OrganizationManagerDashboardPanelProps
 > = () => {
+  const location = useLocation(); // Get current location
   const { currentUser, organizationIds } = useAuth();
   // Context values will be used by child Outlet components
   const {
@@ -184,7 +186,7 @@ const OrganizationManagerDashboardContent: React.FC<
   }
 
   return (
-    <Container component='main' maxWidth='xl'>
+    <>
       <Paper sx={{ p: { xs: 1, sm: 2 }, mb: 4 }} elevation={3}>
         <Box
           sx={{
@@ -215,6 +217,10 @@ const OrganizationManagerDashboardContent: React.FC<
             Add Organization
           </Button>
         </Box>
+
+        {/* Conditionally render QuickNav for overview page - MOVED HERE */}
+        {location.pathname === '/dashboard/organization-manager/overview' &&
+          selectedOrgId && <OrgManagerQuickNav />}
 
         {organizations.length > 0 ? (
           <FormControl fullWidth margin='normal' sx={{ mt: 2 }}>
@@ -283,7 +289,7 @@ const OrganizationManagerDashboardContent: React.FC<
           {snackbarMessage}
         </Alert>
       </Snackbar>
-    </Container>
+    </>
   );
 };
 
@@ -292,8 +298,7 @@ const OrganizationManagerDashboardPanel: React.FC<
   OrganizationManagerDashboardPanelProps
 > = (props) => {
   return (
-    <OrgManagerProvider
-    >
+    <OrgManagerProvider>
       <OrganizationManagerDashboardContent {...props} />
     </OrgManagerProvider>
   );

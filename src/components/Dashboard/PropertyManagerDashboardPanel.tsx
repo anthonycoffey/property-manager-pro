@@ -19,7 +19,7 @@ import {
 import AddIcon from '@mui/icons-material/Add';
 import CloseIcon from '@mui/icons-material/Close';
 import DomainAddIcon from '@mui/icons-material/DomainAdd';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom'; // Added useLocation
 
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../../firebaseConfig';
@@ -148,7 +148,7 @@ const PropertyManagerDashboardContent: React.FC<
       {/* Testimonial Section - Added back */}
       {organizationId && ( // Only show if org context is available
         <>
-          <Divider sx={{ my: 6, borderColor: 'secondary.main' }} />
+          <Divider sx={{ mt: 8 }} />
           <Box
             sx={{
               mt: 4,
@@ -156,13 +156,6 @@ const PropertyManagerDashboardContent: React.FC<
               backgroundColor: 'background.default',
             }}
           >
-            <Typography
-              variant='h5'
-              gutterBottom
-              sx={{ mb: 2, textAlign: 'center' }}
-            >
-              Valued Feedback
-            </Typography>
             <Box
               sx={{
                 display: 'flex',
@@ -249,16 +242,28 @@ const PropertyManagerDashboardContent: React.FC<
 const PropertyManagerDashboardPanel: React.FC<
   PropertyManagerDashboardPanelProps
 > = (props) => {
+  const location = useLocation(); // Get current location
   const { organizationId: authOrganizationId } = useAuth();
   // Use prop if provided, otherwise fallback to auth's organizationId
   const currentOrganizationId =
     props.organizationId || authOrganizationId || null;
 
+  // We need selectedPropertyId from context to decide if QuickNav should render
+  // This means PropertyManagerQuickNav itself cannot be the one consuming the context
+  // if the panel needs to make a decision based on context values *before* rendering QuickNav.
+  // However, QuickNav *does* consume the context.
+  // A simple way is to let QuickNav render and handle its disabled state if no property is selected.
+  // The conditional rendering here will be based on the *page* (overview) and if an org is present.
+
   return (
     <PropertyManagerProvider>
-      <PropertyManagerQuickNav />
-      {/* <Divider sx={{ my: 4 }} /> */}
+      {/* <Container component="main" maxWidth="xl" > */}
+      {/* Conditionally render QuickNav for overview page */}
+      {location.pathname === '/dashboard/property-manager/overview' &&
+        currentOrganizationId && <PropertyManagerQuickNav />}
+
       <PropertyManagerDashboardContent organizationId={currentOrganizationId} />
+      {/* </Container> */}
     </PropertyManagerProvider>
   );
 };

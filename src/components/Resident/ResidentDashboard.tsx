@@ -1,37 +1,29 @@
 import React from 'react';
-import {
-  Box,
-  Typography,
-  Paper,
-  Container,
-  Stack,
-  Divider,
-} from '@mui/material';
-import { Outlet } from 'react-router-dom'; // Import Outlet
+import { Box, Typography, Paper, Container, Divider } from '@mui/material';
+import { Outlet, useLocation } from 'react-router-dom'; // Import Outlet & useLocation
 import { useAuth } from '../../hooks/useAuth';
-import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import TestimonialCard from '../Marketing/TestimonialCard';
+import ResidentQuickNav from './ResidentQuickNav'; // Import ResidentQuickNav
 
 const ResidentDashboard: React.FC = () => {
   const { currentUser } = useAuth();
+  const location = useLocation(); // Get current location
 
   if (!currentUser) {
     return <Typography>Loading resident data...</Typography>;
   }
 
   return (
-    <Container component='main' maxWidth='xl'>
+    <>
+      {/* Conditionally render QuickNav for the 'My Profile' page */}
+      {location.pathname === '/dashboard/resident/my-profile' && (
+        <ResidentQuickNav />
+      )}
       <Paper elevation={3} sx={{ mb: 4, p: { xs: 1, sm: 2 } }}>
-        <Stack direction='row' alignItems='center' sx={{ mb: 2 }}>
-          <AccountCircleIcon fontSize='large' color='primary' sx={{ mr: 1 }} />
-          <Typography variant='h4' color='primary'>
-            Resident Dashboard
-          </Typography>
-        </Stack>
         {/* Outlet will render the specific resident view (My Profile, My Property, etc.) */}
-        <Outlet /> 
+        <Outlet />
       </Paper>
-      
+
       <Divider sx={{ my: 6, borderColor: 'secondary.main' }} />
       {/* Testimonials Section */}
       <Box
@@ -107,7 +99,7 @@ const ResidentDashboard: React.FC = () => {
           />
         </Box>
       </Box>
-    </Container>
+    </>
   );
 };
 

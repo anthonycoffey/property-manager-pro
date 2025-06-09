@@ -18,15 +18,12 @@ import {
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import SaveIcon from '@mui/icons-material/Save';
-import { Link as RouterLink } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../../firebaseConfig';
 import type { Resident, Vehicle } from '../../types';
 import { isAppError } from '../../utils/errorUtils';
-import { navigationItems } from '../../config/navigationConfig';
-import type { NavItemConfig } from '../../config/navigationConfig';
 
 const functions = getFunctions();
 const updateResidentProfileCallable = httpsCallable(
@@ -50,12 +47,6 @@ const ResidentProfileManagement: React.FC = () => {
     message: '',
     severity: 'success',
   });
-
-  const residentNavItems = navigationItems.filter(
-    (item) =>
-      item.roles.includes('resident') &&
-      item.path !== '/dashboard/resident/my-profile' // Exclude self
-  );
 
   useEffect(() => {
     const fetchResidentData = async () => {
@@ -189,7 +180,7 @@ const ResidentProfileManagement: React.FC = () => {
   }
 
   return (
-    <Paper elevation={3} sx={{ p: { xs: 2, sm: 3 }, mt: 2 }}>
+    <>
       <Typography variant='h5' gutterBottom sx={{ mb: 3 }}>
         Manage Your Profile
       </Typography>
@@ -367,45 +358,6 @@ const ResidentProfileManagement: React.FC = () => {
         </Button>
       </Box>
 
-      {/* Quick Navigation Links */}
-      <Divider sx={{ my: 4 }} />
-      <Typography variant='h5' gutterBottom sx={{ mb: 3 }}>
-        Explore Your Dashboard
-      </Typography>
-      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
-        {residentNavItems.map((item: NavItemConfig) => (
-          <Box
-            key={item.text}
-            sx={{
-              flexGrow: 1,
-              flexBasis: {
-                xs: '100%',
-                sm: 'calc(50% - 8px)',
-                md: 'calc(33.333% - 11px)',
-              },
-              minWidth: { xs: 'calc(50% - 8px)', sm: 180 },
-            }}
-          >
-            <Card
-              sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}
-            >
-              <CardActionArea
-                component={RouterLink}
-                to={item.path}
-                sx={{ flexGrow: 1 }}
-              >
-                <CardContent sx={{ textAlign: 'center', p: 3 }}>
-                  <item.icon sx={{ fontSize: 48, mb: 2 }} color='primary' />
-                  <Typography gutterBottom variant='h6' component='div'>
-                    {item.text}
-                  </Typography>
-                </CardContent>
-              </CardActionArea>
-            </Card>
-          </Box>
-        ))}
-      </Box>
-
       <Snackbar
         open={snackbar.open}
         autoHideDuration={6000}
@@ -419,7 +371,7 @@ const ResidentProfileManagement: React.FC = () => {
           {snackbar.message}
         </Alert>
       </Snackbar>
-    </Paper>
+    </>
   );
 };
 

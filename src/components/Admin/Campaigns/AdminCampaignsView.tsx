@@ -38,7 +38,7 @@ const AdminCampaignsView: React.FC = () => {
   }
 
   return (
-    <Paper elevation={0}>
+    <Paper sx={{ p: { xs: 1, sm: 2, lg: 3 } }}>
       <Box sx={{ mb: 2 }}>
         {/* OrganizationSelector will show its own loading/error state */}
         <OrganizationSelector
@@ -48,7 +48,6 @@ const AdminCampaignsView: React.FC = () => {
         />
       </Box>
 
-      <Divider sx={{ my: 2 }} />
       {selectedOrganizationId && (
         <Box sx={{ mb: 2 }}>
           <PropertySelectorDropdown

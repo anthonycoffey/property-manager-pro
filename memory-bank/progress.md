@@ -2,86 +2,67 @@
 
 ## 1. Current Status
 
-The project has most recently completed Phase 1 of the "Dashboard Data Visualizations & Statistics" feature, focusing on non-Phoenix related data. This involved adding new dashboard tabs to user panels, creating backend aggregation functions, developing frontend chart components, and updating data models and Firestore indexes. A plan for integrating Phoenix API data for service request analytics (`docs/12-dashboard-phoenix-integration-plan.md`) has also been documented.
+The project has most recently completed a significant **Dashboard Navigation Refactor and UI Enhancements** initiative. This involved moving from a tab-based navigation system within individual dashboard panels to a global, role-aware drawer navigation. Additionally, breadcrumbs were implemented for better contextual awareness, and initial/overview pages for each role were enhanced with quick navigation links. Layouts were updated to prefer MUI `Box` and `Stack` components.
 
-Prior to this, updates included login page accessibility enhancements and Twilio "Request Call" integration.
+Prior to this, Phase 1 of "Dashboard Data Visualizations & Statistics" (non-Phoenix data) was completed, along with login page accessibility and Twilio integration.
 
-- **Date of this update:** 2025-06-03
+- **Date of this update:** 2025-06-09
 
 ## 2. What Works / Completed (Newest First)
 
-- **Dashboard Data Visualizations & Statistics - Phase 1 (Non-Phoenix Data) (Completed 2025-06-03):**
-    - **Objective:** Implement initial dashboard statistics and visualizations for Admin, Organization Manager, and Property Manager roles.
-    - **Data Model Enhancement:**
-        - Added `totalUnits: number` to `Property` interface in `src/types/index.ts` and `PropertyData` in `functions/src/types.ts`.
-        - Updated `CreatePropertyForm.tsx` and `EditPropertyModal.tsx` to include `totalUnits` field.
-        - Updated `createProperty.ts` and `updateProperty.ts` Cloud Functions to handle `totalUnits`.
-    - **Backend Aggregation Cloud Functions:**
-        - Created `functions/src/callable/getAdminDashboardStats.ts`: Aggregates platform-wide counts, user/org growth trends, and campaign overview.
-        - Created `functions/src/callable/getOrgManagerDashboardStats.ts`: Aggregates organization-specific counts and campaign performance.
-        - Created `functions/src/callable/getPropertyManagerDashboardStats.ts`: Aggregates property-specific counts (residents, occupancy) and campaign performance.
-        - All three functions updated to robustly handle `request.data` being null or undefined.
-        - Exported new functions in `functions/src/index.ts`.
-    - **Frontend Chart Components (`src/components/Dashboard/Charts/`):**
-        - Created `KpiCard.tsx`, `LineChart.tsx`, `BarChart.tsx`, `PieChart.tsx`, `GaugeChart.tsx`.
-        - Installed `highcharts` and `highcharts-react-official` dependencies.
-    - **Dashboard Panel Integration:**
-        - `AdminDashboardPanel.tsx`: Added "Dashboard" tab; integrated KPIs, Line charts, Pie chart via `getAdminDashboardStats`.
-        - `OrganizationManagerDashboardPanel.tsx`: Added "Dashboard" tab; integrated KPIs, Bar chart via `getOrgManagerDashboardStats`.
-        - `PropertyManagerDashboardPanel.tsx`: Added "Dashboard" tab; integrated KPIs, Bar chart via `getPropertyManagerDashboardStats`.
-    - **Firestore Indexes (`firestore.indexes.json`):**
-        - Added collection group indexes for `properties`, `residents`.
-        - Added collection group index for `campaigns` including `organizationId`.
-        - Removed JSON comments.
-    - **Documentation:**
-        - Created `docs/12-dashboard-phoenix-integration-plan.md`.
+- **Dashboard Navigation Refactor & UI Enhancements (Completed 2025-06-09):**
+    - **Objective:** Improve dashboard navigation scalability, mobile usability, and overall user experience.
+    - **Navigation System:**
+        - Replaced tab-based navigation with a global drawer in `AppBarComponent.tsx`.
+        - Drawer links are dynamically generated from `src/config/navigationConfig.ts` based on user roles.
+        - Content from former tabs now resides in distinct routed view components.
+    - **Routing:**
+        - `src/routes.tsx` restructured with nested routes under `/dashboard` for new views.
+        - `src/components/Dashboard.tsx` updated to be a layout component with an `<Outlet />` and default view redirection logic.
+    - **Layout & Context:**
+        - `OrganizationManagerDashboardPanel.tsx` and `PropertyManagerDashboardPanel.tsx` refactored into layout components providing context (`OrgManagerContext`, `PropertyManagerContext`) for selected organization/property to child views.
+        - `ResidentDashboard.tsx` refactored into a layout component for resident views, including the testimonial section.
+        - `AdminDashboardPanel.tsx` simplified as its content moved to routed views.
+    - **UI Enhancements:**
+        - **Breadcrumbs:** `src/components/Layout/BreadcrumbsComponent.tsx` added and integrated into `Dashboard.tsx` to display on all authenticated dashboard pages.
+        - **Initial Page Navigation:** `AdminOverviewView.tsx`, `OrgManagerOverviewView.tsx`, `PropertyManagerOverviewView.tsx`, and `ResidentProfileManagement.tsx` (now the resident's initial page) enhanced with "Quick Navigation" cards/links.
+        - **Testimonial Sections:** Added back to `PropertyManagerDashboardPanel.tsx` and `ResidentDashboard.tsx` layouts.
+        - **Layout Components:** Ensured consistent use of MUI `Box` and `Stack` for new layouts and refactored sections.
+        - **Resident Default:** "My Profile" set as the default landing page for residents.
+        - Corrected `phoneNumber` to `phone` in `ResidentProfileManagement.tsx`.
 
+- **Resident Profile - Vehicle Information Update (Completed 2025-06-04):** (Details as previously listed in `activeContext.md`)
+- **Dashboard Data Visualizations & Statistics - Phase 1 (Non-Phoenix Data) (Completed 2025-06-03):** (Details as previously listed)
 - **Login Page Accessibility (Completed 2025-06-03):** (Details as previously listed)
 - **Twilio "Request Call" Integration (Completed 2025-06-03):** (Details as previously listed)
 - **Phoenix API Integration - Service Request Form Submission (Completed 2025-06-02):** (Details as previously listed)
-- **Resident Invitation Campaigns (Backend & Initial Frontend for PMs) - 2025-05-29:** (Details as previously listed)
-- **Campaign Reactivation Feature - 2025-05-29:** (Details as previously listed)
-- **Campaign Management UI for Organization Managers & Admins (Completed 2025-05-30):** (Details as previously listed)
-- **Campaign Table Actions & View Details Page (Frontend & Backend) - 2025-05-30:** (Details as previously listed)
-- **Project Definition & Core Documentation:** (Details as previously listed)
-- **Authentication, RBAC, Multi-Tenancy Foundations:** (Details as previously listed, including `processSignUp` clarification, custom claims, Firestore rules, frontend auth integration)
-- **Invitation System (Phases 1, 2, 3 - Superseded by Campaigns for Residents but core logic for other roles remains):** (Details as previously listed)
-- **Admin, Organization Manager, Property Manager Core CRUD & UI Features:** (Details as previously listed, including Property Manager panel refactor, Google Places API updates, etc.)
-- **Public Campaign Link Flow Rearchitected & Sign-up Debugged (2025-05-30):** (Details as previously listed)
-- **Custom GPTChat Model Integration (Completed 2025-05-31):** (Details as previously listed)
+- **(Older completed items as previously listed)**
 
 ## 3. What's Left to Build (High-Level from `projectRoadmap.md` and recent work)
 
-1.  **Dashboard Data Visualizations & Statistics - Phase 1.C (Phoenix API Integration):**
-    *   **Objective:** Integrate service request analytics from Phoenix API into dashboards.
-    *   **Status:** Pending Phoenix API documentation for querying aggregated job data.
-    *   **Tasks:**
-        *   Review Phoenix API documentation.
-        *   Refine scope of service request stats based on API capabilities.
-        *   Implement/update Cloud Functions (`getAdminServiceRequestStats`, `getOrgServiceRequestStats`, `getPropertyManagerServiceRequestStats`) to fetch and process data from Phoenix.
-        *   Integrate new charts for service request analytics into the respective dashboard panels.
-        *   Reference `docs/12-dashboard-phoenix-integration-plan.md`.
-2.  **Phoenix Integration - Remaining Core Tasks:**
-    *   Implement job/service request querying by various roles (Resident, PM, OM) from Property Manager Pro to Phoenix.
-    *   Further develop the service request dispatch lifecycle beyond initial submission (e.g., status updates via webhooks from Phoenix to PMP, cancellation flows).
-    *   Implement services querying from Phoenix for display/management within PMP if needed beyond the service type dropdown in the request form.
-3.  **Dashboard Statistics - Denormalization & Optimization:**
-    *   Monitor performance of current direct aggregation Cloud Functions.
-    *   Iteratively implement denormalized counters (updated by Firestore triggers) for high-cost or frequently accessed statistics to improve scalability and reduce read costs, as per the hybrid aggregation strategy.
-4.  **Review and Refine User Experience for Dashboards:**
-    *   Gather feedback on the initial dashboard implementations.
-    *   Consider adding date range filters or other interactivity as needed.
-    *   Ensure accessibility and responsiveness of all charts.
+1.  **Thorough Testing of New Navigation & UI:** (Immediate next step)
+    *   Verify all drawer links, breadcrumbs, and navigation cards for all user roles.
+    *   Test responsiveness and context providers.
+2.  **Dashboard Data Visualizations & Statistics - Phase 1.C (Phoenix API Integration):** (As previously listed)
+3.  **Phoenix Integration - Remaining Core Tasks:** (As previously listed)
+4.  **Dashboard Statistics - Denormalization & Optimization:** (As previously listed)
+5.  **Review and Refine User Experience for Dashboards (Post-Refactor):**
+    *   Gather feedback on the new drawer navigation and breadcrumbs.
+    *   Consider further refinements to overview pages or navigation flow.
 
 ## 4. Known Issues & Blockers
 
-*   **Phoenix API Documentation for Aggregated Queries:** Currently a blocker for Phase 1.C of dashboard statistics.
+*   **Phoenix API Documentation for Aggregated Queries:** Still a blocker for Phase 1.C of dashboard statistics.
 
 ## 5. Evolution of Project Decisions (Newest First)
 
-- **Dashboard Statistics Aggregation Strategy (2025-06-03):** Adopted a hybrid approach: direct aggregation via Cloud Functions initially, with iterative denormalization for scalability. Cloud Functions to be resilient to missing `request.data`.
-- **Dashboard Layout Components (2025-06-03):** Prioritize MUI `Box` (with Flexbox) and `Stack` for dashboard layouts.
-- **Charting Library (2025-06-03):** Confirmed use of `Highcharts` with `highcharts-react-official`.
-- **Firestore Indexing for Dashboards (2025-06-03):** Added necessary collection group indexes for `properties`, `residents`, and `campaigns` to `firestore.indexes.json`.
-- **`totalUnits` Field for Properties (2025-06-03):** Added to data model and relevant forms/functions to enable occupancy calculations.
+- **Dashboard Navigation & Layout (2025-06-09):**
+    - Shifted from tabs to a global drawer with routed views.
+    - Introduced `BreadcrumbsComponent`.
+    - Enhanced overview pages with quick navigation elements.
+    - Refactored role-specific dashboard panels (`OrganizationManagerDashboardPanel`, `PropertyManagerDashboardPanel`, `ResidentDashboard`) to serve as layout components with `<Outlet />` and, where applicable, context providers.
+    - Standardized on `Box` and `Stack` for new layouts.
+- **Dashboard Statistics Aggregation Strategy (2025-06-03):** (As previously listed)
+- **Dashboard Layout Components (Preference Reinforced 2025-06-09):** Prioritize MUI `Box` (with Flexbox) and `Stack`.
+- **Charting Library (2025-06-03):** (As previously listed)
 - **(Older decisions as previously listed)**

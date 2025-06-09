@@ -1,9 +1,5 @@
 import React from 'react';
-import {
-  Box,
-} from '@mui/material';
 import { useAuth } from '../hooks/useAuth';
-
 import AdminDashboardPanel from './Dashboard/AdminDashboardPanel';
 import PropertyManagerDashboardPanel from './Dashboard/PropertyManagerDashboardPanel';
 import OrganizationManagerDashboardPanel from './Dashboard/OrganizationManagerDashboardPanel';
@@ -14,7 +10,7 @@ const Dashboard: React.FC = () => {
   const { roles, organizationId, organizationIds } = useAuth();
 
   return (
-    <Box>
+    <>
       {roles.includes('admin') && <AdminDashboardPanel />}
 
       {roles.includes('organization_manager') && (
@@ -32,10 +28,8 @@ const Dashboard: React.FC = () => {
       {!roles.includes('admin') &&
         !roles.includes('organization_manager') &&
         !roles.includes('property_manager') &&
-        !roles.includes('resident') && (
-          <GuestDashboardPanel />
-        )}
-    </Box>
+        !roles.includes('resident') && <GuestDashboardPanel />}
+    </>
   );
 };
 

@@ -599,7 +599,6 @@ const AdminDashboardPanel: React.FC = () => {
                   <Box
                     sx={{
                       p: 2,
-                      borderRadius: 2,
                       flexGrow: 1,
                       width: { xs: '100%', lg: 'calc(60% - 12px)' },
                     }}
@@ -620,7 +619,6 @@ const AdminDashboardPanel: React.FC = () => {
                   <Box
                     sx={{
                       p: 2,
-                      borderRadius: 2,
                       width: { xs: '100%', lg: 'calc(40% - 12px)' },
                       display: 'flex',
                       flexDirection: 'column',
@@ -768,7 +766,7 @@ const AdminDashboardPanel: React.FC = () => {
                 {(phoenixStats?.typeDistribution &&
                   phoenixStats.typeDistribution.length > 0) ||
                 phoenixLoading ? (
-                  <Box sx={{ p: 2, borderRadius: 2, mt: 2 }}>
+                  <Box sx={{ p: 2, mt: 2 }}>
                     {' '}
                     {/* MODIFIED: Removed Paper, changed my:4 to mt:2 */}
                     {phoenixTypeDistributionOptions && (
@@ -781,18 +779,7 @@ const AdminDashboardPanel: React.FC = () => {
                   </Box>
                 ) : null}
 
-                {/* Phoenix Volume Trends Chart - Removed 6/4/2025 */}
-                {/* {(phoenixStats?.volumeTrends && phoenixStats.volumeTrends.length > 0) || phoenixLoading ? (
-                <Paper elevation={2} sx={{ p: 2, borderRadius: 2 }}>
-                  {phoenixVolumeTrendOptions && (
-                    <LineChart
-                      options={phoenixVolumeTrendOptions}
-                      isLoading={phoenixLoading}
-                      height="350px"
-                    />
-                  )}
-                </Paper>
-              ) : null} */}
+
               </Stack>
 
               {/* Combined check for no data */}

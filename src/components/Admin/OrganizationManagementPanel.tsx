@@ -231,7 +231,6 @@ const OrganizationManagementPanel: React.FC = () => {
             mt: 2,
             p: 2,
             border: '1px dashed grey',
-            borderRadius: 1,
             textAlign: 'center',
           }}
         >

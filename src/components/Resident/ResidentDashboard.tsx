@@ -65,10 +65,7 @@ const ResidentDashboard: React.FC = () => {
 
   return (
     <Container component='main' maxWidth='xl'>
-      <Paper
-        sx={{ p: 2, display: 'flex', flexDirection: 'column' }}
-        elevation={6}
-      >
+      <Paper elevation={3} sx={{ mb: 4, p: { xs: 1, sm: 2 } }}>
         <Stack direction='row' alignItems='center' sx={{ mb: 2 }}>
           <AccountCircleIcon fontSize='large' color='primary' sx={{ mr: 1 }} />
           <Typography variant='h4' color='primary'>
@@ -130,86 +127,82 @@ const ResidentDashboard: React.FC = () => {
             <ChatView />
           </Box>
         </TabPanel>
-
-        {/* Testimonials Section */}
+      </Paper>
+      <Divider sx={{ my: 6, borderColor: 'secondary.main' }} />
+      {/* Testimonials Section */}
+      <Box
+        sx={{
+          mt: 4,
+          p: 2,
+          backgroundColor: 'background.default',
+        }}
+      >
+        <Typography
+          variant='h5'
+          gutterBottom
+          sx={{ mb: 2, textAlign: 'center' }}
+        >
+          What Other Residents Are Saying
+        </Typography>
         <Box
           sx={{
-            mt: 4,
-            p: 2,
-            backgroundColor: 'background.default',
-            borderRadius: 1,
+            display: 'flex',
+            flexDirection: { xs: 'column', md: 'row' },
+            gap: 2,
+            justifyContent: 'center',
+            alignItems: 'stretch',
           }}
         >
-          <Typography
-            variant='h5'
-            gutterBottom
-            sx={{ mb: 2, textAlign: 'center' }}
-          >
-            What Other Residents Are Saying
-          </Typography>
-          <Box
-            sx={{
-              display: 'flex',
-              flexDirection: { xs: 'column', md: 'row' },
-              gap: 2,
-              justifyContent: 'center',
-              alignItems: 'stretch',
-            }}
-          >
-            <TestimonialCard
-              quote='Friendly fast service 😊🙏'
-              author='Samalam C'
-              authorRole='Resident'
-            />
-            <TestimonialCard
-              quote='He did amazing!! Very professional!!'
-              author='A&A kidz'
-              authorRole='Resident'
-            />
-          </Box>
-          <Box
-            sx={{
-              display: 'flex',
-              flexDirection: { xs: 'column', sm: 'row' },
-              gap: { xs: 1, sm: 2, md: 10 },
-              justifyContent: 'center',
-              alignItems: 'center',
-              mt: 3,
-            }}
-          >
-            <Box
-              component='img'
-              src='/review1.png'
-              alt='5.0 rating'
-              sx={{
-                width: { xs: 100, sm: 140 },
-                height: 'auto',
-                borderRadius: 2,
-              }}
-            />
-            <Box
-              component='img'
-              src='/review2.png'
-              alt='35 years experience'
-              sx={{
-                width: { xs: 100, sm: 140 },
-                height: 'auto',
-                borderRadius: 2,
-              }}
-            />
-            <Box
-              component='img'
-              src='/review3.png'
-              alt='satisfaction guaranteed'
-              sx={{
-                width: { xs: 100, sm: 140 },
-                height: 'auto',
-                borderRadius: 2,
-              }}
-            />
-          </Box>
+          <TestimonialCard
+            quote='Friendly fast service 😊🙏'
+            author='Samalam C'
+            authorRole='Resident'
+          />
+          <TestimonialCard
+            quote='He did amazing!! Very professional!!'
+            author='A&A kidz'
+            authorRole='Resident'
+          />
         </Box>
-      </Paper>
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: { xs: 'column', sm: 'row' },
+            gap: { xs: 1, sm: 2, md: 10 },
+            justifyContent: 'center',
+            alignItems: 'center',
+            mt: 3,
+          }}
+        >
+          <Box
+            component='img'
+            src='/review1.png'
+            alt='5.0 rating'
+            sx={{
+              width: { xs: 100, sm: 140 },
+              height: 'auto',
+            }}
+          />
+          <Box
+            component='img'
+            src='/review2.png'
+            alt='35 years experience'
+            sx={{
+              width: { xs: 100, sm: 140 },
+              height: 'auto',
+            }}
+          />
+          <Box
+            component='img'
+            src='/review3.png'
+            alt='satisfaction guaranteed'
+            sx={{
+              width: { xs: 100, sm: 140 },
+              height: 'auto',
+            }}
+          />
+        </Box>
+      </Box>
     </Container>
   );
 };

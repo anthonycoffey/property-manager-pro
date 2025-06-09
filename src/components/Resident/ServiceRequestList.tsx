@@ -5,8 +5,8 @@ import {
   Paper,
   CircularProgress,
   Alert,
-  Button as MuiButton,
   Chip,
+  IconButton,
   Table,
   TableBody,
   TableCell,
@@ -15,6 +15,7 @@ import {
   TableRow,
   TablePagination,
 } from '@mui/material';
+import VisibilityIcon from '@mui/icons-material/Visibility';
 import {
   collection,
   query,
@@ -154,11 +155,11 @@ const ServiceRequestList: React.FC = () => {
         <Table sx={{ minWidth: 650 }} aria-label='service requests table'>
           <TableHead>
             <TableRow>
-              <TableCell>Date Submitted</TableCell>
-              <TableCell>Service Type(s)</TableCell>
+              <TableCell align="center">View Job</TableCell>
               <TableCell>Status</TableCell>
               <TableCell>Location</TableCell>
-              <TableCell>Actions</TableCell>
+              <TableCell>Service Type(s)</TableCell>
+              <TableCell>Date Submitted</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -169,10 +170,19 @@ const ServiceRequestList: React.FC = () => {
                   key={request.id}
                   sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
                 >
-                  <TableCell component='th' scope='row'>
-                    {formatDate(request.submittedAt)}
+                  <TableCell align="center">
+                    {request.phoenixSubmissionId && (
+                      <IconButton
+                        aria-label='view job'
+                        size='small'
+                        onClick={() =>
+                          handleViewJobClick(request.phoenixSubmissionId!)
+                        }
+                      >
+                        <VisibilityIcon fontSize='small' />
+                      </IconButton>
+                    )}
                   </TableCell>
-                  <TableCell>{request.requestType}</TableCell>
                   <TableCell>
                     <Chip
                       label={request.status.toUpperCase()}
@@ -185,18 +195,9 @@ const ServiceRequestList: React.FC = () => {
                       request.serviceLocation ||
                       'N/A'}
                   </TableCell>
-                  <TableCell>
-                    {request.phoenixSubmissionId && (
-                      <MuiButton
-                        variant='outlined'
-                        size='small'
-                        onClick={() =>
-                          handleViewJobClick(request.phoenixSubmissionId!)
-                        }
-                      >
-                        View Job
-                      </MuiButton>
-                    )}
+                  <TableCell>{request.requestType}</TableCell>
+                  <TableCell component='th' scope='row'>
+                    {formatDate(request.submittedAt)}
                   </TableCell>
                 </TableRow>
               ))}

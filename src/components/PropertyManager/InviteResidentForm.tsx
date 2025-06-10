@@ -48,7 +48,9 @@ const InviteResidentForm: React.FC<InviteResidentFormProps> = ({
     }
 
     if (!currentUser || !inviterRole || !organizationId) {
-      setError('Permission denied, unrecognized role, or organization context missing.');
+      setError(
+        'Permission denied, unrecognized role, or organization context missing.'
+      );
       return;
     }
 
@@ -77,7 +79,9 @@ const InviteResidentForm: React.FC<InviteResidentFormProps> = ({
 
       if (responseData?.success) {
         setSuccess(
-          `Invitation sent successfully to ${inviteeEmail} for ${propertyName || 'the selected property'}.`
+          `Invitation sent successfully to ${inviteeEmail} for ${
+            propertyName || 'the selected property'
+          }.`
         );
         setInviteeEmail('');
         if (onInvitationSent) {
@@ -95,7 +99,10 @@ const InviteResidentForm: React.FC<InviteResidentFormProps> = ({
     }
   };
 
-  const canInvite = userRoles.includes('property_manager') || userRoles.includes('organization_manager') || userRoles.includes('admin');
+  const canInvite =
+    userRoles.includes('property_manager') ||
+    userRoles.includes('organization_manager') ||
+    userRoles.includes('admin');
 
   if (!currentUser || !canInvite) {
     return (
@@ -115,7 +122,7 @@ const InviteResidentForm: React.FC<InviteResidentFormProps> = ({
   return (
     <Box component='form' onSubmit={handleSubmit} sx={{ mt: 1 }}>
       <Typography variant='subtitle1' gutterBottom sx={{ mt: 2 }}>
-        Inviting Resident to: {propertyName || `Property ID: ${propertyId}`}
+        Invite Resident to {propertyName || `Property ID: ${propertyId}`}
       </Typography>
       {error && (
         <Alert severity='error' sx={{ mb: 2 }}>

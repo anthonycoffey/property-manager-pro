@@ -10,7 +10,13 @@ import { varAlpha } from '../utils';
 
 const MuiContainer: Components<Theme>['MuiContainer'] = {
   styleOverrides: {
-    root: ({ theme, ownerState }: { theme: Theme; ownerState: ContainerProps }) => ({
+    root: ({
+      theme,
+      ownerState,
+    }: {
+      theme: Theme;
+      ownerState: ContainerProps;
+    }) => ({
       ...(!ownerState?.disableGutters && {
         [theme.breakpoints.only('xs')]: {
           paddingLeft: theme.spacing(1),
@@ -107,12 +113,6 @@ const MuiOutlinedInput: Components<Theme>['MuiOutlinedInput'] = {
         0.2
       ),
     }),
-    input: ({ theme }) => ({
-      padding: theme.spacing(2.0625, 1.75), // Approx 16.5px 14px (MUI default)
-      [theme.breakpoints.down('sm')]: {
-        padding: theme.spacing(1.25, 1.5), // 10px V, 12px H for xs, sm
-      },
-    }),
   },
 };
 
@@ -174,15 +174,15 @@ const MuiMenuItem: Components<Theme>['MuiMenuItem'] = {
   styleOverrides: {
     root: ({ theme }) => ({
       ...theme.typography.body2,
-      paddingTop: theme.spacing(1),    // 8px
+      paddingTop: theme.spacing(1), // 8px
       paddingBottom: theme.spacing(1), // 8px
-      paddingLeft: theme.spacing(2),   // 16px
-      paddingRight: theme.spacing(2),  // 16px
+      paddingLeft: theme.spacing(2), // 16px
+      paddingRight: theme.spacing(2), // 16px
       [theme.breakpoints.down('sm')]: {
-        paddingTop: theme.spacing(0.75),    // 6px
+        paddingTop: theme.spacing(0.75), // 6px
         paddingBottom: theme.spacing(0.75), // 6px
-        paddingLeft: theme.spacing(1.5),   // 12px
-        paddingRight: theme.spacing(1.5),  // 12px
+        paddingLeft: theme.spacing(1.5), // 12px
+        paddingRight: theme.spacing(1.5), // 12px
       },
     }),
   },
@@ -203,11 +203,15 @@ const MuiFormControlLabel: Components<Theme>['MuiFormControlLabel'] = {
 };
 
 const MuiCheckbox: Components<Theme>['MuiCheckbox'] = {
-  defaultProps: { /* ... existing ... */ },
+  defaultProps: {
+    /* ... existing ... */
+  },
 };
 
 const MuiRadio: Components<Theme>['MuiRadio'] = {
-  defaultProps: { /* ... existing ... */ },
+  defaultProps: {
+    /* ... existing ... */
+  },
 };
 
 // --- Dialog Component Overrides ---
@@ -236,14 +240,22 @@ const MuiDialogTitle: Components<Theme>['MuiDialogTitle'] = {
 
 const MuiDialogContent: Components<Theme>['MuiDialogContent'] = {
   styleOverrides: {
-    root: ({ theme, ownerState }: { theme: Theme; ownerState: DialogContentProps }) => ({
+    root: ({
+      theme,
+      ownerState,
+    }: {
+      theme: Theme;
+      ownerState: DialogContentProps;
+    }) => ({
       padding: ownerState?.dividers ? theme.spacing(1, 3) : theme.spacing(2, 3), // Default based on dividers
       [theme.breakpoints.down('sm')]: {
         paddingLeft: theme.spacing(2),
         paddingRight: theme.spacing(2),
         // Vertical padding might also need adjustment based on dividers
         paddingTop: ownerState?.dividers ? theme.spacing(1) : theme.spacing(2),
-        paddingBottom: ownerState?.dividers ? theme.spacing(1) : theme.spacing(2),
+        paddingBottom: ownerState?.dividers
+          ? theme.spacing(1)
+          : theme.spacing(2),
       },
     }),
   },
@@ -259,7 +271,6 @@ const MuiDialogActions: Components<Theme>['MuiDialogActions'] = {
     }),
   },
 };
-
 
 // --- Export All Component Overrides ---
 export const components: Components<Theme> = {
@@ -277,8 +288,8 @@ export const components: Components<Theme> = {
   MuiFormControlLabel,
   MuiCheckbox,
   MuiRadio,
-  MuiDialog,          // Added
-  MuiDialogTitle,     // Added
-  MuiDialogContent,   // Added
-  MuiDialogActions,   // Added
+  MuiDialog, // Added
+  MuiDialogTitle, // Added
+  MuiDialogContent, // Added
+  MuiDialogActions, // Added
 };

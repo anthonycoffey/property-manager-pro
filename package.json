@@ -12,7 +12,10 @@
     "deploy:firestore": "firebase deploy --only firestore",
     "deploy:storage": "firebase deploy --only storage",
     "seed:templates:local": "node scripts/seedTemplates.js --env=emulator",
-    "seed:templates:prod": "node scripts/seedTemplates.js --env=production"
+    "seed:templates:prod": "node scripts/seedTemplates.js --env=production",
+    "emulator:start": "firebase emulators:start",
+    "emulator:start:seed": "firebase emulators:start --import=./firebase-emulator-data/firebase-export-1749580828646WxtuMT",
+    "emulator:export": "(if exist .\\firebase-emulator-data (rd /s /q .\\firebase-emulator-data)) && mkdir .\\firebase-emulator-data && firebase emulators:export ./firebase-emulator-data"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",

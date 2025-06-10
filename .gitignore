@@ -30,3 +30,4 @@ rescuelink/
 .runtimeconfig.json
 functions/.env.default
 phoenix/
+firebase-emulator-data/

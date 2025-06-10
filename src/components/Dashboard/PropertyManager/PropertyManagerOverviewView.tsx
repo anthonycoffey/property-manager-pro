@@ -311,7 +311,7 @@ const PropertyManagerOverviewView: React.FC = () => {
         {(dashboardStats?.campaignPerformance &&
           dashboardStats.campaignPerformance.length > 0) ||
         dashboardLoading ? (
-          <Paper elevation={0} sx={{ p: 2, mb: 3 }}>
+          <Paper elevation={0} sx={{ p: 2, mb: 3, pb: 9 }}>
             {campaignPerformanceOptions && (
               <BarChart
                 options={campaignPerformanceOptions}
@@ -381,7 +381,7 @@ const PropertyManagerOverviewView: React.FC = () => {
         {(phoenixStats?.typeDistribution &&
           phoenixStats.typeDistribution.length > 0) ||
         phoenixLoading ? (
-          <Paper elevation={0} sx={{ p: 2, my: 3 }}>
+          <Paper elevation={0} sx={{ p: 2, mt: 3, pb: 9 }}>
             {phoenixTypeDistributionOptions && (
               <PieChart
                 options={phoenixTypeDistributionOptions}

@@ -77,11 +77,14 @@ function createCustomShadowsSet(baseColorChannel: string): CustomShadowsInterfac
 // --- Export Custom Shadows for Light and Dark Mode ---
 // For light mode, material-kit-react uses grey['500Channel'] as the base.
 const lightGrey = palette.light?.grey;
-const baseLightColorChannel = lightGrey && '500Channel' in lightGrey ? lightGrey['500Channel'] as string : '145, 158, 171'; // Fallback
+const baseLightColorChannel = lightGrey && '500Channel' in lightGrey ? lightGrey['500Channel'] as string : '145, 158, 171'; // Fallback for light mode
+
+// Define a base channel for dark custom shadows (typically black)
+const baseDarkColorChannel = '0,0,0'; // Pure black channel
 
 export const customShadows: Partial<Record<ThemeColorScheme, CustomShadowsInterface>> = {
   light: createCustomShadowsSet(baseLightColorChannel),
-  // dark: createCustomShadowsSet(darkBaseColorChannel) // Would use a different base for dark mode
+  dark: createCustomShadowsSet(baseDarkColorChannel), // Add dark custom shadows
 };
 
 // Re-import themeConfig for direct fallback if palette channels are not ready.

@@ -484,10 +484,10 @@ const AdminOverviewView: React.FC = () => {
       <Divider sx={{ mt: 10, mb: 4 }} />
 
       <Box
-        sx={{ mb: 3, opacity: dashboardLoading || phoenixLoading ? 0.3 : 1 }}
+        sx={{ mb: 10, opacity: dashboardLoading || phoenixLoading ? 0.3 : 1 }}
       >
         <Typography variant='h5' gutterBottom sx={{ mb: 2 }}>
-          Service Request Analytics
+          Service Requests
         </Typography>
         {phoenixError && (
           <Alert severity='error' sx={{ mb: 2 }}>

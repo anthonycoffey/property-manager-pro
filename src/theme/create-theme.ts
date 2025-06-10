@@ -10,11 +10,6 @@ import { typography as appTypography } from './core/typography';
 import { shadows as appShadows } from './core/shadows';
 import { customShadows as appCustomShadows } from './core/custom-shadows';
 import { components as appComponents } from './core/components';
-import {
-  createPaletteChannel,
-  createSimplePaletteChannel,
-} from './utils/colorManipulator'; // Added createSimplePaletteChannel
-
 // Ensure PaletteColorWithChannels is imported for dark mode casts
 import type { ThemeOptions, ThemeColorScheme } from './types';
 
@@ -32,45 +27,29 @@ export function createAppTheme({
 
   if (mode === 'light') {
     // For light mode, use our fully defined light palette.
-    // appPalette.light is already typed as FullyDefinedLightPalette which extends MuiPaletteOptions.
+    // appPalette.light is now typed as AppPaletteOptions.
     // Deep clone to prevent modification of the original appPalette.light
     const lightPaletteParsed = JSON.parse(JSON.stringify(appPalette.light!));
     paletteOptionsForMode = lightPaletteParsed;
-    if (paletteOptionsForMode) {
-      // Check to satisfy TS that it's not undefined before assigning to .mode
-      paletteOptionsForMode.mode = 'light'; // Ensure mode is explicitly set
-    }
-  } else {
-    // For dark mode, provide a simpler palette structure based on themeConfig.
-    // MUI's createTheme will use these to generate the full dark palette,
-    // including appropriate text, background, and shades for primary/secondary etc.
-    paletteOptionsForMode = {
-      mode: 'dark',
-      // Use createPaletteChannel to generate full PaletteColorWithChannels objects
-      primary: createPaletteChannel(themeConfig.palette.primary),
-      secondary: createPaletteChannel(themeConfig.palette.secondary),
-      info: createPaletteChannel(themeConfig.palette.info),
-      success: createPaletteChannel(themeConfig.palette.success),
-      warning: createPaletteChannel(themeConfig.palette.warning),
-      error: createPaletteChannel(themeConfig.palette.error),
-      common: createSimplePaletteChannel(themeConfig.palette.common), // Process common colors
-      grey: createSimplePaletteChannel(themeConfig.palette.grey), // Process grey scale
-      // IMPORTANT: Do NOT provide text, background, divider, or action here for dark mode.
-      // Let MUI generate them based on the mode and the primary/secondary/etc. colors.
-      // contrastThreshold and tonalOffset are important for MUI's color calculations.
-      contrastThreshold: 3, // MUI default
-      tonalOffset: 0.2, // MUI default
-    };
+    // Ensure mode is explicitly set (already done in appPalette.light but good for safety)
+    if (paletteOptionsForMode) paletteOptionsForMode.mode = 'light';
+
+  } else { // mode === 'dark'
+    // For dark mode, use our fully defined dark palette.
+    // appPalette.dark is now available and typed as AppPaletteOptions.
+    // Deep clone to prevent modification of the original appPalette.dark
+    const darkPaletteParsed = JSON.parse(JSON.stringify(appPalette.dark!));
+    paletteOptionsForMode = darkPaletteParsed;
+    // Ensure mode is explicitly set (already done in appPalette.dark but good for safety)
+    if (paletteOptionsForMode) paletteOptionsForMode.mode = 'dark';
   }
 
   // Construct the initial theme options using this mode-specific palette
   const initialThemeOptions: ThemeOptions = {
     palette: paletteOptionsForMode as ThemeOptions['palette'], // Assert type after conditional assignment
     typography: appTypography,
-    shadows: appShadows.light, // For dark mode, MUI might adjust these based on the new dark palette.
-    // If specific dark shadows are needed, they'd be appShadows.dark
-    customShadows: appCustomShadows.light, // Custom shadows are not auto-adjusted by MUI for dark mode.
-    // Define appCustomShadows.dark if needed.
+    shadows: mode === 'light' ? appShadows.light : appShadows.dark,
+    customShadows: mode === 'light' ? appCustomShadows.light : appCustomShadows.dark,
     components: appComponents,
     shape: { borderRadius: 8 },
     cssVariables: themeConfig.cssVariables, // For potential CssVarsProvider use

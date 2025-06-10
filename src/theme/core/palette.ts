@@ -10,7 +10,11 @@ import type {
   TypeTextWithChannels,
   TypeBackgroundWithChannels,
   ActionColorsWithChannels,
-  FullyDefinedLightPalette, // Import the new specific type
+  AppPaletteOptions, // Changed from FullyDefinedLightPalette
+  // Assuming a similar structure for dark palette or a more generic one if needed
+  // For now, let's assume AppPaletteOptions structure is compatible for dark mode too
+  // or we can use a more generic MuiPaletteOptions type for the darkPalette object.
+  // For simplicity, we'll aim for a compatible structure.
 } from '../types';
 
 
@@ -28,6 +32,44 @@ const grey: GreyColorsWithChannels = createSimplePaletteChannel(themeConfig.pale
 
 // --- Define Text, Background, Action for Light Mode ---
 // (Dark mode would have its own definitions if we were doing a custom dark theme)
+
+// --- Define Text, Background, Action for Dark Mode ---
+const textDark: TypeTextWithChannels = {
+  primary: '#E0E0E0',
+  secondary: '#B0B0B0',
+  disabled: '#757575',
+  // Channels - these would need to be derived if varAlpha is used with them.
+  // For now, direct hex values are used. If channels are needed,
+  // we'd need a utility or manual definition like: '224,224,224' for #E0E0E0
+  // For simplicity, if varAlpha is used for text, it might be with a common channel like white/black.
+  primaryChannel: '224,224,224', // Example for #E0E0E0
+  secondaryChannel: '176,176,176', // Example for #B0B0B0
+  disabledChannel: '117,117,117', // Example for #757575
+};
+
+const backgroundDark: TypeBackgroundWithChannels = {
+  paper: '#1E1E1E',
+  default: '#121212',
+  neutral: '#2C2C2C',
+  // Channels
+  paperChannel: '30,30,30', // Example for #1E1E1E
+  defaultChannel: '18,18,18', // Example for #121212
+  neutralChannel: '44,44,44', // Example for #2C2C2C
+};
+
+const actionDark: ActionColorsWithChannels = {
+  active: '#FFFFFF', // Active icons/text could be pure white or a light primary shade
+  hover: 'rgba(255, 255, 255, 0.08)',
+  selected: 'rgba(255, 255, 255, 0.16)', // Increased opacity for selection
+  disabled: 'rgba(255, 255, 255, 0.3)',
+  disabledBackground: 'rgba(255, 255, 255, 0.12)',
+  focus: 'rgba(255, 255, 255, 0.12)',
+  hoverOpacity: 0.08,
+  disabledOpacity: 0.3, // Match disabled text opacity if needed
+  // activeChannel: '255,255,255', // if needed
+};
+
+const dividerDark = 'rgba(255, 255, 255, 0.12)'; // Standard dark mode divider
 
 const textLight: TypeTextWithChannels = {
   primary: grey[800],
@@ -63,7 +105,7 @@ const actionLight: ActionColorsWithChannels = {
 
 
 // --- Assemble Light Palette ---
-const lightPalette: FullyDefinedLightPalette = { // Use the specific type
+const lightPalette: AppPaletteOptions = { // Changed from FullyDefinedLightPalette
   mode: 'light',
   primary,
   secondary,
@@ -83,7 +125,33 @@ const lightPalette: FullyDefinedLightPalette = { // Use the specific type
 // We are only defining a light palette for now, as per Option A for dark mode.
 // MUI will auto-generate dark mode from this light palette.
 // Use FullyDefinedLightPalette to ensure the extended types are recognized.
-export const palette: Partial<Record<ThemeColorScheme, FullyDefinedLightPalette>> = {
+
+// --- Assemble Dark Palette ---
+// We'll use the same base colors (primary, secondary, etc.) for now,
+// and the new textDark, backgroundDark, actionDark, and dividerDark.
+// The type here should ideally be MuiTheme['palette'] or a compatible custom type.
+// For now, casting to AppPaletteOptions for structural similarity,
+// but this might need refinement if dark palette has different optional/required fields.
+const darkPalette: AppPaletteOptions = { // Changed from FullyDefinedLightPalette
+  mode: 'dark',
+  primary, // Reusing from top, created with themeConfig.palette.primary
+  secondary, // Reusing from top
+  info,      // Reusing from top
+  success,   // Reusing from top
+  warning,   // Reusing from top
+  error,     // Reusing from top
+  common,    // Reusing from top (common.white, common.black)
+  grey,      // Reusing from top (full grey scale)
+  text: textDark,
+  background: backgroundDark,
+  divider: dividerDark,
+  action: actionDark,
+  // Ensure all fields from FullyDefinedLightPalette are covered if necessary,
+  // or adjust the type of the exported 'palette' object.
+  // contrastThreshold and tonalOffset are typically not set here but in createTheme options.
+};
+
+export const palette: Partial<Record<ThemeColorScheme, AppPaletteOptions>> = { // Changed from FullyDefinedLightPalette
   light: lightPalette,
-  // dark: darkPalette, // Would be defined here if doing custom dark theme
+  dark: darkPalette, // Add the new darkPalette
 };

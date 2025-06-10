@@ -122,8 +122,9 @@ const ChatView: React.FC = () => {
   return (
     <>
       <Paper
-        elevation={5}
+        variant='outlined'
         sx={{
+          backgroundColor: 'background.default',
           minHeight: '50vh', // Or adjust as needed
           maxHeight: '75vh',
           display: 'flex',
@@ -140,6 +141,7 @@ const ChatView: React.FC = () => {
             {error}
           </Alert>
         )}
+
         <MessageList messages={messages} isLoading={isLoading} />
         <ChatInput
           ref={chatInputRef}

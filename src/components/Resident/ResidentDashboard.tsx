@@ -30,7 +30,10 @@ const ResidentDashboard: React.FC = () => {
         <Outlet />
       </Paper>
 
-      <Divider sx={{ mt: 8 }} />
+
+ {location.pathname !== '/dashboard/resident/ai-assistant' && (
+        <>
+              <Divider sx={{ mt: 8 }} />
       {/* Testimonials Section */}
       <Box
         sx={{
@@ -105,6 +108,9 @@ const ResidentDashboard: React.FC = () => {
           />
         </Box>
       </Box>
+        </>
+      )}
+
     </>
   );
 };

@@ -1,7 +1,6 @@
 import React from 'react';
 import { Box, Paper, Typography, Avatar, ListItem } from '@mui/material';
 import PersonIcon from '@mui/icons-material/Person';
-import SmartToyIcon from '@mui/icons-material/SmartToy'; // Bot icon
 import ReportProblemIcon from '@mui/icons-material/ReportProblem'; // For system notifications
 import type { ChatMessage } from './types'; // Adjusted import path with type-only import
 
@@ -25,13 +24,17 @@ const ChatMessageItem: React.FC<ChatMessageItemProps> = ({ message }) => {
         <PersonIcon />
       </Avatar>
     );
-    bubbleBgColor = 'primary.light'; 
+    bubbleBgColor = 'primary.light';
     bubbleColor = 'primary.contrastText';
     borderRadiusStyle = '10px 10px 0 10px';
   } else if (isAssistant) {
     avatar = (
       <Avatar sx={{ bgcolor: 'primary.main', mr: 1 }}>
-        <SmartToyIcon />
+        <img
+          src='/mcu-logo-small.png'
+          alt='Assistant'
+          style={{ objectFit: 'cover', width: '100%', height: '100%' }}
+        />
       </Avatar>
     );
     // bubbleBgColor = (theme) => theme.palette.mode === 'dark' ? theme.palette.grey[700] : theme.palette.grey[100]; // Theme-aware example
@@ -48,41 +51,45 @@ const ChatMessageItem: React.FC<ChatMessageItemProps> = ({ message }) => {
   }
 
   return (
-    <ListItem 
-      sx={{ 
-        display: 'flex', 
+    <ListItem
+      sx={{
+        display: 'flex',
         justifyContent: isUser ? 'flex-end' : 'flex-start',
         mb: 1.5,
-        px: 0, 
+        px: 0,
       }}
     >
       <Box sx={{ display: 'flex', alignItems: 'flex-start', maxWidth: '80%' }}>
         {!isUser && avatar}
-        <Paper 
-          elevation={1} 
-          sx={{ 
-            p: 1.5, 
-            bgcolor: bubbleBgColor, 
+        <Paper
+          elevation={1}
+          sx={{
+            p: 1.5,
+            bgcolor: bubbleBgColor,
             color: bubbleColor,
             borderRadius: borderRadiusStyle,
-            wordBreak: 'break-word', 
+            wordBreak: 'break-word',
           }}
         >
-          <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap' }}>
+          <Typography variant='body1' sx={{ whiteSpace: 'pre-wrap' }}>
             {message.content}
           </Typography>
           {message.timestamp && (
-            <Typography 
-              variant="caption" 
-              display="block" 
-              sx={{ 
-                textAlign: 'right', 
-                mt: 0.5, 
+            <Typography
+              variant='caption'
+              display='block'
+              sx={{
+                textAlign: 'right',
+                mt: 0.5,
                 opacity: 0.7,
-                color: isUser || isSystemNotification ? 'inherit' : 'text.secondary', 
+                color:
+                  isUser || isSystemNotification ? 'inherit' : 'text.secondary',
               }}
             >
-              {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              {new Date(message.timestamp).toLocaleTimeString([], {
+                hour: '2-digit',
+                minute: '2-digit',
+              })}
             </Typography>
           )}
         </Paper>

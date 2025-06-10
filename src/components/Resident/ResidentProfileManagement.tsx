@@ -543,7 +543,7 @@ const ResidentProfileManagement: React.FC = () => {
         <DialogActions>
           <Button onClick={handleCloseVehicleDialog}>Cancel</Button>
           <Button onClick={handleSaveVehicle} variant='contained'>
-            Save Vehicle
+            Add Vehicle
           </Button>
         </DialogActions>
       </Dialog>

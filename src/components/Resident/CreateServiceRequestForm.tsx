@@ -38,7 +38,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { httpsCallable } from 'firebase/functions';
 import { functions, db } from '../../firebaseConfig'; // Added db
 import { doc, getDoc } from 'firebase/firestore'; // Added doc, getDoc
-import type { Property, Resident } from '../../types'; // Added Property, Resident type
+import type { Property, Resident, Vehicle } from '../../types'; // Added Property, Resident, Vehicle type
 
 interface CreateServiceRequestFormProps {
   onServiceRequestSubmitted: () => void;
@@ -114,6 +114,9 @@ const CreateServiceRequestForm: React.FC<CreateServiceRequestFormProps> = ({
   const [propertyFullAddressString, setPropertyFullAddressString] = useState<string | null>(null);
   const [isLoadingPropertyAddress, setIsLoadingPropertyAddress] = useState<boolean>(false);
   const [propertyAddressError, setPropertyAddressError] = useState<string | null>(null);
+
+  // New state for selected vehicle
+  const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
 
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -553,6 +556,12 @@ const CreateServiceRequestForm: React.FC<CreateServiceRequestFormProps> = ({
       // serviceTypeValue: selectedServiceName, // Replaced by serviceTypesForSubmission
       serviceTypes: serviceTypesForSubmission, // Array of {id, value} objects
       isOffPremiseRequest: (!!propertyFullAddressString && !propertyAddressError && isOffPremise) || (!propertyFullAddressString && !propertyAddressError), // True if prop address was available and toggle is on, OR if no prop address was available (implies off-premise by default)
+      
+      // Add vehicle details if selected
+      car_year: selectedVehicle ? selectedVehicle.year : undefined,
+      car_make: selectedVehicle ? selectedVehicle.make : undefined,
+      car_model: selectedVehicle ? selectedVehicle.model : undefined,
+      car_color: selectedVehicle ? selectedVehicle.color : undefined,
     };
 
     try {
@@ -575,6 +584,7 @@ const CreateServiceRequestForm: React.FC<CreateServiceRequestFormProps> = ({
           setServiceLocationObject(null);
           // setServiceLocation(''); // Also clear the old string state if it's still used by autocomplete display - Removed as serviceLocation is unused
           setSmsConsent(false);
+          setSelectedVehicle(null); // Reset selected vehicle
           // Reset existing fields
           setServiceDateTime(new Date());
           setResidentNotes('');
@@ -606,13 +616,14 @@ const CreateServiceRequestForm: React.FC<CreateServiceRequestFormProps> = ({
       phone,
       residentNotes,
       smsConsent,
+      selectedVehicle, // Added selectedVehicle to dependencies
       onServiceRequestSubmitted,
       isOffPremise,
       propertyAddressError,
       propertyFullAddressString
       // setError, setSuccessMessage, setSubmitting, setSelectedPhoenixServices,
       // setAutocompleteValue, setAutocompleteInputValue, setServiceLocationObject,
-      // setSmsConsent, setServiceDateTime, setResidentNotes, setPhone (state setters are stable)
+      // setSmsConsent, setServiceDateTime, setResidentNotes, setPhone, setSelectedVehicle (state setters are stable)
     ]
   );
 
@@ -958,6 +969,59 @@ const CreateServiceRequestForm: React.FC<CreateServiceRequestFormProps> = ({
               </Typography>
             )}
           </Box>
+
+          {/* Vehicle Selection Dropdown */}
+          {residentProfileData?.vehicles && residentProfileData.vehicles.length > 0 && (
+            <Box sx={{ my: 1 }}>
+              <Typography
+                variant='caption'
+                display='block'
+                sx={{ mb: 0.5, color: 'text.secondary' }}
+              >
+                Select Vehicle
+              </Typography>
+              <ReactSelect
+                inputId='resident-vehicle-select'
+                options={residentProfileData.vehicles.map((vehicle) => ({
+                  value: vehicle, // Store the whole vehicle object
+                  label: `${vehicle.year} ${vehicle.make} ${vehicle.model} (${vehicle.color}) - ${vehicle.plate}`,
+                }))}
+                value={selectedVehicle ? { value: selectedVehicle, label: `${selectedVehicle.year} ${selectedVehicle.make} ${selectedVehicle.model} (${selectedVehicle.color}) - ${selectedVehicle.plate}` } : null}
+                onChange={(selectedOption) => {
+                  setSelectedVehicle(selectedOption ? selectedOption.value : null);
+                }}
+                isClearable
+                isSearchable
+                isDisabled={submitting}
+                placeholder="Select your vehicle..."
+                styles={{ // Apply similar styling as Service Type for consistency
+                  control: (baseStyles, state) => ({
+                    ...baseStyles,
+                    boxShadow: state.isFocused ? `0 0 0 1px ${theme.palette.primary.main}` : 'none',
+                    minHeight: '56px',
+                    backgroundColor: theme.palette.background.paper,
+                    borderRadius: theme.shape.borderRadius,
+                  }),
+                  menu: (baseStyles) => ({
+                    ...baseStyles,
+                    zIndex: theme.zIndex.modal, // Standard zIndex for dropdowns
+                    backgroundColor: theme.palette.background.paper,
+                  }),
+                  option: (baseStyles, state) => ({
+                    ...baseStyles,
+                    backgroundColor: state.isSelected ? theme.palette.primary.main : state.isFocused ? theme.palette.action.hover : theme.palette.background.paper,
+                    color: state.isSelected ? theme.palette.primary.contrastText : theme.palette.text.primary,
+                    '&:active': {
+                      backgroundColor: theme.palette.primary.dark,
+                    },
+                  }),
+                  placeholder: (baseStyles) => ({ ...baseStyles, color: theme.palette.text.secondary }),
+                  input: (baseStyles) => ({ ...baseStyles, color: theme.palette.text.primary }),
+                  singleValue: (baseStyles) => ({ ...baseStyles, color: theme.palette.text.primary }),
+                }}
+              />
+            </Box>
+          )}
 
           {/* SMS Consent Checkbox */}
           <FormControlLabel

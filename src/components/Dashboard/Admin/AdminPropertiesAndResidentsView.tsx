@@ -158,7 +158,7 @@ const AdminPropertiesAndResidentsView: React.FC = () => {
             onClick={handleOpenCreatePropertyModal}
             sx={{ mb: 2 }}
           >
-            Create Property for Selected Organization
+            Create Property
           </Button>
           <OrganizationPropertiesList
             key={refreshPropertiesListKey}

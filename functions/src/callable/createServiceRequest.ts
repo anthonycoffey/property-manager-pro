@@ -33,6 +33,12 @@ interface CreateServiceRequestData {
   serviceLocationAddress: ServiceLocationAddress;
   serviceTypes: Array<{ id: number | string; value: string }>; // Updated for multi-select
   isOffPremiseRequest?: boolean; // New field
+
+  // New vehicle fields
+  car_year?: number | string; // Frontend sends number, Phoenix expects string in example
+  car_make?: string;
+  car_model?: string;
+  car_color?: string;
 }
 
 export const createServiceRequest = https.onCall(
@@ -182,10 +188,10 @@ export const createServiceRequest = https.onCall(
             zipcode: data.serviceLocationAddress.zipcode,
           },
         },
-        { name: 'car_year', value: '' },
-        { name: 'car_make', value: '' },
-        { name: 'car_model', value: '' },
-        { name: 'car_color', value: '' },
+        { name: 'car_year', value: data.car_year ? String(data.car_year) : '' },
+        { name: 'car_make', value: data.car_make || '' },
+        { name: 'car_model', value: data.car_model || '' },
+        { name: 'car_color', value: data.car_color || '' },
         {
           name: 'service_type',
           value: data.serviceTypes, // Directly use the array of {id, value} from frontend

@@ -305,8 +305,8 @@ const ResidentProfileManagement: React.FC = () => {
 
   return (
     <>
-      <Typography variant='h5' gutterBottom sx={{ mb: 3 }}>
-        Manage Your Profile
+      <Typography variant='h5'  gutterBottom sx={{ mb: 3 }}>
+        Edit Your Profile
       </Typography>
       {error && (
         <Alert severity='error' sx={{ mb: 2 }}>

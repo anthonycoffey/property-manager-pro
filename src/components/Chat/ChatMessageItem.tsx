@@ -1,7 +1,6 @@
 import React from 'react';
 import { Box, Paper, Typography, Avatar, ListItem } from '@mui/material';
 import PersonIcon from '@mui/icons-material/Person';
-import SmartToyIcon from '@mui/icons-material/SmartToy'; // Bot icon
 import ReportProblemIcon from '@mui/icons-material/ReportProblem'; // For system notifications
 import type { ChatMessage } from './types'; // Adjusted import path with type-only import
 

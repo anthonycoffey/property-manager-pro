@@ -157,15 +157,16 @@ const CreateServiceRequestForm: React.FC<CreateServiceRequestFormProps> = ({
   useEffect(() => {
     setResidentName(currentUser?.displayName || '');
     setEmail(currentUser?.email || '');
-    // Pre-fill phone from fetched resident profile if available
+
+    // Pre-fill phone: prioritize residentProfileData.phone, fallback to currentUser.phoneNumber
     if (residentProfileData?.phone) {
       setPhone(formatPhoneNumberOnInput(residentProfileData.phone));
+    } else if (currentUser?.phoneNumber) {
+      setPhone(formatPhoneNumberOnInput(currentUser.phoneNumber));
     } else {
-      // If no phone in profile, or profile not yet fetched, ensure form phone is clear or based on other logic
-      // For now, if a user manually typed something before profile load, it might be overwritten.
-      // Consider if phone should only be set once, or if profile load always dictates it.
-      // Current behavior: profile load (or lack of phone in it) will dictate.
-      setPhone(''); // Clear phone if not in profile or profile not loaded
+      // If no phone in profile or currentUser, ensure form phone is clear.
+      // Current behavior: profile/currentUser load (or lack of phone) will dictate.
+      setPhone(''); // Clear phone if not available from any source
     }
   }, [currentUser, residentProfileData, formatPhoneNumberOnInput]);
 
@@ -414,6 +415,17 @@ const CreateServiceRequestForm: React.FC<CreateServiceRequestFormProps> = ({
     fetchAndSetPropertyAddress();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUser, organizationId, propertyId, isLoaded, isOffPremise]); // Rerun if isOffPremise changes
+
+  // Effect to auto-select the first vehicle if available and none is selected
+  useEffect(() => {
+    if (
+      residentProfileData?.vehicles &&
+      residentProfileData.vehicles.length > 0 &&
+      !selectedVehicle // Only set if no vehicle is currently selected
+    ) {
+      setSelectedVehicle(residentProfileData.vehicles[0]);
+    }
+  }, [residentProfileData, selectedVehicle]); // Re-run if profile data changes or selected vehicle changes (to prevent re-setting if user deselects)
 
   // Debounced function to fetch place predictions
   const fetchPlacePredictions = useMemo(

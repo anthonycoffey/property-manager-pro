@@ -78,7 +78,8 @@ const CreateServiceRequestForm: React.FC<CreateServiceRequestFormProps> = ({
   );
   const [phone, setPhone] = useState(''); // This will be the form's phone state
   const [email, setEmail] = useState(currentUser?.email || '');
-  const [residentProfileData, setResidentProfileData] = useState<Resident | null>(null); // To store fetched resident profile
+  const [residentProfileData, setResidentProfileData] =
+    useState<Resident | null>(null); // To store fetched resident profile
 
   // const [serviceLocation, setServiceLocation] = useState(''); // Kept for now, as handleAutocompleteChange updates it. Could be removed if Autocomplete directly drives display. - Removed as unused
   // const [requestType, setRequestType] = useState<string>(''); // Replaced by selectedPhoenixServiceId
@@ -111,9 +112,14 @@ const CreateServiceRequestForm: React.FC<CreateServiceRequestFormProps> = ({
 
   // New state for property address pre-population and off-premise toggle
   const [isOffPremise, setIsOffPremise] = useState<boolean>(false);
-  const [propertyFullAddressString, setPropertyFullAddressString] = useState<string | null>(null);
-  const [isLoadingPropertyAddress, setIsLoadingPropertyAddress] = useState<boolean>(false);
-  const [propertyAddressError, setPropertyAddressError] = useState<string | null>(null);
+  const [propertyFullAddressString, setPropertyFullAddressString] = useState<
+    string | null
+  >(null);
+  const [isLoadingPropertyAddress, setIsLoadingPropertyAddress] =
+    useState<boolean>(false);
+  const [propertyAddressError, setPropertyAddressError] = useState<
+    string | null
+  >(null);
 
   // New state for selected vehicle
   const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
@@ -163,13 +169,20 @@ const CreateServiceRequestForm: React.FC<CreateServiceRequestFormProps> = ({
     }
   }, [currentUser, residentProfileData, formatPhoneNumberOnInput]);
 
-
   // Effect to fetch resident's full profile for additional details like phone
   useEffect(() => {
     const fetchResidentProfile = async () => {
       if (currentUser?.uid && organizationId && propertyId) {
         try {
-          const residentDocRef = doc(db, 'organizations', organizationId, 'properties', propertyId, 'residents', currentUser.uid);
+          const residentDocRef = doc(
+            db,
+            'organizations',
+            organizationId,
+            'properties',
+            propertyId,
+            'residents',
+            currentUser.uid
+          );
           const residentDocSnap = await getDoc(residentDocRef);
           if (residentDocSnap.exists()) {
             setResidentProfileData(residentDocSnap.data() as Resident);
@@ -178,7 +191,7 @@ const CreateServiceRequestForm: React.FC<CreateServiceRequestFormProps> = ({
             setResidentProfileData(null);
           }
         } catch (error) {
-          console.error("Error fetching resident profile:", error);
+          console.error('Error fetching resident profile:', error);
           setResidentProfileData(null);
         }
       } else {
@@ -232,8 +245,15 @@ const CreateServiceRequestForm: React.FC<CreateServiceRequestFormProps> = ({
   // Effect to fetch and pre-populate property address
   useEffect(() => {
     const fetchAndSetPropertyAddress = async () => {
-      if (currentUser && organizationId && propertyId && isLoaded && geocoderService.current) {
-        if (isOffPremise) { // If user toggled to off-premise, don't auto-fetch/fill.
+      if (
+        currentUser &&
+        organizationId &&
+        propertyId &&
+        isLoaded &&
+        geocoderService.current
+      ) {
+        if (isOffPremise) {
+          // If user toggled to off-premise, don't auto-fetch/fill.
           // Optionally clear fields if desired when toggling to off-premise,
           // or let user type over. For now, just return.
           return;
@@ -242,93 +262,147 @@ const CreateServiceRequestForm: React.FC<CreateServiceRequestFormProps> = ({
         setIsLoadingPropertyAddress(true);
         setPropertyAddressError(null);
         // Clear previous values before attempting to set new ones
-        // setPropertyFullAddressString(null); 
-        // setAutocompleteInputValue(''); 
+        // setPropertyFullAddressString(null);
+        // setAutocompleteInputValue('');
         // setAutocompleteValue(null);
         // setServiceLocationObject(null);
 
-
         try {
-          const propertyDocRef = doc(db, 'organizations', organizationId, 'properties', propertyId);
+          const propertyDocRef = doc(
+            db,
+            'organizations',
+            organizationId,
+            'properties',
+            propertyId
+          );
           const propertyDocSnap = await getDoc(propertyDocRef);
 
           if (propertyDocSnap.exists()) {
             const propertyData = propertyDocSnap.data() as Property;
-            if (propertyData.address && propertyData.address.street && propertyData.address.city && propertyData.address.state && propertyData.address.zip) {
+            if (
+              propertyData.address &&
+              propertyData.address.street &&
+              propertyData.address.city &&
+              propertyData.address.state &&
+              propertyData.address.zip
+            ) {
               const { street, city, state, zip } = propertyData.address;
               const fullAddress = `${street}, ${city}, ${state} ${zip}`;
-              
+
               setPropertyFullAddressString(fullAddress);
-              setAutocompleteInputValue(fullAddress); 
+              setAutocompleteInputValue(fullAddress);
 
-              geocoderService.current.geocode({ address: fullAddress }, (results, geocodeStatus) => {
-                if (geocodeStatus === google.maps.GeocoderStatus.OK && results && results[0]) {
-                  const place = results[0];
-                  const placeTypeResult: PlaceType = {
-                    description: place.formatted_address || fullAddress,
-                    structured_formatting: {
-                      main_text: results[0].address_components?.find(c => c.types.includes('street_number'))?.long_name + ' ' + results[0].address_components?.find(c => c.types.includes('route'))?.long_name || street,
-                      secondary_text: results[0].address_components?.find(c => c.types.includes('locality'))?.long_name || city,
-                      main_text_matched_substrings: [], 
-                    },
-                    place_id: place.place_id,
-                  };
-                  setAutocompleteValue(placeTypeResult);
-                  setAutocompleteOptions(placeTypeResult ? [placeTypeResult] : []);
+              geocoderService.current.geocode(
+                { address: fullAddress },
+                (results, geocodeStatus) => {
+                  if (
+                    geocodeStatus === google.maps.GeocoderStatus.OK &&
+                    results &&
+                    results[0]
+                  ) {
+                    const place = results[0];
+                    const placeTypeResult: PlaceType = {
+                      description: place.formatted_address || fullAddress,
+                      structured_formatting: {
+                        main_text:
+                          results[0].address_components?.find((c) =>
+                            c.types.includes('street_number')
+                          )?.long_name +
+                            ' ' +
+                            results[0].address_components?.find((c) =>
+                              c.types.includes('route')
+                            )?.long_name || street,
+                        secondary_text:
+                          results[0].address_components?.find((c) =>
+                            c.types.includes('locality')
+                          )?.long_name || city,
+                        main_text_matched_substrings: [],
+                      },
+                      place_id: place.place_id,
+                    };
+                    setAutocompleteValue(placeTypeResult);
+                    setAutocompleteOptions(
+                      placeTypeResult ? [placeTypeResult] : []
+                    );
 
-                  let streetNumber = '';
-                  let routeValue = ''; // Renamed to avoid conflict with 'route' in scope
-                  let currentCity = '';
-                  let currentState = '';
-                  let currentPostalCode = '';
-                  let currentCountry = '';
+                    let streetNumber = '';
+                    let routeValue = ''; // Renamed to avoid conflict with 'route' in scope
+                    let currentCity = '';
+                    let currentState = '';
+                    let currentPostalCode = '';
+                    let currentCountry = '';
 
-                  place.address_components?.forEach((component) => {
-                    const types = component.types;
-                    if (types.includes('street_number')) streetNumber = component.long_name;
-                    if (types.includes('route')) routeValue = component.long_name;
-                    if (types.includes('locality')) currentCity = component.long_name;
-                    else if (types.includes('postal_town') && !currentCity) currentCity = component.long_name;
-                    else if (types.includes('sublocality_level_1') && !currentCity) currentCity = component.long_name;
-                    if (types.includes('administrative_area_level_1')) currentState = component.short_name;
-                    if (types.includes('postal_code')) currentPostalCode = component.long_name;
-                    if (types.includes('country')) currentCountry = component.short_name;
-                  });
-                  const fullStreet = streetNumber ? `${streetNumber} ${routeValue}`.trim() : routeValue.trim();
-                  setServiceLocationObject({
-                    address_1: fullStreet,
-                    city: currentCity,
-                    state: currentState,
-                    zipcode: currentPostalCode,
-                    country: currentCountry,
-                    fullAddress: place.formatted_address || fullAddress,
-                  });
-                } else {
-                  console.error('Geocoding pre-filled property address failed: ' + geocodeStatus);
-                  setPropertyAddressError('Could not verify your property address. Please enter address manually or use the "off-premise" toggle.');
-                  setPropertyFullAddressString(null); 
-                  setAutocompleteValue(null);
-                  setServiceLocationObject(null);
-                  setAutocompleteInputValue(''); // Clear input if geocoding fails
+                    place.address_components?.forEach((component) => {
+                      const types = component.types;
+                      if (types.includes('street_number'))
+                        streetNumber = component.long_name;
+                      if (types.includes('route'))
+                        routeValue = component.long_name;
+                      if (types.includes('locality'))
+                        currentCity = component.long_name;
+                      else if (types.includes('postal_town') && !currentCity)
+                        currentCity = component.long_name;
+                      else if (
+                        types.includes('sublocality_level_1') &&
+                        !currentCity
+                      )
+                        currentCity = component.long_name;
+                      if (types.includes('administrative_area_level_1'))
+                        currentState = component.short_name;
+                      if (types.includes('postal_code'))
+                        currentPostalCode = component.long_name;
+                      if (types.includes('country'))
+                        currentCountry = component.short_name;
+                    });
+                    const fullStreet = streetNumber
+                      ? `${streetNumber} ${routeValue}`.trim()
+                      : routeValue.trim();
+                    setServiceLocationObject({
+                      address_1: fullStreet,
+                      city: currentCity,
+                      state: currentState,
+                      zipcode: currentPostalCode,
+                      country: currentCountry,
+                      fullAddress: place.formatted_address || fullAddress,
+                    });
+                  } else {
+                    console.error(
+                      'Geocoding pre-filled property address failed: ' +
+                        geocodeStatus
+                    );
+                    setPropertyAddressError(
+                      'Could not verify your property address. Please enter address manually or use the "off-premise" toggle.'
+                    );
+                    setPropertyFullAddressString(null);
+                    setAutocompleteValue(null);
+                    setServiceLocationObject(null);
+                    setAutocompleteInputValue(''); // Clear input if geocoding fails
+                  }
                 }
-              });
+              );
             } else {
-              setPropertyAddressError('Your property address details are incomplete. Please enter address manually or use the "off-premise" toggle.');
-               setAutocompleteInputValue(''); 
+              setPropertyAddressError(
+                'Your property address details are incomplete. Please enter address manually or use the "off-premise" toggle.'
+              );
+              setAutocompleteInputValue('');
             }
           } else {
-            setPropertyAddressError('Your property details could not be found. Please enter address manually or use the "off-premise" toggle.');
-             setAutocompleteInputValue(''); 
+            setPropertyAddressError(
+              'Your property details could not be found. Please enter address manually or use the "off-premise" toggle.'
+            );
+            setAutocompleteInputValue('');
           }
         } catch (err) {
           console.error('Error fetching property details:', err);
-          setPropertyAddressError('Failed to load your property address. Please enter address manually or use the "off-premise" toggle.');
-           setAutocompleteInputValue(''); 
+          setPropertyAddressError(
+            'Failed to load your property address. Please enter address manually or use the "off-premise" toggle.'
+          );
+          setAutocompleteInputValue('');
         } finally {
           setIsLoadingPropertyAddress(false);
         }
       } else if (!propertyId && !isLoadingPropertyAddress && !isOffPremise) {
-         // No propertyId associated, or user explicitly wants off-premise
+        // No propertyId associated, or user explicitly wants off-premise
         setPropertyFullAddressString(null);
         setAutocompleteInputValue('');
         setAutocompleteValue(null);
@@ -338,7 +412,7 @@ const CreateServiceRequestForm: React.FC<CreateServiceRequestFormProps> = ({
     };
 
     fetchAndSetPropertyAddress();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUser, organizationId, propertyId, isLoaded, isOffPremise]); // Rerun if isOffPremise changes
 
   // Debounced function to fetch place predictions
@@ -370,7 +444,12 @@ const CreateServiceRequestForm: React.FC<CreateServiceRequestFormProps> = ({
 
     // If address is pre-filled from property and not off-premise,
     // and input hasn't changed from the pre-filled string, keep existing options.
-    if (propertyFullAddressString && !isOffPremise && autocompleteInputValue === propertyFullAddressString && autocompleteValue) {
+    if (
+      propertyFullAddressString &&
+      !isOffPremise &&
+      autocompleteInputValue === propertyFullAddressString &&
+      autocompleteValue
+    ) {
       setAutocompleteOptions([autocompleteValue]);
       return undefined;
     }
@@ -379,7 +458,8 @@ const CreateServiceRequestForm: React.FC<CreateServiceRequestFormProps> = ({
       !autocompleteService.current ||
       autocompleteInputValue === '' ||
       (autocompleteValue &&
-        autocompleteInputValue === autocompleteValue.description && !isOffPremise) // also check !isOffPremise here
+        autocompleteInputValue === autocompleteValue.description &&
+        !isOffPremise) // also check !isOffPremise here
     ) {
       setAutocompleteOptions(autocompleteValue ? [autocompleteValue] : []);
       return undefined;
@@ -412,7 +492,13 @@ const CreateServiceRequestForm: React.FC<CreateServiceRequestFormProps> = ({
     return () => {
       active = false;
     };
-  }, [autocompleteInputValue, autocompleteValue, fetchPlacePredictions, isOffPremise, propertyFullAddressString]);
+  }, [
+    autocompleteInputValue,
+    autocompleteValue,
+    fetchPlacePredictions,
+    isOffPremise,
+    propertyFullAddressString,
+  ]);
 
   const handleAutocompleteChange = useCallback(
     (_event: React.SyntheticEvent, newValue: PlaceType | null) => {
@@ -552,19 +638,23 @@ const CreateServiceRequestForm: React.FC<CreateServiceRequestFormProps> = ({
         // New fields for Phoenix integration
         smsConsent: smsConsent,
         serviceLocationAddress: serviceLocationObject, // This is the structured address object
-      // serviceTypeId: selectedPhoenixServiceId, // Replaced by serviceTypesForSubmission
-      // serviceTypeValue: selectedServiceName, // Replaced by serviceTypesForSubmission
-      serviceTypes: serviceTypesForSubmission, // Array of {id, value} objects
-      isOffPremiseRequest: (!!propertyFullAddressString && !propertyAddressError && isOffPremise) || (!propertyFullAddressString && !propertyAddressError), // True if prop address was available and toggle is on, OR if no prop address was available (implies off-premise by default)
-      
-      // Add vehicle details if selected
-      car_year: selectedVehicle ? selectedVehicle.year : undefined,
-      car_make: selectedVehicle ? selectedVehicle.make : undefined,
-      car_model: selectedVehicle ? selectedVehicle.model : undefined,
-      car_color: selectedVehicle ? selectedVehicle.color : undefined,
-    };
+        // serviceTypeId: selectedPhoenixServiceId, // Replaced by serviceTypesForSubmission
+        // serviceTypeValue: selectedServiceName, // Replaced by serviceTypesForSubmission
+        serviceTypes: serviceTypesForSubmission, // Array of {id, value} objects
+        isOffPremiseRequest:
+          (!!propertyFullAddressString &&
+            !propertyAddressError &&
+            isOffPremise) ||
+          (!propertyFullAddressString && !propertyAddressError), // True if prop address was available and toggle is on, OR if no prop address was available (implies off-premise by default)
 
-    try {
+        // Add vehicle details if selected
+        car_year: selectedVehicle ? selectedVehicle.year : undefined,
+        car_make: selectedVehicle ? selectedVehicle.make : undefined,
+        car_model: selectedVehicle ? selectedVehicle.model : undefined,
+        car_color: selectedVehicle ? selectedVehicle.color : undefined,
+      };
+
+      try {
         const createServiceRequest = httpsCallable(
           functions,
           'createServiceRequest'
@@ -620,7 +710,7 @@ const CreateServiceRequestForm: React.FC<CreateServiceRequestFormProps> = ({
       onServiceRequestSubmitted,
       isOffPremise,
       propertyAddressError,
-      propertyFullAddressString
+      propertyFullAddressString,
       // setError, setSuccessMessage, setSubmitting, setSelectedPhoenixServices,
       // setAutocompleteValue, setAutocompleteInputValue, setServiceLocationObject,
       // setSmsConsent, setServiceDateTime, setResidentNotes, setPhone, setSelectedVehicle (state setters are stable)
@@ -724,18 +814,36 @@ const CreateServiceRequestForm: React.FC<CreateServiceRequestFormProps> = ({
                   required
                   error={!serviceLocationObject && submitting} // Example error state
                   helperText={
-                    !serviceLocationObject && submitting && !isLoadingPropertyAddress
+                    !serviceLocationObject &&
+                    submitting &&
+                    !isLoadingPropertyAddress
                       ? 'Service location is required.'
                       : propertyAddressError || '' // Display property address error here as well
                   }
-                  disabled={submitting || !isLoaded || isLoadingPropertyAddress || (!!propertyFullAddressString && !isOffPremise && !propertyAddressError)}
+                  disabled={
+                    submitting ||
+                    !isLoaded ||
+                    isLoadingPropertyAddress ||
+                    (!!propertyFullAddressString &&
+                      !isOffPremise &&
+                      !propertyAddressError)
+                  }
                   InputProps={{
                     ...params.InputProps,
-                    readOnly: !!propertyFullAddressString && !isOffPremise && !propertyAddressError && !isLoadingPropertyAddress,
+                    readOnly:
+                      !!propertyFullAddressString &&
+                      !isOffPremise &&
+                      !propertyAddressError &&
+                      !isLoadingPropertyAddress,
                   }}
                 />
               )}
-              disabled={isLoadingPropertyAddress || (!!propertyFullAddressString && !isOffPremise && !propertyAddressError)} // Disable Autocomplete itself
+              disabled={
+                isLoadingPropertyAddress ||
+                (!!propertyFullAddressString &&
+                  !isOffPremise &&
+                  !propertyAddressError)
+              } // Disable Autocomplete itself
               renderOption={(props, option) => {
                 const matches =
                   option.structured_formatting.main_text_matched_substrings ||
@@ -802,13 +910,22 @@ const CreateServiceRequestForm: React.FC<CreateServiceRequestFormProps> = ({
             </Box>
           )}
           {isLoadingPropertyAddress && (
-            <Box sx={{ display: 'flex', justifyContent: 'center', my: 1, alignItems: 'center' }}>
-              <CircularProgress size={20} sx={{mr: 1}} /> 
-              <Typography variant="caption">Loading property address...</Typography>
+            <Box
+              sx={{
+                display: 'flex',
+                justifyContent: 'center',
+                my: 1,
+                alignItems: 'center',
+              }}
+            >
+              <CircularProgress size={20} sx={{ mr: 1 }} />
+              <Typography variant='caption'>
+                Loading property address...
+              </Typography>
             </Box>
           )}
           {propertyAddressError && !isLoadingPropertyAddress && (
-            <Alert severity='warning' sx={{ mb: 1 }}> 
+            <Alert severity='warning' sx={{ mb: 1 }}>
               {propertyAddressError}
             </Alert>
           )}
@@ -824,39 +941,41 @@ const CreateServiceRequestForm: React.FC<CreateServiceRequestFormProps> = ({
           )}
 
           {/* Off-premise toggle */}
-          {propertyFullAddressString && !propertyAddressError && !isLoadingPropertyAddress && (
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={isOffPremise}
-                  onChange={(e) => {
-                    const newIsOffPremise = e.target.checked;
-                    setIsOffPremise(newIsOffPremise);
-                    if (!newIsOffPremise) {
-                      // If toggling back to on-premise, re-apply property address
-                      if (propertyFullAddressString) {
-                        setAutocompleteInputValue(propertyFullAddressString);
-                        // Re-trigger geocoding by clearing autocompleteValue, effect will pick it up
-                        // Or directly call the geocode logic if it's extracted
-                        // For simplicity, the main useEffect will re-run due to isOffPremise change
+          {propertyFullAddressString &&
+            !propertyAddressError &&
+            !isLoadingPropertyAddress && (
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={isOffPremise}
+                    onChange={(e) => {
+                      const newIsOffPremise = e.target.checked;
+                      setIsOffPremise(newIsOffPremise);
+                      if (!newIsOffPremise) {
+                        // If toggling back to on-premise, re-apply property address
+                        if (propertyFullAddressString) {
+                          setAutocompleteInputValue(propertyFullAddressString);
+                          // Re-trigger geocoding by clearing autocompleteValue, effect will pick it up
+                          // Or directly call the geocode logic if it's extracted
+                          // For simplicity, the main useEffect will re-run due to isOffPremise change
+                        }
+                      } else {
+                        // Toggling to off-premise: clear the fields for new input
+                        setAutocompleteInputValue('');
+                        setAutocompleteValue(null);
+                        setServiceLocationObject(null);
+                        setAutocompleteOptions([]);
                       }
-                    } else {
-                      // Toggling to off-premise: clear the fields for new input
-                      setAutocompleteInputValue('');
-                      setAutocompleteValue(null);
-                      setServiceLocationObject(null);
-                      setAutocompleteOptions([]);
-                    }
-                  }}
-                  name="isOffPremise"
-                  color="primary"
-                  disabled={submitting || isLoadingPropertyAddress}
-                />
-              }
-              label="Use a different service location (off-premise)"
-              sx={{ mb: 1 }}
-            />
-          )}
+                    }}
+                    name='isOffPremise'
+                    color='primary'
+                    disabled={submitting || isLoadingPropertyAddress}
+                  />
+                }
+                label='Use a different service location (off-premise)'
+                sx={{ mb: 1 }}
+              />
+            )}
 
           {/* Service Type Dropdown using ReactSelect */}
           <Box sx={{ my: 1 }}>
@@ -903,16 +1022,32 @@ const CreateServiceRequestForm: React.FC<CreateServiceRequestFormProps> = ({
               }
               closeMenuOnSelect={false} // Useful for multi-select
               styles={{
-                control: (baseStyles, state) => ({
-                  ...baseStyles,
-
-                  boxShadow: state.isFocused
-                    ? `0 0 0 1px ${theme.palette.primary.main}`
-                    : 'none',
-                  minHeight: '56px', // Match MUI TextField height
-                  backgroundColor: theme.palette.background.paper, // Ensure background for dark/light mode
-                  borderRadius: theme.shape.borderRadius, // Added to match MUI TextField
-                }),
+                control: (baseStyles, state) => {
+                  let currentBorderColor;
+                  if (state.isFocused) {
+                    currentBorderColor = theme.palette.primary.main;
+                  } else if (theme.palette.mode === 'dark') {
+                    currentBorderColor = 'rgba(255, 255, 255, 0.23)'; // TextField dark mode default
+                  } else {
+                    currentBorderColor = 'rgba(0, 0, 0, 0.23)'; // TextField light mode default
+                  }
+                  return {
+                    ...baseStyles,
+                    backgroundColor:
+                      theme.palette.mode === 'dark'
+                        ? 'transparent'
+                        : theme.palette.background.paper,
+                    borderRadius: theme.shape.borderRadius,
+                    minHeight: '56px',
+                    border: `1px solid ${currentBorderColor}`,
+                    boxShadow: state.isFocused
+                      ? `0 0 0 1px ${theme.palette.primary.main}`
+                      : 'none',
+                    '&:hover': {
+                      border: `1px solid ${theme.palette.text.primary}`,
+                    },
+                  };
+                },
                 menu: (baseStyles) => ({
                   ...baseStyles,
                   zIndex: theme.zIndex.modal + 1, // Ensure dropdown is above other elements like modals
@@ -971,57 +1106,103 @@ const CreateServiceRequestForm: React.FC<CreateServiceRequestFormProps> = ({
           </Box>
 
           {/* Vehicle Selection Dropdown */}
-          {residentProfileData?.vehicles && residentProfileData.vehicles.length > 0 && (
-            <Box sx={{ my: 1 }}>
-              <Typography
-                variant='caption'
-                display='block'
-                sx={{ mb: 0.5, color: 'text.secondary' }}
-              >
-                Select Vehicle
-              </Typography>
-              <ReactSelect
-                inputId='resident-vehicle-select'
-                options={residentProfileData.vehicles.map((vehicle) => ({
-                  value: vehicle, // Store the whole vehicle object
-                  label: `${vehicle.year} ${vehicle.make} ${vehicle.model} (${vehicle.color}) - ${vehicle.plate}`,
-                }))}
-                value={selectedVehicle ? { value: selectedVehicle, label: `${selectedVehicle.year} ${selectedVehicle.make} ${selectedVehicle.model} (${selectedVehicle.color}) - ${selectedVehicle.plate}` } : null}
-                onChange={(selectedOption) => {
-                  setSelectedVehicle(selectedOption ? selectedOption.value : null);
-                }}
-                isClearable
-                isSearchable
-                isDisabled={submitting}
-                placeholder="Select your vehicle..."
-                styles={{ // Apply similar styling as Service Type for consistency
-                  control: (baseStyles, state) => ({
-                    ...baseStyles,
-                    boxShadow: state.isFocused ? `0 0 0 1px ${theme.palette.primary.main}` : 'none',
-                    minHeight: '56px',
-                    backgroundColor: theme.palette.background.paper,
-                    borderRadius: theme.shape.borderRadius,
-                  }),
-                  menu: (baseStyles) => ({
-                    ...baseStyles,
-                    zIndex: theme.zIndex.modal, // Standard zIndex for dropdowns
-                    backgroundColor: theme.palette.background.paper,
-                  }),
-                  option: (baseStyles, state) => ({
-                    ...baseStyles,
-                    backgroundColor: state.isSelected ? theme.palette.primary.main : state.isFocused ? theme.palette.action.hover : theme.palette.background.paper,
-                    color: state.isSelected ? theme.palette.primary.contrastText : theme.palette.text.primary,
-                    '&:active': {
-                      backgroundColor: theme.palette.primary.dark,
+          {residentProfileData?.vehicles &&
+            residentProfileData.vehicles.length > 0 && (
+              <Box sx={{ my: 1 }}>
+                <Typography
+                  variant='caption'
+                  display='block'
+                  sx={{ mb: 0.5, color: 'text.secondary' }}
+                >
+                  Select Vehicle
+                </Typography>
+
+                <ReactSelect
+                  inputId='resident-vehicle-select'
+                  options={residentProfileData.vehicles.map((vehicle) => ({
+                    value: vehicle, // Store the whole vehicle object
+                    label: `${vehicle.year} ${vehicle.make} ${vehicle.model} (${vehicle.color}) - ${vehicle.plate}`,
+                  }))}
+                  value={
+                    selectedVehicle
+                      ? {
+                          value: selectedVehicle,
+                          label: `${selectedVehicle.year} ${selectedVehicle.make} ${selectedVehicle.model} (${selectedVehicle.color}) - ${selectedVehicle.plate}`,
+                        }
+                      : null
+                  }
+                  onChange={(selectedOption) => {
+                    setSelectedVehicle(
+                      selectedOption ? selectedOption.value : null
+                    );
+                  }}
+                  isClearable
+                  isSearchable
+                  isDisabled={submitting}
+                  placeholder='Select your vehicle...'
+                  styles={{
+                    // Apply similar styling as Service Type for consistency
+                    control: (baseStyles, state) => {
+                      let currentBorderColor;
+                      if (state.isFocused) {
+                        currentBorderColor = theme.palette.primary.main;
+                      } else if (theme.palette.mode === 'dark') {
+                        currentBorderColor = 'rgba(255, 255, 255, 0.23)'; // TextField dark mode default
+                      } else {
+                        currentBorderColor = 'rgba(0, 0, 0, 0.23)'; // TextField light mode default
+                      }
+                      return {
+                        ...baseStyles,
+                        backgroundColor:
+                          theme.palette.mode === 'dark'
+                            ? 'transparent'
+                            : theme.palette.background.paper,
+                        borderRadius: theme.shape.borderRadius,
+                        minHeight: '56px',
+                        border: `1px solid ${currentBorderColor}`,
+                        boxShadow: state.isFocused
+                          ? `0 0 0 1px ${theme.palette.primary.main}`
+                          : 'none',
+                        '&:hover': {
+                          border: `1px solid ${theme.palette.text.primary}`,
+                        },
+                      };
                     },
-                  }),
-                  placeholder: (baseStyles) => ({ ...baseStyles, color: theme.palette.text.secondary }),
-                  input: (baseStyles) => ({ ...baseStyles, color: theme.palette.text.primary }),
-                  singleValue: (baseStyles) => ({ ...baseStyles, color: theme.palette.text.primary }),
-                }}
-              />
-            </Box>
-          )}
+                    menu: (baseStyles) => ({
+                      ...baseStyles,
+                      zIndex: theme.zIndex.modal, // Standard zIndex for dropdowns
+                      backgroundColor: theme.palette.background.paper,
+                    }),
+                    option: (baseStyles, state) => ({
+                      ...baseStyles,
+                      backgroundColor: state.isSelected
+                        ? theme.palette.primary.main
+                        : state.isFocused
+                        ? theme.palette.action.hover
+                        : theme.palette.background.paper,
+                      color: state.isSelected
+                        ? theme.palette.primary.contrastText
+                        : theme.palette.text.primary,
+                      '&:active': {
+                        backgroundColor: theme.palette.primary.dark,
+                      },
+                    }),
+                    placeholder: (baseStyles) => ({
+                      ...baseStyles,
+                      color: theme.palette.text.secondary,
+                    }),
+                    input: (baseStyles) => ({
+                      ...baseStyles,
+                      color: theme.palette.text.primary,
+                    }),
+                    singleValue: (baseStyles) => ({
+                      ...baseStyles,
+                      color: theme.palette.text.primary,
+                    }),
+                  }}
+                />
+              </Box>
+            )}
 
           {/* SMS Consent Checkbox */}
           <FormControlLabel

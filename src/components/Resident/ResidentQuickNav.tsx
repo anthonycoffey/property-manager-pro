@@ -19,9 +19,6 @@ const residentNavItems = navigationItems.filter(
 const ResidentQuickNav: React.FC = () => {
   return (
     <>
-      <Typography variant='h5' gutterBottom sx={{ mb: 3 }}>
-        Explore Your Dashboard
-      </Typography>
       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 4 }}>
         {residentNavItems.map((item: NavItemConfig) => (
           <Box

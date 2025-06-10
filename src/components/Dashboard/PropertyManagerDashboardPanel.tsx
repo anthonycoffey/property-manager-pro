@@ -71,7 +71,7 @@ const PropertyManagerDashboardContent: React.FC<
 
   return (
     <>
-      <Paper elevation={3} sx={{ mb: 4, p: { xs: 1, sm: 2 } }}>
+      <Paper elevation={3} sx={{ p: { xs: 1, sm: 2, lg: 3 } }}>
         {pathname !== aiAssistancePath && (
           <>
             <Box
@@ -117,9 +117,9 @@ const PropertyManagerDashboardContent: React.FC<
       </Paper>
 
       {/* Testimonial Section - Added back */}
-      {organizationId && ( // Only show if org context is available
+      {pathname !== aiAssistancePath && ( // Only show if org context is available
         <>
-          <Divider sx={{ mt: 8 }} />
+          <Divider sx={{ mt: 6 }} />
           <Box
             sx={{
               mt: 4,

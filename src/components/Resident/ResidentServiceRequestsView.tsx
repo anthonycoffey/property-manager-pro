@@ -24,9 +24,6 @@ const ResidentServiceRequestsView: React.FC = () => {
         onServiceRequestSubmitted={handleServiceRequestSubmitted}
       />
       <Divider sx={{ my: 3 }} />
-      <Typography variant='h6' gutterBottom sx={{ mb: 2 }}>
-        Your Submitted Requests
-      </Typography>
       <ServiceRequestList />
     </Box>
   );

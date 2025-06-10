@@ -67,8 +67,10 @@ const ServiceRequestList: React.FC = () => {
   const [serviceRequests, setServiceRequests] = useState<ServiceRequest[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [isJobDetailModalOpen, setIsJobDetailModalOpen] = useState<boolean>(false);
-  const [selectedPhoenixSubmissionId, setSelectedPhoenixSubmissionId] = useState<string | null>(null);
+  const [isJobDetailModalOpen, setIsJobDetailModalOpen] =
+    useState<boolean>(false);
+  const [selectedPhoenixSubmissionId, setSelectedPhoenixSubmissionId] =
+    useState<string | null>(null);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
 
@@ -155,11 +157,13 @@ const ServiceRequestList: React.FC = () => {
         <Table sx={{ minWidth: 650 }} aria-label='service requests table'>
           <TableHead>
             <TableRow>
-              <TableCell align="center">View Job</TableCell>
-              <TableCell>Status</TableCell>
-              <TableCell>Location</TableCell>
-              <TableCell>Service Type(s)</TableCell>
-              <TableCell>Date Submitted</TableCell>
+              <TableCell align='center' sx={{ minWidth: 50, width: 100 }}>
+                View Job
+              </TableCell>
+              <TableCell align='center'>Status</TableCell>
+              <TableCell align='center'>Location</TableCell>
+              <TableCell align='center'>Service Type(s)</TableCell>
+              <TableCell align='center'>Date</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -170,7 +174,7 @@ const ServiceRequestList: React.FC = () => {
                   key={request.id}
                   sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
                 >
-                  <TableCell align="center">
+                  <TableCell align='center'>
                     {request.phoenixSubmissionId && (
                       <IconButton
                         aria-label='view job'
@@ -183,20 +187,21 @@ const ServiceRequestList: React.FC = () => {
                       </IconButton>
                     )}
                   </TableCell>
-                  <TableCell>
+                  <TableCell align='center'>
                     <Chip
                       label={request.status.toUpperCase()}
                       color={getStatusChipColor(request.status)}
                       size='small'
                     />
                   </TableCell>
-                  <TableCell>
+
+                  <TableCell align='center'>
                     {request.serviceLocationData?.fullAddress ||
                       request.serviceLocation ||
                       'N/A'}
                   </TableCell>
-                  <TableCell>{request.requestType}</TableCell>
-                  <TableCell component='th' scope='row'>
+                  <TableCell align='center'>{request.requestType}</TableCell>
+                  <TableCell align='center' component='th' scope='row'>
                     {formatDate(request.submittedAt)}
                   </TableCell>
                 </TableRow>

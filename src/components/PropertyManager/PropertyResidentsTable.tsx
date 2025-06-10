@@ -159,7 +159,7 @@ const PropertyResidentsTable: React.FC<PropertyResidentsTableProps> = ({ organiz
   }
 
   return (
-    <Paper sx={{ width: '100%', overflow: 'hidden', mt: 2 }} elevation={0}>
+    <Paper sx={{ width: '100%', overflow: 'hidden' }} elevation={0}>
       <TableContainer>
         <Table stickyHeader aria-label="residents table">
           <TableHead>

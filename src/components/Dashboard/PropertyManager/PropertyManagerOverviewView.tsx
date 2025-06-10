@@ -186,7 +186,7 @@ const PropertyManagerOverviewView: React.FC = () => {
         return null;
       return {
         chart: { type: 'pie' },
-        title: { text: 'Service Request Types (Phoenix)' },
+        title: { text: 'Service Request Types' },
         tooltip: {
           pointFormat:
             '{series.name}: <b>{point.percentage:.1f}%</b> ({point.y})',
@@ -331,7 +331,7 @@ const PropertyManagerOverviewView: React.FC = () => {
 
         <Divider sx={{ my: 4 }} />
         <Typography variant='h5' gutterBottom sx={{ mb: 2 }}>
-          Service Request Analytics (Phoenix)
+          Service Request Analytics
         </Typography>
         {phoenixError && (
           <Alert severity='error' sx={{ my: 2 }}>

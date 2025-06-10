@@ -247,7 +247,10 @@ const AppBarComponent: React.FC<AppBarComponentProps> = ({
     <AppBar position='static'>
       <Toolbar sx={{ justifyContent: 'space-between' }}>
         {/* Left Side: App Logo/Title */}
-        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+        <Box
+          sx={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}
+          onClick={() => navigate('/dashboard')}
+        >
           <Avatar
             src='/mcu-logo-small.png'
             alt='App Logo'
@@ -255,13 +258,12 @@ const AppBarComponent: React.FC<AppBarComponentProps> = ({
           />
           <Typography
             variant='h6'
-            component='a'
-            href='/dashboard'
+            component='span'
             sx={{
               flexGrow: 1,
               textDecoration: 'none',
               color: 'inherit',
-              cursor: 'pointer',
+              userSelect: 'none',
             }}
           >
             Property Manager Pro

@@ -150,8 +150,9 @@ export interface Theme extends BaseMuiTheme { // Extend BaseMuiTheme
 }
 
 // Specific type for our fully constructed light palette object
-export interface FullyDefinedLightPalette extends MuiPaletteOptions {
-  mode: 'light';
+// Renamed to AppPaletteOptions to be mode-agnostic
+export interface AppPaletteOptions extends MuiPaletteOptions {
+  mode: ThemeColorScheme; // Changed from 'light' to ThemeColorScheme
   primary: PaletteColorWithChannels;
   secondary: PaletteColorWithChannels;
   info: PaletteColorWithChannels;

@@ -11,8 +11,11 @@ import { palette } from './palette'; // To access grey color channels
 // during this module's static initialization, though it should be.
 
 // Ensure palette.light and palette.light.grey are defined before accessing '500Channel'
-const lightGrey = palette.light?.grey;
-const grey500Channel = lightGrey && '500Channel' in lightGrey ? lightGrey['500Channel'] as string : '145, 158, 171'; // Default fallback
+const lightGrey = palette.light?.grey; // Used for light shadows
+const grey500Channel = lightGrey && '500Channel' in lightGrey ? lightGrey['500Channel'] as string : '145, 158, 171'; // Default fallback for light shadows
+
+// Define a base channel for dark shadows (typically black)
+const blackColorChannel = '0,0,0'; // Pure black channel for dark mode shadows
 
 function createMuiShadows(colorChannel: string): MuiShadows {
   const color1 = varAlpha(colorChannel, 0.2);
@@ -55,5 +58,5 @@ function createMuiShadows(colorChannel: string): MuiShadows {
 
 export const shadows: { light: MuiShadows; dark?: MuiShadows } = {
   light: createMuiShadows(grey500Channel),
-  // dark shadows would be created with a different base color if needed
+  dark: createMuiShadows(blackColorChannel), // Add dark shadows using the black color channel
 };

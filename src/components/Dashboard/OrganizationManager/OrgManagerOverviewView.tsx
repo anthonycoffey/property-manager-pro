@@ -311,7 +311,7 @@ const OrgManagerOverviewView: React.FC = () => {
           direction={{ xs: 'column', lg: 'row' }}
           alignItems='center'
         >
-          <Box sx={{ width: { xs: '100%', lg: '60%' }, p: 1 }}>
+          <Box sx={{ width: { xs: '100%', lg: '60%' }, p: 1, pb: 6 }}>
             {(dashboardStats?.campaignPerformance?.conversionRates &&
               dashboardStats.campaignPerformance.conversionRates.length > 0) ||
             dashboardLoading ? (
@@ -403,7 +403,7 @@ const OrgManagerOverviewView: React.FC = () => {
           {(phoenixStats?.typeDistribution &&
             phoenixStats.typeDistribution.length > 0) ||
           phoenixLoading ? (
-            <Paper elevation={0} sx={{ p: 2, my: 2 }}>
+            <Paper elevation={0} sx={{ p: 2, my: 2, pb: 9 }}>
               {phoenixTypeDistributionOptions && (
                 <PieChart
                   options={phoenixTypeDistributionOptions}
@@ -430,8 +430,6 @@ const OrgManagerOverviewView: React.FC = () => {
             </Typography>
           )}
       </Box>
-
-
     </Box>
   );
 };

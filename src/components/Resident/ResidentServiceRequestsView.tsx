@@ -18,7 +18,7 @@ const ResidentServiceRequestsView: React.FC = () => {
   return (
     <Box sx={{ p: { xs: 1, sm: 2, lg: 3 } }}>
       <Typography variant='h5' gutterBottom sx={{ mb: 2 }}>
-        Service Requests
+        Request Service
       </Typography>
       <CreateServiceRequestForm
         onServiceRequestSubmitted={handleServiceRequestSubmitted}

@@ -4,7 +4,6 @@ import {
   TextField,
   Button,
   Typography,
-  Paper,
   CircularProgress,
   Snackbar,
   Alert,
@@ -124,7 +123,7 @@ const ResidentProfileManagement: React.FC = () => {
       }
     };
     fetchResidentData();
-  }, [currentUser]);
+  }, [currentUser, formatPhoneNumberOnInput]);
 
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target;
@@ -178,7 +177,7 @@ const ResidentProfileManagement: React.FC = () => {
     }
     setError(null); // Clear general error if validation passes
 
-    let updatedVehicles = [...vehicles];
+    const updatedVehicles = [...vehicles];
     if (editingVehicleIndex !== null) { // Editing
       updatedVehicles[editingVehicleIndex] = currentVehicleFormData;
     } else { // Adding

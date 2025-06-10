@@ -15,6 +15,7 @@ import {
   ListItemText,
   Divider,
   Typography,
+  Paper,
 } from '@mui/material';
 import LightModeIcon from '@mui/icons-material/LightMode';
 import DarkModeIcon from '@mui/icons-material/DarkMode';
@@ -54,8 +55,6 @@ const AppBarComponent: React.FC<AppBarComponentProps> = ({
       }
       setDrawerOpen(open);
     };
-
-
 
   const handleLogin = () => {
     navigate('/login');
@@ -115,7 +114,13 @@ const AppBarComponent: React.FC<AppBarComponentProps> = ({
               />
             ) : currentUser.displayName ? (
               <Avatar
-                sx={{ width: 56, height: 56, bgcolor: 'secondary.main', mb: 1 }}
+                sx={{
+                  width: 56,
+                  height: 56,
+                  bgcolor: 'primary.main',
+                  color: 'primary.contrastText',
+                  mb: 1,
+                }}
               >
                 {currentUser.displayName.charAt(0).toUpperCase()}
               </Avatar>
@@ -244,7 +249,22 @@ const AppBarComponent: React.FC<AppBarComponentProps> = ({
       <Toolbar sx={{ justifyContent: 'space-between' }}>
         {/* Left Side: App Logo/Title */}
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
-          <Typography variant='h6' component='div' sx={{ flexGrow: 1 }}>
+          <Avatar
+            src='/mcu-logo-small.png'
+            alt='App Logo'
+            sx={{ width: 40, height: 40, mr: 2 }}
+          />
+          <Typography
+            variant='h6'
+            component='a'
+            href='/dashboard'
+            sx={{
+              flexGrow: 1,
+              textDecoration: 'none',
+              color: 'inherit',
+              cursor: 'pointer',
+            }}
+          >
             Property Manager Pro
           </Typography>
         </Box>
@@ -258,16 +278,16 @@ const AppBarComponent: React.FC<AppBarComponentProps> = ({
               <Avatar
                 src={currentUser.photoURL ?? undefined} // Handle null photoURL
                 alt={currentUser.displayName || 'User Avatar'}
-                sx={{ width: 32, height: 32, ml: 1.5, cursor: 'pointer' }}
+                sx={{ width: 32, height: 32, ml: 1, cursor: 'pointer' }}
                 onClick={toggleDrawer(true)}
               />
             ) : currentUser.displayName ? (
               <Avatar
                 sx={{
-                  width: 32,
-                  height: 32,
-                  bgcolor: 'secondary.main',
-                  ml: 1.5,
+                  ml: 1,
+                  fontWeight: 'bold',
+                  bgcolor: 'primary.secondary',
+                  color: 'primary.contrastText',
                   cursor: 'pointer',
                 }}
                 onClick={toggleDrawer(true)}
@@ -280,7 +300,9 @@ const AppBarComponent: React.FC<AppBarComponentProps> = ({
                 color='inherit'
                 aria-label='open drawer'
                 edge='end'
-                sx={{ ml: 0.5 }}
+                sx={{
+                  ml: 1,
+                }}
               >
                 <MenuIcon />
               </IconButton>
@@ -292,7 +314,9 @@ const AppBarComponent: React.FC<AppBarComponentProps> = ({
               color='inherit'
               aria-label='open drawer'
               edge='end' // Ensure it's at the very end
-              sx={{ ml: 0.5 }} // Adjusted margin
+              sx={{
+                ml: 1,
+              }} // Adjusted margin
             >
               <MenuIcon />
             </IconButton>

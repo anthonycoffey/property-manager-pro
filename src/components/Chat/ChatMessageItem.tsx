@@ -29,13 +29,11 @@ const ChatMessageItem: React.FC<ChatMessageItemProps> = ({ message }) => {
     borderRadiusStyle = '10px 10px 0 10px';
   } else if (isAssistant) {
     avatar = (
-      <Avatar sx={{ bgcolor: 'primary.main', mr: 1 }}>
-        <img
-          src='/mcu-logo-small.png'
-          alt='Assistant'
-          style={{ objectFit: 'cover', width: '100%', height: '100%' }}
-        />
-      </Avatar>
+      <Avatar
+        src='/mcu-logo-small.png'
+        alt='Assistant'
+        sx={{ bgcolor: 'primary.main', mr: 2, width: 40, height: 40 }}
+      />
     );
     // bubbleBgColor = (theme) => theme.palette.mode === 'dark' ? theme.palette.grey[700] : theme.palette.grey[100]; // Theme-aware example
     borderRadiusStyle = '10px 10px 10px 0';

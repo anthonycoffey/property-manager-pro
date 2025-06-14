@@ -122,8 +122,8 @@ const ChatView: React.FC = () => {
   return (
     <>
       <Paper
-      elevation={5}
-        // variant='outlined'
+        // elevation={5}
+        variant='outlined'
         sx={{
           backgroundColor: 'background.paper',
           minHeight: '50vh', // Or adjust as needed

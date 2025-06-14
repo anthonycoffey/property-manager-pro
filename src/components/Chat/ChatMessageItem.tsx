@@ -60,7 +60,8 @@ const ChatMessageItem: React.FC<ChatMessageItemProps> = ({ message }) => {
       <Box sx={{ display: 'flex', alignItems: 'flex-start', maxWidth: '80%' }}>
         {!isUser && avatar}
         <Paper
-          elevation={1}
+        variant='outlined'
+          elevation={5}
           sx={{
             p: 1.5,
             bgcolor: bubbleBgColor,

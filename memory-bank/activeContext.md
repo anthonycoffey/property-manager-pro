@@ -26,9 +26,22 @@
     - Login Page Accessibility.
     - Twilio "Request Call" Integration.
     - Phoenix Integration - Service Request Form Submission (Initial Phase).
+    - Service Request Form Phone Pre-population (Completed 2025-06-10): Enhanced phone number pre-population in `CreateServiceRequestForm.tsx` to use `currentUser.phoneNumber` as a fallback if `residentProfileData.phone` is unavailable.
+    - Service Request Form Auto-select First Vehicle (Completed 2025-06-10): Added functionality to `CreateServiceRequestForm.tsx` to automatically select the first vehicle from the resident's profile if vehicles are present and no vehicle is already selected.
 
 ## 2. Recent Changes & Activities (Newest First)
 
+- **Demo Page Enhancement (Completed 2025-06-14):**
+    - **Objective:** Extend the MUI component showcase page with more helper and overlay components.
+    - **Change:** Modified `src/pages/DemoPage.tsx`.
+    - **Details:** Added a new "Helpers & Overlays" section featuring demonstrations of `Popover`, `Backdrop`, and `Popper` components. Also enhanced the existing `Tooltip` examples to show different placements and usage with disabled elements. Replaced `Grid` with `Stack` for layout in this new section to resolve TypeScript errors and align with project patterns.
+- **Service Request Form Auto-select First Vehicle (Completed 2025-06-10):**
+    - Modified `src/components/Resident/CreateServiceRequestForm.tsx`.
+    - Added a new `useEffect` hook that triggers when `residentProfileData` or `selectedVehicle` changes.
+    - If `residentProfileData.vehicles` exists, is not empty, and no vehicle is currently selected (`selectedVehicle` is null), the hook sets `selectedVehicle` to the first vehicle in the `residentProfileData.vehicles` array.
+- **Service Request Form Phone Pre-population (Completed 2025-06-10):**
+    - Modified `src/components/Resident/CreateServiceRequestForm.tsx`.
+    - Updated the `useEffect` hook that sets initial form values (name, email, phone) to check `currentUser.phoneNumber` from Firebase Auth if `residentProfileData.phone` (from Firestore) is not present. This improves the likelihood of pre-filling the phone number.
 - **Dashboard Navigation Refactor & UI Enhancements (Completed 2025-06-09):**
     - Details as listed in "Current Work Focus" above.
     - Key files created/modified:

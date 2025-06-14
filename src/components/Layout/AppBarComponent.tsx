@@ -116,6 +116,7 @@ const AppBarComponent: React.FC<AppBarComponentProps> = ({
                 sx={{
                   width: 56,
                   height: 56,
+                  fontWeight: 'bold',
                   bgcolor: 'primary.main',
                   color: 'primary.contrastText',
                   mb: 1,

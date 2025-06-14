@@ -6,16 +6,17 @@ import {
   CircularProgress,
   Alert,
   Chip,
-  IconButton,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   TablePagination,
+  Button,
+  Stack,
+  useTheme,
+  List,
+  ListItem,
+  ListItemText,
+  Divider,
+  useMediaQuery,
 } from '@mui/material';
-import VisibilityIcon from '@mui/icons-material/Visibility';
+import LaunchIcon from '@mui/icons-material/Launch';
 import {
   collection,
   query,
@@ -26,10 +27,9 @@ import {
 } from 'firebase/firestore';
 import { db } from '../../firebaseConfig';
 import { useAuth } from '../../hooks/useAuth';
-import type { ServiceRequest } from '../../types'; // Removed ServiceRequestStatus as it's part of ServiceRequest
-import ServiceJobDetailModal from '../Job/ServiceJobDetailModal'; // Import the modal
+import type { ServiceRequest } from '../../types';
+import ServiceJobDetailModal from '../Job/ServiceJobDetailModal';
 
-// Assuming ServiceRequestStatus is part of ServiceRequest type, e.g. ServiceRequest['status']
 const getStatusChipColor = (
   status: ServiceRequest['status']
 ):
@@ -64,6 +64,8 @@ const formatDate = (timestamp: Timestamp | Date | undefined): string => {
 
 const ServiceRequestList: React.FC = () => {
   const { currentUser, organizationId } = useAuth();
+  const theme = useTheme();
+  const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));
   const [serviceRequests, setServiceRequests] = useState<ServiceRequest[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -72,7 +74,7 @@ const ServiceRequestList: React.FC = () => {
   const [selectedPhoenixSubmissionId, setSelectedPhoenixSubmissionId] =
     useState<string | null>(null);
   const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [rowsPerPage, setRowsPerPage] = useState(5); // Default to 5 per page
 
   const handleViewJobClick = (phoenixSubmissionId: string) => {
     setSelectedPhoenixSubmissionId(phoenixSubmissionId);
@@ -149,78 +151,172 @@ const ServiceRequestList: React.FC = () => {
   }
 
   return (
-    <>
+    <Box sx={{ width: '100%' }}>
       <Typography variant='h6' gutterBottom sx={{ mb: 2 }}>
         Your Service Requests
       </Typography>
-      <TableContainer component={Paper} elevation={1}>
-        <Table sx={{ minWidth: 650 }} aria-label='service requests table'>
-          <TableHead>
-            <TableRow>
-              <TableCell align='center' sx={{ minWidth: 50, width: 100 }}>
-                View Job
-              </TableCell>
-              <TableCell align='center'>Status</TableCell>
-              <TableCell align='center'>Location</TableCell>
-              <TableCell align='center'>Service Type(s)</TableCell>
-              <TableCell align='center'>Date</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {serviceRequests
-              .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-              .map((request) => (
-                <TableRow
-                  key={request.id}
-                  sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
-                >
-                  <TableCell align='center'>
-                    {request.phoenixSubmissionId && (
-                      <IconButton
-                        aria-label='view job'
-                        size='small'
-                        onClick={() =>
-                          handleViewJobClick(request.phoenixSubmissionId!)
-                        }
-                      >
-                        <VisibilityIcon fontSize='small' />
-                      </IconButton>
-                    )}
-                  </TableCell>
-                  <TableCell align='center'>
-                    <Chip
-                      label={request.status.toUpperCase()}
-                      color={getStatusChipColor(request.status)}
-                      size='small'
-                    />
-                  </TableCell>
-
-                  <TableCell align='center'>
-                    {request.serviceLocationData?.fullAddress ||
-                      request.serviceLocation ||
-                      'N/A'}
-                  </TableCell>
-                  <TableCell align='center'>{request.requestType}</TableCell>
-                  <TableCell align='center' component='th' scope='row'>
-                    {formatDate(request.submittedAt)}
-                  </TableCell>
-                </TableRow>
-              ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
-      <TablePagination
-        rowsPerPageOptions={[5, 10, 25]}
-        component='div'
-        count={serviceRequests.length}
-        rowsPerPage={rowsPerPage}
-        page={page}
-        onPageChange={(_event, newPage) => setPage(newPage)}
-        onRowsPerPageChange={(event) => {
-          setRowsPerPage(parseInt(event.target.value, 10));
-          setPage(0);
+      <Paper
+        elevation={0}
+        sx={{
+          background: 'transparent',
+          border: `1px solid ${theme.palette.divider}`,
         }}
-      />
+      >
+        <List disablePadding>
+          {serviceRequests
+            .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+            .map((request, index) => (
+              <React.Fragment key={request.id}>
+                <ListItem
+                  sx={{
+                    py: 2,
+                    px: 2,
+                    flexDirection: 'column',
+                    alignItems: 'stretch',
+                  }}
+                >
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'flex-start',
+                      width: '100%',
+                      mb: isSmallScreen ? 2 : 0,
+                    }}
+                  >
+                    <ListItemText
+                      primary={
+                        request.serviceLocationData?.fullAddress ||
+                        request.serviceLocation ||
+                        'N/A'
+                      }
+                      secondary={
+                        <React.Fragment>
+                          <Typography
+                            component='span'
+                            variant='body2'
+                            color='text.primary'
+                            display='block'
+                            sx={{ mt: 1 }}
+                          >
+                            {`Submitted: ${formatDate(request.submittedAt)}`}
+                          </Typography>
+                          <Stack
+                            direction='row'
+                            spacing={1}
+                            useFlexGap
+                            flexWrap='wrap'
+                            sx={{ mt: 1, pr: isSmallScreen ? 0 : '120px' }} // Add padding to avoid overlap
+                          >
+                            {request.requestType.split(',').map((type) => (
+                              <Chip
+                                key={type.trim()}
+                                label={type.trim()}
+                                size='small'
+                              />
+                            ))}
+                          </Stack>
+                        </React.Fragment>
+                      }
+                      primaryTypographyProps={{
+                        fontWeight: 'medium',
+                        mb: 1,
+                      }}
+                    />
+                    {!isSmallScreen && (
+                      <Stack
+                        spacing={1}
+                        alignItems='flex-end'
+                        sx={{
+                          position: 'absolute',
+                          top: theme.spacing(2),
+                          right: theme.spacing(2),
+                        }}
+                      >
+                        <Chip
+                          size='small'
+                          variant='outlined'
+                          label={request.status.toUpperCase().replace('_', ' ')}
+                          color={getStatusChipColor(request.status)}
+                          sx={{
+                            position: 'relative',
+                            top: -6,
+                            left: 6,
+                            border: 1,
+                            borderColor: `${getStatusChipColor(
+                              request.status
+                            )}`,
+                          }}
+                        />
+                        {request.phoenixSubmissionId && (
+                          <Button
+                            size='small'
+                            onClick={() =>
+                              handleViewJobClick(request.phoenixSubmissionId!)
+                            }
+                            startIcon={<LaunchIcon />}
+                          >
+                            View Job
+                          </Button>
+                        )}
+                      </Stack>
+                    )}
+                  </Box>
+                  {isSmallScreen && (
+                    <Stack
+                      direction='row'
+                      justifyContent='space-between'
+                      alignItems='center'
+                      sx={{ width: '100%', mt: 2 }}
+                    >
+                      <Chip
+                        label={request.status.toUpperCase().replace('_', ' ')}
+                        color={getStatusChipColor(request.status)}
+                        size='small'
+                        variant='outlined'
+                        sx={{
+                          position: 'relative',
+                          border: 1,
+                          borderColor: `${getStatusChipColor(request.status)}`,
+                        }}
+                      />
+                      {request.phoenixSubmissionId && (
+                        <Button
+                          size='small'
+                          onClick={() =>
+                            handleViewJobClick(request.phoenixSubmissionId!)
+                          }
+                          startIcon={<LaunchIcon />}
+                        >
+                          View Job
+                        </Button>
+                      )}
+                    </Stack>
+                  )}
+                </ListItem>
+                {index <
+                  serviceRequests.slice(
+                    page * rowsPerPage,
+                    page * rowsPerPage + rowsPerPage
+                  ).length -
+                    1 && <Divider component='li' />}
+              </React.Fragment>
+            ))}
+        </List>
+        <TablePagination
+          rowsPerPageOptions={[5, 10, 25]}
+          component='div'
+          count={serviceRequests.length}
+          rowsPerPage={rowsPerPage}
+          page={page}
+          onPageChange={(_event, newPage) => setPage(newPage)}
+          onRowsPerPageChange={(event) => {
+            setRowsPerPage(parseInt(event.target.value, 10));
+            setPage(0);
+          }}
+          sx={{ mt: 2, borderTop: `1px solid ${theme.palette.divider}` }}
+        />
+      </Paper>
       {selectedPhoenixSubmissionId && (
         <ServiceJobDetailModal
           isOpen={isJobDetailModalOpen}
@@ -231,7 +327,7 @@ const ServiceRequestList: React.FC = () => {
           phoenixSubmissionId={selectedPhoenixSubmissionId}
         />
       )}
-    </>
+    </Box>
   );
 };
 

@@ -6,10 +6,22 @@ The project has most recently completed a significant **Dashboard Navigation Ref
 
 Prior to this, Phase 1 of "Dashboard Data Visualizations & Statistics" (non-Phoenix data) was completed, along with login page accessibility and Twilio integration.
 
-- **Date of this update:** 2025-06-09
+- **Date of this update:** 2025-06-14
 
 ## 2. What Works / Completed (Newest First)
 
+- **Demo Page Enhancement (Completed 2025-06-14):**
+    - **Objective:** Extend the MUI component showcase page with more helper and overlay components.
+    - **Change:** Modified `src/pages/DemoPage.tsx`.
+    - **Details:** Added a new "Helpers & Overlays" section demonstrating `Popover`, `Backdrop`, and `Popper`. Enhanced `Tooltip` examples, adjusting their layout to a vertical stack for clearer presentation. Replaced deprecated `Grid` with `Stack` for layout, resolving TS errors.
+- **Service Request Form Auto-select First Vehicle (Completed 2025-06-10):**
+    - **Objective:** Automatically select the first vehicle in the service request form if the resident has vehicles and none is yet selected.
+    - **Change:** Modified `src/components/Resident/CreateServiceRequestForm.tsx`.
+    - **Details:** Added a `useEffect` hook that listens to `residentProfileData` and `selectedVehicle`. If `residentProfileData.vehicles` is populated and no vehicle is currently selected, it sets `selectedVehicle` to the first vehicle in the array.
+- **Service Request Form Phone Pre-population (Completed 2025-06-10):**
+    - **Objective:** Enhance the pre-population of the phone number field in the resident service request form.
+    - **Change:** Modified `src/components/Resident/CreateServiceRequestForm.tsx`.
+    - **Details:** The `useEffect` hook responsible for setting initial form values (name, email, phone) was updated. It now checks `currentUser.phoneNumber` (from Firebase Auth) as a fallback if `residentProfileData.phone` (from Firestore) is not available. This increases the chances of the phone number being pre-filled for the user.
 - **Dashboard Navigation Refactor & UI Enhancements (Completed 2025-06-09):**
     - **Objective:** Improve dashboard navigation scalability, mobile usability, and overall user experience.
     - **Navigation System:**

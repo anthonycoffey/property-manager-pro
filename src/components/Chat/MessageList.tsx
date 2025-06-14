@@ -14,8 +14,6 @@ const loadingWords = [
   'searching',
   'vibing',
   'working',
-  'looking',
-  'checking',
 ];
 
 const MessageList: React.FC<MessageListProps> = ({ messages, isLoading }) => {
@@ -46,7 +44,6 @@ const MessageList: React.FC<MessageListProps> = ({ messages, isLoading }) => {
   return (
     <Box sx={{ flexGrow: 1, overflowY: 'auto', p: 2 }}>
       <List sx={{ py: 0 }}>
-        {' '}
         {/* Remove default List padding if Box handles it */}
         {messages.map((msg, index) => (
           <ChatMessageItem key={msg.id || index} message={msg} />

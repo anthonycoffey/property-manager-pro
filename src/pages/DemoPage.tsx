@@ -49,6 +49,11 @@ import {
   Stack,
   CssBaseline,
   useTheme,
+  Popover,
+  Backdrop,
+  Popper,
+  Fade,
+  ClickAwayListener,
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import MailIcon from '@mui/icons-material/Mail';
@@ -69,10 +74,40 @@ const DemoPage: React.FC = () => {
   const autocompleteOptions = ['Apple', 'Banana', 'Cherry', 'Date', 'Elderberry'];
   const [openSnackbar, setOpenSnackbar] = useState(false);
   const [openDialog, setOpenDialog] = useState(false);
+  const [popoverAnchorEl, setPopoverAnchorEl] = useState<HTMLButtonElement | null>(null);
+  const [openBackdrop, setOpenBackdrop] = useState(false);
+  const [popperAnchorEl, setPopperAnchorEl] = useState<null | HTMLElement>(null);
+  const [openPopper, setOpenPopper] = useState(false);
+
 
   const handleSnackbarClose = () => setOpenSnackbar(false);
   const handleDialogOpen = () => setOpenDialog(true);
   const handleDialogClose = () => setOpenDialog(false);
+
+  const handlePopoverOpen = (event: React.MouseEvent<HTMLButtonElement>) => {
+    setPopoverAnchorEl(event.currentTarget);
+  };
+  const handlePopoverClose = () => {
+    setPopoverAnchorEl(null);
+  };
+  const openPopover = Boolean(popoverAnchorEl);
+
+  const handleBackdropClose = () => {
+    setOpenBackdrop(false);
+  };
+  const handleBackdropToggle = () => {
+    setOpenBackdrop(!openBackdrop);
+  };
+
+  const handlePopperClick = (event: React.MouseEvent<HTMLElement>) => {
+    setPopperAnchorEl(event.currentTarget);
+    setOpenPopper((previousOpen) => !previousOpen);
+  };
+
+  const handlePopperClose = () => {
+    setOpenPopper(false);
+  };
+
 
   const tableRows = [
     { id: 1, name: 'Frozen yoghurt', calories: 159, fat: 6.0 },
@@ -302,6 +337,72 @@ const DemoPage: React.FC = () => {
             </TableBody>
           </Table>
         </TableContainer>
+      </Paper>
+
+      <Divider sx={{ my: theme.spacing(4) }} />
+
+      {/* Section: Helpers & Overlays */}
+      <Paper elevation={3} sx={{ p: theme.spacing(3), mb: theme.spacing(4) }}>
+        <Typography variant="h5" gutterBottom sx={{ color: theme.palette.secondary.main, mb: theme.spacing(2) }}>
+          Helpers & Overlays
+        </Typography>
+        <Stack spacing={3}>
+
+
+          {/* Popover Example */}
+          <Box>
+            <Typography variant="h6" gutterBottom>Popover</Typography>
+            <Button aria-describedby={openPopover ? 'simple-popover' : undefined} variant="contained" onClick={handlePopoverOpen}>
+              Open Popover
+            </Button>
+            <Popover
+              id={openPopover ? 'simple-popover' : undefined}
+              open={openPopover}
+              anchorEl={popoverAnchorEl}
+              onClose={handlePopoverClose}
+              anchorOrigin={{
+                vertical: 'bottom',
+                horizontal: 'left',
+              }}
+            >
+              <Typography sx={{ p: 2 }}>The content of the Popover.</Typography>
+            </Popover>
+          </Box>
+
+          {/* Backdrop Example */}
+          <Box>
+            <Typography variant="h6" gutterBottom>Backdrop</Typography>
+            <Button onClick={handleBackdropToggle}>Show Backdrop</Button>
+            <Backdrop
+              sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+              open={openBackdrop}
+              onClick={handleBackdropClose}
+            >
+              <CircularProgress color="inherit" />
+            </Backdrop>
+          </Box>
+
+          {/* Popper Example */}
+          <Box>
+            <Typography variant="h6" gutterBottom>Popper</Typography>
+            <ClickAwayListener onClickAway={handlePopperClose}>
+              <div>
+                <Button aria-describedby="fade-popper" type="button" onClick={handlePopperClick}>
+                  Toggle Popper
+                </Button>
+                <Popper id="fade-popper" open={openPopper} anchorEl={popperAnchorEl} transition>
+                  {({ TransitionProps }) => (
+                    <Fade {...TransitionProps} timeout={350}>
+                      <Paper sx={{ p: 2, bgcolor: 'background.paper', border: '1px solid' }}>
+                        <Typography>The content of the Popper.</Typography>
+                      </Paper>
+                    </Fade>
+                  )}
+                </Popper>
+              </div>
+            </ClickAwayListener>
+          </Box>
+        </Stack>
       </Paper>
 
     </Container>

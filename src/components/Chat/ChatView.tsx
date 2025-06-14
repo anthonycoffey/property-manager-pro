@@ -122,9 +122,10 @@ const ChatView: React.FC = () => {
   return (
     <>
       <Paper
-        variant='outlined'
+      elevation={5}
+        // variant='outlined'
         sx={{
-          backgroundColor: 'background.default',
+          backgroundColor: 'background.paper',
           minHeight: '50vh', // Or adjust as needed
           maxHeight: '75vh',
           display: 'flex',
@@ -149,7 +150,7 @@ const ChatView: React.FC = () => {
           isLoading={isLoading}
         />
       </Paper>
-      <Box sx={{ display: 'flex', justifyContent: 'flex-end', my: 2 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'flex-end', my: 3 }}>
         <Button
           variant='outlined'
           size='small'

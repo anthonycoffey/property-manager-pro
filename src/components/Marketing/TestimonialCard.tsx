@@ -4,10 +4,9 @@ import {
   CardContent,
   Typography,
   Avatar,
-  Box,
   Rating,
+  Stack,
 } from '@mui/material';
-import StarIcon from '@mui/icons-material/Star';
 
 interface TestimonialCardProps {
   quote: string;
@@ -24,59 +23,40 @@ const TestimonialCard: React.FC<TestimonialCardProps> = ({
 }) => {
   return (
     <Card
+      elevation={4}
       sx={{
-      maxWidth: { xs: '100%', lg: '50%' },
-      m: 2,
-      boxShadow: 3,
-      display: 'flex',
-      flexDirection: 'column',
-      justifyContent: 'space-between',
-      height: '100%', // Ensure cards in a row have same height
+        p: 2,
+        borderRadius: 2,
+        maxWidth: 500,
       }}
     >
-      <CardContent sx={{ flexGrow: 1 }}>
-        <Box sx={{ display: 'flex', mb: 1.5 }}>
-          <Rating
-            name='testimonial-rating'
-            value={5}
-            readOnly
-            precision={0.5}
-            emptyIcon={
-              <StarIcon style={{ opacity: 0.55 }} fontSize='inherit' />
-            }
-          />
-        </Box>
-        <Typography
-          variant='body1'
-          component='p'
-          sx={{ fontStyle: 'italic', mb: 2 }}
-        >
+      <CardContent>
+        <Stack direction='row' spacing={2} alignItems='center' mb={2}>
+          {avatarUrl ? (
+            <Avatar src={avatarUrl} alt={author} />
+          ) : (
+            <Avatar sx={{ bgcolor: 'primary.main' }}>{author.charAt(0)}</Avatar>
+          )}
+          <Stack direction='column' alignItems='flex-start'>
+            <Typography variant='subtitle1' component='div' fontWeight='bold'>
+              {author}
+            </Typography>
+            {authorRole && (
+              <Typography
+                variant='caption'
+                color='text.secondary'
+                sx={{ mb: 0.5 }}
+              >
+                {authorRole}
+              </Typography>
+            )}
+            <Rating name='read-only' value={5} readOnly size='small' />
+          </Stack>
+        </Stack>
+        <Typography variant='body1' color='text.secondary' sx={{ mt: 2 }}>
           "{quote}"
         </Typography>
       </CardContent>
-      <Box sx={{ display: 'flex', alignItems: 'center', p: 2, pt: 0 }}>
-        {avatarUrl ? (
-          <Avatar src={avatarUrl} alt={author} sx={{ mr: 1.5 }} />
-        ) : (
-          <Avatar sx={{ mr: 1.5, bgcolor: 'primary.main' }}>
-            {author.substring(0, 1).toUpperCase()}
-          </Avatar>
-        )}
-        <Box>
-          <Typography
-            variant='subtitle2'
-            component='div'
-            sx={{ fontWeight: 'bold' }}
-          >
-            {author}
-          </Typography>
-          {authorRole && (
-            <Typography variant='caption' color='text.secondary'>
-              {authorRole}
-            </Typography>
-          )}
-        </Box>
-      </Box>
     </Card>
   );
 };

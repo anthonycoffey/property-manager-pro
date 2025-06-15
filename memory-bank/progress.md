@@ -10,6 +10,19 @@ Prior to this, Phase 1 of "Dashboard Data Visualizations & Statistics" (non-Phoe
 
 ## 2. What Works / Completed (Newest First)
 
+- **Resident Testimonial Refactor (Completed 2025-06-15):**
+    - **Objective:** Refactor the static testimonial section into a reusable, theme-aware slider component.
+    - **Change:** Created `src/components/Resident/ResidentReviewSlider.tsx` and updated `src/components/Resident/ResidentDashboard.tsx`.
+    - **Details:**
+        - Created a new `ResidentReviewSlider` component to display testimonials in a "Google Reviews" style slider.
+        - The component is built with MUI components (`Card`, `Avatar`, `Rating`, etc.) and is fully theme-aware.
+        - Implemented a custom slider using `useState` and `IconButton` to avoid new dependencies.
+        - Replaced the old static testimonial layout in `ResidentDashboard.tsx` with the new slider component.
+
+- **AppBar Layout Refactor (Completed 2025-06-15):**
+    - **Objective:** Refactor the `AppBarComponent` to a more conventional left-drawer oriented design.
+    - **Change:** Modified `src/components/Layout/AppBarComponent.tsx`.
+    - **Details:** Moved the drawer-toggling `MenuIcon` to the far-left of the `AppBar`. Centered the application logo and title. Removed the redundant user avatar trigger from the `AppBar`, as the user's profile is already in the drawer. The right side of the `AppBar` now only contains the `Notifications` component.
 - **Demo Page Enhancement (Completed 2025-06-14):**
     - **Objective:** Extend the MUI component showcase page with more helper and overlay components.
     - **Change:** Modified `src/pages/DemoPage.tsx`.

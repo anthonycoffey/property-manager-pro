@@ -161,7 +161,7 @@ export const navigationItems: NavItemConfig[] = [
   {
     text: 'Request Service',
     icon: BuildIcon,
-    path: '/dashboard/resident/service-requests',
+    path: '/dashboard/resident/service-request',
     roles: ['resident'],
   },
   {

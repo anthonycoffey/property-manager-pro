@@ -574,6 +574,7 @@ const ResidentProfileManagement: React.FC = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
     </>
   );
 };

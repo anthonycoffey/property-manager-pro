@@ -15,6 +15,7 @@ import {
   ListItemText,
   Divider,
   Typography,
+  // Container,
 } from '@mui/material';
 import LightModeIcon from '@mui/icons-material/LightMode';
 import DarkModeIcon from '@mui/icons-material/DarkMode';
@@ -246,89 +247,58 @@ const AppBarComponent: React.FC<AppBarComponentProps> = ({
 
   return (
     <AppBar position='static'>
-      <Toolbar sx={{ justifyContent: 'space-between' }}>
-        {/* Left Side: App Logo/Title */}
-        <Box
-          sx={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}
-          onClick={() => navigate('/dashboard')}
-        >
-          <Avatar
-            src='/mcu-logo-small.png'
-            alt='App Logo'
-            sx={{ width: 40, height: 40, mr: 2 }}
-          />
-          <Typography
-            variant='h6'
-            component='span'
+      {/* <Container maxWidth='lg' disableGutters> */}
+        <Toolbar>
+          {/* Left Side: Drawer Toggle */}
+          <IconButton
+            color='inherit'
+            aria-label='open drawer'
+            edge='start'
+            onClick={toggleDrawer(true)}
+            sx={{ mr: 2 }}
+          >
+            <MenuIcon />
+          </IconButton>
+
+          {/* Center: App Logo/Title */}
+          <Box
             sx={{
               flexGrow: 1,
-              textDecoration: 'none',
-              color: 'inherit',
-              userSelect: 'none',
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              cursor: 'pointer',
             }}
+            onClick={() => navigate('/dashboard')}
           >
-            Property Manager Pro
-          </Typography>
-        </Box>
-
-        {/* Right Side: Notifications and Menu Toggle */}
-        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-          <Notifications />
-          {/* User Avatar or Menu Icon to toggle drawer */}
-          {currentUser ? ( // Check if currentUser exists before accessing properties
-            currentUser.photoURL ? (
-              <Avatar
-                src={currentUser.photoURL ?? undefined} // Handle null photoURL
-                alt={currentUser.displayName || 'User Avatar'}
-                sx={{ width: 32, height: 32, ml: 1, cursor: 'pointer' }}
-                onClick={toggleDrawer(true)}
-              />
-            ) : currentUser.displayName ? (
-              <Avatar
-                sx={{
-                  ml: 1,
-                  fontWeight: 'bold',
-                  bgcolor: 'primary.secondary',
-                  color: 'primary.contrastText',
-                  cursor: 'pointer',
-                }}
-                onClick={toggleDrawer(true)}
-              >
-                {currentUser.displayName.charAt(0).toUpperCase()}
-              </Avatar>
-            ) : (
-              <IconButton // Fallback to MenuIcon if no photoURL or displayName
-                onClick={toggleDrawer(true)}
-                color='inherit'
-                aria-label='open drawer'
-                edge='end'
-                sx={{
-                  ml: 1,
-                }}
-              >
-                <MenuIcon />
-              </IconButton>
-            )
-          ) : (
-            // If no currentUser, show MenuIcon for login/guest access to drawer
-            <IconButton
-              onClick={toggleDrawer(true)}
-              color='inherit'
-              aria-label='open drawer'
-              edge='end' // Ensure it's at the very end
+            <Avatar
+              src='/mcu-logo-small.png'
+              alt='App Logo'
+              sx={{ width: 40, height: 40, mr: 2 }}
+            />
+            <Typography
+              variant='h6'
+              component='span'
               sx={{
-                ml: 1,
-              }} // Adjusted margin
+                textDecoration: 'none',
+                color: 'inherit',
+                userSelect: 'none',
+              }}
             >
-              <MenuIcon />
-            </IconButton>
-          )}
-        </Box>
+              Property Manager Pro
+            </Typography>
+          </Box>
 
-        <Drawer anchor='right' open={drawerOpen} onClose={toggleDrawer(false)}>
-          {drawerList()}
-        </Drawer>
-      </Toolbar>
+          {/* Right Side: Notifications */}
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <Notifications />
+          </Box>
+
+          <Drawer anchor='left' open={drawerOpen} onClose={toggleDrawer(false)}>
+            {drawerList()}
+          </Drawer>
+        </Toolbar>
+      {/* </Container> */}
     </AppBar>
   );
 };

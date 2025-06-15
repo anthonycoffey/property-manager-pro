@@ -1,8 +1,14 @@
 import React from 'react';
-import { Box, Typography, Paper, Divider, CircularProgress } from '@mui/material';
+import {
+  Box,
+  Typography,
+  Paper,
+  Divider,
+  CircularProgress,
+} from '@mui/material';
 import { Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
-import TestimonialCard from '../Marketing/TestimonialCard';
+import ResidentReviewSlider from './ResidentReviewSlider';
 import ResidentQuickNav from './ResidentQuickNav';
 import ServiceRequestList from './ServiceRequestList';
 
@@ -10,10 +16,30 @@ const ResidentDashboard: React.FC = () => {
   const { currentUser } = useAuth();
   const location = useLocation();
 
+  const testimonials = [
+    {
+      quote: 'Friendly fast service 😊🙏',
+      author: 'Samalam C',
+      authorRole: 'Resident',
+    },
+    {
+      quote: 'He did amazing!! Very professional!!',
+      author: 'A&A kidz',
+      authorRole: 'Resident',
+    },
+  ];
+
   if (!currentUser) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 200 }}>
-        <Box component="span" sx={{ display: 'flex' }}>
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          minHeight: 200,
+        }}
+      >
+        <Box component='span' sx={{ display: 'flex' }}>
           <CircularProgress />
         </Box>
       </Box>
@@ -43,84 +69,26 @@ const ResidentDashboard: React.FC = () => {
 
       {location.pathname !== '/dashboard/resident/ai-assistant' && (
         <>
-              <Divider sx={{ mt: 8 }} />
-      {/* Testimonials Section */}
-      <Box
-        sx={{
-          mt: 4,
-          p: 2,
-          backgroundColor: 'background.default',
-        }}
-      >
-        <Typography
-          variant='h5'
-          gutterBottom
-          sx={{ mb: 2, textAlign: 'center' }}
-        >
-          What Other Residents Are Saying
-        </Typography>
-        <Box
-          sx={{
-            display: 'flex',
-            flexDirection: { xs: 'column', md: 'row' },
-            gap: 2,
-            justifyContent: 'center',
-            alignItems: 'stretch',
-          }}
-        >
-          <TestimonialCard
-            quote='Friendly fast service 😊🙏'
-            author='Samalam C'
-            authorRole='Resident'
-          />
-          <TestimonialCard
-            quote='He did amazing!! Very professional!!'
-            author='A&A kidz'
-            authorRole='Resident'
-          />
-        </Box>
-        <Box
-          sx={{
-            display: 'flex',
-            flexDirection: { xs: 'column', sm: 'row' },
-            gap: { xs: 1, sm: 2, md: 10 },
-            justifyContent: 'center',
-            alignItems: 'center',
-            mt: 3,
-          }}
-        >
+          <Divider sx={{ mt: 8 }} />
+          {/* Testimonials Section */}
           <Box
-            component='img'
-            src='/review1.png'
-            alt='5.0 rating'
             sx={{
-              width: { xs: 100, sm: 140 },
-              height: 'auto',
+              my: 6,
+              backgroundColor: 'background.default',
+              py: 6,
             }}
-          />
-          <Box
-            component='img'
-            src='/review2.png'
-            alt='35 years experience'
-            sx={{
-              width: { xs: 100, sm: 140 },
-              height: 'auto',
-            }}
-          />
-          <Box
-            component='img'
-            src='/review3.png'
-            alt='satisfaction guaranteed'
-            sx={{
-              width: { xs: 100, sm: 140 },
-              height: 'auto',
-            }}
-          />
-        </Box>
-      </Box>
+          >
+            <Typography
+              variant='h5'
+              gutterBottom
+              sx={{ mb: 4, textAlign: 'center' }}
+            >
+              What Your Neighbors Are Saying
+            </Typography>
+            <ResidentReviewSlider reviews={testimonials} />
+          </Box>
         </>
       )}
-
     </>
   );
 };

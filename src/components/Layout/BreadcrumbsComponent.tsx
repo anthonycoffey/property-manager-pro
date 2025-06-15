@@ -61,7 +61,7 @@ const BreadcrumbsComponent: React.FC = () => {
   const homeName = homeNavItem.text;
 
   return (
-    <Box sx={{ mb: 2, px: {xs: 0, sm: 1} }}>
+    <Box sx={{ my: 2, px: {xs: 0, sm: 1} }}>
       <Breadcrumbs aria-label="breadcrumb">
         <Link 
           component={RouterLink} 

@@ -1,18 +1,12 @@
 import React from 'react';
-import { Box, Divider, Typography } from '@mui/material';
+import { Box, Typography } from '@mui/material';
 import CreateServiceRequestForm from './CreateServiceRequestForm';
-import ServiceRequestList from './ServiceRequestList';
 
 const ResidentServiceRequestsView: React.FC = () => {
-  // The onServiceRequestSubmitted callback in CreateServiceRequestForm
-  // might need to be connected to a snackbar or other global notification system
-  // if immediate feedback beyond the list auto-refreshing is desired.
-  // For now, console.log is fine as per original ResidentDashboard.
   const handleServiceRequestSubmitted = () => {
     console.log(
       'Service request submitted, list should auto-refresh via onSnapshot.'
     );
-    // Potentially trigger a snackbar here
   };
 
   return (

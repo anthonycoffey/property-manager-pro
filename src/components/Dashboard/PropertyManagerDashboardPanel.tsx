@@ -10,6 +10,7 @@ import {
   IconButton,
   Container,
   Divider,
+  Typography,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import CloseIcon from '@mui/icons-material/Close';
@@ -127,6 +128,13 @@ const PropertyManagerDashboardContent: React.FC<
               backgroundColor: 'background.default',
             }}
           >
+                     <Typography
+                variant='h5'
+                gutterBottom
+                sx={{ mb: 4, textAlign: 'center' }}
+              >
+                What Other Property Managers Are Saying
+              </Typography>
             <Box
               sx={{
                 display: 'flex',
@@ -137,41 +145,17 @@ const PropertyManagerDashboardContent: React.FC<
                 justifyContent: 'center',
               }}
             >
+     
               <TestimonialCard
                 quote='Robert and his team were amazing!! Our residents really loved the customer service they had during our on site event. Mark was exceptional!'
                 author='Amanda Martin'
                 authorRole='Property Manager'
               />
-              {/* Add more TestimonialCards if needed, or make them dynamic */}
-            </Box>
-            <Box
-              sx={{
-                display: 'flex',
-                flexDirection: { xs: 'column', sm: 'row' },
-                gap: { xs: 1, sm: 4, md: 10 },
-                justifyContent: 'center',
-                alignItems: 'center',
-                mt: 3,
-              }}
-            >
-              <Box
-                component='img'
-                src='/review1.png'
-                alt='5.0 rating'
-                sx={{ width: { xs: 100, sm: 140 }, height: 'auto' }}
-              />
-              <Box
-                component='img'
-                src='/review2.png'
-                alt='Experience badge'
-                sx={{ width: { xs: 100, sm: 140 }, height: 'auto' }}
-              />
-              <Box
-                component='img'
-                src='/review3.png'
-                alt='Satisfaction badge'
-                sx={{ width: { xs: 100, sm: 140 }, height: 'auto' }}
-              />
+              {/* <TestimonialCard
+                quote='The best service we have ever had. The team is professional, courteous, and always on time. Highly recommended!'
+                author='John Smith'
+                authorRole='Property Manager'
+              /> */}
             </Box>
           </Box>
         </>

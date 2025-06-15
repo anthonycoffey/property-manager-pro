@@ -218,16 +218,12 @@ const ServiceRequestList: React.FC = () => {
                           </Stack>
                         </React.Fragment>
                       }
-                      primaryTypographyProps={{
-                        fontWeight: 'medium',
-                        mb: 1,
-                      }}
                     />
                     {!isSmallScreen && (
                       <Stack
-                        spacing={1}
-                        alignItems='flex-end'
+                        spacing={4}
                         sx={{
+                          justifyContent: 'space-between',
                           position: 'absolute',
                           top: theme.spacing(2),
                           right: theme.spacing(2),
@@ -239,9 +235,6 @@ const ServiceRequestList: React.FC = () => {
                           label={request.status.toUpperCase().replace('_', ' ')}
                           color={getStatusChipColor(request.status)}
                           sx={{
-                            position: 'relative',
-                            top: -6,
-                            left: 6,
                             border: 1,
                             borderColor: `${getStatusChipColor(
                               request.status
@@ -250,7 +243,8 @@ const ServiceRequestList: React.FC = () => {
                         />
                         {request.phoenixSubmissionId && (
                           <Button
-                            size='small'
+                            variant='contained'
+                            size='medium'
                             onClick={() =>
                               handleViewJobClick(request.phoenixSubmissionId!)
                             }
@@ -283,6 +277,7 @@ const ServiceRequestList: React.FC = () => {
                       {request.phoenixSubmissionId && (
                         <Button
                           size='small'
+                          variant='contained'
                           onClick={() =>
                             handleViewJobClick(request.phoenixSubmissionId!)
                           }

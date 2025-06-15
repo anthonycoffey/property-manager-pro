@@ -4,6 +4,7 @@ import { Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import TestimonialCard from '../Marketing/TestimonialCard';
 import ResidentQuickNav from './ResidentQuickNav';
+import ServiceRequestList from './ServiceRequestList';
 
 const ResidentDashboard: React.FC = () => {
   const { currentUser } = useAuth();
@@ -30,8 +31,17 @@ const ResidentDashboard: React.FC = () => {
         <Outlet />
       </Paper>
 
+      {/* Conditionally render ServiceRequestList for the 'My Profile' page */}
+      {location.pathname === '/dashboard/resident/my-profile' && (
+        <Paper elevation={3} sx={{ mb: 4, p: { xs: 1, sm: 2 } }}>
+          <Typography variant='h5' gutterBottom sx={{ mb: 2 }}>
+            Your Service Requests
+          </Typography>
+          <ServiceRequestList />
+        </Paper>
+      )}
 
- {location.pathname !== '/dashboard/resident/ai-assistant' && (
+      {location.pathname !== '/dashboard/resident/ai-assistant' && (
         <>
               <Divider sx={{ mt: 8 }} />
       {/* Testimonials Section */}

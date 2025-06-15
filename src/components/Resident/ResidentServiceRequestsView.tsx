@@ -23,8 +23,6 @@ const ResidentServiceRequestsView: React.FC = () => {
       <CreateServiceRequestForm
         onServiceRequestSubmitted={handleServiceRequestSubmitted}
       />
-      <Divider sx={{ my: 3 }} />
-      <ServiceRequestList />
     </Box>
   );
 };

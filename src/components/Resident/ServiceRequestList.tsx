@@ -153,9 +153,6 @@ const ServiceRequestList: React.FC = () => {
 
   return (
     <Box sx={{ width: '100%' }}>
-      <Typography variant='h6' gutterBottom sx={{ mb: 2 }}>
-        Your Service Requests
-      </Typography>
       <Paper
         elevation={0}
         sx={{
@@ -244,7 +241,7 @@ const ServiceRequestList: React.FC = () => {
                             }
                             endIcon={<LaunchIcon />}
                           >
-                            Technician Tracker
+                            View Job
                           </Button>
                         )}
                       </Stack>
@@ -268,7 +265,7 @@ const ServiceRequestList: React.FC = () => {
                           }
                           endIcon={<LaunchIcon />}
                         >
-                          Technician Tracker
+                          View Job
                         </Button>
                       )}
                     </Stack>

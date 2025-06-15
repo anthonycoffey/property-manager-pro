@@ -29,6 +29,7 @@ import { db } from '../../firebaseConfig';
 import { useAuth } from '../../hooks/useAuth';
 import type { ServiceRequest } from '../../types';
 import ServiceJobDetailModal from '../Job/ServiceJobDetailModal';
+import { CheckCircle } from '@mui/icons-material';
 
 const getStatusChipColor = (
   status: ServiceRequest['status']
@@ -169,7 +170,7 @@ const ServiceRequestList: React.FC = () => {
               <React.Fragment key={request.id}>
                 <ListItem
                   sx={{
-                    py: 2,
+                    py: 1,
                     px: 2,
                     flexDirection: 'column',
                     alignItems: 'stretch',
@@ -186,71 +187,64 @@ const ServiceRequestList: React.FC = () => {
                   >
                     <ListItemText
                       primary={
-                        request.serviceLocationData?.fullAddress ||
-                        request.serviceLocation ||
-                        'N/A'
+                        <Stack spacing={1} alignItems='flex-start'>
+                          <Chip
+                            icon={<CheckCircle sx={{ mr: 2 }} />}
+                            size='small'
+                            variant='outlined'
+                            label={request.status
+                              .toUpperCase()
+                              .replace('_', ' ')}
+                            color={getStatusChipColor(request.status)}
+                          />
+                          <Typography variant='body1' fontWeight='medium'>
+                            {request.serviceLocationData?.fullAddress ||
+                              request.serviceLocation ||
+                              'N/A'}
+                          </Typography>
+                        </Stack>
                       }
                       secondary={
-                        <React.Fragment>
-                          <Typography
-                            component='span'
-                            variant='body2'
-                            color='text.primary'
-                            display='block'
-                            sx={{ mt: 1 }}
-                          >
-                            {`Submitted: ${formatDate(request.submittedAt)}`}
-                          </Typography>
-                          <Stack
-                            direction='row'
-                            spacing={1}
-                            useFlexGap
-                            flexWrap='wrap'
-                            sx={{ mt: 1, pr: isSmallScreen ? 0 : '120px' }} // Add padding to avoid overlap
-                          >
-                            {request.requestType.split(',').map((type) => (
-                              <Chip
-                                key={type.trim()}
-                                label={type.trim()}
-                                size='small'
-                              />
-                            ))}
-                          </Stack>
-                        </React.Fragment>
+                        <Stack
+                          direction='row'
+                          spacing={1}
+                          useFlexGap
+                          flexWrap='wrap'
+                          sx={{ mt: 1, pr: isSmallScreen ? 0 : '150px' }} // Add padding to avoid overlap
+                        >
+                          {request.requestType.split(',').map((type) => (
+                            <Chip
+                              key={type.trim()}
+                              label={type.trim()}
+                              size='small'
+                            />
+                          ))}
+                        </Stack>
                       }
                     />
                     {!isSmallScreen && (
                       <Stack
-                        spacing={4}
+                        spacing={2}
+                        alignItems='flex-end'
                         sx={{
-                          justifyContent: 'space-between',
                           position: 'absolute',
                           top: theme.spacing(2),
                           right: theme.spacing(2),
                         }}
                       >
-                        <Chip
-                          size='small'
-                          variant='outlined'
-                          label={request.status.toUpperCase().replace('_', ' ')}
-                          color={getStatusChipColor(request.status)}
-                          sx={{
-                            border: 1,
-                            borderColor: `${getStatusChipColor(
-                              request.status
-                            )}`,
-                          }}
-                        />
+                        <Typography variant='subtitle1' color='text.secondary'>
+                          {formatDate(request.submittedAt)}
+                        </Typography>
                         {request.phoenixSubmissionId && (
                           <Button
                             variant='contained'
-                            size='medium'
+                            // size='small'
                             onClick={() =>
                               handleViewJobClick(request.phoenixSubmissionId!)
                             }
-                            startIcon={<LaunchIcon />}
+                            endIcon={<LaunchIcon />}
                           >
-                            View Job
+                            Technician Tracker
                           </Button>
                         )}
                       </Stack>
@@ -261,19 +255,10 @@ const ServiceRequestList: React.FC = () => {
                       direction='row'
                       justifyContent='space-between'
                       alignItems='center'
-                      sx={{ width: '100%', mt: 2 }}
                     >
-                      <Chip
-                        label={request.status.toUpperCase().replace('_', ' ')}
-                        color={getStatusChipColor(request.status)}
-                        size='small'
-                        variant='outlined'
-                        sx={{
-                          position: 'relative',
-                          border: 1,
-                          borderColor: `${getStatusChipColor(request.status)}`,
-                        }}
-                      />
+                      <Typography variant='subtitle1' color='text.secondary'>
+                        {formatDate(request.submittedAt)}
+                      </Typography>
                       {request.phoenixSubmissionId && (
                         <Button
                           size='small'
@@ -281,9 +266,9 @@ const ServiceRequestList: React.FC = () => {
                           onClick={() =>
                             handleViewJobClick(request.phoenixSubmissionId!)
                           }
-                          startIcon={<LaunchIcon />}
+                          endIcon={<LaunchIcon />}
                         >
-                          View Job
+                          Technician Tracker
                         </Button>
                       )}
                     </Stack>

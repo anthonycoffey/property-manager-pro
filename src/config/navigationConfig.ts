@@ -6,7 +6,6 @@ import AssignmentIndIcon from '@mui/icons-material/AssignmentInd';
 import HomeWorkIcon from '@mui/icons-material/HomeWork';
 import CampaignIcon from '@mui/icons-material/Campaign';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
-import ApartmentIcon from '@mui/icons-material/Apartment';
 import PersonIcon from '@mui/icons-material/Person';
 import BuildIcon from '@mui/icons-material/Build';
 import PeopleIcon from '@mui/icons-material/People'; // For PM Residents tab
@@ -154,7 +153,7 @@ export const navigationItems: NavItemConfig[] = [
   },
   {
     text: 'My Property',
-    icon: ApartmentIcon,
+    icon: HomeWorkIcon,
     path: '/dashboard/resident/my-property',
     roles: ['resident'],
   },

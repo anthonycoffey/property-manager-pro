@@ -20,6 +20,7 @@ import {
   DialogTitle, // Added
   Card,
   CardContent,
+  CardHeader,
 } from '@mui/material';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
@@ -32,6 +33,7 @@ import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../../firebaseConfig';
 import type { Resident, Vehicle } from '../../types';
 import { isAppError } from '../../utils/errorUtils';
+import { Person, PersonPinCircleOutlined } from '@mui/icons-material';
 
 const functions = getFunctions();
 const updateResidentProfileCallable = httpsCallable(
@@ -307,10 +309,16 @@ const ResidentProfileManagement: React.FC = () => {
 
   return (
     <Card sx={{ mb: 3 }}>
+      <CardHeader
+        avatar={<Person color='primary' />}
+        title={
+          <Typography variant='h5' component='div'>
+            Edit Your Profile
+          </Typography>
+        }
+        sx={{ mb: 2 }}
+      />
       <CardContent>
-        <Typography variant='h5' gutterBottom sx={{ mb: 3 }}>
-          Edit Your Profile
-        </Typography>
         {error && (
           <Alert severity='error' sx={{ mb: 2 }}>
             {error}

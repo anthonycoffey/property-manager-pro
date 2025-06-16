@@ -16,6 +16,7 @@ import {
   useMediaQuery,
   Card,
   CardContent,
+  CardHeader,
 } from '@mui/material';
 import LaunchIcon from '@mui/icons-material/Launch';
 import {
@@ -30,7 +31,7 @@ import { db } from '../../firebaseConfig';
 import { useAuth } from '../../hooks/useAuth';
 import type { ServiceRequest } from '../../types';
 import ServiceJobDetailModal from '../Job/ServiceJobDetailModal';
-import { CheckCircle } from '@mui/icons-material';
+import { CheckCircle, ViewList } from '@mui/icons-material';
 
 const getStatusChipColor = (
   status: ServiceRequest['status']
@@ -154,11 +155,17 @@ const ServiceRequestList: React.FC = () => {
 
   return (
         <Card>
-          <CardContent>
 
-          <Typography variant='h5' gutterBottom sx={{ mb: 2 }}>
+          <CardHeader
+            avatar={<ViewList color='primary' />}
+            title={
+              <Typography variant='h5' component='div'>
             Your Service Requests
-          </Typography>
+              </Typography>
+            }
+            sx={{ mb: 2 }}
+          />
+          <CardContent>
 
         <List disablePadding>
           {serviceRequests

@@ -10,6 +10,7 @@ import {
   ListItemText,
   CardContent,
   Card,
+  CardHeader,
 } from '@mui/material';
 import {
   HomeWork as HomeWorkIcon,
@@ -90,13 +91,15 @@ const PropertyDetailsView: React.FC = () => {
 
   return (
     <Card>
+      <CardHeader
+        avatar={<HomeWorkIcon color="primary" />}
+        title={
+          <Typography variant="h5" component="div">
+        Property Information
+          </Typography>
+        }
+      />
       <CardContent>
-      <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-        <HomeWorkIcon sx={{ mr: 1, fontSize: '2rem' }} color='primary' />
-        <Typography variant='h5' component='div'>
-          Property Information
-        </Typography>
-      </Box>
       <List>
         <ListItem>
           <ListItemIcon>

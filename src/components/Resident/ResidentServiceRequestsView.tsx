@@ -1,6 +1,7 @@
 import React from 'react';
-import { Typography, Card, CardContent } from '@mui/material';
+import { Typography, Card, CardContent, CardHeader } from '@mui/material';
 import CreateServiceRequestForm from './CreateServiceRequestForm';
+import { EventAvailable } from '@mui/icons-material';
 
 const ResidentServiceRequestsView: React.FC = () => {
   const handleServiceRequestSubmitted = () => {
@@ -11,10 +12,16 @@ const ResidentServiceRequestsView: React.FC = () => {
 
   return (
     <Card>
-      <CardContent>
-        <Typography variant='h5' gutterBottom sx={{ mb: 2 }}>
+        <CardHeader
+          avatar={<EventAvailable color='primary' />}
+          title={
+            <Typography variant='h5' component='div'>
           Request Service
-        </Typography>
+            </Typography>
+          }
+          sx={{ mb: 2 }}
+        />
+      <CardContent>
         <CreateServiceRequestForm
           onServiceRequestSubmitted={handleServiceRequestSubmitted}
         />

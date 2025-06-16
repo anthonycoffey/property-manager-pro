@@ -54,9 +54,9 @@ const ResidentReviewSlider: React.FC<ResidentReviewSliderProps> = ({
   const paginate = useCallback((newDirection: number) => {
     setDirection(newDirection);
     if (newDirection > 0) {
-      setActiveStep((prevActiveStep) => (prevActiveStep + 1) % maxSteps);
+      setActiveStep((prev) => (prev + 1) % maxSteps);
     } else {
-      setActiveStep((prevActiveStep) => (prevActiveStep - 1 + maxSteps) % maxSteps);
+      setActiveStep((prev) => (prev - 1 + maxSteps) % maxSteps);
     }
   }, [maxSteps]);
 
@@ -78,7 +78,7 @@ const ResidentReviewSlider: React.FC<ResidentReviewSliderProps> = ({
         clearInterval(intervalRef.current);
       }
     };
-  }, [activeStep, isPaused, resetTimer]);
+  }, [isPaused, resetTimer]);
 
   if (!reviews || reviews.length === 0) {
     return null;
@@ -93,6 +93,7 @@ const ResidentReviewSlider: React.FC<ResidentReviewSliderProps> = ({
         flexGrow: 1,
         margin: 'auto',
         position: 'relative',
+        overflow: 'hidden',
         minHeight: 220,
       }}
       onMouseEnter={() => setIsPaused(true)}

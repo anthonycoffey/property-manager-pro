@@ -104,7 +104,7 @@ const PropertyManagerDashboardContent: React.FC<
           </>
         )}
 
-        <Box sx={{ mt: 2 }}>
+        <Box sx={{ mt: 1 }}>
           {pathname === aiAssistancePath ? (
             <Outlet /> // Always render Outlet for AI assistance route
           ) : selectedPropertyId ? (
@@ -123,18 +123,18 @@ const PropertyManagerDashboardContent: React.FC<
           <Divider sx={{ mt: 6 }} />
           <Box
             sx={{
-              mt: 4,
-              p: { xs: 1, sm: 2, lg: 3 },
+              my: 6,
+              pb: 6,
               backgroundColor: 'background.default',
             }}
           >
-                     <Typography
-                variant='h5'
-                gutterBottom
-                sx={{ mb: 4, textAlign: 'center' }}
-              >
-                What Other Property Managers Are Saying
-              </Typography>
+            <Typography
+              variant='h5'
+              gutterBottom
+              sx={{ mb: 4, textAlign: 'center' }}
+            >
+              What Other Property Managers Are Saying
+            </Typography>
             <Box
               sx={{
                 display: 'flex',
@@ -145,7 +145,6 @@ const PropertyManagerDashboardContent: React.FC<
                 justifyContent: 'center',
               }}
             >
-     
               <TestimonialCard
                 quote='Robert and his team were amazing!! Our residents really loved the customer service they had during our on site event. Mark was exceptional!'
                 author='Amanda Martin'

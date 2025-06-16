@@ -229,13 +229,12 @@ const OrgManagerOverviewView: React.FC = () => {
   return (
     <Box
       sx={{
-        p: { xs: 1, sm: 2, lg: 3 },
         position: 'relative',
         minHeight: '300px',
       }}
     >
       <Typography variant='h4' gutterBottom sx={{ mb: 3 }}>
-        Overview for: {selectedOrganization.name}
+        Overview for {selectedOrganization.name}
       </Typography>
 
       {(dashboardLoading || phoenixLoading) && (

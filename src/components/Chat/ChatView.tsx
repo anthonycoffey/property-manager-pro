@@ -122,6 +122,22 @@ const ChatView: React.FC = () => {
   return (
     <Card>
       <CardContent>
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
+          <Button
+            variant='outlined'
+            size='small'
+            onClick={() => setIsRequestCallDialogOpen(true)}
+            startIcon={<PhoneCallbackIcon />}
+            sx={{ mr: 1 }}
+            title='Speak to a Live Agent'
+          >
+            Connect to Live Agent
+          </Button>
+        </Box>
+        <RequestTwilioCallDialog
+          open={isRequestCallDialogOpen}
+          onOpenChange={setIsRequestCallDialogOpen}
+        />
         <Paper
           // elevation={5}
           variant='outlined'
@@ -151,22 +167,6 @@ const ChatView: React.FC = () => {
             isLoading={isLoading}
           />
         </Paper>
-        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 3 }}>
-          <Button
-            variant='outlined'
-            size='small'
-            onClick={() => setIsRequestCallDialogOpen(true)}
-            startIcon={<PhoneCallbackIcon />}
-            sx={{ mr: 1 }}
-            title='Speak to a Live Agent'
-          >
-            Connect to Live Agent
-          </Button>
-        </Box>
-        <RequestTwilioCallDialog
-          open={isRequestCallDialogOpen}
-          onOpenChange={setIsRequestCallDialogOpen}
-        />
       </CardContent>
     </Card>
   );

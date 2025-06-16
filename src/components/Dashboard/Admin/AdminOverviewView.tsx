@@ -241,7 +241,7 @@ const AdminOverviewView: React.FC = () => {
   }, [dashboardStats?.campaignOverview?.typeBreakdown]);
 
   return (
-    <Box sx={{ p: { xs: 1, sm: 2, lg: 3 }, position: 'relative' }}>
+    <Box>
       {/* Quick Navigation Links */}
       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
         {adminNavItems.map((item: NavItemConfig) => (

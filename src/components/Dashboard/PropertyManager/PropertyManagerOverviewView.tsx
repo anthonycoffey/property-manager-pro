@@ -233,11 +233,10 @@ const PropertyManagerOverviewView: React.FC = () => {
       sx={{
         position: 'relative',
         minHeight: '300px',
-        p: { xs: 1, sm: 2, lg: 3 },
       }}
     >
       <Typography variant='h4' gutterBottom sx={{ mb: 3 }}>
-        Overview for: {selectedPropertyName || 'Selected Property'}
+        Overview for {selectedPropertyName || 'Selected Property'}
       </Typography>
 
       {(dashboardLoading || phoenixLoading) && (

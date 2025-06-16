@@ -32,16 +32,6 @@ const ResidentReviewSlider: React.FC<ResidentReviewSliderProps> = ({
   const [isPaused, setIsPaused] = useState(false);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  const handleNext = () => {
-    setActiveStep((prevActiveStep) => (prevActiveStep + 1) % maxSteps);
-  };
-
-  const handleBack = () => {
-    setActiveStep(
-      (prevActiveStep) => (prevActiveStep - 1 + maxSteps) % maxSteps
-    );
-  };
-
   const variants = {
     enter: (direction: number) => ({
       x: direction > 0 ? 100 : -100,
@@ -61,14 +51,14 @@ const ResidentReviewSlider: React.FC<ResidentReviewSliderProps> = ({
 
   const [direction, setDirection] = useState(0);
 
-  const paginate = (newDirection: number) => {
+  const paginate = useCallback((newDirection: number) => {
     setDirection(newDirection);
     if (newDirection > 0) {
-      handleNext();
+      setActiveStep((prevActiveStep) => (prevActiveStep + 1) % maxSteps);
     } else {
-      handleBack();
+      setActiveStep((prevActiveStep) => (prevActiveStep - 1 + maxSteps) % maxSteps);
     }
-  };
+  }, [maxSteps]);
 
   const resetTimer = useCallback(() => {
     if (intervalRef.current) {

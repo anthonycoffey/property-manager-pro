@@ -150,7 +150,7 @@ const OrgManagerPropertiesView: React.FC = () => {
   return (
     <Paper sx={{ p: { xs: 1, sm: 2, lg: 3 } }}>
       <Typography variant='h5' gutterBottom sx={{ mb: 2 }}>
-        Properties & Residents for {selectedOrganization.name}
+        {selectedOrganization.name} Properties
       </Typography>
       <Button
         variant='contained'

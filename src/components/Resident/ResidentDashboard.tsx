@@ -2,7 +2,6 @@ import React from 'react';
 import {
   Box,
   Typography,
-  Paper,
   Divider,
   CircularProgress,
 } from '@mui/material';
@@ -52,19 +51,11 @@ const ResidentDashboard: React.FC = () => {
       {location.pathname === '/dashboard/resident/my-profile' && (
         <ResidentQuickNav />
       )}
-      <Paper elevation={3} sx={{ mb: 4, p: { xs: 1, sm: 2 } }}>
-        {/* Outlet will render the specific resident view (My Profile, My Property, etc.) */}
-        <Outlet />
-      </Paper>
+      <Outlet />
 
       {/* Conditionally render ServiceRequestList for the 'My Profile' page */}
       {location.pathname === '/dashboard/resident/my-profile' && (
-        <Paper elevation={3} sx={{ mb: 4, p: { xs: 1, sm: 2 } }}>
-          <Typography variant='h5' gutterBottom sx={{ mb: 2 }}>
-            Your Service Requests
-          </Typography>
-          <ServiceRequestList />
-        </Paper>
+        <ServiceRequestList />
       )}
 
       {location.pathname !== '/dashboard/resident/ai-assistant' && (
@@ -73,9 +64,9 @@ const ResidentDashboard: React.FC = () => {
           {/* Testimonials Section */}
           <Box
             sx={{
-              my: 6,
+              my: 2,
               backgroundColor: 'background.default',
-              py: 6,
+              py: { xs: 4, sm: 6, lg: 8 },
             }}
           >
             <Typography

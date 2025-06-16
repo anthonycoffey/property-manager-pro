@@ -18,6 +18,8 @@ import {
   DialogContent, // Added
   DialogContentText, // Added
   DialogTitle, // Added
+  Card,
+  CardContent,
 } from '@mui/material';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
@@ -304,278 +306,279 @@ const ResidentProfileManagement: React.FC = () => {
   }
 
   return (
-    <>
-      <Typography variant='h5'  gutterBottom sx={{ mb: 3 }}>
-        Edit Your Profile
-      </Typography>
-      {error && (
-        <Alert severity='error' sx={{ mb: 2 }}>
-          {error}
-        </Alert>
-      )}
-      <Box component='form' onSubmit={handleSubmit} noValidate>
-        <Stack spacing={2} sx={{ mb: 2 }}>
-          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-            <TextField
-              fullWidth
-              label='Full Name'
-              name='displayName'
-              value={residentData.displayName || ''}
-              onChange={handleInputChange}
-            />
-            <TextField
-              fullWidth
-              label='Email Address'
-              name='email'
-              type='email'
-              value={residentData.email || ''}
-              onChange={handleInputChange}
-              InputProps={{
-                readOnly: true,
-              }}
-            />
-          </Stack>
-          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-            <TextField
-              fullWidth
-              label='Phone Number'
-              name='phone' // Corrected: use phone
-              value={residentData.phone || ''} // Corrected: use phone
-              onChange={handleInputChange}
-            />
-            <TextField
-              disabled
-              fullWidth
-              label='Unit Number'
-              name='unitNumber'
-              value={residentData.unitNumber || ''}
-              onChange={handleInputChange}
-            />
-          </Stack>
-        </Stack>
-
-        <Divider sx={{ my: 4 }} />
-        <Typography variant='h6'>Vehicle Information</Typography>
-        <Stack
-          direction='row'
-          justifyContent='space-between'
-          alignItems='center'
-          sx={{ mb: 2 }}
-        >
-          <Typography variant='subtitle1'>Limit: 2</Typography>
-          {vehicles.length < 2 && (
-            <Button
-              variant='outlined'
-              startIcon={<AddCircleOutlineIcon />}
-              onClick={() => handleOpenVehicleDialog(null)} // Open dialog for adding
-              size='small'
-              disabled={saving || loading}
-            >
-              Add
-            </Button>
-          )}
-        </Stack>
-
-        {vehicles.length > 0 ? (
-          <List sx={{ pt: 0, pb: 0 }}>
-            {vehicles.map((vehicle, index) => (
-              <ListItem
-                key={index}
-                divider={index < vehicles.length - 1}
-                secondaryAction={
-                  <Stack direction='row' spacing={0.5}>
-                    <IconButton
-                      edge='end'
-                      aria-label='edit'
-                      onClick={() => handleOpenVehicleDialog(index)}
-                      disabled={saving || loading}
-                      size='small'
-                    >
-                      <EditIcon fontSize='small' />
-                    </IconButton>
-                    <IconButton
-                      edge='end'
-                      aria-label='delete'
-                      onClick={() => handleOpenDeleteConfirmDialog(index)}
-                      color='error'
-                      disabled={saving || loading}
-                      size='small'
-                    >
-                      <DeleteOutlineIcon fontSize='small' />
-                    </IconButton>
-                  </Stack>
-                }
-                sx={{ py: 1.5 }}
-              >
-                <ListItemText
-                  primary={
-                    `${vehicle.year || ''} ${vehicle.color || ''} ${
-                      vehicle.make || ''
-                    } ${vehicle.model || ''}`
-                      .trim()
-                      .replace(/ +/g, ' ') || 'Vehicle Details Missing'
-                  }
-                  secondary={`Plate: ${vehicle.plate || 'N/A'}`}
-                  primaryTypographyProps={{ fontWeight: 'medium' }}
-                />
-              </ListItem>
-            ))}
-          </List>
-        ) : (
-          <Typography
-            color='textSecondary'
-            sx={{ mb: 2, textAlign: 'center', mt: 2 }}
-          >
-            No vehicles added.
-          </Typography>
+    <Card sx={{ mb: 3 }}>
+      <CardContent>
+        <Typography variant='h5' gutterBottom sx={{ mb: 3 }}>
+          Edit Your Profile
+        </Typography>
+        {error && (
+          <Alert severity='error' sx={{ mb: 2 }}>
+            {error}
+          </Alert>
         )}
-
-        <Button
-          type='submit'
-          fullWidth
-          variant='contained'
-          sx={{ mt: 3, mb: 2 }}
-          disabled={saving}
-          startIcon={
-            saving ? (
-              <CircularProgress size={20} color='inherit' />
-            ) : (
-              <SaveIcon />
-            )
-          }
-        >
-          {saving ? 'Saving...' : 'Save Profile'}
-        </Button>
-      </Box>
-
-      <Snackbar
-        open={snackbar.open}
-        autoHideDuration={6000}
-        onClose={handleCloseSnackbar}
-      >
-        <Alert
-          onClose={handleCloseSnackbar}
-          severity={snackbar.severity}
-          sx={{ width: '100%' }}
-        >
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
-
-      {/* Add/Edit Vehicle Dialog */}
-      <Dialog
-        open={isVehicleDialogOpen}
-        onClose={handleCloseVehicleDialog}
-        aria-labelledby='vehicle-dialog-title'
-      >
-        <DialogTitle id='vehicle-dialog-title'>
-          {editingVehicleIndex !== null
-            ? 'Edit Vehicle Details'
-            : 'Add New Vehicle'}
-        </DialogTitle>
-        <DialogContent>
-          <Stack spacing={2} sx={{ pt: 1 }}>
-            <TextField
-              autoFocus
-              margin='dense'
-              name='make'
-              label='Make'
-              type='text'
-              fullWidth
-              variant='outlined'
-              value={currentVehicleFormData.make}
-              onChange={handleVehicleChange} // Re-using handleVehicleChange for dialog form
-              required
-            />
-            <TextField
-              margin='dense'
-              name='model'
-              label='Model'
-              type='text'
-              fullWidth
-              variant='outlined'
-              value={currentVehicleFormData.model}
-              onChange={handleVehicleChange}
-              required
-            />
-            <TextField
-              margin='dense'
-              name='year'
-              label='Year'
-              type='number'
-              fullWidth
-              variant='outlined'
-              value={
-                currentVehicleFormData.year === 0
-                  ? ''
-                  : currentVehicleFormData.year
-              }
-              onChange={handleVehicleChange}
-              required
-              InputProps={{
-                inputProps: { min: 1900, max: new Date().getFullYear() + 2 },
-              }}
-            />
-            <TextField
-              margin='dense'
-              name='color'
-              label='Color'
-              type='text'
-              fullWidth
-              variant='outlined'
-              value={currentVehicleFormData.color}
-              onChange={handleVehicleChange}
-              required
-            />
-            <TextField
-              margin='dense'
-              name='plate'
-              label='License Plate'
-              type='text'
-              fullWidth
-              variant='outlined'
-              value={currentVehicleFormData.plate}
-              onChange={handleVehicleChange}
-              required
-            />
+        <Box component='form' onSubmit={handleSubmit} noValidate>
+          <Stack spacing={2} sx={{ mb: 2 }}>
+            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+              <TextField
+                fullWidth
+                label='Full Name'
+                name='displayName'
+                value={residentData.displayName || ''}
+                onChange={handleInputChange}
+              />
+              <TextField
+                fullWidth
+                label='Email Address'
+                name='email'
+                type='email'
+                value={residentData.email || ''}
+                onChange={handleInputChange}
+                InputProps={{
+                  readOnly: true,
+                }}
+              />
+            </Stack>
+            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+              <TextField
+                fullWidth
+                label='Phone Number'
+                name='phone' // Corrected: use phone
+                value={residentData.phone || ''} // Corrected: use phone
+                onChange={handleInputChange}
+              />
+              <TextField
+                disabled
+                fullWidth
+                label='Unit Number'
+                name='unitNumber'
+                value={residentData.unitNumber || ''}
+                onChange={handleInputChange}
+              />
+            </Stack>
           </Stack>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseVehicleDialog}>Cancel</Button>
-          <Button onClick={handleSaveVehicle} variant='contained'>
-            Add Vehicle
-          </Button>
-        </DialogActions>
-      </Dialog>
 
-      {/* Delete Confirmation Dialog */}
-      <Dialog
-        open={deleteConfirmOpen}
-        onClose={handleCloseDeleteConfirmDialog}
-        aria-labelledby='delete-confirm-dialog-title'
-      >
-        <DialogTitle id='delete-confirm-dialog-title'>
-          Confirm Delete
-        </DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            Are you sure you want to delete this vehicle? This action cannot be
-            undone.
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseDeleteConfirmDialog}>Cancel</Button>
-          <Button
-            onClick={handleConfirmDeleteVehicle}
-            color='error'
-            variant='contained'
+          <Divider sx={{ my: 4 }} />
+          <Typography variant='h6'>Vehicle Information</Typography>
+          <Stack
+            direction='row'
+            justifyContent='space-between'
+            alignItems='center'
+            sx={{ mb: 2 }}
           >
-            Delete
-          </Button>
-        </DialogActions>
-      </Dialog>
+            <Typography variant='subtitle1'>Limit: 2</Typography>
+            {vehicles.length < 2 && (
+              <Button
+                variant='outlined'
+                startIcon={<AddCircleOutlineIcon />}
+                onClick={() => handleOpenVehicleDialog(null)} // Open dialog for adding
+                size='small'
+                disabled={saving || loading}
+              >
+                Add
+              </Button>
+            )}
+          </Stack>
 
-    </>
+          {vehicles.length > 0 ? (
+            <List sx={{ pt: 0, pb: 0 }}>
+              {vehicles.map((vehicle, index) => (
+                <ListItem
+                  key={index}
+                  divider={index < vehicles.length - 1}
+                  secondaryAction={
+                    <Stack direction='row' spacing={0.5}>
+                      <IconButton
+                        edge='end'
+                        aria-label='edit'
+                        onClick={() => handleOpenVehicleDialog(index)}
+                        disabled={saving || loading}
+                        size='small'
+                      >
+                        <EditIcon fontSize='small' />
+                      </IconButton>
+                      <IconButton
+                        edge='end'
+                        aria-label='delete'
+                        onClick={() => handleOpenDeleteConfirmDialog(index)}
+                        color='error'
+                        disabled={saving || loading}
+                        size='small'
+                      >
+                        <DeleteOutlineIcon fontSize='small' />
+                      </IconButton>
+                    </Stack>
+                  }
+                  sx={{ py: 1.5 }}
+                >
+                  <ListItemText
+                    primary={
+                      `${vehicle.year || ''} ${vehicle.color || ''} ${
+                        vehicle.make || ''
+                      } ${vehicle.model || ''}`
+                        .trim()
+                        .replace(/ +/g, ' ') || 'Vehicle Details Missing'
+                    }
+                    secondary={`Plate: ${vehicle.plate || 'N/A'}`}
+                    primaryTypographyProps={{ fontWeight: 'medium' }}
+                  />
+                </ListItem>
+              ))}
+            </List>
+          ) : (
+            <Typography
+              color='textSecondary'
+              sx={{ mb: 2, textAlign: 'center', mt: 2 }}
+            >
+              No vehicles added.
+            </Typography>
+          )}
+
+          <Button
+            type='submit'
+            fullWidth
+            variant='contained'
+            sx={{ mt: 3, mb: 2 }}
+            disabled={saving}
+            startIcon={
+              saving ? (
+                <CircularProgress size={20} color='inherit' />
+              ) : (
+                <SaveIcon />
+              )
+            }
+          >
+            {saving ? 'Saving...' : 'Save Profile'}
+          </Button>
+        </Box>
+
+        <Snackbar
+          open={snackbar.open}
+          autoHideDuration={6000}
+          onClose={handleCloseSnackbar}
+        >
+          <Alert
+            onClose={handleCloseSnackbar}
+            severity={snackbar.severity}
+            sx={{ width: '100%' }}
+          >
+            {snackbar.message}
+          </Alert>
+        </Snackbar>
+
+        {/* Add/Edit Vehicle Dialog */}
+        <Dialog
+          open={isVehicleDialogOpen}
+          onClose={handleCloseVehicleDialog}
+          aria-labelledby='vehicle-dialog-title'
+        >
+          <DialogTitle id='vehicle-dialog-title'>
+            {editingVehicleIndex !== null
+              ? 'Edit Vehicle Details'
+              : 'Add New Vehicle'}
+          </DialogTitle>
+          <DialogContent>
+            <Stack spacing={2} sx={{ pt: 1 }}>
+              <TextField
+                autoFocus
+                margin='dense'
+                name='make'
+                label='Make'
+                type='text'
+                fullWidth
+                variant='outlined'
+                value={currentVehicleFormData.make}
+                onChange={handleVehicleChange} // Re-using handleVehicleChange for dialog form
+                required
+              />
+              <TextField
+                margin='dense'
+                name='model'
+                label='Model'
+                type='text'
+                fullWidth
+                variant='outlined'
+                value={currentVehicleFormData.model}
+                onChange={handleVehicleChange}
+                required
+              />
+              <TextField
+                margin='dense'
+                name='year'
+                label='Year'
+                type='number'
+                fullWidth
+                variant='outlined'
+                value={
+                  currentVehicleFormData.year === 0
+                    ? ''
+                    : currentVehicleFormData.year
+                }
+                onChange={handleVehicleChange}
+                required
+                InputProps={{
+                  inputProps: { min: 1900, max: new Date().getFullYear() + 2 },
+                }}
+              />
+              <TextField
+                margin='dense'
+                name='color'
+                label='Color'
+                type='text'
+                fullWidth
+                variant='outlined'
+                value={currentVehicleFormData.color}
+                onChange={handleVehicleChange}
+                required
+              />
+              <TextField
+                margin='dense'
+                name='plate'
+                label='License Plate'
+                type='text'
+                fullWidth
+                variant='outlined'
+                value={currentVehicleFormData.plate}
+                onChange={handleVehicleChange}
+                required
+              />
+            </Stack>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleCloseVehicleDialog}>Cancel</Button>
+            <Button onClick={handleSaveVehicle} variant='contained'>
+              Add Vehicle
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Delete Confirmation Dialog */}
+        <Dialog
+          open={deleteConfirmOpen}
+          onClose={handleCloseDeleteConfirmDialog}
+          aria-labelledby='delete-confirm-dialog-title'
+        >
+          <DialogTitle id='delete-confirm-dialog-title'>
+            Confirm Delete
+          </DialogTitle>
+          <DialogContent>
+            <DialogContentText>
+              Are you sure you want to delete this vehicle? This action cannot
+              be undone.
+            </DialogContentText>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleCloseDeleteConfirmDialog}>Cancel</Button>
+            <Button
+              onClick={handleConfirmDeleteVehicle}
+              color='error'
+              variant='contained'
+            >
+              Delete
+            </Button>
+          </DialogActions>
+        </Dialog>
+      </CardContent>
+    </Card>
   );
 };
 

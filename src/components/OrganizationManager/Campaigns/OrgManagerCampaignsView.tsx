@@ -47,7 +47,7 @@ const OrgManagerCampaignsView: React.FC = () => {
   return (
     <Paper elevation={0} sx={{ p: { xs: 1, sm: 2, lg: 3 } }}>
       <Typography variant='h5' gutterBottom>
-        Campaigns for {selectedOrganization.name}
+        {selectedOrganization.name} Campaigns
       </Typography>
 
       <Box sx={{ mb: 2, mt: 2 }}>

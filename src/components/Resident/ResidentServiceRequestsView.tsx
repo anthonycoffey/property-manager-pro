@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Typography } from '@mui/material';
+import { Typography, Card, CardContent } from '@mui/material';
 import CreateServiceRequestForm from './CreateServiceRequestForm';
 
 const ResidentServiceRequestsView: React.FC = () => {
@@ -10,14 +10,16 @@ const ResidentServiceRequestsView: React.FC = () => {
   };
 
   return (
-    <Box sx={{ p: { xs: 1, sm: 2, lg: 3 } }}>
-      <Typography variant='h5' gutterBottom sx={{ mb: 2 }}>
-        Request Service
-      </Typography>
-      <CreateServiceRequestForm
-        onServiceRequestSubmitted={handleServiceRequestSubmitted}
-      />
-    </Box>
+    <Card>
+      <CardContent>
+        <Typography variant='h5' gutterBottom sx={{ mb: 2 }}>
+          Request Service
+        </Typography>
+        <CreateServiceRequestForm
+          onServiceRequestSubmitted={handleServiceRequestSubmitted}
+        />
+      </CardContent>
+    </Card>
   );
 };
 

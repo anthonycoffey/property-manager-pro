@@ -1,5 +1,5 @@
 import React, { useState } from 'react'; // Added useState for modals if needed here
-import { Box, Typography, Alert } from '@mui/material';
+import { Box, Alert } from '@mui/material';
 import PropertyManagerPropertiesList from '../../PropertyManager/PropertyManagerPropertiesList';
 import EditPropertyModal from '../../PropertyManager/EditPropertyModal'; // If edit is triggered from here
 import type { Property as PropertyType } from '../../../types';
@@ -52,10 +52,7 @@ const PropertyManagerMyPropertiesView: React.FC = () => {
   }
 
   return (
-    <Box sx={{ p: { xs: 1, sm: 2, lg: 3 } }}>
-      <Typography variant='h5' gutterBottom sx={{ mb: 2 }}>
-        Your Managed Properties
-      </Typography>
+    <Box>
       <PropertyManagerPropertiesList
         key={refreshPropertiesKey} // Use key to force re-render if properties list changes externally
         // organizationId is implicitly handled by PropertyManagerPropertiesList via useAuth or props if needed

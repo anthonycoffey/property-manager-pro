@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Box,
@@ -23,7 +23,9 @@ interface ResidentReviewSliderProps {
   reviews: Review[];
 }
 
-const ResidentReviewSlider: React.FC<ResidentReviewSliderProps> = ({ reviews }) => {
+const ResidentReviewSlider: React.FC<ResidentReviewSliderProps> = ({
+  reviews,
+}) => {
   const theme = useTheme();
   const [activeStep, setActiveStep] = useState(0);
   const maxSteps = reviews.length;
@@ -35,7 +37,9 @@ const ResidentReviewSlider: React.FC<ResidentReviewSliderProps> = ({ reviews }) 
   };
 
   const handleBack = () => {
-    setActiveStep((prevActiveStep) => (prevActiveStep - 1 + maxSteps) % maxSteps);
+    setActiveStep(
+      (prevActiveStep) => (prevActiveStep - 1 + maxSteps) % maxSteps
+    );
   };
 
   const variants = {
@@ -66,7 +70,7 @@ const ResidentReviewSlider: React.FC<ResidentReviewSliderProps> = ({ reviews }) 
     }
   };
 
-  const resetTimer = () => {
+  const resetTimer = useCallback(() => {
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
     }
@@ -75,7 +79,7 @@ const ResidentReviewSlider: React.FC<ResidentReviewSliderProps> = ({ reviews }) 
         paginate(1);
       }, 5000);
     }
-  };
+  }, [isPaused, paginate]);
 
   useEffect(() => {
     resetTimer();
@@ -86,7 +90,6 @@ const ResidentReviewSlider: React.FC<ResidentReviewSliderProps> = ({ reviews }) 
     };
   }, [activeStep, isPaused, resetTimer]);
 
-
   if (!reviews || reviews.length === 0) {
     return null;
   }
@@ -95,7 +98,13 @@ const ResidentReviewSlider: React.FC<ResidentReviewSliderProps> = ({ reviews }) 
 
   return (
     <Box
-      sx={{ maxWidth: 400, flexGrow: 1, margin: 'auto', position: 'relative', minHeight: 220 }}
+      sx={{
+        maxWidth: 400,
+        flexGrow: 1,
+        margin: 'auto',
+        position: 'relative',
+        minHeight: 220,
+      }}
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
     >
@@ -141,7 +150,11 @@ const ResidentReviewSlider: React.FC<ResidentReviewSliderProps> = ({ reviews }) 
                   {activeReview.author.charAt(0)}
                 </Avatar>
                 <Box>
-                  <Typography variant='subtitle1' component='div' fontWeight='bold'>
+                  <Typography
+                    variant='subtitle1'
+                    component='div'
+                    fontWeight='bold'
+                  >
                     {activeReview.author}
                   </Typography>
                   <Rating name='read-only' value={5} readOnly size='small' />

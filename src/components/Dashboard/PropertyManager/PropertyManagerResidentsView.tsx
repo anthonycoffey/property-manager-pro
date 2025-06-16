@@ -55,14 +55,14 @@ const PropertyManagerResidentsView: React.FC = () => {
   }
 
   return (
-    <Box sx={{ p: { xs: 1, sm: 2, lg: 3 } }}>
+    <Box>
       <InviteResidentForm
         organizationId={organizationId}
         propertyId={selectedPropertyId}
         propertyName={selectedPropertyName || undefined}
         onInvitationSent={handleResidentInvited}
       />
-      <Divider sx={{ my: 3 }} />
+      <Divider sx={{ my: 4 }} />
 
       <Typography variant='subtitle1' gutterBottom sx={{ mb: 1 }}>
         {selectedPropertyName || 'Selected Property'} Residents

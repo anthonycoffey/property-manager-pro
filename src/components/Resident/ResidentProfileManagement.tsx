@@ -33,7 +33,7 @@ import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../../firebaseConfig';
 import type { Resident, Vehicle } from '../../types';
 import { isAppError } from '../../utils/errorUtils';
-import { Person, PersonPinCircleOutlined } from '@mui/icons-material';
+import { Person } from '@mui/icons-material';
 
 const functions = getFunctions();
 const updateResidentProfileCallable = httpsCallable(

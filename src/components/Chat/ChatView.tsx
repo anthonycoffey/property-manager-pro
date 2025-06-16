@@ -122,7 +122,7 @@ const ChatView: React.FC = () => {
   return (
     <Card>
       <CardContent>
-        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2.5 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
           <Button
             variant='outlined'
             size='small'

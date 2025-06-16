@@ -1,6 +1,6 @@
 import { isAppError } from '../../utils/errorUtils';
 import React, { useState, useEffect, useRef } from 'react';
-import { Paper, Alert, Button, Box } from '@mui/material';
+import { Paper, Alert, Button, Box, Card, CardContent } from '@mui/material';
 import { PhoneCallback as PhoneCallbackIcon } from '@mui/icons-material';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { app as firebaseApp } from '../../firebaseConfig';
@@ -120,53 +120,55 @@ const ChatView: React.FC = () => {
   };
 
   return (
-    <>
-      <Paper
-        // elevation={5}
-        variant='outlined'
-        sx={{
-          backgroundColor: 'background.paper',
-          minHeight: '50vh', // Or adjust as needed
-          maxHeight: '75vh',
-          display: 'flex',
-          flexDirection: 'column',
-          overflow: 'hidden',
-        }}
-      >
-        {error && (
-          <Alert
-            severity='error'
-            onClose={() => setError(null)}
-            sx={{ m: 1, mb: 0, flexShrink: 0 }}
-          >
-            {error}
-          </Alert>
-        )}
-
-        <MessageList messages={messages} isLoading={isLoading} />
-        <ChatInput
-          ref={chatInputRef}
-          onSendMessage={handleSendMessage}
-          isLoading={isLoading}
-        />
-      </Paper>
-      <Box sx={{ display: 'flex', justifyContent: 'flex-end', my: 3 }}>
-        <Button
+    <Card>
+      <CardContent>
+        <Paper
+          // elevation={5}
           variant='outlined'
-          size='small'
-          onClick={() => setIsRequestCallDialogOpen(true)}
-          startIcon={<PhoneCallbackIcon />}
-          sx={{ mr: 1 }}
-          title='Speak to a Live Agent'
+          sx={{
+            backgroundColor: 'background.paper',
+            minHeight: '50vh', // Or adjust as needed
+            maxHeight: '75vh',
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden',
+          }}
         >
-          Connect to Live Agent
-        </Button>
-      </Box>
-      <RequestTwilioCallDialog
-        open={isRequestCallDialogOpen}
-        onOpenChange={setIsRequestCallDialogOpen}
-      />
-    </>
+          {error && (
+            <Alert
+              severity='error'
+              onClose={() => setError(null)}
+              sx={{ m: 1, mb: 0, flexShrink: 0 }}
+            >
+              {error}
+            </Alert>
+          )}
+
+          <MessageList messages={messages} isLoading={isLoading} />
+          <ChatInput
+            ref={chatInputRef}
+            onSendMessage={handleSendMessage}
+            isLoading={isLoading}
+          />
+        </Paper>
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 3 }}>
+          <Button
+            variant='outlined'
+            size='small'
+            onClick={() => setIsRequestCallDialogOpen(true)}
+            startIcon={<PhoneCallbackIcon />}
+            sx={{ mr: 1 }}
+            title='Speak to a Live Agent'
+          >
+            Connect to Live Agent
+          </Button>
+        </Box>
+        <RequestTwilioCallDialog
+          open={isRequestCallDialogOpen}
+          onOpenChange={setIsRequestCallDialogOpen}
+        />
+      </CardContent>
+    </Card>
   );
 };
 

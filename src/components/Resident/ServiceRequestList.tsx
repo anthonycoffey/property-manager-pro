@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import {
   Box,
   Typography,
-  Paper,
   CircularProgress,
   Alert,
   Chip,
@@ -15,6 +14,8 @@ import {
   ListItemText,
   Divider,
   useMediaQuery,
+  Card,
+  CardContent,
 } from '@mui/material';
 import LaunchIcon from '@mui/icons-material/Launch';
 import {
@@ -152,14 +153,13 @@ const ServiceRequestList: React.FC = () => {
   }
 
   return (
-    <Box sx={{ width: '100%' }}>
-      <Paper
-        elevation={0}
-        sx={{
-          background: 'transparent',
-          border: `1px solid ${theme.palette.divider}`,
-        }}
-      >
+        <Card>
+          <CardContent>
+
+          <Typography variant='h5' gutterBottom sx={{ mb: 2 }}>
+            Your Service Requests
+          </Typography>
+
         <List disablePadding>
           {serviceRequests
             .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
@@ -293,7 +293,6 @@ const ServiceRequestList: React.FC = () => {
           }}
           sx={{ mt: 2, borderTop: `1px solid ${theme.palette.divider}` }}
         />
-      </Paper>
       {selectedPhoenixSubmissionId && (
         <ServiceJobDetailModal
           isOpen={isJobDetailModalOpen}
@@ -304,8 +303,10 @@ const ServiceRequestList: React.FC = () => {
           phoenixSubmissionId={selectedPhoenixSubmissionId}
         />
       )}
-    </Box>
+          </CardContent>
+  </Card>
   );
 };
+
 
 export default ServiceRequestList;

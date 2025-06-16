@@ -8,6 +8,8 @@ import {
   ListItem,
   ListItemIcon,
   ListItemText,
+  CardContent,
+  Card,
 } from '@mui/material';
 import {
   HomeWork as HomeWorkIcon,
@@ -87,7 +89,8 @@ const PropertyDetailsView: React.FC = () => {
   }
 
   return (
-    <>
+    <Card>
+      <CardContent>
       <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
         <HomeWorkIcon sx={{ mr: 1, fontSize: '2rem' }} color='primary' />
         <Typography variant='h5' component='div'>
@@ -145,7 +148,8 @@ const PropertyDetailsView: React.FC = () => {
           </ListItem>
         )}
       </List>
-    </>
+      </CardContent>
+    </Card>
   );
 };
 

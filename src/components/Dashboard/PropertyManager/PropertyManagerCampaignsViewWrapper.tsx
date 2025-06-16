@@ -1,12 +1,11 @@
 import React from 'react';
-import { Box, Typography, Alert } from '@mui/material';
+import { Box, Alert } from '@mui/material';
 import PropertyCampaignsView from '../../PropertyManager/Campaigns/PropertyCampaignsView';
 import { usePropertyManagerContext } from '../../../hooks/usePropertyManagerContext';
 import { useAuth } from '../../../hooks/useAuth';
 
 const PropertyManagerCampaignsViewWrapper: React.FC = () => {
-  const { selectedPropertyId, selectedPropertyName } =
-    usePropertyManagerContext();
+  const { selectedPropertyId } = usePropertyManagerContext();
   const { organizationId } = useAuth();
 
   if (!organizationId) {
@@ -25,11 +24,7 @@ const PropertyManagerCampaignsViewWrapper: React.FC = () => {
   }
 
   return (
-    <Box sx={{ p: { xs: 1, sm: 2, lg: 3 } }}>
-      <Typography variant='h5' gutterBottom sx={{ mb: 2 }}>
-        Manage Invitation Campaigns for{' '}
-        {selectedPropertyName || 'Selected Property'}
-      </Typography>
+    <Box>
       <PropertyCampaignsView
         organizationId={organizationId}
         propertyId={selectedPropertyId}

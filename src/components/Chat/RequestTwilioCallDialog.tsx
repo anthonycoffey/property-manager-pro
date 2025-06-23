@@ -174,13 +174,12 @@ const RequestTwilioCallDialog: React.FC<RequestTwilioCallDialogProps> = ({ open,
               type="tel"
               fullWidth
               variant="outlined"
-              placeholder="+1 (555) 123-4567"
+              placeholder="Enter your phone number..."
               value={displayPhoneNumber}
               onChange={handlePhoneInputChange}
               error={!!error}
               helperText={error}
               disabled={isSubmitting}
-              InputLabelProps={{ shrink: true }}
             />
           </DialogContent>
           <DialogActions sx={{ px: 3, pb: 2 }}>

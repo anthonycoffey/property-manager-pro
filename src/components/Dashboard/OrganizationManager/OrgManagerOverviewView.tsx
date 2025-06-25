@@ -411,12 +411,7 @@ const OrgManagerOverviewView: React.FC = () => {
                 />
               )}
             </Paper>
-          ) : (
-            !phoenixLoading &&
-            !phoenixError && (
-              <Typography>No Phoenix service type data.</Typography>
-            )
-          )}
+          ) : null}
         </Box>
 
         {!(dashboardStats || dashboardLoading) &&

@@ -389,14 +389,7 @@ const PropertyManagerOverviewView: React.FC = () => {
               />
             )}
           </Paper>
-        ) : (
-          !phoenixLoading &&
-          !phoenixError && (
-            <Typography sx={{ mt: 2 }}>
-              No Phoenix service type data for this property.
-            </Typography>
-          )
-        )}
+        ) : null}
 
         {!(dashboardStats || dashboardLoading) &&
           !dashboardError &&

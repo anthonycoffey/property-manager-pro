@@ -5,6 +5,7 @@ import {
   Card,
   CardActionArea,
   CardContent,
+  Divider,
 } from '@mui/material';
 import { Link as RouterLink } from 'react-router-dom';
 import { usePropertyManagerContext } from '../../../hooks/usePropertyManagerContext';
@@ -59,6 +60,7 @@ const PropertyManagerQuickNav: React.FC = () => {
           </Box>
         ))}
       </Box>
+      <Divider sx={{ my: 6 }} />
     </>
   );
 };

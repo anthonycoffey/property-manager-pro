@@ -92,65 +92,65 @@ const PropertyDetailsView: React.FC = () => {
   return (
     <Card>
       <CardHeader
-        avatar={<HomeWorkIcon color="primary" />}
+        avatar={<HomeWorkIcon color='primary' />}
         title={
-          <Typography variant="h5" component="div">
-        Property Information
+          <Typography variant='h5' component='div'>
+            Property Information
           </Typography>
         }
       />
       <CardContent>
-      <List>
-        <ListItem>
-          <ListItemIcon>
-            <PersonIcon />
-          </ListItemIcon>
-          <ListItemText
-            primary='Property Name'
-            secondary={propertyDetails.name}
-          />
-        </ListItem>
-        <ListItem>
-          <ListItemIcon>
-            <ApartmentIcon />
-          </ListItemIcon>
-          <ListItemText
-            primary='Property Type'
-            secondary={propertyDetails.type}
-          />
-        </ListItem>
-        {propertyDetails.address && (
-          <ListItem alignItems='flex-start'>
-            <ListItemIcon sx={{ mt: 1 }}>
-              <LocationOnIcon />
+        <List>
+          <ListItem sx={{ borderBottom: 1, borderColor: 'divider' }}>
+            <ListItemIcon>
+              <PersonIcon />
             </ListItemIcon>
             <ListItemText
-              primary='Address'
-              secondary={
-                <>
-                  <Typography
-                    component='span'
-                    variant='body2'
-                    color='text.primary'
-                  >
-                    {propertyDetails.address.street}
-                  </Typography>
-                  <br />
-                  <Typography
-                    component='span'
-                    variant='body2'
-                    color='text.primary'
-                  >
-                    {propertyDetails.address.city},{' '}
-                    {propertyDetails.address.state}{' '}
-                    {propertyDetails.address.zip}
-                  </Typography>
-                </>
-              }
+              primary='Property Name'
+              secondary={propertyDetails.name}
             />
           </ListItem>
-        )}
-      </List>
+ <ListItem sx={{ borderBottom: 1, borderColor: 'divider' }}>
+            <ListItemIcon>
+              <ApartmentIcon />
+            </ListItemIcon>
+            <ListItemText
+              primary='Property Type'
+              secondary={propertyDetails.type}
+            />
+          </ListItem>
+          {propertyDetails.address && (
+            <ListItem alignItems='flex-start' >
+              <ListItemIcon sx={{ mt: 1 }}>
+                <LocationOnIcon />
+              </ListItemIcon>
+              <ListItemText
+                primary='Address'
+                secondary={
+                  <>
+                    <Typography
+                      component='span'
+                      variant='body2'
+                      color='text.primary'
+                    >
+                      {propertyDetails.address.street}
+                    </Typography>
+                    <br />
+                    <Typography
+                      component='span'
+                      variant='body2'
+                      color='text.primary'
+                    >
+                      {propertyDetails.address.city},{' '}
+                      {propertyDetails.address.state}{' '}
+                      {propertyDetails.address.zip}
+                    </Typography>
+                  </>
+                }
+              />
+            </ListItem>
+          )}
+        </List>
       </CardContent>
     </Card>
   );

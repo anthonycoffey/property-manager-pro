@@ -33,7 +33,10 @@ import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../../firebaseConfig';
 import type { Resident, Vehicle } from '../../types';
 import { isAppError } from '../../utils/errorUtils';
-import { Person } from '@mui/icons-material';
+import {
+  AccountCircle,
+  DirectionsCar,
+} from '@mui/icons-material';
 
 const functions = getFunctions();
 const updateResidentProfileCallable = httpsCallable(
@@ -310,10 +313,10 @@ const ResidentProfileManagement: React.FC = () => {
   return (
     <Card sx={{ mb: 3 }}>
       <CardHeader
-        avatar={<Person color='primary' />}
+        avatar={<AccountCircle color='primary' />}
         title={
           <Typography variant='h5' component='div'>
-            Edit Your Profile
+            My Profile
           </Typography>
         }
         sx={{ mb: 2 }}
@@ -324,6 +327,7 @@ const ResidentProfileManagement: React.FC = () => {
             {error}
           </Alert>
         )}
+
         <Box component='form' onSubmit={handleSubmit} noValidate>
           <Stack spacing={2} sx={{ mb: 2 }}>
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
@@ -366,12 +370,16 @@ const ResidentProfileManagement: React.FC = () => {
           </Stack>
 
           <Divider sx={{ my: 4 }} />
-          <Typography variant='h6'>Vehicle Information</Typography>
+          <Stack direction='row' spacing={2} alignItems='center'>
+            <DirectionsCar color='primary' />
+            <Typography variant='h5'>Vehicle Information</Typography>
+          </Stack>
+
           <Stack
             direction='row'
             justifyContent='space-between'
             alignItems='center'
-            sx={{ mb: 2 }}
+            sx={{ mb: 1 }}
           >
             <Typography variant='subtitle1'>Limit: 2</Typography>
             {vehicles.length < 2 && (

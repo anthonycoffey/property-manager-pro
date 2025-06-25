@@ -55,28 +55,29 @@ const Footer: React.FC = () => {
 
           {/* Social Proof Images Section */}
           <Stack
-            direction='row'
-            spacing={8}
+            direction={{ xs: 'column', sm: 'row' }}
+            spacing={{ xs: 2, sm: 4, md: 8 }}
             alignItems='center'
-            justifyContent='space-between'
+            justifyContent='center'
           >
             <Box
               component='img'
               src='/review1.png'
               alt='Social proof review 1'
               sx={{
-                width: { xs: 100, lg: 180 },
+                width: '100%',
+                maxWidth: '150px',
                 height: 'auto',
                 borderRadius: 1,
               }}
             />
-
             <Box
               component='img'
               src='/review2.png'
               alt='Social proof review 2'
               sx={{
-                width: { xs: 100, lg: 180 },
+                width: '100%',
+                maxWidth: '150px',
                 height: 'auto',
                 borderRadius: 1,
               }}
@@ -86,7 +87,8 @@ const Footer: React.FC = () => {
               src='/review3.png'
               alt='Social proof review 3'
               sx={{
-                width: { xs: 100, lg: 180 },
+                width: '100%',
+                maxWidth: '150px',
                 height: 'auto',
                 borderRadius: 1,
               }}

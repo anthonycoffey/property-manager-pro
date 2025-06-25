@@ -207,9 +207,9 @@ const AppBarComponent: React.FC<AppBarComponentProps> = ({
           </Box>
         )}
 
+          <Divider sx={{ mb: 2 }} />
         {/* Theme Toggle - pushed to bottom */}
         <Box sx={{ p: 2, mb: 4 }}>
-          <Divider sx={{ mb: 2 }} />
           <ThemeToggle toggleColorMode={toggleColorMode} mode={mode} />
         </Box>
       </Box>

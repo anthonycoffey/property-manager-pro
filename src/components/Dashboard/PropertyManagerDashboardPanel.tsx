@@ -137,7 +137,7 @@ const PropertyManagerDashboardContent: React.FC<
             />
           </>
 
-          <Box sx={{ mt: 1 }}>
+          <Box sx={{ mt: 2 }}>
             {selectedPropertyId ? (
               <Outlet /> // For other routes, render Outlet only if a property is selected
             ) : (

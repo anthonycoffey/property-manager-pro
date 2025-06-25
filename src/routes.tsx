@@ -4,6 +4,7 @@ import LoginForm from './components/LoginForm';
 import SignupForm from './components/SignupForm';
 import Dashboard from './components/Dashboard';
 import ProtectedRoute from './components/ProtectedRoute';
+import MainLayout from './components/Layout/MainLayout';
 // Removed Outlet import as it's not directly used at this top level anymore for all routes, but by child layout routes
 // import { Outlet } from 'react-router-dom';
 
@@ -52,11 +53,11 @@ const AppRoutes: React.FC = () => {
         path='/dashboard'
         element={
           <ProtectedRoute>
-            <Dashboard />{' '}
-            {/* Dashboard component will render an <Outlet /> for its children */}
+            <MainLayout />
           </ProtectedRoute>
         }
       >
+        <Route index element={<Dashboard />} />
         {/* Admin Routes - Direct children of /dashboard Outlet */}
         <Route path='admin/overview' element={<AdminOverviewView />} />
         <Route

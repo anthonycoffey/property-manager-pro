@@ -60,6 +60,10 @@ The application employs a modern web architecture with a React-based frontend an
     - The initial landing/overview pages for each role (`AdminOverviewView.tsx`, `OrgManagerOverviewView.tsx`, `PropertyManagerOverviewView.tsx`, `ResidentProfileManagement.tsx`) now include a "Quick Navigation" section.
     - This section displays MUI `Card` components with icons and links (using `CardActionArea` and `RouterLink`) to other main sections available to that user, derived from `navigationConfig.ts`. This provides an alternative in-page navigation method.
 
+- **Application Layout Wrapper (Corrected Pattern 2025-06-25):**
+    - The application uses a two-level layout approach.
+    - **Global Layout (`App.tsx`):** The root `App.tsx` component renders the `AppBarComponent` to ensure it is globally visible on all pages, public and private.
+    - **Authenticated Layout (`MainLayout.tsx`):** A dedicated `MainLayout.tsx` is wrapped by the `ProtectedRoute`. It is responsible for the layout of authenticated pages, containing a `Container` for the main content (`Outlet`) and a full-width `Footer`. This pattern correctly separates global concerns from authenticated-only layout elements.
 - **Client-Side API Service Modules:** (No changes from previous version)
 - **Generic Chart Wrapper Components:** (No changes from previous version)
 - **Address Autocompletion (Google Places API):** (No changes from previous version)

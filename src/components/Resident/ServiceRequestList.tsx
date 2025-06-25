@@ -17,6 +17,7 @@ import {
   Card,
   CardContent,
   CardHeader,
+  CardActions,
 } from '@mui/material';
 import LaunchIcon from '@mui/icons-material/Launch';
 import {
@@ -154,19 +155,17 @@ const ServiceRequestList: React.FC = () => {
   }
 
   return (
-        <Card>
-
-          <CardHeader
-            avatar={<ViewList color='primary' />}
-            title={
-              <Typography variant='h5' component='div'>
+    <Card>
+      <CardHeader
+        avatar={<ViewList color='primary' />}
+        title={
+          <Typography variant='h5' component='div'>
             Your Service Requests
-              </Typography>
-            }
-            sx={{ mb: 2 }}
-          />
-          <CardContent>
-
+          </Typography>
+        }
+        sx={{ mb: 2 }}
+      />
+      <CardContent>
         <List disablePadding>
           {serviceRequests
             .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
@@ -174,12 +173,41 @@ const ServiceRequestList: React.FC = () => {
               <React.Fragment key={request.id}>
                 <ListItem
                   sx={{
-                    py: 1,
+                    py: 2,
                     px: 2,
                     flexDirection: 'column',
                     alignItems: 'stretch',
                   }}
                 >
+                  {isSmallScreen && (
+                    <Stack
+                      direction='row'
+                      justifyContent='space-between'
+                      alignItems='center'
+                      sx={{ mb: 1 }}
+                    >
+                      <Chip
+                        icon={<CheckCircle sx={{ mr: 2 }} />}
+                        size='small'
+                        variant='outlined'
+                        label={request.status.toUpperCase().replace('_', ' ')}
+                        color={getStatusChipColor(request.status)}
+                      />
+
+                      {request.phoenixSubmissionId && (
+                        <Button
+                          size='small'
+                          variant='contained'
+                          onClick={() =>
+                            handleViewJobClick(request.phoenixSubmissionId!)
+                          }
+                          endIcon={<LaunchIcon />}
+                        >
+                          View Job
+                        </Button>
+                      )}
+                    </Stack>
+                  )}
                   <Box
                     sx={{
                       display: 'flex',
@@ -191,21 +219,32 @@ const ServiceRequestList: React.FC = () => {
                   >
                     <ListItemText
                       primary={
-                        <Stack spacing={1} alignItems='flex-start'>
-                          <Chip
-                            icon={<CheckCircle sx={{ mr: 2 }} />}
-                            size='small'
-                            variant='outlined'
-                            label={request.status
-                              .toUpperCase()
-                              .replace('_', ' ')}
-                            color={getStatusChipColor(request.status)}
-                          />
+                        <Stack spacing={2} alignItems='flex-start'>
+                          {!isSmallScreen && (
+                            <Chip
+                              icon={<CheckCircle sx={{ mr: 2 }} />}
+                              size='small'
+                              variant='outlined'
+                              label={request.status
+                                .toUpperCase()
+                                .replace('_', ' ')}
+                              color={getStatusChipColor(request.status)}
+                            />
+                          )}
+                          {/* {isSmallScreen ? (
+                            <Typography
+                              variant='subtitle1'
+                              color='text.secondary'
+                            >
+                              {formatDate(request.submittedAt)}
+                            </Typography>
+                          ) : ( */}
                           <Typography variant='body1' fontWeight='medium'>
                             {request.serviceLocationData?.fullAddress ||
                               request.serviceLocation ||
                               'N/A'}
                           </Typography>
+                          {/* )} */}
                         </Stack>
                       }
                       secondary={
@@ -216,13 +255,26 @@ const ServiceRequestList: React.FC = () => {
                           flexWrap='wrap'
                           sx={{ mt: 1, pr: isSmallScreen ? 0 : '150px' }} // Add padding to avoid overlap
                         >
-                          {request.requestType.split(',').map((type) => (
-                            <Chip
-                              key={type.trim()}
-                              label={type.trim()}
-                              size='small'
-                            />
-                          ))}
+                          {isSmallScreen ? (
+                            <>
+                              <Typography
+                                variant='subtitle1'
+                                color='text.secondary'
+                              >
+                                {formatDate(request.submittedAt)}
+                              </Typography>
+                            </>
+                          ) : (
+                            <>
+                              {request.requestType.split(',').map((type) => (
+                                <Chip
+                                  key={type.trim()}
+                                  label={type.trim()}
+                                  size='small'
+                                />
+                              ))}
+                            </>
+                          )}
                         </Stack>
                       }
                     />
@@ -257,24 +309,17 @@ const ServiceRequestList: React.FC = () => {
                   {isSmallScreen && (
                     <Stack
                       direction='row'
-                      justifyContent='space-between'
-                      alignItems='center'
+                      spacing={1}
+                      useFlexGap
+                      flexWrap='wrap'
                     >
-                      <Typography variant='subtitle1' color='text.secondary'>
-                        {formatDate(request.submittedAt)}
-                      </Typography>
-                      {request.phoenixSubmissionId && (
-                        <Button
+                      {request.requestType.split(',').map((type) => (
+                        <Chip
+                          key={type.trim()}
+                          label={type.trim()}
                           size='small'
-                          variant='contained'
-                          onClick={() =>
-                            handleViewJobClick(request.phoenixSubmissionId!)
-                          }
-                          endIcon={<LaunchIcon />}
-                        >
-                          View Job
-                        </Button>
-                      )}
+                        />
+                      ))}
                     </Stack>
                   )}
                 </ListItem>
@@ -287,6 +332,20 @@ const ServiceRequestList: React.FC = () => {
               </React.Fragment>
             ))}
         </List>
+
+        {selectedPhoenixSubmissionId && (
+          <ServiceJobDetailModal
+            isOpen={isJobDetailModalOpen}
+            onClose={() => {
+              setIsJobDetailModalOpen(false);
+              setSelectedPhoenixSubmissionId(null); // Reset when closing
+            }}
+            phoenixSubmissionId={selectedPhoenixSubmissionId}
+          />
+        )}
+      </CardContent>
+
+      <CardActions sx={{ display: 'block', width: '100%' }}>
         <TablePagination
           rowsPerPageOptions={[5, 10, 25]}
           component='div'
@@ -300,20 +359,9 @@ const ServiceRequestList: React.FC = () => {
           }}
           sx={{ mt: 2, borderTop: `1px solid ${theme.palette.divider}` }}
         />
-      {selectedPhoenixSubmissionId && (
-        <ServiceJobDetailModal
-          isOpen={isJobDetailModalOpen}
-          onClose={() => {
-            setIsJobDetailModalOpen(false);
-            setSelectedPhoenixSubmissionId(null); // Reset when closing
-          }}
-          phoenixSubmissionId={selectedPhoenixSubmissionId}
-        />
-      )}
-          </CardContent>
-  </Card>
+      </CardActions>
+    </Card>
   );
 };
-
 
 export default ServiceRequestList;

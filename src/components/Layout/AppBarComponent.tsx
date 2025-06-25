@@ -5,8 +5,6 @@ import {
   Box,
   Avatar,
   IconButton,
-  Switch,
-  Stack,
   Drawer,
   List,
   ListItem,
@@ -15,10 +13,9 @@ import {
   ListItemText,
   Divider,
   Typography,
+  Stack,
   // Container,
 } from '@mui/material';
-import LightModeIcon from '@mui/icons-material/LightMode';
-import DarkModeIcon from '@mui/icons-material/DarkMode';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 // DashboardIcon will be dynamically used from NavItemConfig
 import LoginIcon from '@mui/icons-material/Login';
@@ -28,6 +25,7 @@ import MenuIcon from '@mui/icons-material/Menu';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import Notifications from '../Notifications/Notifications';
+import ThemeToggle from './ThemeToggle'; // Import the new component
 import { navigationItems } from '../../config/navigationConfig'; // Import new navigation config
 import type { UserRole } from '../../config/navigationConfig'; // TYPE-ONLY IMPORTS
 
@@ -210,36 +208,9 @@ const AppBarComponent: React.FC<AppBarComponentProps> = ({
         )}
 
         {/* Theme Toggle - pushed to bottom */}
-        <Box>
-          {' '}
-          {/* Wrapper for theme toggle to prevent it from being part of the List's click handler */}
-          <Divider />
-          <Stack
-            direction='row'
-            spacing={1} // Increased spacing a bit for better visual separation
-            alignItems='center'
-            justifyContent='center' // Center the toggle
-            sx={{ p: 2, mb: 4 }} // Add padding around the toggle
-          >
-            <LightModeIcon
-              sx={{
-                color: mode === 'light' ? 'primary.main' : 'action.disabled', // Use theme color
-                fontSize: '1.25rem',
-              }}
-            />
-            <Switch
-              checked={mode === 'dark'}
-              onChange={toggleColorMode}
-              color='primary' // Use primary color for switch
-              size='small'
-            />
-            <DarkModeIcon
-              sx={{
-                color: mode === 'dark' ? 'primary.main' : 'action.disabled', // Use theme color
-                fontSize: '1.25rem',
-              }}
-            />
-          </Stack>
+        <Box sx={{ p: 2, mb: 4 }}>
+          <Divider sx={{ mb: 2 }} />
+          <ThemeToggle toggleColorMode={toggleColorMode} mode={mode} />
         </Box>
       </Box>
     );
@@ -247,58 +218,57 @@ const AppBarComponent: React.FC<AppBarComponentProps> = ({
 
   return (
     <AppBar position='static'>
-      {/* <Container maxWidth='lg' disableGutters> */}
-        <Toolbar>
-          {/* Left Side: Drawer Toggle */}
-          <IconButton
-            color='inherit'
-            aria-label='open drawer'
-            edge='start'
-            onClick={toggleDrawer(true)}
-            sx={{ mr: 2 }}
-          >
-            <MenuIcon />
-          </IconButton>
+      <Toolbar>
+        {/* Drawer Toggle */}
+        <IconButton
+          color='inherit'
+          aria-label='open drawer'
+          edge='start'
+          onClick={toggleDrawer(true)}
+          sx={{ mr: 2 }}
+        >
+          <MenuIcon />
+        </IconButton>
 
-          {/* Center: App Logo/Title */}
-          <Box
+        {/* App Logo/Title */}
+        <Box
+          sx={{
+            flexGrow: 1,
+            display: 'flex',
+            alignItems: 'center',
+            cursor: 'pointer',
+          }}
+          onClick={() => navigate('/dashboard')}
+        >
+          <Avatar
+            src='/mcu-logo-small.png'
+            alt='App Logo'
+            sx={{ width: 40, height: 40, mr: 2 }}
+          />
+          <Typography
+            variant='h6'
+            component='span'
             sx={{
-              flexGrow: 1,
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center',
-              cursor: 'pointer',
+              display: { xs: 'none', sm: 'block' },
+              textDecoration: 'none',
+              color: 'inherit',
+              userSelect: 'none',
             }}
-            onClick={() => navigate('/dashboard')}
           >
-            <Avatar
-              src='/mcu-logo-small.png'
-              alt='App Logo'
-              sx={{ width: 40, height: 40, mr: 2 }}
-            />
-            <Typography
-              variant='h6'
-              component='span'
-              sx={{
-                textDecoration: 'none',
-                color: 'inherit',
-                userSelect: 'none',
-              }}
-            >
-              Property Manager Pro
-            </Typography>
-          </Box>
+            Property Manager Pro
+          </Typography>
+        </Box>
 
-          {/* Right Side: Notifications */}
-          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-            <Notifications />
-          </Box>
+        {/* Theme Toggle and Notifications */}
+        <Stack direction='row' spacing={2} alignItems='center'>
+          <ThemeToggle toggleColorMode={toggleColorMode} mode={mode} />
+          <Notifications />
+        </Stack>
 
-          <Drawer anchor='left' open={drawerOpen} onClose={toggleDrawer(false)}>
-            {drawerList()}
-          </Drawer>
-        </Toolbar>
-      {/* </Container> */}
+        <Drawer anchor='left' open={drawerOpen} onClose={toggleDrawer(false)}>
+          {drawerList()}
+        </Drawer>
+      </Toolbar>
     </AppBar>
   );
 };

@@ -18,6 +18,7 @@ import {
 import CloseIcon from '@mui/icons-material/Close';
 import {
   AddCircleOutline as AddCircleOutlineIcon,
+  ContactPhone,
   DeleteOutline as DeleteOutlineIcon,
   DirectionsCar as DirectionsCarIcon,
 } from '@mui/icons-material';
@@ -359,7 +360,15 @@ const EditResidentModal: React.FC<EditResidentModalProps> = ({
               </Alert>
             )}
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-              {' '}
+              <Stack
+                direction='row'
+                spacing={2}
+                alignItems='center'
+                sx={{ mt: 1 }}
+              >
+                <ContactPhone color='primary' />
+                <Typography variant='h6'>Contact Information</Typography>
+              </Stack>
               {/* Increased gap for main sections */}
               <Box
                 sx={{
@@ -380,13 +389,15 @@ const EditResidentModal: React.FC<EditResidentModalProps> = ({
                   sx={{ flex: 1 }}
                 />
                 <TextField
-                  label='Email (Read-only)'
+                  label='Email'
                   name='email'
                   value={residentData?.email || ''}
                   fullWidth
                   margin='dense'
                   disabled
-                  InputProps={{ readOnly: true }}
+                  slotProps={{
+                    input: { readOnly: true },
+                  }}
                   sx={{ flex: 1 }}
                 />
               </Box>
@@ -476,7 +487,6 @@ const EditResidentModal: React.FC<EditResidentModalProps> = ({
                   </Button>
                 )}
               </Box>
-              {formData.vehicles.length > 0 && <Divider sx={{ mb: 2 }} />}
               <Stack spacing={3}>
                 {formData.vehicles.map((vehicle, index) => (
                   <Box

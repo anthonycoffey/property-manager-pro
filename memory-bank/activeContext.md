@@ -31,6 +31,13 @@
 
 ## 2. Recent Changes & Activities (Newest First)
 
+- **Dynamic Card Headers & Conditional Layout (Completed 2025-06-25):**
+    - **Objective:** Update dashboard panels to show dynamic titles/icons and conditionally render layouts for specific routes.
+    - **Change:** Modified `src/components/Dashboard/PropertyManagerDashboardPanel.tsx`.
+    - **Details:**
+        - Implemented a dynamic `CardHeader` that displays the title and icon from `navigationConfig.ts` based on the current route.
+        - Added a conditional check to provide a full-screen view for the AI Assistant (`/dashboard/property-manager/ai-assistant`) by rendering its content outside the main `Card` wrapper, allowing it to take up the full content area. Other routes retain the card-based layout.
+
 - **Resident Testimonial Refactor (Completed 2025-06-15):**
     - **Objective:** Refactor the static testimonial section into a reusable, theme-aware slider component.
     - **Change:** Created `src/components/Resident/ResidentReviewSlider.tsx` and updated `src/components/Resident/ResidentDashboard.tsx`.

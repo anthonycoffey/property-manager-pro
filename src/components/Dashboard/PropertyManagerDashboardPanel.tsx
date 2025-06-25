@@ -1,7 +1,6 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
   Box,
-  Paper,
   Button,
   Alert,
   Dialog,
@@ -11,6 +10,9 @@ import {
   Container,
   Divider,
   Typography,
+  Card,
+  CardContent,
+  CardHeader,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import CloseIcon from '@mui/icons-material/Close';
@@ -23,6 +25,7 @@ import TestimonialCard from '../Marketing/TestimonialCard'; // For testimonial s
 import { PropertyManagerProvider } from '../../contexts/PropertyManagerContext';
 import { usePropertyManagerContext } from '../../hooks/usePropertyManagerContext'; // Corrected import path
 import { useAuth } from '../../hooks/useAuth';
+import { navigationItems } from '../../config/navigationConfig';
 import PropertyManagerQuickNav from './PropertyManager/PropertyManagerQuickNav';
 
 interface PropertyManagerDashboardPanelProps {
@@ -36,6 +39,13 @@ const PropertyManagerDashboardContent: React.FC<
     usePropertyManagerContext();
   const location = useLocation();
   const { pathname } = location;
+
+  // Find the current navigation item based on the path
+  const currentNavItem = useMemo(
+    () => navigationItems.find((item) => item.path === pathname),
+    [pathname]
+  );
+
   const aiAssistancePath = '/dashboard/property-manager/ai-assistant';
 
   const [isCreatePropertyModalOpen, setIsCreatePropertyModalOpen] =
@@ -70,10 +80,34 @@ const PropertyManagerDashboardContent: React.FC<
     );
   }
 
+  // AI Assistant gets a full-screen view without the card wrapper
+  if (pathname === aiAssistancePath) {
+    return <Outlet />;
+  }
+
   return (
     <>
-      <Paper elevation={3} sx={{ p: { xs: 1, sm: 2, lg: 3 } }}>
-        {pathname !== aiAssistancePath && (
+      <Card>
+        {currentNavItem && (
+          <CardHeader
+            avatar={
+              <currentNavItem.icon
+                color='primary'
+                sx={{
+                  width: { xs: 28, md: 32 },
+                  height: { xs: 28, md: 32 },
+                }}
+              />
+            }
+            title={
+              <Typography variant='h5' component='div'>
+                {currentNavItem.text}
+              </Typography>
+            }
+            sx={{ pb: 0, pt: 3 }}
+          />
+        )}
+        <CardContent>
           <>
             <Box
               sx={{
@@ -102,25 +136,23 @@ const PropertyManagerDashboardContent: React.FC<
               label='Select Property to Manage'
             />
           </>
-        )}
 
-        <Box sx={{ mt: 1 }}>
-          {pathname === aiAssistancePath ? (
-            <Outlet /> // Always render Outlet for AI assistance route
-          ) : selectedPropertyId ? (
-            <Outlet /> // For other routes, render Outlet only if a property is selected
-          ) : (
-            <Alert severity='info' sx={{ mt: 2 }}>
-              Please select a property from the dropdown to see more options.
-            </Alert>
-          )}
-        </Box>
-      </Paper>
+          <Box sx={{ mt: 1 }}>
+            {selectedPropertyId ? (
+              <Outlet /> // For other routes, render Outlet only if a property is selected
+            ) : (
+              <Alert severity='info' sx={{ mt: 2 }}>
+                Please select a property from the dropdown to see more options.
+              </Alert>
+            )}
+          </Box>
+        </CardContent>
+      </Card>
 
       {/* Testimonial Section - Added back */}
       {pathname !== aiAssistancePath && ( // Only show if org context is available
         <>
-          <Divider sx={{ mt: 6 }} />
+          <Divider sx={{ mt: 8 }} />
           <Box
             sx={{
               my: 6,
@@ -139,8 +171,7 @@ const PropertyManagerDashboardContent: React.FC<
               sx={{
                 display: 'flex',
                 flexDirection: { xs: 'column', md: 'row' },
-                alignItems: { xs: 'stretch', md: 'flex-start' },
-                gap: { xs: 2, md: 4 },
+                alignItems: { xs: 'center' },
                 width: '100%',
                 justifyContent: 'center',
               }}
@@ -150,11 +181,6 @@ const PropertyManagerDashboardContent: React.FC<
                 author='Amanda Martin'
                 authorRole='Property Manager'
               />
-              {/* <TestimonialCard
-                quote='The best service we have ever had. The team is professional, courteous, and always on time. Highly recommended!'
-                author='John Smith'
-                authorRole='Property Manager'
-              /> */}
             </Box>
           </Box>
         </>

@@ -19,7 +19,7 @@ const residentNavItems = navigationItems.filter(
 const ResidentQuickNav: React.FC = () => {
   return (
     <>
-      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 4 }}>
+      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 3 }}>
         {residentNavItems.map((item: NavItemConfig) => (
           <Box
             key={item.text}

@@ -2,6 +2,7 @@ import React from 'react';
 import { Outlet } from 'react-router-dom';
 import { Box, CssBaseline, Container } from '@mui/material';
 import Footer from './Footer';
+import BreadcrumbsComponent from './BreadcrumbsComponent';
 
 const MainLayout: React.FC = () => {
   return (
@@ -15,6 +16,7 @@ const MainLayout: React.FC = () => {
           mb: 4,
         }}
       >
+        <BreadcrumbsComponent />
         <Outlet />
       </Container>
       <Footer />

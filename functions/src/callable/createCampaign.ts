@@ -45,7 +45,13 @@ const KNOWN_FIELDS_CONFIG: FieldConfig[] = [
   },
   {
     canonicalName: 'displayName',
-    expectedCsvHeaders: ['displayname', 'display_name', 'name', 'fullname', 'full_name'],
+    expectedCsvHeaders: [
+      'displayname',
+      'display_name',
+      'name',
+      'fullname',
+      'full_name',
+    ],
   },
   {
     canonicalName: 'unitNumber',
@@ -92,30 +98,13 @@ export const createCampaign = v1Https.onCall(
     // context.auth is now guaranteed to be defined
     const { uid: authUid, token: authToken } = context.auth;
 
-    // Determine appDomain (frontendAppBaseUrl) once for constructing links
-    let appDomain: string;
-    if (process.env.FUNCTIONS_EMULATOR === 'true') {
-      const configuredDomain = functions.config().app?.domain;
-      if (configuredDomain) {
-        if (configuredDomain.toLowerCase() === "localhost") {
-          appDomain = 'http://localhost:5173'; // Default Vite dev server port
-        } else {
-          appDomain = configuredDomain.startsWith('http') ? configuredDomain : `http://${configuredDomain}`;
-        }
-      } else {
-        appDomain = 'http://localhost:5173'; // Default emulator frontend
-      }
-    } else {
-      const prodDomain = functions.config().app?.domain;
-      if (!prodDomain) {
-        functions.logger.error(
-          "CRITICAL: functions.config().app.domain is not set for production environment! Public campaign links and invitation emails will use hardcoded fallback. This MUST be configured."
-        );
-        appDomain = 'https://phoenix-property-manager-pro.web.app'; // Default production frontend
-      } else {
-        appDomain = prodDomain.startsWith('http') ? prodDomain : `https://${prodDomain}`;
-      }
-    }
+    const LOCAL_DOMAIN = 'http://localhost:5173';
+    const PRODUCTION_DOMAIN = 'https://amenities.24hrcarunlocking.com';
+
+    // Determine APP_DOMAIN (frontendAppBaseUrl) based on environment
+    const APP_DOMAIN = process.env.FUNCTIONS_EMULATOR === 'true' 
+      ? LOCAL_DOMAIN 
+      : PRODUCTION_DOMAIN;
 
     // Validate roles - Admin, Organization Manager, Property Manager
     const roles = authToken.roles as string[] | undefined; // Roles from custom claims
@@ -233,13 +222,12 @@ export const createCampaign = v1Https.onCall(
       id: campaignRef.id, // Add the document ID here
     };
 
-
     let accessUrl: string | undefined = undefined;
 
     // Type-specific setup
     if (campaignParams.campaignType === 'public_link') {
-      // The accessUrl points to the new frontend handler page, using the already determined appDomain
-      accessUrl = `${appDomain}/join-public-campaign?campaign=${campaignRef.id}`;
+      // The accessUrl points to the new frontend handler page, using the already determined APP_DOMAIN
+      accessUrl = `${APP_DOMAIN}/join-public-campaign?campaign=${campaignRef.id}`;
       newCampaignData.accessUrl = accessUrl;
     } else if (campaignParams.campaignType === 'csv_import') {
       // Use campaignParams
@@ -283,30 +271,48 @@ export const createCampaign = v1Https.onCall(
           .doc(campaignParams.propertyId)
           .get();
         if (propertyDoc.exists) {
-          propertyNameForEmail = propertyDoc.data()?.name || propertyNameForEmail;
+          propertyNameForEmail =
+            propertyDoc.data()?.name || propertyNameForEmail;
         } else {
-          functions.logger.warn(`Property ${campaignParams.propertyId} not found for campaign ${campaignRef.id}. Using fallback name for email.`);
+          functions.logger.warn(
+            `Property ${campaignParams.propertyId} not found for campaign ${campaignRef.id}. Using fallback name for email.`
+          );
         }
 
         // Fetch Inviter's Name
         // Ensure userOrganizationId is available for Property Manager role check
-        const currentPMUserOrgId = isPropertyManager ? userOrganizationId : null;
+        const currentPMUserOrgId = isPropertyManager
+          ? userOrganizationId
+          : null;
 
         let inviterProfileDoc;
         if (isAdmin || isOrganizationManager) {
           inviterProfileDoc = await db.collection('admins').doc(authUid).get();
-        } else if (isPropertyManager && currentPMUserOrgId) { // Check currentPMUserOrgId
-          inviterProfileDoc = await db.collection('organizations').doc(currentPMUserOrgId).collection('users').doc(authUid).get();
+        } else if (isPropertyManager && currentPMUserOrgId) {
+          // Check currentPMUserOrgId
+          inviterProfileDoc = await db
+            .collection('organizations')
+            .doc(currentPMUserOrgId)
+            .collection('users')
+            .doc(authUid)
+            .get();
         }
-
 
         if (inviterProfileDoc?.exists) {
-          inviterNameForEmail = inviterProfileDoc.data()?.displayName || inviterProfileDoc.data()?.name || inviterNameForEmail;
+          inviterNameForEmail =
+            inviterProfileDoc.data()?.displayName ||
+            inviterProfileDoc.data()?.name ||
+            inviterNameForEmail;
         } else {
-          functions.logger.warn(`Inviter profile ${authUid} not found (or org ID missing for PM). Using fallback name for email.`);
+          functions.logger.warn(
+            `Inviter profile ${authUid} not found (or org ID missing for PM). Using fallback name for email.`
+          );
         }
       } catch (fetchError) {
-        functions.logger.error(`Error fetching property/inviter details for campaign ${campaignRef.id} emails:`, fetchError);
+        functions.logger.error(
+          `Error fetching property/inviter details for campaign ${campaignRef.id} emails:`,
+          fetchError
+        );
         // Proceeding with fallback names.
       }
       // --- End Pre-Loop Data Fetching for Email Template ---
@@ -330,7 +336,7 @@ export const createCampaign = v1Https.onCall(
           // Get all headers from the current raw record
           const originalCsvHeaders = Object.keys(rawRecord);
           const remainingNormalizedHeaders: { [key: string]: string } = {};
-          originalCsvHeaders.forEach(header => {
+          originalCsvHeaders.forEach((header) => {
             remainingNormalizedHeaders[normalizeHeader(header)] = header;
           });
 
@@ -344,9 +350,14 @@ export const createCampaign = v1Https.onCall(
             for (const expectedNormalizedHeader of fieldConfig.expectedCsvHeaders) {
               if (
                 remainingNormalizedHeaders[expectedNormalizedHeader] &&
-                rawRecord[remainingNormalizedHeaders[expectedNormalizedHeader]] !== undefined
+                rawRecord[
+                  remainingNormalizedHeaders[expectedNormalizedHeader]
+                ] !== undefined
               ) {
-                foundValue = rawRecord[remainingNormalizedHeaders[expectedNormalizedHeader]]?.trim() || null;
+                foundValue =
+                  rawRecord[
+                    remainingNormalizedHeaders[expectedNormalizedHeader]
+                  ]?.trim() || null;
                 matchedNormalizedHeaderKey = expectedNormalizedHeader;
                 break;
               }
@@ -373,18 +384,24 @@ export const createCampaign = v1Https.onCall(
 
           // Check for email specifically after attempting to map it via KNOWN_FIELDS_CONFIG
           const emailValue = processedData['email'];
-          if (!emailValue || typeof emailValue !== 'string' || emailValue.trim() === '') {
+          if (
+            !emailValue ||
+            typeof emailValue !== 'string' ||
+            emailValue.trim() === ''
+          ) {
             functions.logger.warn(
               `Skipping record due to missing or invalid email after mapping for campaign ${campaignRef.id}:`,
               rawRecord
             );
             continue;
           }
-          
+
           // Populate additionalCsvData with remaining columns
           for (const normalizedHeaderKey in remainingNormalizedHeaders) {
-            const originalHeader = remainingNormalizedHeaders[normalizedHeaderKey];
-            additionalCsvData[originalHeader] = rawRecord[originalHeader]?.trim() || null;
+            const originalHeader =
+              remainingNormalizedHeaders[normalizedHeaderKey];
+            additionalCsvData[originalHeader] =
+              rawRecord[originalHeader]?.trim() || null;
           }
 
           const invitationToken = crypto.randomUUID();
@@ -396,7 +413,8 @@ export const createCampaign = v1Https.onCall(
 
           const invitationData = {
             email: emailValue.trim(), // Already validated
-            displayName: (processedData['displayName'] as string)?.trim() || null,
+            displayName:
+              (processedData['displayName'] as string)?.trim() || null,
             unitNumber: (processedData['unitNumber'] as string)?.trim() || null,
             rolesToAssign: campaignParams.rolesToAssign,
             organizationId: campaignParams.organizationId, // Keep for direct reference if needed
@@ -407,26 +425,31 @@ export const createCampaign = v1Https.onCall(
             createdAt: FieldValue.serverTimestamp(),
             expiresAt: newCampaignData.expiresAt,
             campaignId: campaignRef.id,
-            additionalCsvData: Object.keys(additionalCsvData).length > 0 ? additionalCsvData : null, // Add if not empty
+            additionalCsvData:
+              Object.keys(additionalCsvData).length > 0
+                ? additionalCsvData
+                : null, // Add if not empty
           };
           batch.set(invitationRef, invitationData);
 
           // --- Add Mail Document to Batch for this resident ---
-          const invitationLink = `${appDomain}/accept-invitation?token=${invitationToken}&orgId=${campaignParams.organizationId}`;
-          const inviteeName = (processedData['displayName'] as string)?.trim() || emailValue.trim(); // Fallback to email if displayName is not present
+          const invitationLink = `${APP_DOMAIN}/accept-invitation?token=${invitationToken}&orgId=${campaignParams.organizationId}`;
+          const inviteeName =
+            (processedData['displayName'] as string)?.trim() ||
+            emailValue.trim(); // Fallback to email if displayName is not present
 
           const mailDocRef = db.collection('mail').doc(); // Auto-generate ID for mail document
           const mailData = {
             to: [emailValue.trim()],
             template: {
-              name: "residentInvitation", // Name of the template in Firestore /templates collection
+              name: 'residentInvitation', // Name of the template in Firestore /templates collection
               data: {
                 appName: appNameForEmail,
                 propertyName: propertyNameForEmail,
                 inviteeName: inviteeName,
                 inviterName: inviterNameForEmail,
                 invitationLink: invitationLink,
-              }
+              },
             },
             // Optional: Add audit fields for the mail document itself
             // createdBy: authUid,
@@ -441,7 +464,9 @@ export const createCampaign = v1Https.onCall(
         if (invitedCount > 0) {
           await batch.commit();
         } else {
-          functions.logger.info(`No valid records found to process for campaign ${campaignRef.id}.`);
+          functions.logger.info(
+            `No valid records found to process for campaign ${campaignRef.id}.`
+          );
         }
         functions.logger.info(
           `Processed ${invitedCount} invitations for campaign ${campaignRef.id}.`

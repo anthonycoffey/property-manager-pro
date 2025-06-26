@@ -12,8 +12,6 @@ const MainLayout: React.FC = () => {
         component='main'
         sx={{
           flexGrow: 1,
-          mt: 4,
-          mb: 4,
         }}
       >
         <BreadcrumbsComponent />

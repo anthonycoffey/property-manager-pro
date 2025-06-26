@@ -301,15 +301,13 @@ export const createInvitation = onCall(async (request) => {
     await db.doc(invitationPath).set(invitationData);
     console.log(`Invitation created at ${invitationPath} for ${inviteeEmail}`);
 
-    const projectId =
-      process.env.GCLOUD_PROJECT || 'phoenix-property-manager-pro';
-    let appDomain = `${projectId}.firebaseapp.com`;
-    let protocol = 'https';
-
-    if (process.env.FUNCTIONS_EMULATOR === 'true') {
-      appDomain = 'localhost:5173';
-      protocol = 'http';
-    }
+    // Use the new paradigm for APP_DOMAIN
+    const LOCAL_DOMAIN = 'http://localhost:5173';
+    const PRODUCTION_DOMAIN = 'https://amenities.24hrcarunlocking.com';
+    const APP_DOMAIN =
+      process.env.FUNCTIONS_EMULATOR === 'true'
+        ? LOCAL_DOMAIN
+        : PRODUCTION_DOMAIN;
 
     const appName = 'Property Manager Pro';
     let emailTemplateName = '';
@@ -319,9 +317,9 @@ export const createInvitation = onCall(async (request) => {
     const renderedSubject = `Invitation to Manage Organization on ${appName}`;
 
     if (rolesToAssign.includes('organization_manager')) {
-      invitationLink = `${protocol}://${appDomain}/accept-org-manager-invitation?token=${invitationToken}`;
+      invitationLink = `${APP_DOMAIN}/accept-org-manager-invitation?token=${invitationToken}`;
     } else {
-      invitationLink = `${protocol}://${appDomain}/accept-invitation?token=${invitationToken}`;
+      invitationLink = `${APP_DOMAIN}/accept-invitation?token=${invitationToken}`;
       if (singleOrgIdForInvite) {
         invitationLink += `&orgId=${singleOrgIdForInvite}`;
       }

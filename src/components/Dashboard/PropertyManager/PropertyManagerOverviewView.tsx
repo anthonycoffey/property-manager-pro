@@ -14,6 +14,7 @@ import HomeWorkIcon from '@mui/icons-material/HomeWork';
 import CrisisAlertIcon from '@mui/icons-material/CrisisAlert';
 import LocalShippingIcon from '@mui/icons-material/LocalShipping';
 import AvTimerIcon from '@mui/icons-material/AvTimer';
+import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
 
 import { useAuth } from '../../../hooks/useAuth';
 
@@ -36,6 +37,7 @@ interface PropertyManagerDashboardStatsData {
     totalResidents: number;
     totalUnits: number;
     occupancyRate: number;
+    totalVehicles: number;
   };
   campaignPerformance?: PropertyCampaignPerformanceData[];
 }
@@ -278,7 +280,7 @@ const PropertyManagerOverviewView: React.FC = () => {
             sx={{ flex: 1 }}
           />
           <KpiCard
-            title='Occupancy Rate'
+            title='Residents Onboarded'
             value={
               dashboardLoading
                 ? '...'
@@ -299,6 +301,17 @@ const PropertyManagerOverviewView: React.FC = () => {
             }
             isLoading={dashboardLoading}
             icon={<HomeWorkIcon />}
+            sx={{ flex: 1 }}
+          />
+          <KpiCard
+            title='Registered Vehicles'
+            value={
+              dashboardLoading
+                ? '...'
+                : dashboardStats?.propertyCounts?.totalVehicles ?? 'N/A'
+            }
+            isLoading={dashboardLoading}
+            icon={<DirectionsCarIcon />}
             sx={{ flex: 1 }}
           />
         </Stack>

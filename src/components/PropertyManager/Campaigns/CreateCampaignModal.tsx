@@ -327,20 +327,32 @@ const CreateCampaignModal: React.FC<CreateCampaignModalProps> = ({
           </FormControl>
 
           {campaignType === 'csv_import' && (
-            <TextField
-              margin="dense"
-              id="csvFile"
-              // label="CSV File" // Label provided by browser
-              type="file"
-              fullWidth
-              variant="outlined"
-              // InputLabelProps={{ shrink: true }}
-              onChange={handleFileChange}
-              inputProps={{ accept: '.csv, text/csv' }}
-              required
-              disabled={isLoading || !!successMessage}
-              helperText={csvFile ? `Selected: ${csvFile.name}` : "Select a .csv file"}
-            />
+            <Box>
+              <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                <Button
+                  component="a"
+                  href="/resident_invitation_template.csv"
+                  download="resident_invitation_template.csv"
+                  startIcon={<DownloadIcon />}
+                  size="small"
+                  sx={{ mb: 1, textTransform: 'none' }}
+                >
+                  Download CSV Template
+                </Button>
+              </Box>
+              <TextField
+                margin="dense"
+                id="csvFile"
+                type="file"
+                fullWidth
+                variant="outlined"
+                onChange={handleFileChange}
+                inputProps={{ accept: '.csv, text/csv' }}
+                required
+                disabled={isLoading || !!successMessage}
+                helperText={csvFile ? `Selected: ${csvFile.name}` : 'Select a .csv file'}
+              />
+            </Box>
           )}
 
           <TextField

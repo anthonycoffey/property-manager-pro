@@ -15,8 +15,8 @@ const Footer: React.FC = () => {
     <Box
       component='footer'
       sx={{
-        py: 4,
-        px: 2,
+        py: 8,
+        px: { xs: 1, md: 2 },
         mt: 'auto',
         backgroundColor: theme.palette.primary.dark,
         color: theme.palette.primary.contrastText,
@@ -55,32 +55,41 @@ const Footer: React.FC = () => {
 
           {/* Social Proof Images Section */}
           <Stack
-            direction={{ xs: 'column', sm: 'row' }}
-            spacing={{ xs: 2, sm: 4, md: 8 }}
-            alignItems={{ xs: 'center', sm: 'flex-end' }}
-            justifyContent='center'
-            height='100%'
+            direction='row'
+            spacing={{ xs: 2, sm: 4, md: 10 }}
+            alignItems='flex-end'
+            justifyContent={{ xs: 'center', sm: 'flex-end' }}
+            sx={{
+              width: { xs: '100%', sm: 'auto' },
+              mt: { xs: 3, sm: 0 },
+              mb: { xs: 2, sm: 0 },
+              flexWrap: 'wrap',
+            }}
           >
-            <Box
-              component='img'
-              src='/review1.png'
-              alt='Social proof review 1'
-              sx={{
-                width: '100%',
-                maxWidth: '150px',
-                height: 'auto',
-                borderRadius: 1,
-              }}
-            />
             <Box
               component='img'
               src='/review2.png'
               alt='Social proof review 2'
               sx={{
                 width: '100%',
-                maxWidth: '150px',
+                maxWidth: { xs: 80, sm: 120, md: 150 },
                 height: 'auto',
                 borderRadius: 1,
+                mb: 0,
+                mx: { xs: 'auto', sm: 0 },
+              }}
+            />
+            <Box
+              component='img'
+              src='/review1.png'
+              alt='Social proof review 1'
+              sx={{
+                width: '100%',
+                maxWidth: { xs: 80, sm: 120, md: 150 },
+                height: 'auto',
+                borderRadius: 1,
+                mb: 0,
+                mx: { xs: 'auto', sm: 0 },
               }}
             />
             <Box
@@ -89,16 +98,28 @@ const Footer: React.FC = () => {
               alt='Social proof review 3'
               sx={{
                 width: '100%',
-                maxWidth: '150px',
+                maxWidth: { xs: 80, sm: 120, md: 150 },
                 height: 'auto',
                 borderRadius: 1,
+                mx: { xs: 'auto', sm: 0 },
               }}
             />
           </Stack>
         </Stack>
-        <Typography variant='body2' sx={{ pt: 4, textAlign: { xs: 'center' } }}>
-          © {new Date().getFullYear()} Property Manager Pro. All rights
-          reserved.
+        <Typography
+        component={'div'}
+          variant='body2'
+          sx={{ pt: 4, textAlign: { xs: 'center' } }}
+        >
+          © {new Date().getFullYear()} All rights
+          reserved.  24HR Car Unlocking Emergency Roadside Services
+        </Typography>        
+        <Typography
+        component={'div'}
+          variant='body2'
+          sx={{  textAlign: { xs: 'center' } }}
+        >
+          Locksmith License #: B26277801
         </Typography>
       </Container>
     </Box>

@@ -57,8 +57,9 @@ const Footer: React.FC = () => {
           <Stack
             direction={{ xs: 'column', sm: 'row' }}
             spacing={{ xs: 2, sm: 4, md: 8 }}
-            alignItems='center'
+            alignItems={{ xs: 'center', sm: 'flex-end' }}
             justifyContent='center'
+            height='100%'
           >
             <Box
               component='img'

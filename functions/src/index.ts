@@ -128,5 +128,9 @@ export const getPropertyManagerPhoenixStats = getPropertyManagerPhoenixStatsFunc
 import { cleanupProcessedCampaignCSVs as cleanupProcessedCampaignCSVsFunction } from './scheduled/cleanupProcessedCampaignCSVs.js';
 export const cleanupProcessedCampaignCSVs = cleanupProcessedCampaignCSVsFunction;
 
+// Webhooks
+import { updateServiceJobStatus as updateServiceJobStatusFunction } from './webhooks/updateServiceJobStatus.js';
+export const updateServiceJobStatus = updateServiceJobStatusFunction;
+
 // Note: The firebaseAdmin.ts and handleHttpsError.ts are not directly exported
 // as they are internal modules used by the functions themselves.

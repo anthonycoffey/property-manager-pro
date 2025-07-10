@@ -170,6 +170,12 @@ service cloud.firestore {
       allow read: if isOrgUser(organizationId) && (isPropertyManager() /* || isPropertyStaff() */);
 
 
+      // Subcollection: googleAuth
+      match /googleAuth/{userId} {
+        // Allow a property manager to read their own google auth document
+        allow read: if isPropertyManager() && isOrgUser(organizationId) && request.auth.uid == userId;
+      }
+
       // Subcollection: users (Property Managers, Staff, Organization Managers if profile stored here)
       match /users/{orgUserId} {
         // Admins can manage all organization users

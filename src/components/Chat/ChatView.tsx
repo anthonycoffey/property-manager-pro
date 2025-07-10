@@ -88,7 +88,7 @@ const ChatView: React.FC = () => {
         useFineTuned: true,
       });
 
-      const responseData = result.data;
+      const responseData = result.data as GptChatResponseData;
       const assistantMessage: ChatMessage = {
         id: 'assistant-' + Date.now(),
         role: 'assistant',
@@ -96,6 +96,17 @@ const ChatView: React.FC = () => {
         timestamp: new Date(),
       };
       setMessages((prevMessages) => [...prevMessages, assistantMessage]);
+
+      if (responseData.tool_call?.name === 'create_service_request') {
+        // Optionally, you could add another system message to confirm the action
+        const confirmationMessage: ChatMessage = {
+          id: 'system-confirmation-' + Date.now(),
+          role: 'system_notification',
+          content: `Service request ${responseData.serviceRequestResult?.serviceRequestId} has been created.`,
+          timestamp: new Date(),
+        };
+        setMessages((prevMessages) => [...prevMessages, confirmationMessage]);
+      }
     } catch (err: unknown) {
       console.error('Error calling getGptChatResponse:', err);
       let friendlyErrorMessage =

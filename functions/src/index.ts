@@ -132,5 +132,16 @@ export const cleanupProcessedCampaignCSVs = cleanupProcessedCampaignCSVsFunction
 import { updateServiceJobStatus as updateServiceJobStatusFunction } from './webhooks/updateServiceJobStatus.js';
 export const updateServiceJobStatus = updateServiceJobStatusFunction;
 
+// Google Auth Functions
+import {
+  initiateGoogleOAuth as initiateGoogleOAuthFunction,
+  handleGoogleOAuthCallback as handleGoogleOAuthCallbackFunction,
+  disconnectGoogleAccount as disconnectGoogleAccountFunction,
+} from './callable/googleAuth.js';
+
+export const initiateGoogleOAuth = initiateGoogleOAuthFunction;
+export const handleGoogleOAuthCallback = handleGoogleOAuthCallbackFunction;
+export const disconnectGoogleAccount = disconnectGoogleAccountFunction;
+
 // Note: The firebaseAdmin.ts and handleHttpsError.ts are not directly exported
 // as they are internal modules used by the functions themselves.

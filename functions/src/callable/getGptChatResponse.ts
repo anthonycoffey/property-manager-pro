@@ -2,11 +2,21 @@ import 'dotenv/config'; // Load environment variables from .env files
 import functions from 'firebase-functions'; // Changed from * as functions
 import { CallableContext } from 'firebase-functions/v1/https'; // Explicit v1 import
 import fetch from 'node-fetch'; // Standard import for node-fetch v3+ with nodenext
+import { _createServiceRequestLogic } from './createServiceRequest.js';
+import { inspect } from 'util';
 
 // Define interfaces based on our plan and Phoenix API response
 interface ChatMessage {
   role: 'system' | 'user' | 'assistant';
-  content: string;
+  content: string | null;
+  tool_calls?: {
+    id: string;
+    type: 'function';
+    function: {
+      name: string;
+      arguments: string;
+    };
+  }[];
 }
 
 interface RequestData {
@@ -190,6 +200,8 @@ async function fetchServicesPricingFromPhoenix(debugMode = false, envPhoenixApiU
 // @ts-expect-error TODO: Resolve CallableContext type mismatch if it causes runtime issues. Linter seems to misinterpret v1 CallableContext with current setup.
 export const getGptChatResponse = functions.https.onCall(async (data: any, context: CallableContext) => {
   // Log available configurations
+  console.log("CF: Full data object received:", inspect(data, { depth: 2 }));
+  const auth = data.auth || context.auth;
   console.log("CF: Attempting to log process.env relevant keys.");
   console.log("CF: process.env.OPENAI_API_KEY exists:", !!process.env.OPENAI_API_KEY);
   console.log("CF: process.env.PHOENIX_API_URL exists:", !!process.env.PHOENIX_API_URL);
@@ -244,28 +256,26 @@ export const getGptChatResponse = functions.https.onCall(async (data: any, conte
     console.log("CF: Fetched services pricing string length:", servicesPricing.length);
     if (isDebug) console.log('CF_DEBUG: Fetched services pricing for prompt content:', servicesPricing);
 
-    const systemPromptContent = `You are RescueBot, a friendly and helpful virtual assistant for Rescue Rob's Roadside Services.
+    const systemPromptContent = `You are RescueBot, a friendly and efficient virtual assistant for Rescue Rob's Roadside Services. Your primary goal is to collect all necessary information from the user to create a service request.
 
+Your process is as follows:
+1. Greet the user and ask how you can help.
+2. Identify the service(s) the user needs from the list below.
+3. Collect the user's full name, contact phone number, and full service location address.
+4. Ask for the user's vehicle information (year, make, model, color).
+5. Ask for a preferred service date and time.
+6. Ask for consent to receive SMS messages regarding the service request.
+7. Once you have gathered ALL of the required information, you MUST call the 'create_service_request' function to submit the request.
+8. Do not ask for information you have already received in the conversation. Review the conversation history to see what has already been provided.
+9. Be conversational and helpful, but stay focused on the goal of creating the service request.
 
-PRICING INFORMATION:
-When asked about pricing, be transparent and use ONLY the following official pricing information:
+AVAILABLE SERVICES & PRICING:
 ${servicesPricing}
 
-IMPORTANT PRICING GUIDELINES:
-- Always provide the full price range when discussing services
-- Explain what factors affect the final price (vehicle type, key complexity, etc.)
-- Never quote a single fixed price unless it's specifically a flat rate service
-- If asked about services not listed above, say you need to check with a service coordinator
-- Format all pricing information consistently as shown above
-
-Important: When extracting information, be precise and consistent. Format phone numbers as (xxx) xxx-xxxx. 
-Always get as complete address information as possible, including city, state and zip code. 
-When identifying services, match them exactly to our service catalog including the service ID.
-
-Make sure to clearly distinguish between different service types and match them to these exact options:
+SERVICE LIST FOR FUNCTION CALLING (use the ID and the full service name):
 - Automotive Unlocking (ID: 1)
 - Dead Battery Jump Start (ID: 3)
-- Flat Tire Changing (ID: 4)  
+- Flat Tire Changing (ID: 4)
 - Battery, Starter & Alt Test (ID: 5)
 - Vehicle Battery Replacement (ID: 6)
 - Towing (ID: 11)
@@ -278,8 +288,7 @@ Make sure to clearly distinguish between different service types and match them 
 - Tire Repair (ID: 27)
 - Tire Replacement (ID: 32)
 - Other (ID: 35)
-
-Keep responses brief but helpful. Stay focused on helping the user quickly get the service they need.`;
+`;
 
     const systemMessage: ChatMessage = { role: 'system', content: systemPromptContent };
     const completeMessages: ChatMessage[] = messages[0]?.role === 'system' ? messages : [systemMessage, ...messages];
@@ -288,7 +297,57 @@ Keep responses brief but helpful. Stay focused on helping the user quickly get t
     console.log('CF: Using OpenAI model:', modelId);
     if (isDebug) console.log('CF_DEBUG: System prompt content length:', systemPromptContent.length);
 
-    console.log("CF: 'completeMessages' to be sent to OpenAI (summary):", JSON.stringify(completeMessages.map(m => ({role: m.role, content: m.content.substring(0,70) + "..."})), null, 2)); // Log snippet
+    const tools = [
+      {
+        type: 'function',
+        function: {
+          name: 'create_service_request',
+          description: 'Creates a service request in the system once all information has been collected.',
+          parameters: {
+            type: 'object',
+            properties: {
+              residentNotes: { type: 'string', description: 'Any additional notes or details from the resident.' },
+              serviceDateTime: { type: 'string', description: 'The requested date and time for the service in ISO 8601 format.' },
+              phone: { type: 'string', description: 'The resident\'s contact phone number.' },
+              smsConsent: { type: 'boolean', description: 'Whether the resident consents to receive SMS messages.' },
+              serviceLocationAddress: {
+                type: 'object',
+                description: 'The full address for the service location.',
+                properties: {
+                  address_1: { type: 'string' },
+                  city: { type: 'string' },
+                  state: { type: 'string' },
+                  country: { type: 'string' },
+                  zipcode: { type: 'string' },
+                  fullAddress: { type: 'string' },
+                },
+                required: ['fullAddress'],
+              },
+              serviceTypes: {
+                type: 'array',
+                description: 'An array of services requested.',
+                items: {
+                  type: 'object',
+                  properties: {
+                    id: { type: 'number', description: 'The ID of the service.' },
+                    value: { type: 'string', description: 'The name of the service.' },
+                  },
+                  required: ['id', 'value'],
+                },
+              },
+              isOffPremiseRequest: { type: 'boolean', description: 'Whether the service is at the resident\'s property or another location.' },
+              car_year: { type: 'number', description: 'The year of the vehicle.' },
+              car_make: { type: 'string', description: 'The make of the vehicle.' },
+              car_model: { type: 'string', description: 'The model of the vehicle.' },
+              car_color: { type: 'string', description: 'The color of the vehicle.' },
+            },
+            required: ['serviceDateTime', 'phone', 'smsConsent', 'serviceLocationAddress', 'serviceTypes'],
+          },
+        },
+      },
+    ];
+
+    console.log("CF: 'completeMessages' to be sent to OpenAI (summary):", JSON.stringify(completeMessages.map(m => ({role: m.role, content: (m.content || "").substring(0,70) + "..."})), null, 2)); // Log snippet
     if (isDebug) {
       console.log('CF_DEBUG: Full "completeMessages" to OpenAI:', JSON.stringify(completeMessages, null, 2)); // Corrected string concatenation
     }
@@ -304,6 +363,8 @@ Keep responses brief but helpful. Stay focused on helping the user quickly get t
         messages: completeMessages,
         max_tokens: maxTokens,
         temperature: 0.7,
+        tools: tools,
+        tool_choice: 'auto',
       }),
     });
 
@@ -319,16 +380,65 @@ Keep responses brief but helpful. Stay focused on helping the user quickly get t
     const responseData = await openaiResponse.json() as OpenAIChatCompletionResponse;
     if (isDebug) console.log('DEBUG MODE - Full OpenAI response:', JSON.stringify(responseData, null, 2));
 
-    if (!responseData.choices || responseData.choices.length === 0 || !responseData.choices[0].message || !responseData.choices[0].message.content) {
-        console.error('Invalid response structure from OpenAI or empty message content:', responseData);
-        throw new functions.https.HttpsError('internal', 'Received an invalid or empty response from the AI service.');
+    const responseChoice = responseData.choices?.[0];
+
+    if (!responseChoice) {
+        console.error('Invalid response structure from OpenAI: No choices returned.', responseData);
+        throw new functions.https.HttpsError('internal', 'Received an invalid response from the AI service.');
+    }
+
+    const { message } = responseChoice;
+
+    // Check for tool calls
+    if (message.tool_calls && message.tool_calls.length > 0) {
+      const toolCall = message.tool_calls[0];
+      if (toolCall.function.name === 'create_service_request') {
+        const serviceRequestArgs = JSON.parse(toolCall.function.arguments);
+        
+        console.log('CF: AI is attempting to call create_service_request with args:', serviceRequestArgs);
+
+        if (!auth) {
+          throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated to create a service request.');
+        }
+
+        const { organizationId, propertyId } = auth.token;
+
+        if (!organizationId || !propertyId) {
+          throw new functions.https.HttpsError('failed-precondition', 'User is not associated with an organization or property.');
+        }
+
+        const createServiceRequestData = {
+          ...serviceRequestArgs,
+          organizationId,
+          propertyId,
+        };
+
+        const result = await _createServiceRequestLogic(createServiceRequestData, { ...context, auth });
+
+        return {
+          tool_call: {
+            name: 'create_service_request',
+            arguments: serviceRequestArgs,
+          },
+          message: `Service request created successfully! Your request ID is ${result.serviceRequestId}.`,
+          model: modelId,
+          request_id: responseData.id,
+          finish_reason: responseChoice.finish_reason,
+          serviceRequestResult: result,
+        };
+      }
+    }
+
+    if (!message.content) {
+        console.error('Invalid response from OpenAI: Message content is empty.', responseData);
+        throw new functions.https.HttpsError('internal', 'Received an empty message from the AI service.');
     }
 
     return {
-      message: responseData.choices[0].message.content,
+      message: message.content,
       model: modelId,
       request_id: responseData.id,
-      finish_reason: responseData.choices[0].finish_reason,
+      finish_reason: responseChoice.finish_reason,
     };
 
   } catch (error: unknown) {

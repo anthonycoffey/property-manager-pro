@@ -142,6 +142,12 @@ export const navigationItems: NavItemConfig[] = [
     path: '/dashboard/property-manager/ai-assistant',
     roles: ['property_manager'],
   },
+  {
+    text: 'My Account',
+    icon: PersonIcon,
+    path: '/dashboard/property-manager/my-account',
+    roles: ['property_manager'],
+  },
 
   // --- Resident Links ---
   // Corresponds to ResidentDashboard tabs (Reordered for My Profile to be default)

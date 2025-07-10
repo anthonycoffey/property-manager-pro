@@ -29,6 +29,7 @@ import PropertyManagerOverviewView from './components/Dashboard/PropertyManager/
 import PropertyManagerMyPropertiesView from './components/Dashboard/PropertyManager/PropertyManagerMyPropertiesView';
 import PropertyManagerResidentsView from './components/Dashboard/PropertyManager/PropertyManagerResidentsView';
 import PropertyManagerCampaignsViewWrapper from './components/Dashboard/PropertyManager/PropertyManagerCampaignsViewWrapper';
+import MyAccountPage from './pages/PropertyManager/MyAccountPage';
 
 import ResidentDashboard from './components/Resident/ResidentDashboard'; // Import Resident Layout
 import PropertyDetailsView from './components/Resident/PropertyDetailsView';
@@ -107,6 +108,9 @@ const AppRoutes: React.FC = () => {
           <Route path='ai-assistant' element={<ChatView />} />
           <Route index element={<Navigate to='overview' replace />} />
         </Route>
+
+        {/* Standalone Property Manager page */}
+        <Route path='property-manager/my-account' element={<MyAccountPage />} />
 
         {/* Resident Routes - Nested under ResidentDashboard */}
         <Route path='resident' element={<ResidentDashboard />}>

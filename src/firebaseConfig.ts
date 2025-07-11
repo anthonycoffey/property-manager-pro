@@ -1,7 +1,7 @@
 import { initializeApp } from "firebase/app";
 import { getAuth, connectAuthEmulator } from "firebase/auth";
 import { getFirestore, connectFirestoreEmulator } from "firebase/firestore";
-import { getFunctions, connectFunctionsEmulator } from "firebase/functions";
+import { getFunctions, connectFunctionsEmulator, type Functions } from "firebase/functions";
 import { getStorage, connectStorageEmulator } from "firebase/storage";
 
 // Your web app's Firebase configuration
@@ -23,7 +23,7 @@ const db = getFirestore(app);
 const storage = getStorage(app);
 // We will get the functions instance later, after connecting to the emulator
 
-let functions;
+let functions: Functions;
 
 // Connect to emulators if in development mode (Vite specific)
 if (import.meta.env.DEV) {

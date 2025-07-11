@@ -16,14 +16,15 @@ import {
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import CloseIcon from '@mui/icons-material/Close';
-import { Outlet, useLocation } from 'react-router-dom'; // useLocation already here, good.
+import { Outlet, useLocation } from 'react-router-dom';
 
 import PropertySelectorDropdown from '../PropertyManager/PropertySelectorDropdown';
 import CreatePropertyForm from '../PropertyManager/CreatePropertyForm';
-import TestimonialCard from '../Marketing/TestimonialCard'; // For testimonial section
+import TestimonialCard from '../Marketing/TestimonialCard';
 
 import { PropertyManagerProvider } from '../../contexts/PropertyManagerContext';
-import { usePropertyManagerContext } from '../../hooks/usePropertyManagerContext'; // Corrected import path
+import { UserProfileProvider } from '../../contexts/UserProfileContext';
+import { usePropertyManagerContext } from '../../hooks/usePropertyManagerContext';
 import { useAuth } from '../../hooks/useAuth';
 import { navigationItems } from '../../config/navigationConfig';
 import PropertyManagerQuickNav from './PropertyManager/PropertyManagerQuickNav';
@@ -229,10 +230,12 @@ const PropertyManagerDashboardPanel: React.FC<
 
   return (
     <PropertyManagerProvider>
-      {location.pathname === '/dashboard/property-manager/overview' &&
-        currentOrganizationId && <PropertyManagerQuickNav />}
+      <UserProfileProvider>
+        {location.pathname === '/dashboard/property-manager/overview' &&
+          currentOrganizationId && <PropertyManagerQuickNav />}
 
-      <PropertyManagerDashboardContent organizationId={currentOrganizationId} />
+        <PropertyManagerDashboardContent organizationId={currentOrganizationId} />
+      </UserProfileProvider>
     </PropertyManagerProvider>
   );
 };

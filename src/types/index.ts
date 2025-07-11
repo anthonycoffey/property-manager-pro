@@ -437,3 +437,23 @@ export type ServiceRequestStatus =
   completedAt?: Timestamp | Date | string | null; // Firestore Timestamp
   organizationId: string; // Added for easier querying/rules
 }
+
+export type ViolationStatus = 'reported' | 'acknowledged' | 'resolved';
+export type ViolationType = 'fire_lane' | 'unauthorized_space' | 'blocking_driveway' | 'double_parked' | 'other';
+
+export interface Violation {
+  id: string;
+  reporterId: string;
+  propertyId: string;
+  organizationId: string;
+  licensePlate: string;
+  status: ViolationStatus;
+  violationType: ViolationType;
+  createdAt: Timestamp | { _seconds: number; _nanoseconds: number }; // Allow for serialized Timestamp
+  // Add other fields from your data structure as needed
+}
+
+export interface GetViolationsResponse {
+  violations: Violation[];
+  total: number;
+}

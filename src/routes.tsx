@@ -30,6 +30,8 @@ import PropertyManagerMyPropertiesView from './components/Dashboard/PropertyMana
 import PropertyManagerResidentsView from './components/Dashboard/PropertyManager/PropertyManagerResidentsView';
 import PropertyManagerCampaignsViewWrapper from './components/Dashboard/PropertyManager/PropertyManagerCampaignsViewWrapper';
 import MyAccountPage from './pages/PropertyManager/MyAccountPage';
+import ReportViolationPage from './pages/PropertyManager/ReportViolationPage';
+import ViolationsDashboardPage from './pages/PropertyManager/ViolationsDashboardPage';
 
 import ResidentDashboard from './components/Resident/ResidentDashboard'; // Import Resident Layout
 import PropertyDetailsView from './components/Resident/PropertyDetailsView';
@@ -105,6 +107,8 @@ const AppRoutes: React.FC = () => {
             path='campaigns'
             element={<PropertyManagerCampaignsViewWrapper />}
           />
+          <Route path='report-violation' element={<ReportViolationPage />} />
+          <Route path='violations' element={<ViolationsDashboardPage />} />
           <Route path='ai-assistant' element={<ChatView />} />
           <Route index element={<Navigate to='overview' replace />} />
         </Route>

@@ -14,6 +14,7 @@ export interface GptChatResponseData {
   finish_reason: string;
   tool_call?: {
     name: string;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     arguments: any;
   };
   serviceRequestResult?: {

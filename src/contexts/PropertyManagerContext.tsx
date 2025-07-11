@@ -19,7 +19,6 @@ export const PropertyManagerProvider: React.FC<
   initialSelectedPropertyId = null,
   initialSelectedPropertyName = null,
 }) => {
-  // const [properties, setProperties] = useState<PropertyType[]>(initialProperties);
   const [selectedPropertyId, setSelectedPropertyId] = useState<string | null>(
     initialSelectedPropertyId
   );

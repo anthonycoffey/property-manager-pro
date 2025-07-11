@@ -120,6 +120,15 @@ export const getOrgManagerPhoenixStats = getOrgManagerPhoenixStatsFunction;
 import { getPropertyManagerPhoenixStats as getPropertyManagerPhoenixStatsFunction } from './callable/getPropertyManagerPhoenixStats.js';
 export const getPropertyManagerPhoenixStats = getPropertyManagerPhoenixStatsFunction;
 
+import { createViolationReport as createViolationReportFunction } from './callable/createViolationReport.js';
+export const createViolationReport = createViolationReportFunction;
+
+import { getViolations as getViolationsFunction } from './callable/getViolations.js';
+export const getViolations = getViolationsFunction;
+
+import { getUserProfiles as getUserProfilesFunction } from './callable/getUserProfiles.js';
+export const getUserProfiles = getUserProfilesFunction;
+
 // HTTP Functions
 // import { handleCampaignSignUpLink as handleCampaignSignUpLinkFunction } from './http/handleCampaignSignUpLink.js'; // Commented out as it's being decommissioned
 // export const handleCampaignSignUpLink = handleCampaignSignUpLinkFunction; // Commented out

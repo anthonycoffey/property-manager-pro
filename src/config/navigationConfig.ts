@@ -9,6 +9,8 @@ import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import PersonIcon from '@mui/icons-material/Person';
 import BuildIcon from '@mui/icons-material/Build';
 import PeopleIcon from '@mui/icons-material/People'; // For PM Residents tab
+import ReportProblemIcon from '@mui/icons-material/ReportProblem';
+import PolicyIcon from '@mui/icons-material/Policy';
 
 // Define UserRole type if not already globally available
 export type UserRole =
@@ -134,6 +136,18 @@ export const navigationItems: NavItemConfig[] = [
     text: 'Campaigns',
     icon: CampaignIcon,
     path: '/dashboard/property-manager/campaigns', // Page will need property selector
+    roles: ['property_manager'],
+  },
+  {
+    text: 'Report Violation',
+    icon: ReportProblemIcon,
+    path: '/dashboard/property-manager/report-violation',
+    roles: ['property_manager'],
+  },
+  {
+    text: 'Violations',
+    icon: PolicyIcon,
+    path: '/dashboard/property-manager/violations',
     roles: ['property_manager'],
   },
   {

@@ -170,6 +170,12 @@ service cloud.firestore {
       allow read: if isOrgUser(organizationId) && (isPropertyManager() /* || isPropertyStaff() */);
 
 
+      // Subcollection: googleAuth
+      match /googleAuth/{userId} {
+        // Allow a property manager to read their own google auth document
+        allow read: if isPropertyManager() && isOrgUser(organizationId) && request.auth.uid == userId;
+      }
+
       // Subcollection: users (Property Managers, Staff, Organization Managers if profile stored here)
       match /users/{orgUserId} {
         // Admins can manage all organization users
@@ -328,6 +334,19 @@ service cloud.firestore {
 
       // Only admins can create, update, or delete global invitations
       allow create, update, delete: if isAdmin();
+    }
+
+    match /violations/{violationId} {
+      // Create is handled by a callable function which validates the data more securely.
+      // This rule just ensures the user has the correct role and is the reporter.
+      allow create: if (isPropertyManager() || isOrganizationManager() || isAdmin()) &&
+                       request.resource.data.reporterId == request.auth.uid;
+
+      allow read, update: if isAdmin() || isOrgManagerForOrg(resource.data.organizationId);
+      allow read, update: if isPropertyManager() && request.auth.token.organizationId == resource.data.organizationId;
+      
+      // Residents can read their own violations
+      allow read: if isResident() && request.auth.uid == resource.data.residentId;
     }
 
       // Subcollection: services

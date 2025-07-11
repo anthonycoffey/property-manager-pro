@@ -1,8 +1,8 @@
 import { initializeApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
-import { getFunctions } from "firebase/functions";
-import { getStorage } from "firebase/storage"; // Import getStorage
+import { getAuth, connectAuthEmulator } from "firebase/auth";
+import { getFirestore, connectFirestoreEmulator } from "firebase/firestore";
+import { getFunctions, connectFunctionsEmulator, type Functions } from "firebase/functions";
+import { getStorage, connectStorageEmulator } from "firebase/storage";
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
@@ -17,34 +17,37 @@ const firebaseConfig = {
 console.log('Firebase config:', firebaseConfig);
 
 const app = initializeApp(firebaseConfig);
+
 const auth = getAuth(app);
 const db = getFirestore(app);
-const functions = getFunctions(app);
-const storage = getStorage(app); // Initialize Firebase Storage
+const storage = getStorage(app);
+// We will get the functions instance later, after connecting to the emulator
+
+let functions: Functions;
 
 // Connect to emulators if in development mode (Vite specific)
 if (import.meta.env.DEV) {
   console.log("Connecting to Firebase Emulators");
   try {
-    const { connectAuthEmulator } = await import("firebase/auth");
     connectAuthEmulator(auth, "http://localhost:9099");
     console.log("Auth emulator connected");
 
-    const { connectFirestoreEmulator } = await import("firebase/firestore");
     connectFirestoreEmulator(db, "localhost", 8080);
     console.log("Firestore emulator connected");
-
-    const { connectFunctionsEmulator } = await import("firebase/functions");
-    connectFunctionsEmulator(functions, "localhost", 5001);
-    console.log("Functions emulator connected");
     
-    const { connectStorageEmulator } = await import("firebase/storage");
     connectStorageEmulator(storage, "localhost", 9199);
     console.log("Storage emulator connected");
+
+    // Now that the auth emulator is connected, we can get the functions instance
+    functions = getFunctions(app);
+    connectFunctionsEmulator(functions, "localhost", 5001);
+    console.log("Functions emulator connected");
 
   } catch (error) {
     console.error("Error connecting to Firebase emulators:", error);
   }
+} else {
+  functions = getFunctions(app);
 }
 
-export { app, auth, db, functions, storage }; // Export storage
+export { app, auth, db, functions, storage };

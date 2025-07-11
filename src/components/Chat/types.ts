@@ -12,6 +12,16 @@ export interface GptChatResponseData {
   model: string;
   request_id: string;
   finish_reason: string;
+  tool_call?: {
+    name: string;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    arguments: any;
+  };
+  serviceRequestResult?: {
+    success: boolean;
+    serviceRequestId: string;
+    message: string;
+  };
 }
 
 // Expected structure for the data sent to our getGptChatResponse Firebase function

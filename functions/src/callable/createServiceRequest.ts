@@ -26,7 +26,7 @@ interface CreateServiceRequestData {
   residentNotes?: string;
   serviceDateTime: string; // ISO string from client
   phone?: string;
-  description: string; // Kept for now, can be merged with residentNotes if needed
+  description?: string; // Kept for now, can be merged with residentNotes if needed
 
   // New fields from frontend
   smsConsent: boolean;
@@ -41,8 +41,7 @@ interface CreateServiceRequestData {
   car_color?: string;
 }
 
-export const createServiceRequest = https.onCall(
-  async (data: CreateServiceRequestData, context: CallableContext) => {
+export async function _createServiceRequestLogic(data: CreateServiceRequestData, context: CallableContext) {
     if (!context.auth) {
       throw handleHttpsError('unauthenticated', 'User must be authenticated.');
     }
@@ -140,15 +139,15 @@ export const createServiceRequest = https.onCall(
       // For now, using a comma-separated string of names.
       requestType: data.serviceTypes.map((st) => st.value).join(', '),
       description: data.description?.trim() || '',
-      residentNotes: data.residentNotes?.trim(),
+      residentNotes: data.residentNotes?.trim() || '',
       serviceDateTime: new Date(data.serviceDateTime), // Store as Timestamp
-      phone: data.phone?.trim(),
+      phone: data.phone?.trim() || '',
       // Store structured address or just the full string, or both
       serviceLocation: data.serviceLocationAddress.fullAddress,
       serviceLocationData: data.serviceLocationAddress, // Optional: store the whole object
       status: 'submitted' as ServiceRequestStatus,
       submittedAt: FirebaseAdminFieldValue.serverTimestamp(),
-      smsConsent: data.smsConsent, // Store consent
+      smsConsent: data.smsConsent || false, // Store consent
       isOffPremise: data.isOffPremiseRequest || false, // Store off-premise status
       // phoenixSubmissionId: phoenixSubmissionId, // Store Phoenix ID
       // assignedTo, completedAt, notes will be set later
@@ -268,5 +267,11 @@ export const createServiceRequest = https.onCall(
           'An internal error occurred during service request processing.'
       );
     }
+}
+
+
+export const createServiceRequest = https.onCall(
+  async (data: CreateServiceRequestData, context: CallableContext) => {
+    return await _createServiceRequestLogic(data, context);
   }
 );

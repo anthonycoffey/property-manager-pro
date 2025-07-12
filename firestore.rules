@@ -157,6 +157,11 @@ service cloud.firestore {
     match /admins/{adminId} {
       // Only allow admin role to read/write admin profiles
       allow read, write: if isAdmin();
+
+      // Allow admins to read their own notifications
+      match /notifications/{notificationId} {
+        allow list, get, create, update, delete: if isAdmin() && request.auth.uid == adminId;
+      }
     }
 
     match /organizations/{organizationId} {
@@ -188,6 +193,10 @@ service cloud.firestore {
         allow read, write: if isPropertyManager() && isOrgUser(organizationId);
         // Property Staff can read users within their organization
         // allow read: if isPropertyStaff() && isOrgUser(organizationId); // isPropertyStaff is commented out
+
+        match /notifications/{notificationId} {
+          allow list, get, create, update, delete: if isPropertyManager() && request.auth.uid == orgUserId;
+        }
       }
 
       // Subcollection: properties
@@ -407,6 +416,16 @@ service cloud.firestore {
                          resource.data.propertyId == request.auth.token.propertyId;
                          // && (add field validation here for what can be updated)
       }
+    }
+
+    // Collection group for notifications
+    match /{path=**}/notifications/{notificationId} {
+      // Allow backend services (e.g., Cloud Functions) to create notifications.
+      // This is identified by the absence of request.auth when using the Admin SDK.
+      allow create: if request.auth == null;
+
+      // Allow admins to manage notifications for auditing or manual intervention.
+      allow read, update, delete: if isAdmin();
     }
   }
 }

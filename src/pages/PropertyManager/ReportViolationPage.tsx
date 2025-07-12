@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Box, Button, FormControl, InputLabel, MenuItem, Select, TextField, Typography, CircularProgress } from '@mui/material';
+import { Box, Button, FormControl, InputLabel, MenuItem, Select, TextField, Typography, CircularProgress, IconButton, Stack } from '@mui/material';
+import PhotoCamera from '@mui/icons-material/PhotoCamera';
 import { usePropertyManagerContext } from '../../hooks/usePropertyManagerContext';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
@@ -102,21 +103,27 @@ const ReportViolationPage = () => {
             </FormControl>
             <Box mt={2}>
               <Typography variant="subtitle1" gutterBottom>
-                Upload Photo
+                Violation Photo
               </Typography>
-              <Button
-                variant="contained"
-                component="label"
-              >
-                Upload File
-                <input
-                  type="file"
-                  hidden
-                  accept="image/*"
-                  onChange={handlePhotoChange}
-                />
-              </Button>
-              {photo && <Typography sx={{ display: 'inline', ml: 2 }}>{photo.name}</Typography>}
+              <Stack direction="row" alignItems="center" spacing={2}>
+                <Button
+                  variant="contained"
+                  component="label"
+                >
+                  Upload File
+                  <input
+                    type="file"
+                    hidden
+                    accept="image/*"
+                    onChange={handlePhotoChange}
+                  />
+                </Button>
+                <IconButton color="primary" aria-label="upload picture" component="label">
+                  <input hidden accept="image/*" type="file" onChange={handlePhotoChange} capture="environment" />
+                  <PhotoCamera />
+                </IconButton>
+                {photo && <Typography sx={{ display: 'inline', ml: 2 }}>{photo.name}</Typography>}
+              </Stack>
             </Box>
             {error && <Typography color="error" sx={{ mt: 2 }}>{error}</Typography>}
             {success && <Typography color="success.main" sx={{ mt: 2 }}>{success}</Typography>}

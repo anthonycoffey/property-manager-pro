@@ -2,6 +2,15 @@
 
 ## 1. Current Work Focus
 
+- **Mobile-Friendly Violation Reporting (Completed 2025-07-12):**
+    - **Objective:** Enhance the "Report Violation" page to be more mobile-friendly by providing a direct camera access option.
+    - **Core Changes:**
+        - Modified `src/pages/PropertyManager/ReportViolationPage.tsx`.
+        - Added an `IconButton` with a `PhotoCamera` icon next to the existing "Upload File" button.
+        - This new button triggers a file input with the `capture="environment"` attribute, which directly opens the device's rear camera on mobile browsers.
+        - The existing file upload functionality for selecting from the gallery is preserved.
+        - Used an MUI `Stack` to group the buttons and the selected file name for better layout.
+
 - **Dashboard Navigation Refactor & UI Enhancements (Completed 2025-06-09):**
     - **Objective:** Refactor tab-based dashboard navigation to a drawer-based system for improved scalability and mobile usability. Enhance user experience with breadcrumbs and improved initial page navigation.
     - **Core Changes:**
@@ -30,6 +39,16 @@
     - Service Request Form Auto-select First Vehicle (Completed 2025-06-10): Added functionality to `CreateServiceRequestForm.tsx` to automatically select the first vehicle from the resident's profile if vehicles are present and no vehicle is already selected.
 
 ## 2. Recent Changes & Activities (Newest First)
+
+- **Mobile-Friendly Violation Reporting (Completed 2025-07-12):**
+    - **Objective:** Enhance the "Report Violation" page to be more mobile-friendly by providing a direct camera access option.
+    - **Change:** Modified `src/pages/PropertyManager/ReportViolationPage.tsx`.
+    - **Details:**
+        - Added an `IconButton` with a `PhotoCamera` icon to allow users to directly open their device camera for taking violation photos.
+        - The new input uses `capture="environment"` to signal the use of the rear-facing camera.
+        - The original "Upload File" button is retained for gallery selections.
+        - Both inputs use the same `handlePhotoChange` handler.
+        - Grouped the upload buttons and file name display in an MUI `Stack` for cleaner alignment.
 
 - **Dynamic Card Headers & Conditional Layout (Completed 2025-06-25):**
     - **Objective:** Update dashboard panels to show dynamic titles/icons and conditionally render layouts for specific routes.

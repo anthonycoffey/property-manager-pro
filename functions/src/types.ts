@@ -163,6 +163,7 @@ export interface Resident {
   createdAt: Timestamp | Date;
   phone?: string; // Resident's primary contact phone number
   vehicles?: Vehicle[];
+  fcmTokens?: string[];
 }
 
 export type ServiceRequestStatus = 
@@ -192,4 +193,13 @@ export interface ServiceRequest {
   phoenixSubmissionId?: string | null; // Store ID from Phoenix API
   isOffPremise?: boolean; // New: Indicates if the request was for an off-premise location
   completedAt?: Timestamp | Date | FirebaseFirestore.FieldValue; // Allow FieldValue
+}
+
+export interface Notification {
+  userId: string;
+  title: string;
+  body: string;
+  link?: string;
+  status?: 'pending' | 'sent' | 'failed';
+  sentAt?: Timestamp;
 }

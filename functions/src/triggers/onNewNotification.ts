@@ -2,7 +2,6 @@ import { firestore } from 'firebase-functions/v1';
 import { db, messaging } from '../firebaseAdmin.js';
 import { FieldValue } from 'firebase-admin/firestore';
 import { QueryDocumentSnapshot } from 'firebase-functions/v1/firestore';
-import { EventContext } from 'firebase-functions/v1';
 import { MessagingDeviceResult } from 'firebase-admin/messaging';
 
 interface Notification {
@@ -14,7 +13,7 @@ interface Notification {
 
 export const onNewNotification = firestore
   .document('notifications/{notificationId}')
-  .onCreate(async (snapshot: QueryDocumentSnapshot, context: EventContext) => {
+  .onCreate(async (snapshot: QueryDocumentSnapshot) => {
     const notificationData = snapshot.data() as Notification;
     const { userId, title, body, link } = notificationData;
 

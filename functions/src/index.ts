@@ -141,6 +141,13 @@ export const cleanupProcessedCampaignCSVs = cleanupProcessedCampaignCSVsFunction
 import { updateServiceJobStatus as updateServiceJobStatusFunction } from './webhooks/updateServiceJobStatus.js';
 export const updateServiceJobStatus = updateServiceJobStatusFunction;
 
+// Firestore Triggers
+import { onNewNotification as onNewNotificationFunction } from './triggers/onNewNotification.js';
+export const onNewNotification = onNewNotificationFunction;
+
+import { updateFcmToken as updateFcmTokenFunction } from './callable/updateFcmToken.js';
+export const updateFcmToken = updateFcmTokenFunction;
+
 // Google Auth Functions
 import {
   initiateGoogleOAuth as initiateGoogleOAuthFunction,

@@ -83,6 +83,7 @@ export interface UserProfile {
   organizationId?: string; // For single-org users
   organizationIds?: string[]; // For multi-org users (like org managers)
   propertyId?: string; // For residents
+  fcmTokens?: string[];
   // other custom claims or profile data
 }
 
@@ -456,4 +457,15 @@ export interface Violation {
 export interface GetViolationsResponse {
   violations: Violation[];
   total: number;
+}
+
+export interface Notification {
+  id: string;
+  userId: string;
+  title: string;
+  body: string;
+  link?: string;
+  status?: 'pending' | 'sent' | 'failed';
+  sentAt?: Timestamp;
+  read?: boolean;
 }

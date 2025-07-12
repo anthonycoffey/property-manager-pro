@@ -2,13 +2,21 @@
 
 ## 1. Current Status
 
-The project has most recently completed a significant **Dashboard Navigation Refactor and UI Enhancements** initiative. This involved moving from a tab-based navigation system within individual dashboard panels to a global, role-aware drawer navigation. Additionally, breadcrumbs were implemented for better contextual awareness, and initial/overview pages for each role were enhanced with quick navigation links. Layouts were updated to prefer MUI `Box` and `Stack` components.
+The project has most recently completed an enhancement to the **Report Violation** page to improve mobile usability by adding direct camera access.
 
-Prior to this, Phase 1 of "Dashboard Data Visualizations & Statistics" (non-Phoenix data) was completed, along with login page accessibility and Twilio integration.
+Prior to this, a significant **Dashboard Navigation Refactor & UI Enhancements** initiative was completed. This involved moving from a tab-based navigation system to a global, role-aware drawer navigation, implementing breadcrumbs, and enhancing overview pages.
 
-- **Date of this update:** 2025-06-25
+- **Date of this update:** 2025-07-12
 
 ## 2. What Works / Completed (Newest First)
+
+- **Mobile-Friendly Violation Reporting (Completed 2025-07-12):**
+    - **Objective:** Enhance the "Report Violation" page for better mobile use by adding a direct camera access option.
+    - **Change:** Modified `src/pages/PropertyManager/ReportViolationPage.tsx`.
+    - **Details:**
+        - Added an `IconButton` with a `PhotoCamera` icon alongside the existing "Upload File" button.
+        - The new button uses an input with the `capture="environment"` attribute to directly launch the device's rear camera on mobile browsers, streamlining the process of taking and uploading violation photos.
+        - The original file selection functionality is preserved for gallery uploads.
 
 - **Dynamic Card Headers & Conditional Layout (Completed 2025-06-25):**
     - **Objective:** Update dashboard panels to show dynamic titles/icons and conditionally render layouts for specific routes.

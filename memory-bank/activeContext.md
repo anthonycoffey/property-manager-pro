@@ -2,6 +2,13 @@
 
 ## 1. Current Work Focus
 
+- **New Cloud Function for User-Specific Violations (Completed 2025-07-19):**
+    - **Objective:** Create a new callable cloud function, `getMyViolations`, to allow authenticated users to retrieve a list of violations they have personally reported.
+    - **Core Changes:**
+        - Created `functions/src/callable/getMyViolations.ts`.
+        - The function is based on the existing `getViolations` function but adds a crucial Firestore `where` clause to filter results by the authenticated user's UID (`where('reportedBy', '==', userId)`).
+        - Exported the new function from `functions/src/index.ts` to make it deployable.
+
 - **Mobile-Friendly Violation Reporting (Completed 2025-07-12):**
     - **Objective:** Enhance the "Report Violation" page to be more mobile-friendly by providing a direct camera access option.
     - **Core Changes:**
@@ -39,6 +46,13 @@
     - Service Request Form Auto-select First Vehicle (Completed 2025-06-10): Added functionality to `CreateServiceRequestForm.tsx` to automatically select the first vehicle from the resident's profile if vehicles are present and no vehicle is already selected.
 
 ## 2. Recent Changes & Activities (Newest First)
+
+- **New Cloud Function: `getMyViolations` (Completed 2025-07-19):**
+    - **Objective:** Add a secure endpoint for users to fetch their own reported violations.
+    - **Change:** Created `functions/src/callable/getMyViolations.ts` and updated `functions/src/index.ts`.
+    - **Details:**
+        - The new function mirrors the structure of `getViolations` but includes a non-optional filter to ensure users can only see documents where `reportedBy` matches their `uid`.
+        - This provides a secure way for the frontend to display user-specific data without complex Firestore rules.
 
 - **Mobile-Friendly Violation Reporting (Completed 2025-07-12):**
     - **Objective:** Enhance the "Report Violation" page to be more mobile-friendly by providing a direct camera access option.

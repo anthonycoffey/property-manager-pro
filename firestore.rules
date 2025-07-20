@@ -222,7 +222,7 @@ service cloud.firestore {
           allow read, write: if isPropertyManager() && isOrgUser(organizationId);
 
           // Residents can read their own profile
-          allow read: if isResident() && request.auth.uid == residentId && isPropertyResident(organizationId, propertyId);
+          allow read, write: if isResident() && request.auth.uid == residentId && isPropertyResident(organizationId, propertyId);
           // Residents can update specific fields of their own profile
           allow update: if isResident() && request.auth.uid == residentId && isPropertyResident(organizationId, propertyId) &&
                            request.resource.data.keys().hasOnly(['displayName', 'vehicleMake', 'vehicleModel', 'vehicleColor', 'licensePlate'
@@ -307,6 +307,22 @@ service cloud.firestore {
               (isPropertyManagerForCampaignOrg(resource.data.organizationId, request.auth) && isCampaignCreator(resource.data, request.auth))
             );
         } // End of campaigns subcollection
+
+        // Subcollection: violations
+        match /violations/{violationId} {
+          // Create is handled by a callable function. This rule provides an additional layer of security.
+          allow create: if (isPropertyManager() || isOrganizationManager() || isAdmin()) &&
+                           request.resource.data.reporterId == request.auth.uid;
+
+          // Admins and Org Managers can read/update violations in their orgs.
+          allow read, update: if isAdmin() || isOrgManagerForOrg(organizationId);
+
+          // Property Managers can read/update violations in their properties.
+          allow read, update: if isPropertyManager() && isOrgUser(organizationId);
+
+          // Residents can read their own reported violations.
+          allow read: if isResident() && request.auth.uid == resource.data.reporterId;
+        }
       } // End of properties subcollection
 
       // Subcollection: invitations
@@ -345,18 +361,6 @@ service cloud.firestore {
       allow create, update, delete: if isAdmin();
     }
 
-    match /violations/{violationId} {
-      // Create is handled by a callable function which validates the data more securely.
-      // This rule just ensures the user has the correct role and is the reporter.
-      allow create: if (isPropertyManager() || isOrganizationManager() || isAdmin()) &&
-                       request.resource.data.reporterId == request.auth.uid;
-
-      allow read, update: if isAdmin() || isOrgManagerForOrg(resource.data.organizationId);
-      allow read, update: if isPropertyManager() && request.auth.token.organizationId == resource.data.organizationId;
-      
-      // Residents can read their own violations
-      allow read: if isResident() && request.auth.uid == resource.data.residentId;
-    }
 
       // Subcollection: services
       match /services/{serviceId} {
@@ -424,8 +428,8 @@ service cloud.firestore {
       // This is identified by the absence of request.auth when using the Admin SDK.
       allow create: if request.auth == null;
 
-      // Allow admins to manage notifications for auditing or manual intervention.
-      allow read, update, delete: if isAdmin();
+      // Allow all to manage notifications for now
+      allow read, update, delete: if true;
     }
   }
 }

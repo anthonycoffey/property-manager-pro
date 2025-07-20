@@ -2,19 +2,21 @@ import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { db } from '../firebaseAdmin.js';
 import { Query } from 'firebase-admin/firestore';
 
-export const getViolations = onCall(async (request) => {
+export const getMyViolations = onCall(async (request) => {
   if (!request.auth) {
     throw new HttpsError('unauthenticated', 'The function must be called while authenticated.');
   }
 
   const { organizationId, propertyId, status, type, startDate, endDate, page, rowsPerPage } = request.data;
+  const userId = request.auth.uid;
 
   if (!organizationId || !propertyId) {
     throw new HttpsError('invalid-argument', 'The function must be called with an "organizationId" and "propertyId".');
   }
 
   try {
-    let query: Query = db.collection('organizations').doc(organizationId).collection('properties').doc(propertyId).collection('violations');
+    let query: Query = db.collection('organizations').doc(organizationId).collection('properties').doc(propertyId).collection('violations')
+      .where('reporterId', '==', userId);
 
     if (status) {
       query = query.where('status', '==', status);

@@ -22,8 +22,6 @@ export const createViolationReport = onCall(async (request) => {
     }
 
     const violation = {
-      organizationId,
-      propertyId,
       licensePlate,
       violationType,
       photoUrl,
@@ -33,7 +31,7 @@ export const createViolationReport = onCall(async (request) => {
     };
 
     console.log('Violation data to be saved:', violation);
-    const violationRef = await db.collection('violations').add(violation);
+    const violationRef = await db.collection('organizations').doc(organizationId).collection('properties').doc(propertyId).collection('violations').add(violation);
     console.log(`Violation created with ID: ${violationRef.id}`);
 
     return { success: true, violationId: violationRef.id };

@@ -6,7 +6,7 @@
   "etags": {
     "phoenix-property-manager-pro": {
       "extensionInstances": {
-        "firestore-send-email": "854af53d14be2933c0031a4303deec42caf7184e56224f4b7c881fbd090aba58"
+        "firestore-send-email": "a55c969c8c10a1a80db75d118f5b6f9e0b411f5cf27fc365393b5db5a648a826"
       }
     }
   }

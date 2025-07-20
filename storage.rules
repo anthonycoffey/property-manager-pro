@@ -41,6 +41,7 @@ service firebase.storage {
                       (
                         'property_manager' in request.auth.token.roles ||
                         'organization_manager' in request.auth.token.roles ||
+                        'resident' in request.auth.token.roles ||
                         'admin' in request.auth.token.roles
                       );
       allow read: if request.auth != null; // Allow any authenticated user to read violation images

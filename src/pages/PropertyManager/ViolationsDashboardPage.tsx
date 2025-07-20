@@ -25,10 +25,12 @@ import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { usePropertyManagerContext } from '../../hooks/usePropertyManagerContext';
 import { useUserProfiles } from '../../hooks/useUserProfiles';
 import { getFunctions, httpsCallable } from 'firebase/functions';
+import { useAuth } from '../../hooks/useAuth';
 import type { Violation, GetViolationsResponse } from '../../types';
 
 const ViolationsDashboardPage = () => {
   const { selectedPropertyId } = usePropertyManagerContext();
+  const { organizationId } = useAuth();
   const [violations, setViolations] = useState<Violation[]>([]);
   const [loading, setLoading] = useState(false);
   const [statusFilter, setStatusFilter] = useState('');
@@ -50,12 +52,13 @@ const ViolationsDashboardPage = () => {
 
   useEffect(() => {
     const fetchViolations = async () => {
-      if (!selectedPropertyId) return;
+      if (!selectedPropertyId || !organizationId) return;
       setLoading(true);
       const functions = getFunctions();
       const getViolations = httpsCallable(functions, 'getViolations');
       try {
         const result = await getViolations({
+          organizationId,
           propertyId: selectedPropertyId,
           status: statusFilter,
           type: typeFilter,
@@ -77,7 +80,7 @@ const ViolationsDashboardPage = () => {
     };
 
     fetchViolations();
-  }, [selectedPropertyId, statusFilter, typeFilter, startDate, endDate, page, rowsPerPage]);
+  }, [selectedPropertyId, organizationId, statusFilter, typeFilter, startDate, endDate, page, rowsPerPage]);
 
   if (!selectedPropertyId) {
     return (

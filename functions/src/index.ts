@@ -126,6 +126,9 @@ export const createViolationReport = createViolationReportFunction;
 import { getViolations as getViolationsFunction } from './callable/getViolations.js';
 export const getViolations = getViolationsFunction;
 
+import { getMyViolations as getMyViolationsFunction } from './callable/getMyViolations.js';
+export const getMyViolations = getMyViolationsFunction;
+
 import { getUserProfiles as getUserProfilesFunction } from './callable/getUserProfiles.js';
 export const getUserProfiles = getUserProfilesFunction;
 

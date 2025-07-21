@@ -2,7 +2,7 @@ import { firestore, EventContext } from 'firebase-functions/v1';
 import { db, messaging } from '../firebaseAdmin.js';
 import { FieldValue } from 'firebase-admin/firestore';
 import { QueryDocumentSnapshot } from 'firebase-functions/v1/firestore';
-import { MessagingDeviceResult } from 'firebase-admin/messaging';
+import { MulticastMessage } from 'firebase-admin/messaging';
 
 interface Notification {
   title: string;
@@ -13,59 +13,76 @@ interface Notification {
 
 // Generic function to send a notification based on a direct user profile path
 const sendNotificationToUser = async (snapshot: QueryDocumentSnapshot, userProfilePath: string) => {
+  console.log(`[sendNotificationToUser] Triggered for notification ID: ${snapshot.id}`);
+  console.log(`[sendNotificationToUser] Target user profile path: ${userProfilePath}`);
+
   const notificationData = snapshot.data() as Notification;
   const { title, body, link, mobileLink } = notificationData;
+  console.log('[sendNotificationToUser] Notification Data:', JSON.stringify(notificationData, null, 2));
 
   const userProfileRef = db.doc(userProfilePath);
   const userProfileSnap = await userProfileRef.get();
 
   if (!userProfileSnap.exists) {
-    console.error(`User profile not found at path: ${userProfilePath}`);
+    console.error(`[sendNotificationToUser] User profile not found at path: ${userProfilePath}`);
     return;
   }
+  console.log(`[sendNotificationToUser] Successfully fetched user profile for path: ${userProfilePath}`);
 
   const userProfile = userProfileSnap.data();
-  const tokens = userProfile?.fcmTokens;
+  const fcmTokens = userProfile?.fcmTokens;
 
-  if (!tokens || !Array.isArray(tokens) || tokens.length === 0) {
-    console.log(`No FCM tokens found for user at path: ${userProfilePath}`);
+  if (!fcmTokens || !Array.isArray(fcmTokens) || fcmTokens.length === 0) {
+    console.log(`[sendNotificationToUser] No FCM tokens found for user at path: ${userProfilePath}`);
     return;
   }
+  console.log(`[sendNotificationToUser] Found ${fcmTokens.length} FCM token(s):`, fcmTokens);
 
-  const payload = {
+  const dataPayload: { [key: string]: string } = {};
+  if (link) dataPayload.link = link;
+  if (mobileLink) dataPayload.mobileLink = mobileLink;
+
+  const message: MulticastMessage = {
     notification: { title, body },
-    data: {
-      link: link,
-      mobileLink: mobileLink,
-    },
+    data: dataPayload,
+    tokens: fcmTokens,
   };
+  console.log('[sendNotificationToUser] Sending multicast message payload:', JSON.stringify(message, null, 2));
 
-  const response = await messaging.send(tokens, payload);
+  const response = await messaging.sendEachForMulticast(message);
+  console.log(
+    `[sendNotificationToUser] FCM response: ${response.successCount} success, ${response.failureCount} failure.`
+  );
   const tokensToRemove: string[] = [];
 
-  response.results.forEach((result: MessagingDeviceResult, index: number) => {
-    const error = result.error;
-    if (error) {
-      console.error('Failure sending notification to', tokens[index], error);
-      if (
-        error.code === 'messaging/invalid-registration-token' ||
-        error.code === 'messaging/registration-token-not-registered'
-      ) {
-        tokensToRemove.push(tokens[index]);
+  response.responses.forEach((result, index) => {
+    if (!result.success) {
+      const error = result.error;
+      if (error) {
+        console.error('Failure sending notification to', fcmTokens[index], error);
+        if (
+          error.code === 'messaging/invalid-registration-token' ||
+          error.code === 'messaging/registration-token-not-registered'
+        ) {
+          tokensToRemove.push(fcmTokens[index]);
+        }
       }
     }
   });
 
   if (tokensToRemove.length > 0) {
+    console.log(`[sendNotificationToUser] Removing ${tokensToRemove.length} invalid tokens:`, tokensToRemove);
     await userProfileRef.update({
       fcmTokens: FieldValue.arrayRemove(...tokensToRemove),
     });
+    console.log('[sendNotificationToUser] Successfully removed invalid tokens.');
   }
 
   await snapshot.ref.update({
     status: 'sent',
     sentAt: FieldValue.serverTimestamp(),
   });
+  console.log(`[sendNotificationToUser] Successfully marked notification ${snapshot.id} as sent.`);
 };
 
 // Higher-order function to create a notification handler.

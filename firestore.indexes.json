@@ -1,6 +1,13 @@
 {
   "indexes": [
     {
+      "collectionGroup": "userProfiles",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        { "fieldPath": "vehicles", "arrayConfig": "CONTAINS" }
+      ]
+    },
+    {
       "collectionGroup": "admins",
       "queryScope": "COLLECTION_GROUP",
       "fields": [

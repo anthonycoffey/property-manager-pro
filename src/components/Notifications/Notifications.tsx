@@ -41,7 +41,7 @@ const Notifications: React.FC = () => {
     }
 
     const notificationsRef = collection(firestore, path);
-    const q = query(notificationsRef, orderBy('sentAt', 'desc'));
+    const q = query(notificationsRef, orderBy('createdAt', 'desc'));
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const fetchedNotifications = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Notification));

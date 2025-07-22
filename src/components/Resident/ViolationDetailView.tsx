@@ -11,15 +11,21 @@ interface Violation {
   violationType: string;
   photoUrl: string;
   status: 'pending_acknowledgement' | 'acknowledged' | 'escalated_to_manager' | 'reported';
-  createdAt: {
-    toDate: () => Date;
-  };
-  acknowledgedAt?: {
-    toDate: () => Date;
-  };
+  createdAt: Date;
+  acknowledgedAt?: Date;
 }
 
-const MyViolationsView: React.FC = () => {
+interface Timestamp {
+  _seconds: number;
+  _nanoseconds: number;
+}
+
+interface ViolationData extends Omit<Violation, 'createdAt' | 'acknowledgedAt'> {
+  createdAt: Timestamp;
+  acknowledgedAt?: Timestamp;
+}
+
+const ViolationDetailView: React.FC = () => {
   const { violationId } = useParams<{ violationId: string }>();
   const { currentUser } = useAuth();
   const [violation, setViolation] = useState<Violation | null>(null);
@@ -36,12 +42,21 @@ const MyViolationsView: React.FC = () => {
 
       try {
         const organizationId = currentUser.customClaims?.organizationId;
-        if (!organizationId) {
-          throw new Error('Organization ID not found in user claims.');
+        const propertyId = currentUser.customClaims?.propertyId;
+        if (!organizationId || !propertyId) {
+          throw new Error('Organization ID or Property ID not found in user claims.');
         }
 
-        const result = await getViolationDetails({ violationId, organizationId });
-        setViolation(result.data as Violation);
+        const result = await getViolationDetails({ violationId, organizationId, propertyId });
+        const data = result.data as ViolationData;
+        
+        const newViolation: Violation = {
+          ...data,
+          createdAt: new Date(data.createdAt._seconds * 1000),
+          acknowledgedAt: data.acknowledgedAt ? new Date(data.acknowledgedAt._seconds * 1000) : undefined,
+        };
+
+        setViolation(newViolation);
       } catch (err) {
         console.error('Error fetching violation details:', err);
         setError('Failed to load violation details. You may not have permission to view this.');
@@ -62,11 +77,12 @@ const MyViolationsView: React.FC = () => {
 
     try {
       const organizationId = currentUser.customClaims?.organizationId;
-      if (!organizationId) {
-        throw new Error('Organization ID not found in user claims.');
+      const propertyId = currentUser.customClaims?.propertyId;
+      if (!organizationId || !propertyId) {
+        throw new Error('Organization ID or Property ID not found in user claims.');
       }
 
-      await acknowledgeViolation({ violationId, organizationId });
+      await acknowledgeViolation({ violationId, organizationId, propertyId });
       setViolation((prev) => (prev ? { ...prev, status: 'acknowledged' } : null));
     } catch (err) {
       console.error('Error acknowledging violation:', err);
@@ -97,9 +113,9 @@ const MyViolationsView: React.FC = () => {
         <Typography><strong>License Plate:</strong> {violation.licensePlate}</Typography>
         <Typography><strong>Violation Type:</strong> {violation.violationType}</Typography>
         <Typography><strong>Status:</strong> {violation.status}</Typography>
-        <Typography><strong>Reported At:</strong> {violation.createdAt.toDate().toLocaleString()}</Typography>
+        <Typography><strong>Reported At:</strong> {violation.createdAt.toLocaleString()}</Typography>
         {violation.acknowledgedAt && (
-          <Typography><strong>Acknowledged At:</strong> {violation.acknowledgedAt.toDate().toLocaleString()}</Typography>
+          <Typography><strong>Acknowledged At:</strong> {violation.acknowledgedAt.toLocaleString()}</Typography>
         )}
         <Box mt={2}>
           <img src={violation.photoUrl} alt="Violation" style={{ maxWidth: '100%', height: 'auto' }} />
@@ -121,4 +137,4 @@ const MyViolationsView: React.FC = () => {
   );
 };
 
-export default MyViolationsView;
+export default ViolationDetailView;

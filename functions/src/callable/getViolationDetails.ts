@@ -5,6 +5,7 @@ import { handleHttpsError } from '../helpers/handleHttpsError.js';
 interface GetViolationDetailsData {
   violationId: string;
   organizationId: string;
+  propertyId: string;
 }
 
 export const getViolationDetails = https.onCall(async (data: GetViolationDetailsData, context) => {
@@ -12,13 +13,13 @@ export const getViolationDetails = https.onCall(async (data: GetViolationDetails
     throw new https.HttpsError('unauthenticated', 'The function must be called while authenticated.');
   }
 
-  const { violationId, organizationId } = data;
+  const { violationId, organizationId, propertyId } = data;
   const userId = context.auth.uid;
 
-  if (!violationId || !organizationId) {
+  if (!violationId || !organizationId || !propertyId) {
     throw new https.HttpsError(
       'invalid-argument',
-      'The function must be called with "violationId" and "organizationId" arguments.'
+      'The function must be called with "violationId", "organizationId", and "propertyId" arguments.'
     );
   }
 
@@ -26,6 +27,8 @@ export const getViolationDetails = https.onCall(async (data: GetViolationDetails
     const violationRef = db
       .collection('organizations')
       .doc(organizationId)
+      .collection('properties')
+      .doc(propertyId)
       .collection('violations')
       .doc(violationId);
 

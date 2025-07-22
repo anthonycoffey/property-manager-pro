@@ -16,7 +16,7 @@ export const getMyViolations = onCall(async (request) => {
 
   try {
     let query: Query = db.collection('organizations').doc(organizationId).collection('properties').doc(propertyId).collection('violations')
-      .where('reporterId', '==', userId);
+      .where('residentId', '==', userId);
 
     if (status) {
       query = query.where('status', '==', status);

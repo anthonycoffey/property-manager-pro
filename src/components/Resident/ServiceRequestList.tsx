@@ -247,6 +247,7 @@ const ServiceRequestList: React.FC = () => {
                           {/* )} */}
                         </Stack>
                       }
+                      secondaryTypographyProps={{ component: 'div' }}
                       secondary={
                         <Stack
                           direction='row'

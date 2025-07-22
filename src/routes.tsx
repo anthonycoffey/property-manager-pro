@@ -37,7 +37,8 @@ import ResidentDashboard from './components/Resident/ResidentDashboard'; // Impo
 import PropertyDetailsView from './components/Resident/PropertyDetailsView';
 import ResidentProfileManagement from './components/Resident/ResidentProfileManagement';
 import ResidentServiceRequestsView from './components/Resident/ResidentServiceRequestsView';
-import MyViolationsView from './components/Resident/MyViolationsView';
+import MyViolationsListView from './components/Resident/MyViolationsListView';
+import ViolationDetailView from './components/Resident/ViolationDetailView';
 
 import AcceptInvitationPage from './pages/AcceptInvitationPage';
 import AcceptOrgManagerInvitationPage from './pages/AcceptOrgManagerInvitationPage';
@@ -125,8 +126,11 @@ const AppRoutes: React.FC = () => {
             path='service-request'
             element={<ResidentServiceRequestsView />}
           />
-          <Route path='my-violations' element={<MyViolationsView />} />
-          <Route path='violations/:violationId' element={<MyViolationsView />} />
+          <Route path='violations' element={<MyViolationsListView />} />
+          <Route
+            path='violations/:violationId'
+            element={<ViolationDetailView />}
+          />
           <Route path='ai-assistant' element={<ChatView />} />
           <Route index element={<Navigate to='my-profile' replace />} />{' '}
           {/* Default to my-profile */}

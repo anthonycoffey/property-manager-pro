@@ -47,6 +47,16 @@
 
 ## 2. Recent Changes & Activities (Newest First)
 
+- **FCM Token Logic Update for Multi-Tenancy (Completed 2025-07-21):**
+    - **Objective:** Align the `updateFcmToken` cloud function with the application's multi-tenant Firestore structure.
+    - **Change:** Modified `functions/src/callable/updateFcmToken.ts`.
+    - **Details:**
+        - The function now requires `organizationId`, `role`, and an optional `propertyId` to be passed from the client.
+        - It dynamically constructs the path to the user's profile based on their role.
+        - For residents, the path is `organizations/{orgId}/properties/{propId}/residents/{userId}`.
+        - For staff (e.g., property managers), the path is `organizations/{orgId}/users/{userId}`.
+        - This ensures FCM tokens are saved to the correct, tenant-specific user document.
+
 - **New Cloud Function: `getMyViolations` (Completed 2025-07-19):**
     - **Objective:** Add a secure endpoint for users to fetch their own reported violations.
     - **Change:** Created `functions/src/callable/getMyViolations.ts` and updated `functions/src/index.ts`.

@@ -186,7 +186,7 @@ export const navigationItems: NavItemConfig[] = [
   {
     text: 'My Violations',
     icon: PolicyIcon,
-    path: '/dashboard/resident/my-violations',
+    path: '/dashboard/resident/violations',
     roles: ['resident'],
   },
   {

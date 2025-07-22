@@ -4,13 +4,23 @@ import { handleHttpsError } from '../helpers/handleHttpsError.js';
 
 export const createViolationReport = https.onCall(async (data, context) => {
   if (!context.auth) {
-    throw new https.HttpsError('unauthenticated', 'The function must be called while authenticated.');
+    throw new https.HttpsError(
+      'unauthenticated',
+      'The function must be called while authenticated.'
+    );
   }
 
-  const { organizationId, propertyId, licensePlate, violationType, photoUrl } = data;
+  const { organizationId, propertyId, licensePlate, violationType, photoUrl } =
+    data;
   const reporterId = context.auth.uid;
 
-  if (!organizationId || !propertyId || !licensePlate || !violationType || !photoUrl) {
+  if (
+    !organizationId ||
+    !propertyId ||
+    !licensePlate ||
+    !violationType ||
+    !photoUrl
+  ) {
     throw new https.HttpsError(
       'invalid-argument',
       'The function must be called with organizationId, propertyId, licensePlate, violationType, and photoUrl.'
@@ -25,7 +35,10 @@ export const createViolationReport = https.onCall(async (data, context) => {
       .doc(propertyId)
       .collection('residents');
 
-    const querySnapshot = await residentsRef.where('vehicleLicensePlates', 'array-contains', licensePlate).limit(1).get();
+    const querySnapshot = await residentsRef
+      .where('vehicleLicensePlates', 'array-contains', licensePlate)
+      .limit(1)
+      .get();
 
     let residentId = null;
     if (!querySnapshot.empty) {
@@ -40,7 +53,7 @@ export const createViolationReport = https.onCall(async (data, context) => {
       photoUrl,
       reporterId,
       residentId, // Can be null if no match is found
-      status: residentId ? 'pending_acknowledgement' : 'reported',
+      status: residentId ? 'pending' : 'reported',
       createdAt: new Date(),
     };
 

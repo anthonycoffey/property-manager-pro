@@ -17,8 +17,12 @@ export const checkUnacknowledgedViolations = pubsub
         const violationsRef = orgDoc.ref.collection('violations');
 
         const querySnapshot = await violationsRef
-          .where('status', '==', 'pending_acknowledgement')
-          .where('createdAt', '<=', admin.firestore.Timestamp.fromDate(fiveMinutesAgo))
+          .where('status', '==', 'pending')
+          .where(
+            'createdAt',
+            '<=',
+            admin.firestore.Timestamp.fromDate(fiveMinutesAgo)
+          )
           .get();
 
         if (querySnapshot.empty) {
@@ -28,9 +32,11 @@ export const checkUnacknowledgedViolations = pubsub
         const batch = db.batch();
 
         querySnapshot.forEach((doc) => {
-          console.log(`Escalating violation ${doc.id} in organization ${organizationId}`);
+          console.log(
+            `Escalating violation ${doc.id} in organization ${organizationId}`
+          );
           const violationRef = doc.ref;
-          batch.update(violationRef, { status: 'escalated_to_manager' });
+          batch.update(violationRef, { status: 'escalated' });
 
           // Create a notification for the property manager who reported it
           const violationData = doc.data();

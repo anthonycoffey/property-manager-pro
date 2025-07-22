@@ -20,7 +20,7 @@ const Notifications: React.FC = () => {
     let path = '';
     const roles = currentUser.customClaims?.roles || [];
 
-    if (roles.includes('admin')) {
+    if (roles.includes('admin') || roles.includes('organization_manager')) {
       path = `admins/${currentUser.uid}/notifications`;
     } else if (roles.includes('property_manager')) {
       const { organizationId } = currentUser.customClaims || {};
@@ -79,7 +79,7 @@ const Notifications: React.FC = () => {
     let path = '';
     const roles = currentUser.customClaims?.roles || [];
 
-    if (roles.includes('admin')) {
+    if (roles.includes('admin') || roles.includes('organization_manager')) {
       path = `admins/${currentUser.uid}/notifications`;
     } else if (roles.includes('property_manager')) {
       const { organizationId } = currentUser.customClaims || {};

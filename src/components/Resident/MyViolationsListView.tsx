@@ -5,39 +5,60 @@ import {
   Typography,
   CircularProgress,
   Alert,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
+  List,
+  ListItemText,
+  ListItemIcon,
+  ListItemButton,
   Paper,
   TablePagination,
   Chip,
-  IconButton,
+  Divider,
+  Card,
+  CardContent,
+  CardHeader,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
 } from '@mui/material';
-import LinkIcon from '@mui/icons-material/Link';
+import type { SelectChangeEvent } from '@mui/material';
+import CarCrashIcon from '@mui/icons-material/CarCrash';
+import BlockIcon from '@mui/icons-material/Block';
+import ReportProblemIcon from '@mui/icons-material/ReportProblem';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { useAuth } from '../../hooks/useAuth';
 
 // Define the structure of a violation
+type ViolationStatus = 'pending' | 'acknowledged' | 'escalated' | 'reported';
+
 interface Violation {
   id: string;
   licensePlate: string;
   violationType: string;
   photoUrl: string;
-  status: 'pending_acknowledgement' | 'acknowledged' | 'escalated_to_manager' | 'reported';
+  status: ViolationStatus;
   createdAt: Date;
 }
 
-interface Timestamp {
-  _seconds: number;
-  _nanoseconds: number;
-}
+// Helper function to format violation type string
+const formatViolationType = (type: string) => {
+  return type.replace(/_/g, ' ').toUpperCase();
+};
 
-interface ViolationData extends Omit<Violation, 'createdAt'> {
-  createdAt: Timestamp;
-}
+// Helper function to get chip properties based on status
+const getStatusChipProps = (status: ViolationStatus) => {
+  switch (status) {
+    case 'acknowledged':
+      return { label: 'Acknowledged', color: 'warning' as const };
+    case 'escalated':
+      return { label: 'Escalated', color: 'error' as const };
+    case 'reported':
+      return { label: 'Reported', color: 'info' as const };
+    case 'pending':
+    default:
+      return { label: 'Pending', color: 'default' as const };
+  }
+};
 
 const MyViolationsListView: React.FC = () => {
   const { currentUser } = useAuth();
@@ -48,6 +69,7 @@ const MyViolationsListView: React.FC = () => {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [total, setTotal] = useState(0);
+  const [sortBy, setSortBy] = useState('createdAt_desc');
 
   useEffect(() => {
     const fetchViolations = async () => {
@@ -61,16 +83,27 @@ const MyViolationsListView: React.FC = () => {
         const organizationId = currentUser.customClaims?.organizationId;
         const propertyId = currentUser.customClaims?.propertyId;
         if (!organizationId || !propertyId) {
-          throw new Error('Organization ID or Property ID not found in user claims.');
+          throw new Error(
+            'Organization ID or Property ID not found in user claims.'
+          );
         }
 
-        const result = await getMyViolations({ organizationId, propertyId, page, rowsPerPage });
-        const { violations: newViolations, total: totalCount } = result.data as { violations: { id: string }[], total: number };
+        const result = await getMyViolations({
+          organizationId,
+          propertyId,
+          page,
+          rowsPerPage,
+          sortBy,
+        });
+        const { violations: newViolations, total: totalCount } =
+          result.data as { violations: { id: string }[]; total: number };
 
-        const formattedViolations: Violation[] = newViolations.map((v: any) => ({
-          ...v,
-          createdAt: new Date(v.createdAt._seconds * 1000),
-        }));
+        const formattedViolations: Violation[] = newViolations.map(
+          (v: any) => ({
+            ...v,
+            createdAt: new Date(v.createdAt._seconds * 1000),
+          })
+        );
 
         setViolations(formattedViolations);
         setTotal(totalCount);
@@ -83,84 +116,118 @@ const MyViolationsListView: React.FC = () => {
     };
 
     fetchViolations();
-  }, [currentUser, page, rowsPerPage]);
+  }, [currentUser, page, rowsPerPage, sortBy]);
 
+  const handleSortChange = (event: SelectChangeEvent<string>) => {
+    setSortBy(event.target.value);
+    setPage(0); // Reset to first page on sort change
+  };
 
   if (loading) {
-    return <CircularProgress />;
+    return (
+      <Box display='flex' justifyContent='center' alignItems='center' p={3}>
+        <CircularProgress />
+      </Box>
+    );
   }
 
   if (error) {
-    return <Alert severity="error">{error}</Alert>;
+    return (
+      <Box p={3}>
+        <Alert severity='error'>{error}</Alert>
+      </Box>
+    );
   }
 
+  const getViolationIcon = (violationType: string) => {
+    switch (violationType) {
+      case 'fire_lane':
+        return <CarCrashIcon />;
+      case 'unauthorized_space':
+        return <BlockIcon />;
+      default:
+        return <ReportProblemIcon />;
+    }
+  };
+
   return (
-    <Box>
-      <Typography variant="h4" gutterBottom>My Reported Violations</Typography>
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>License Plate</TableCell>
-              <TableCell>Violation Type</TableCell>
-              <TableCell align="center">Status</TableCell>
-              <TableCell>Date</TableCell>
-              <TableCell align="center">Actions</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {violations.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={4} align="center">
-                  No violations found.
-                </TableCell>
-              </TableRow>
-            ) : (
-              violations.map((violation) => (
-                <TableRow key={violation.id} hover={false}>
-                  <TableCell>{violation.licensePlate}</TableCell>
-                  <TableCell>
-                    <Chip label={violation.violationType.replace(/_/g, ' ').toUpperCase()} />
-                  </TableCell>
-                  <TableCell align="center">
-                    <Chip
-                      label={violation.status.toUpperCase()}
-                      color={
-                        violation.status === 'acknowledged'
-                          ? 'warning'
-                          : violation.status === 'escalated_to_manager'
-                          ? 'error'
-                          : 'default'
-                      }
-                    />
-                  </TableCell>
-                  <TableCell>{violation.createdAt.toLocaleString()}</TableCell>
-                  <TableCell align="center">
-                    <IconButton
-                      onClick={() => navigate(`/dashboard/resident/violations/${violation.id}`)}
-                    >
-                      <LinkIcon />
-                    </IconButton>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
-      <TablePagination
-        rowsPerPageOptions={[5, 10, 25]}
-        component="div"
-        count={total}
-        rowsPerPage={rowsPerPage}
-        page={page}
-        onPageChange={(_event, newPage) => setPage(newPage)}
-        onRowsPerPageChange={(event) => {
-          setRowsPerPage(parseInt(event.target.value, 10));
-          setPage(0);
-        }}
+    <Card>
+      <CardHeader
+        title='My Reported Violations'
+        action={
+          <FormControl size='small' sx={{ minWidth: 120 }}>
+            <InputLabel>Sort By</InputLabel>
+            <Select value={sortBy} label='Sort By' onChange={handleSortChange}>
+              <MenuItem value='createdAt_desc'>Newest</MenuItem>
+              <MenuItem value='createdAt_asc'>Oldest</MenuItem>
+              <MenuItem value='status'>Status</MenuItem>
+            </Select>
+          </FormControl>
+        }
       />
-    </Box>
+      <CardContent sx={{ p: 0 }}>
+        {violations.length === 0 ? (
+          <Box p={3}>
+            <Typography>You have not reported any violations.</Typography>
+          </Box>
+        ) : (
+          <List disablePadding>
+            {violations.map((violation, index) => (
+              <React.Fragment key={violation.id}>
+                <ListItemButton
+                  onClick={() =>
+                    navigate(`/dashboard/resident/violations/${violation.id}`)
+                  }
+                >
+                  <ListItemIcon>
+                    {getViolationIcon(violation.violationType)}
+                  </ListItemIcon>
+                  <ListItemText
+                    primary={formatViolationType(violation.violationType)}
+                    secondary={
+                      <Chip
+                        {...getStatusChipProps(violation.status)}
+                        size='small'
+                      />
+                    }
+                  />
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'flex-end',
+                      ml: 2,
+                    }}
+                  >
+                    <Typography variant='body2' color='text.secondary'>
+                      {violation.licensePlate}
+                    </Typography>
+                    <Typography variant='caption' color='text.secondary'>
+                      {violation.createdAt.toLocaleDateString()}
+                    </Typography>
+                  </Box>
+                </ListItemButton>
+                {index < violations.length - 1 && <Divider />}
+              </React.Fragment>
+            ))}
+          </List>
+        )}
+      </CardContent>
+      {violations.length > 0 && (
+        <TablePagination
+          rowsPerPageOptions={[5, 10, 25]}
+          component='div'
+          count={total}
+          rowsPerPage={rowsPerPage}
+          page={page}
+          onPageChange={(_event, newPage) => setPage(newPage)}
+          onRowsPerPageChange={(event) => {
+            setRowsPerPage(parseInt(event.target.value, 10));
+            setPage(0);
+          }}
+        />
+      )}
+    </Card>
   );
 };
 

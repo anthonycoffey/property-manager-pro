@@ -43,14 +43,14 @@ graph TD
 
     subgraph Backend Processing
         direction TB
-        Callable_CF[Callable Cloud Functions <br> e.g., createViolationReport]
-        Firestore_DB[(Firestore Database)]
+        Callable_CF["Callable Cloud Functions <br> e.g., createViolationReport"]
+        Firestore_DB[("Firestore Database")]
         subgraph Firestore Triggers
-            Trigger_Admin[onNewAdminNotification]
-            Trigger_User[onNewUserNotification]
-            Trigger_Resident[onNewResidentNotification]
+            Trigger_Admin["onNewAdminNotification"]
+            Trigger_User["onNewUserNotification"]
+            Trigger_Resident["onNewResidentNotification"]
         end
-        FCM[Firebase Cloud Messaging]
+        FCM["Firebase Cloud Messaging"]
     end
 
     subgraph User Devices

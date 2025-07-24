@@ -6,6 +6,9 @@ import { handleHttpsError } from '../helpers/handleHttpsError.js';
 
 interface UpdateFcmTokenData {
   fcmToken: string;
+  organizationId: string;
+  role: string;
+  propertyId?: string;
 }
 
 export async function _updateFcmTokenLogic(data: UpdateFcmTokenData, context: CallableContext) {
@@ -14,13 +17,30 @@ export async function _updateFcmTokenLogic(data: UpdateFcmTokenData, context: Ca
   }
 
   const { uid } = context.auth;
-  const { fcmToken } = data;
+  const { fcmToken, organizationId, role, propertyId } = data;
 
-  if (!fcmToken) {
-    throw handleHttpsError('invalid-argument', 'FCM token is required.');
+  if (!fcmToken || !organizationId || !role) {
+    throw handleHttpsError(
+      'invalid-argument',
+      'FCM token, organizationId, and role are required.'
+    );
   }
 
-  const userProfileRef = db.collection('userProfiles').doc(uid);
+  let userProfileRef;
+
+  if (role === 'resident') {
+    if (!propertyId) {
+      throw handleHttpsError(
+        'invalid-argument',
+        'PropertyId is required for resident role.'
+      );
+    }
+    userProfileRef = db.doc(
+      `organizations/${organizationId}/properties/${propertyId}/residents/${uid}`
+    );
+  } else {
+    userProfileRef = db.doc(`organizations/${organizationId}/users/${uid}`);
+  }
 
   try {
     await userProfileRef.update({

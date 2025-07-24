@@ -184,6 +184,12 @@ export const navigationItems: NavItemConfig[] = [
     roles: ['resident'],
   },
   {
+    text: 'My Violations',
+    icon: PolicyIcon,
+    path: '/dashboard/resident/violations',
+    roles: ['resident'],
+  },
+  {
     text: 'AI Assistant',
     icon: ChatBubbleOutlineIcon,
     path: '/dashboard/resident/ai-assistant',

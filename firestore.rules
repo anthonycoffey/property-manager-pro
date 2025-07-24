@@ -93,7 +93,7 @@ service cloud.firestore {
     // Helper function for campaign update validation
     // function canUpdateCampaignFields(requestData, resourceData) {
     //   // requestData is request.resource.data (new state), resourceData is resource.data (old state)
-    //   // Allowed to change by client: campaignName, status (to active, inactive, expired), maxUses, expiresAt, errorDetails
+    //   // Allowed to change by client: campaignName, status (to active, inactive, expired), errorDetails
     //   return requestData.campaignType == resourceData.campaignType &&
     //          requestData.targetPropertyId == resourceData.targetPropertyId &&
     //          requestData.organizationId == resourceData.organizationId &&
@@ -320,8 +320,9 @@ service cloud.firestore {
           // Property Managers can read/update violations in their properties.
           allow read, update: if isPropertyManager() && isOrgUser(organizationId);
 
-          // Residents can read their own reported violations.
-          allow read: if isResident() && request.auth.uid == resource.data.reporterId;
+          // Residents can read violations they reported OR violations filed against them.
+          allow read, update: if isResident() &&
+                         (request.auth.uid == resource.data.reporterId || request.auth.uid == resource.data.residentId);
         }
       } // End of properties subcollection
 

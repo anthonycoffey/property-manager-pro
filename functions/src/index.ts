@@ -129,6 +129,12 @@ export const getViolations = getViolationsFunction;
 import { getMyViolations as getMyViolationsFunction } from './callable/getMyViolations.js';
 export const getMyViolations = getMyViolationsFunction;
 
+import { getViolationDetails as getViolationDetailsFunction } from './callable/getViolationDetails.js';
+export const getViolationDetails = getViolationDetailsFunction;
+
+import { acknowledgeViolation as acknowledgeViolationFunction } from './callable/acknowledgeViolation.js';
+export const acknowledgeViolation = acknowledgeViolationFunction;
+
 import { getUserProfiles as getUserProfilesFunction } from './callable/getUserProfiles.js';
 export const getUserProfiles = getUserProfilesFunction;
 
@@ -140,13 +146,28 @@ export const getUserProfiles = getUserProfilesFunction;
 import { cleanupProcessedCampaignCSVs as cleanupProcessedCampaignCSVsFunction } from './scheduled/cleanupProcessedCampaignCSVs.js';
 export const cleanupProcessedCampaignCSVs = cleanupProcessedCampaignCSVsFunction;
 
+import { checkUnacknowledgedViolations as checkUnacknowledgedViolationsFunction } from './scheduled/checkUnacknowledgedViolations.js';
+export const checkUnacknowledgedViolations = checkUnacknowledgedViolationsFunction;
+
 // Webhooks
 import { updateServiceJobStatus as updateServiceJobStatusFunction } from './webhooks/updateServiceJobStatus.js';
 export const updateServiceJobStatus = updateServiceJobStatusFunction;
 
 // Firestore Triggers
-import { onNewNotification as onNewNotificationFunction } from './triggers/onNewNotification.js';
-export const onNewNotification = onNewNotificationFunction;
+import {
+  onNewAdminNotification as onNewAdminNotificationFunction,
+  onNewUserNotification as onNewUserNotificationFunction,
+  onNewResidentNotification as onNewResidentNotificationFunction,
+} from './triggers/onNewNotification.js';
+export const onNewAdminNotification = onNewAdminNotificationFunction;
+export const onNewUserNotification = onNewUserNotificationFunction;
+export const onNewResidentNotification = onNewResidentNotificationFunction;
+
+import { onViolationUpdate as onViolationUpdateFunction } from './triggers/onViolationUpdate.js';
+export const onViolationUpdate = onViolationUpdateFunction;
+
+import { onResidentProfileUpdate as onResidentProfileUpdateFunction } from './triggers/onResidentProfileUpdate.js';
+export const onResidentProfileUpdate = onResidentProfileUpdateFunction;
 
 import { updateFcmToken as updateFcmTokenFunction } from './callable/updateFcmToken.js';
 export const updateFcmToken = updateFcmTokenFunction;

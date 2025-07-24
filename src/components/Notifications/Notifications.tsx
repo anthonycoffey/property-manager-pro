@@ -20,7 +20,7 @@ const Notifications: React.FC = () => {
     let path = '';
     const roles = currentUser.customClaims?.roles || [];
 
-    if (roles.includes('admin')) {
+    if (roles.includes('admin') || roles.includes('organization_manager')) {
       path = `admins/${currentUser.uid}/notifications`;
     } else if (roles.includes('property_manager')) {
       const { organizationId } = currentUser.customClaims || {};
@@ -41,7 +41,7 @@ const Notifications: React.FC = () => {
     }
 
     const notificationsRef = collection(firestore, path);
-    const q = query(notificationsRef, orderBy('sentAt', 'desc'));
+    const q = query(notificationsRef, orderBy('createdAt', 'desc'));
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const fetchedNotifications = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Notification));
@@ -79,7 +79,7 @@ const Notifications: React.FC = () => {
     let path = '';
     const roles = currentUser.customClaims?.roles || [];
 
-    if (roles.includes('admin')) {
+    if (roles.includes('admin') || roles.includes('organization_manager')) {
       path = `admins/${currentUser.uid}/notifications`;
     } else if (roles.includes('property_manager')) {
       const { organizationId } = currentUser.customClaims || {};

@@ -24,8 +24,9 @@ import type { SelectChangeEvent } from '@mui/material';
 import CarCrashIcon from '@mui/icons-material/CarCrash';
 import BlockIcon from '@mui/icons-material/Block';
 import ReportProblemIcon from '@mui/icons-material/ReportProblem';
-import { getFunctions, httpsCallable } from 'firebase/functions';
 import { useAuth } from '../../hooks/useAuth';
+import { getMyViolations } from '../../lib/violationsService';
+import type { QueryDocumentSnapshot, DocumentData } from 'firebase/firestore';
 
 // Define the structure of a violation
 type ViolationStatus = 'pending' | 'acknowledged' | 'escalated' | 'reported';
@@ -37,13 +38,6 @@ interface Violation {
   photoUrl: string;
   status: ViolationStatus;
   createdAt: Date;
-}
-
-interface ViolationFromFirestore extends Omit<Violation, 'createdAt'> {
-  createdAt: {
-    _seconds: number;
-    _nanoseconds: number;
-  };
 }
 
 // Helper function to format violation type string
@@ -76,14 +70,17 @@ const MyViolationsListView: React.FC = () => {
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [total, setTotal] = useState(0);
   const [sortBy, setSortBy] = useState('createdAt_desc');
+  const [lastVisible, setLastVisible] =
+    useState<QueryDocumentSnapshot<DocumentData> | undefined>(undefined);
+  const [pageLastVisible, setPageLastVisible] = useState<{
+    [key: number]: QueryDocumentSnapshot<DocumentData> | undefined;
+  }>({});
 
   useEffect(() => {
     const fetchViolations = async () => {
       if (!currentUser) return;
 
       setLoading(true);
-      const functions = getFunctions();
-      const getMyViolations = httpsCallable(functions, 'getMyViolations');
 
       try {
         const organizationId = currentUser.customClaims?.organizationId;
@@ -97,22 +94,21 @@ const MyViolationsListView: React.FC = () => {
         const result = await getMyViolations({
           organizationId,
           propertyId,
-          page,
+          userId: currentUser.uid,
           rowsPerPage,
           sortBy,
+          lastVisible: page > 0 ? pageLastVisible[page - 1] : undefined,
         });
-        const { violations: newViolations, total: totalCount } = result.data as {
-          violations: ViolationFromFirestore[];
-          total: number;
-        };
 
-        const formattedViolations: Violation[] = newViolations.map((v) => ({
-          ...v,
-          createdAt: new Date(v.createdAt._seconds * 1000),
-        }));
-
-        setViolations(formattedViolations);
-        setTotal(totalCount);
+        setViolations(result.violations);
+        setTotal(result.total);
+        if (result.lastVisible) {
+          setLastVisible(result.lastVisible);
+          setPageLastVisible((prev) => ({
+            ...prev,
+            [page]: result.lastVisible,
+          }));
+        }
       } catch (err) {
         console.error('Error fetching violations:', err);
         setError('Failed to load violations.');
@@ -209,7 +205,7 @@ const MyViolationsListView: React.FC = () => {
                       {violation.licensePlate}
                     </Typography>
                     <Typography variant='caption' color='text.secondary'>
-                      {violation.createdAt.toLocaleDateString()}
+                      {violation.createdAt.toLocaleString()}
                     </Typography>
                   </Box>
                 </ListItemButton>

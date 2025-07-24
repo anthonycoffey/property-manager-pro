@@ -227,9 +227,8 @@ const GuestDashboardPanel: React.FC = () => {
             <Typography variant='body2' sx={{ mb: 2, textAlign: 'center' }}>
               Welcome,{' '}
               {currentUser?.displayName || currentUser?.email || 'User'}! Your
-              account is pending activation. Manage your profile below.
+              account is pending activation.
             </Typography>
-            <Divider sx={{ my: 1 }} />
 
             {currentUser && (
               <Box
@@ -335,13 +334,20 @@ const GuestDashboardPanel: React.FC = () => {
                 </Button>
               </Box>
             )}
-            <Divider sx={{ my: 1 }} />
             <Typography
               variant='caption'
               display='block'
-              sx={{ textAlign: 'center', mt: 1, mb: 1 }}
+              sx={{
+                textAlign: 'center',
+                mt: 1,
+                mb: 1,
+                maxWidth: '80%',
+                margin: '1rem auto',
+              }}
             >
-              If your role is not yet active, click below to refresh.
+              While your account is pending activation, there may be a brief
+              delay before you have access to all features. To refresh your
+              account status, you can click the button below.
             </Typography>
             <Button
               fullWidth
@@ -376,7 +382,6 @@ const GuestDashboardPanel: React.FC = () => {
             value={currentPassword}
             onChange={(e) => setCurrentPassword(e.target.value)}
             disabled={changePasswordLoading}
-            
             InputProps={{
               endAdornment: (
                 <InputAdornment position='end'>

@@ -64,7 +64,11 @@ The application employs a modern web architecture with a React-based frontend an
     - The application uses a two-level layout approach.
     - **Global Layout (`App.tsx`):** The root `App.tsx` component renders the `AppBarComponent` to ensure it is globally visible on all pages, public and private.
     - **Authenticated Layout (`MainLayout.tsx`):** A dedicated `MainLayout.tsx` is wrapped by the `ProtectedRoute`. It is responsible for the layout of authenticated pages, containing a `Container` for the main content (`Outlet`) and a full-width `Footer`. This pattern correctly separates global concerns from authenticated-only layout elements.
-- **Client-Side API Service Modules:** (No changes from previous version)
+- **Client-Side API Service Modules:**
+    - **Pattern:** API call logic is encapsulated in dedicated service modules within `src/lib/`. This separates data fetching and business logic from the UI components.
+    - **Examples:**
+        - `src/lib/phoenixService.ts`: Handles interactions with the external Phoenix API for service requests.
+        - `src/lib/violationsService.ts`: (New as of 2025-07-24) Provides functions for querying violation data directly from Firestore, replacing previous cloud function calls. This pattern is preferred for simple, secure data retrieval that does not require complex backend processing.
 - **Generic Chart Wrapper Components:** (No changes from previous version)
 - **Address Autocompletion (Google Places API):** (No changes from previous version)
 - **Advanced UI Components (`react-select`):** (No changes from previous version)

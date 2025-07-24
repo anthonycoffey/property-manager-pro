@@ -12,7 +12,9 @@ import {
 } from '@mui/material';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { useAuth } from '../../hooks/useAuth';
+import { getViolationDetailsById } from '../../lib/violationsService';
 
+// Define the structure of a violation
 // Define the structure of a violation
 interface Violation {
   id: string;
@@ -22,17 +24,6 @@ interface Violation {
   status: 'pending' | 'acknowledged' | 'escalated' | 'reported';
   createdAt: Date;
   acknowledgedAt?: Date;
-}
-
-interface Timestamp {
-  _seconds: number;
-  _nanoseconds: number;
-}
-
-interface ViolationData
-  extends Omit<Violation, 'createdAt' | 'acknowledgedAt'> {
-  createdAt: Timestamp;
-  acknowledgedAt?: Timestamp;
 }
 
 const ViolationDetailView: React.FC = () => {
@@ -47,12 +38,6 @@ const ViolationDetailView: React.FC = () => {
     const fetchViolationDetails = async () => {
       if (!currentUser || !violationId) return;
 
-      const functions = getFunctions();
-      const getViolationDetails = httpsCallable(
-        functions,
-        'getViolationDetails'
-      );
-
       try {
         const organizationId = currentUser.customClaims?.organizationId;
         const propertyId = currentUser.customClaims?.propertyId;
@@ -62,22 +47,14 @@ const ViolationDetailView: React.FC = () => {
           );
         }
 
-        const result = await getViolationDetails({
-          violationId,
+        const violationData = await getViolationDetailsById({
           organizationId,
           propertyId,
+          violationId,
+          userId: currentUser.uid,
         });
-        const data = result.data as ViolationData;
 
-        const newViolation: Violation = {
-          ...data,
-          createdAt: new Date(data.createdAt._seconds * 1000),
-          acknowledgedAt: data.acknowledgedAt
-            ? new Date(data.acknowledgedAt._seconds * 1000)
-            : undefined,
-        };
-
-        setViolation(newViolation);
+        setViolation(violationData);
       } catch (err) {
         console.error('Error fetching violation details:', err);
         setError(

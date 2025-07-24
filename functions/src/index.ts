@@ -126,17 +126,15 @@ export const createViolationReport = createViolationReportFunction;
 import { getViolations as getViolationsFunction } from './callable/getViolations.js';
 export const getViolations = getViolationsFunction;
 
-import { getMyViolations as getMyViolationsFunction } from './callable/getMyViolations.js';
-export const getMyViolations = getMyViolationsFunction;
-
-import { getViolationDetails as getViolationDetailsFunction } from './callable/getViolationDetails.js';
-export const getViolationDetails = getViolationDetailsFunction;
 
 import { acknowledgeViolation as acknowledgeViolationFunction } from './callable/acknowledgeViolation.js';
 export const acknowledgeViolation = acknowledgeViolationFunction;
 
 import { getUserProfiles as getUserProfilesFunction } from './callable/getUserProfiles.js';
 export const getUserProfiles = getUserProfilesFunction;
+
+import { anonymizeAndDeleteUser as anonymizeAndDeleteUserFunction } from './callable/anonymizeAndDeleteUser.js';
+export const anonymizeAndDeleteUser = anonymizeAndDeleteUserFunction;
 
 // HTTP Functions
 // import { handleCampaignSignUpLink as handleCampaignSignUpLinkFunction } from './http/handleCampaignSignUpLink.js'; // Commented out as it's being decommissioned

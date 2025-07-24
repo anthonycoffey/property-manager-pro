@@ -9,7 +9,6 @@ import {
   ListItemText,
   ListItemIcon,
   ListItemButton,
-  Paper,
   TablePagination,
   Chip,
   Divider,
@@ -38,6 +37,13 @@ interface Violation {
   photoUrl: string;
   status: ViolationStatus;
   createdAt: Date;
+}
+
+interface ViolationFromFirestore extends Omit<Violation, 'createdAt'> {
+  createdAt: {
+    _seconds: number;
+    _nanoseconds: number;
+  };
 }
 
 // Helper function to format violation type string
@@ -95,15 +101,15 @@ const MyViolationsListView: React.FC = () => {
           rowsPerPage,
           sortBy,
         });
-        const { violations: newViolations, total: totalCount } =
-          result.data as { violations: { id: string }[]; total: number };
+        const { violations: newViolations, total: totalCount } = result.data as {
+          violations: ViolationFromFirestore[];
+          total: number;
+        };
 
-        const formattedViolations: Violation[] = newViolations.map(
-          (v: any) => ({
-            ...v,
-            createdAt: new Date(v.createdAt._seconds * 1000),
-          })
-        );
+        const formattedViolations: Violation[] = newViolations.map((v) => ({
+          ...v,
+          createdAt: new Date(v.createdAt._seconds * 1000),
+        }));
 
         setViolations(formattedViolations);
         setTotal(totalCount);

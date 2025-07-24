@@ -38,13 +38,30 @@ const sendNotificationToUser = async (snapshot: QueryDocumentSnapshot, userProfi
   }
   console.log(`[sendNotificationToUser] Found ${fcmTokens.length} FCM token(s):`, fcmTokens);
 
-  const dataPayload: { [key: string]: string } = {};
-  if (link) dataPayload.link = link;
-  if (mobileLink) dataPayload.mobileLink = mobileLink;
+  // Prepare platform-specific data payloads
+  const webData: { [key: string]: string } = {};
+  if (link) webData.link = link;
+
+  const mobileData: { [key: string]: string } = {};
+  const mobileDeepLink = mobileLink || link; // Fallback to web link if mobile link isn't set
+  if (mobileDeepLink) mobileData.link = mobileDeepLink;
 
   const message: MulticastMessage = {
     notification: { title, body },
-    data: dataPayload,
+    data: webData, // Default payload for web
+    android: {
+      // Android-specific override
+      data: mobileData,
+    },
+    apns: {
+      // iOS-specific override
+      payload: {
+        aps: {
+          sound: 'default',
+        },
+        ...mobileData, // Adds 'link' key with mobile deep link to the APNs payload
+      },
+    },
     tokens: fcmTokens,
   };
   console.log('[sendNotificationToUser] Sending multicast message payload:', JSON.stringify(message, null, 2));

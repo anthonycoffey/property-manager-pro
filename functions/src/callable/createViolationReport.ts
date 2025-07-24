@@ -83,7 +83,7 @@ export const createViolationReport = https.onCall(async (data, context) => {
         title: 'Parking Violation Warning',
         body: 'Your vehicle may have been reported for a parking violation. Please check the details.',
         link: `/dashboard/resident/violations/${violationRef.id}`,
-        mobileLink: `amenilink-resident://my-violations/${violationRef.id}`,
+        mobileLink: `exp+amenilink-resident://(resident)/my-violations/${violationRef.id}`,
         createdAt: new Date(),
         read: false,
       };

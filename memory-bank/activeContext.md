@@ -2,6 +2,19 @@
 
 ## 1. Current Work Focus
 
+- **Property-Wide Notification System (Completed 2025-07-24):**
+    - **Objective:** Implement a feature for property managers to create and view property-wide notifications, with an automated notification path for unidentified vehicle violations.
+    - **Core Changes:**
+        - **Backend:**
+            - Created `functions/src/callable/createPropertyNotification.ts` to allow manual creation of notifications with optional vehicle data and violation links.
+            - Modified `functions/src/callable/createViolationReport.ts` to create a property-wide notification if a reported vehicle's owner cannot be identified.
+            - Updated `firestore.rules` to define access controls for the new `/properties/{propId}/notifications` collection.
+        - **Frontend:**
+            - Created a new UI for Property Managers at `/dashboard/property-manager/property-notifications`.
+            - The view (`PropertyNotificationsView.tsx`) displays a real-time list of all notifications and includes a modal (`CreatePropertyNotificationModal.tsx`) for creating new ones.
+            - Added a client-side service `src/lib/notificationsService.ts` for real-time data fetching.
+            - Added a link to the new page in `navigationConfig.ts`.
+
 - **Deprecate Violation Cloud Functions (Completed 2025-07-24):**
     - **Objective:** Deprecate `getMyViolations` and `getViolationDetails` cloud functions and replace them with client-side Firestore queries.
     - **Core Changes:**
@@ -48,6 +61,14 @@
     - Service Request Form Auto-select First Vehicle (Completed 2025-06-10): Added functionality to `CreateServiceRequestForm.tsx` to automatically select the first vehicle from the resident's profile if vehicles are present and no vehicle is already selected.
 
 ## 2. Recent Changes & Activities (Newest First)
+
+- **Property-Wide Notification System (Completed 2025-07-24):**
+    - **Objective:** Implement a feature for property managers to create and view property-wide notifications.
+    - **Change:** Created a new callable function, modified `createViolationReport`, updated Firestore rules, and built a new UI for property managers.
+    - **Details:**
+        - The new `createPropertyNotification` function allows managers to manually create notifications with an optional license plate.
+        - The `createViolationReport` function now posts a public notification to the property's notification feed if the vehicle's owner is unknown, linking it to the violation report.
+        - A new page was created for property managers to view these notifications and create new ones, accessible via the main navigation.
 
 - **FCM Token Logic Update for Multi-Tenancy (Completed 2025-07-21):**
     - **Objective:** Align the `updateFcmToken` cloud function with the application's multi-tenant Firestore structure.

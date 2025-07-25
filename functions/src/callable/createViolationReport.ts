@@ -69,6 +69,7 @@ export const createViolationReport = https.onCall(async (data, context) => {
     batch.set(violationRef, violationData);
 
     if (residentId) {
+      // If resident is known, create a direct notification for them
       const notificationRef = db
         .collection('organizations')
         .doc(organizationId)
@@ -81,13 +82,32 @@ export const createViolationReport = https.onCall(async (data, context) => {
 
       const notificationData = {
         title: 'Parking Violation Warning',
-        body: 'Your vehicle may have been reported for a parking violation. Please check the details.',
+        body: `A parking violation has been reported for a vehicle with license plate ${licensePlate}. Please check the details.`,
         link: `/dashboard/resident/violations/${violationRef.id}`,
         mobileLink: `amenilink-resident://(resident)/my-violations/${violationRef.id}`,
         createdAt: new Date(),
         read: false,
       };
       batch.set(notificationRef, notificationData);
+    } else {
+      // If resident is unknown, create a property-wide notification for managers
+      const propertyNotificationRef = db
+        .collection('organizations')
+        .doc(organizationId)
+        .collection('properties')
+        .doc(propertyId)
+        .collection('notifications')
+        .doc();
+
+      const propertyNotificationData = {
+        title: 'Unidentified Vehicle Violation',
+        message: `A violation has been reported for an unidentified vehicle with license plate: ${licensePlate}.`,
+        violationId: violationRef.id,
+        vehicle: { licensePlate },
+        createdAt: new Date(),
+        createdBy: reporterId,
+      };
+      batch.set(propertyNotificationRef, propertyNotificationData);
     }
 
     await batch.commit();

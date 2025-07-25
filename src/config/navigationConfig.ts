@@ -11,6 +11,7 @@ import BuildIcon from '@mui/icons-material/Build';
 import PeopleIcon from '@mui/icons-material/People'; // For PM Residents tab
 import ReportProblemIcon from '@mui/icons-material/ReportProblem';
 import PolicyIcon from '@mui/icons-material/Policy';
+import NotificationsIcon from '@mui/icons-material/Notifications';
 
 // Define UserRole type if not already globally available
 export type UserRole =
@@ -148,6 +149,12 @@ export const navigationItems: NavItemConfig[] = [
     text: 'Violations',
     icon: PolicyIcon,
     path: '/dashboard/property-manager/violations',
+    roles: ['property_manager'],
+  },
+  {
+    text: 'Property Notifications',
+    icon: NotificationsIcon,
+    path: '/dashboard/property-manager/property-notifications',
     roles: ['property_manager'],
   },
   {

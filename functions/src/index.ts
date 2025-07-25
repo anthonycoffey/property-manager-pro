@@ -123,6 +123,9 @@ export const getPropertyManagerPhoenixStats = getPropertyManagerPhoenixStatsFunc
 import { createViolationReport as createViolationReportFunction } from './callable/createViolationReport.js';
 export const createViolationReport = createViolationReportFunction;
 
+import { createPropertyNotification as createPropertyNotificationFunction } from './callable/createPropertyNotification.js';
+export const createPropertyNotification = createPropertyNotificationFunction;
+
 import { getViolations as getViolationsFunction } from './callable/getViolations.js';
 export const getViolations = getViolationsFunction;
 
@@ -153,6 +156,7 @@ import {
   onNewUserNotification as onNewUserNotificationFunction,
   onNewResidentNotification as onNewResidentNotificationFunction,
 } from './triggers/onNewNotification.js';
+
 export const onNewAdminNotification = onNewAdminNotificationFunction;
 export const onNewUserNotification = onNewUserNotificationFunction;
 export const onNewResidentNotification = onNewResidentNotificationFunction;
@@ -162,6 +166,9 @@ export const onViolationUpdate = onViolationUpdateFunction;
 
 import { onResidentProfileUpdate as onResidentProfileUpdateFunction } from './triggers/onResidentProfileUpdate.js';
 export const onResidentProfileUpdate = onResidentProfileUpdateFunction;
+
+import { sendPropertyNotification as sendPropertyNotificationFunction } from './triggers/sendPropertyNotification.js';
+export const sendPropertyNotification = sendPropertyNotificationFunction;
 
 import { updateFcmToken as updateFcmTokenFunction } from './callable/updateFcmToken.js';
 export const updateFcmToken = updateFcmTokenFunction;

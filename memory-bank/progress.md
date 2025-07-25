@@ -6,9 +6,17 @@ The project has most recently completed an enhancement to the **Report Violation
 
 Prior to this, a significant **Dashboard Navigation Refactor & UI Enhancements** initiative was completed. This involved moving from a tab-based navigation system to a global, role-aware drawer navigation, implementing breadcrumbs, and enhancing overview pages.
 
-- **Date of this update:** 2025-07-12
+- **Date of this update:** 2025-07-24
 
 ## 2. What Works / Completed (Newest First)
+
+- **Property-Wide Notification System (Completed 2025-07-24):**
+    - **Objective:** To allow property managers to send and view property-wide notifications, and to automate notifications for unidentified vehicle violations.
+    - **Change:**
+        - Implemented a `createPropertyNotification` callable function for manual notifications.
+        - Updated the `createViolationReport` function to conditionally create a property-wide notification if the vehicle's owner is unknown.
+        - Added a new UI at `/dashboard/property-manager/property-notifications` for property managers to view and create these notifications.
+    - **Details:** This feature provides a new communication channel for property-level alerts. The UI includes a form for manual creation and a real-time list of existing notifications, with links to associated violations where applicable.
 
 - **Deprecate Violation Cloud Functions (Completed 2025-07-24):**
     - **Objective:** Deprecate `getMyViolations` and `getViolationDetails` cloud functions, replacing them with client-side Firestore queries to improve performance and simplify the backend.

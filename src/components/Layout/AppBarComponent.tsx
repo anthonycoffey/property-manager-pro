@@ -255,7 +255,7 @@ const AppBarComponent: React.FC<AppBarComponentProps> = ({
               userSelect: 'none',
             }}
           >
-            Property Manager Pro
+            AmeniLink
           </Typography>
         </Box>
 

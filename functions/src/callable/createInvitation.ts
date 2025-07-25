@@ -309,7 +309,7 @@ export const createInvitation = onCall(async (request) => {
         ? LOCAL_DOMAIN
         : PRODUCTION_DOMAIN;
 
-    const appName = 'Property Manager Pro';
+    const appName = 'AmeniLink';
     let emailTemplateName = '';
     let invitationLink: string;
 

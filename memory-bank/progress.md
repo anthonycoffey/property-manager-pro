@@ -10,10 +10,13 @@ Prior to this, a significant **Dashboard Navigation Refactor & UI Enhancements**
 
 ## 2. What Works / Completed (Newest First)
 
-- **New Cloud Function: `getMyViolations` (Completed 2025-07-19):**
-    - **Objective:** Add a secure callable function for users to fetch only the violations they have reported.
-    - **Change:** Created `functions/src/callable/getMyViolations.ts` and exported it from `functions/src/index.ts`.
-    - **Details:** The new function provides a paginated and filterable endpoint that is securely scoped to the authenticated user's ID, ensuring data privacy. It follows existing patterns for authentication checks, argument validation, and error handling.
+- **Deprecate Violation Cloud Functions (Completed 2025-07-24):**
+    - **Objective:** Deprecate `getMyViolations` and `getViolationDetails` cloud functions, replacing them with client-side Firestore queries to improve performance and simplify the backend.
+    - **Change:**
+        - Created `src/lib/violationsService.ts` with `getMyViolations` and `getViolationDetailsById` functions.
+        - Refactored `MyViolationsListView.tsx` and `ViolationDetailView.tsx` to use the new service.
+        - Deleted the corresponding cloud function files and their entries in `functions/src/index.ts`.
+    - **Details:** This change moves data-fetching logic to the client, reducing reliance on backend services for simple data retrieval. The new service includes security checks previously handled by the cloud functions.
 
 - **Mobile-Friendly Violation Reporting (Completed 2025-07-12):**
     - **Objective:** Enhance the "Report Violation" page for better mobile use by adding a direct camera access option.

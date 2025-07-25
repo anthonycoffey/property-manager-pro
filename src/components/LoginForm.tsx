@@ -127,7 +127,7 @@ const LoginForm: React.FC = () => {
       >
         <Avatar
           src={mode === 'dark' ? PMPLogoLight : PMPLogo}
-          alt='Property Manager Pro Logo'
+          alt='AmeniLink Logo'
           sx={{ width: 160, height: 160 }} // Doubled the size
         />
         <Typography component='h1' variant='h5'>

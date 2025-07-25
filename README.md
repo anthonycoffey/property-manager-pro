@@ -1,6 +1,6 @@
-# Property Manager Pro
+# AmeniLink Web
 
-Property Manager Pro is a multi-tenant ERP-style web application designed to streamline property management operations for Administrators, Property Managers, and Residents. It provides a centralized platform for managing properties, users, service requests, and communications.
+AmeniLink is a multi-tenant ERP-style web application designed to streamline property management operations for Administrators, Property Managers, and Residents. It provides a centralized platform for managing properties, users, service requests, and communications.
 
 ## Core Features
 

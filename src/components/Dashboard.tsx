@@ -1,9 +1,10 @@
 import React from 'react';
 import { Outlet, Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-import { navigationItems } from '../config/navigationConfig'; 
+import { navigationItems } from '../config/navigationConfig';
 import type { UserRole } from '../config/navigationConfig';
 import BreadcrumbsComponent from './Layout/BreadcrumbsComponent'; // Import Breadcrumbs
+import GuestDashboardPanel from './Dashboard/GuestDashboardPanel'; // Import GuestDashboardPanel
 
 const Dashboard: React.FC = () => {
   const { currentUser } = useAuth(); // Get currentUser to access customClaims.roles
@@ -30,15 +31,9 @@ const Dashboard: React.FC = () => {
     // The index route in AppRoutes.tsx shows "Select an option..." which is fine if no redirect happens.
   }
 
-  // If roles are still loading or user has no roles (after ProtectedRoute check)
-  // This might indicate an issue or a user state not yet fully resolved.
-  // ProtectedRoute should ideally handle unauthenticated users.
-  // If an authenticated user has no roles, this is a specific state to consider.
-  if (userRoles.length === 0 && currentUser) { 
-    // Authenticated but no roles assigned - this is an edge case.
-    // The index route in AppRoutes will show "Select an option from the menu."
-    // which might be acceptable, or a specific message/page could be shown.
-    // For now, allowing Outlet to render the index route's "Select an option..."
+  // If an authenticated user has no roles, render the GuestDashboardPanel.
+  if (userRoles.length === 0 && currentUser) {
+    return <GuestDashboardPanel />;
   }
   
   // The Outlet will render the matched child route (e.g., AdminOverviewView, etc.)

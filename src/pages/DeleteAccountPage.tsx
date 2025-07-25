@@ -30,11 +30,11 @@ import {
 } from '@mui/icons-material';
 import { useAuth } from '../hooks/useAuth';
 import {
-  deleteUser,
   reauthenticateWithCredential,
   EmailAuthProvider,
 } from 'firebase/auth';
 import { auth } from '../firebaseConfig';
+import { getFunctions, httpsCallable } from 'firebase/functions';
 
 const DeleteAccountPage: React.FC = () => {
   const { currentUser, signOutUser } = useAuth();
@@ -84,7 +84,11 @@ const DeleteAccountPage: React.FC = () => {
         passwordForDelete
       );
       await reauthenticateWithCredential(currentUser, credential);
-      await deleteUser(currentUser);
+
+      const functions = getFunctions();
+      const anonymizeAndDeleteUser = httpsCallable(functions, 'anonymizeAndDeleteUser');
+      await anonymizeAndDeleteUser();
+
       showSnackbar(
         'Account deleted successfully. You will be logged out.',
         'success'
@@ -92,8 +96,6 @@ const DeleteAccountPage: React.FC = () => {
       setDeleteDialogOpen(false);
       if (signOutUser) await signOutUser();
       else auth.signOut();
-      // No navigation here, as signOutUser should handle redirect via AuthProvider or user will be on a blank page after logout.
-      // Or, navigate('/login'); could be added if explicit redirect is needed post-deletion.
     } catch (error: unknown) {
       let errorMessage = 'Failed to delete account.';
       if (error instanceof Error) {

@@ -55,15 +55,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         .then((idTokenResult: IdTokenResult) => {
           if (!isMounted) return;
           const claims = idTokenResult.claims;
-          const processedUser: CustomUser = {
-            ...firebaseUser,
+          const processedUser: CustomUser = Object.assign(firebaseUser, {
             customClaims: {
               roles: (claims.roles as string[]) || [],
               organizationId: (claims.organizationId as string) || undefined,
               organizationIds: (claims.organizationIds as string[]) || undefined,
               propertyId: (claims.propertyId as string) || undefined,
             },
-          };
+          });
           setCurrentUser(processedUser);
           setRoles((claims.roles as string[]) || []);
           setOrganizationId((claims.organizationId as string) || null);

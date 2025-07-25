@@ -2,12 +2,14 @@
 
 ## 1. Current Work Focus
 
-- **New Cloud Function for User-Specific Violations (Completed 2025-07-19):**
-    - **Objective:** Create a new callable cloud function, `getMyViolations`, to allow authenticated users to retrieve a list of violations they have personally reported.
+- **Deprecate Violation Cloud Functions (Completed 2025-07-24):**
+    - **Objective:** Deprecate `getMyViolations` and `getViolationDetails` cloud functions and replace them with client-side Firestore queries.
     - **Core Changes:**
-        - Created `functions/src/callable/getMyViolations.ts`.
-        - The function is based on the existing `getViolations` function but adds a crucial Firestore `where` clause to filter results by the authenticated user's UID (`where('reportedBy', '==', userId)`).
-        - Exported the new function from `functions/src/index.ts` to make it deployable.
+        - Created `src/lib/violationsService.ts` to house the new client-side query logic.
+        - Implemented `getMyViolations` and `getViolationDetailsById` in the new service file.
+        - Refactored `src/components/Resident/MyViolationsListView.tsx` and `src/components/Resident/ViolationDetailView.tsx` to use the new service functions.
+        - Deleted `functions/src/callable/getMyViolations.ts` and `functions/src/callable/getViolationDetails.ts`.
+        - Removed the exports for the deprecated functions from `functions/src/index.ts`.
 
 - **Mobile-Friendly Violation Reporting (Completed 2025-07-12):**
     - **Objective:** Enhance the "Report Violation" page to be more mobile-friendly by providing a direct camera access option.
@@ -57,12 +59,14 @@
         - For staff (e.g., property managers), the path is `organizations/{orgId}/users/{userId}`.
         - This ensures FCM tokens are saved to the correct, tenant-specific user document.
 
-- **New Cloud Function: `getMyViolations` (Completed 2025-07-19):**
-    - **Objective:** Add a secure endpoint for users to fetch their own reported violations.
-    - **Change:** Created `functions/src/callable/getMyViolations.ts` and updated `functions/src/index.ts`.
+- **Deprecate Violation Cloud Functions (Completed 2025-07-24):**
+    - **Objective:** Replace `getMyViolations` and `getViolationDetails` cloud functions with client-side queries.
+    - **Change:** Created `src/lib/violationsService.ts` and updated related components.
     - **Details:**
-        - The new function mirrors the structure of `getViolations` but includes a non-optional filter to ensure users can only see documents where `reportedBy` matches their `uid`.
-        - This provides a secure way for the frontend to display user-specific data without complex Firestore rules.
+        - The new `getMyViolations` service function queries violations where `residentId` matches the user's UID.
+        - The new `getViolationDetailsById` service function includes a security check to ensure the user is either the `residentId` or `reporterId`.
+        - This change improves performance by reducing cloud function invocations and simplifies the backend.
+        - Corrected documentation to reflect the use of `reporterId` for tracking who reported a violation.
 
 - **Mobile-Friendly Violation Reporting (Completed 2025-07-12):**
     - **Objective:** Enhance the "Report Violation" page to be more mobile-friendly by providing a direct camera access option.

@@ -260,7 +260,7 @@ export const createCampaign = v1Https.onCall(
       // --- Pre-Loop Data Fetching for Email Template (specific to CSV import) ---
       let propertyNameForEmail = 'Your Property'; // Fallback
       let inviterNameForEmail = 'The Management Team'; // Fallback
-      const appNameForEmail = 'Property Manager Pro'; // As per plan
+      const appNameForEmail = 'AmeniLink'; // As per plan
 
       try {
         // Fetch Property Name

@@ -35,7 +35,7 @@ const Footer: React.FC = () => {
             alignItems={{ xs: 'flex-start', md: 'flex-start' }}
           >
             <Typography variant='h6' gutterBottom>
-              Property Manager Pro
+              AmeniLink
             </Typography>
             <ul>
               <li>

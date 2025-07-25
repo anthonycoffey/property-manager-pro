@@ -103,7 +103,7 @@ const SignupForm: React.FC = () => {
       <Paper elevation={6} sx={{ mt: 8, p: 2, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
         <Avatar
           src={mode === 'dark' ? PMPLogoLight : PMPLogo}
-          alt="Property Manager Pro Logo"
+          alt="AmeniLink Logo"
           sx={{ width: 160, height: 160 }} // Doubled the size and added margin
         />
         <Typography component="h1" variant="h5">

@@ -57,7 +57,7 @@ const LostPasswordPage: React.FC = () => {
       >
         <Avatar
           src={mode === 'dark' ? PMPLogoLight : PMPLogo}
-          alt='Property Manager Pro Logo'
+          alt='AmeniLink Logo'
           sx={{ width: 160, height: 160 }}
         />
         <Typography component='h1' variant='h5' sx={{ mt: 2 }}>

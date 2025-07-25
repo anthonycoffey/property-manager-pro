@@ -42,7 +42,7 @@ export const themeConfig: ThemeConfigValues = {
   /** **************************************
    * Base
    *************************************** */
-  classesPrefix: 'pmp', // Property Manager Pro prefix
+  classesPrefix: 'al-', // AmeniLink prefix for CSS classes
   /** **************************************
    * Typography
    *************************************** */

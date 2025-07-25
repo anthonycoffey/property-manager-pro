@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -70,9 +70,7 @@ const MyViolationsListView: React.FC = () => {
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [total, setTotal] = useState(0);
   const [sortBy, setSortBy] = useState('createdAt_desc');
-  const [lastVisible, setLastVisible] =
-    useState<QueryDocumentSnapshot<DocumentData> | undefined>(undefined);
-  const [pageLastVisible, setPageLastVisible] = useState<{
+  const pageLastVisible = useRef<{
     [key: number]: QueryDocumentSnapshot<DocumentData> | undefined;
   }>({});
 
@@ -97,17 +95,13 @@ const MyViolationsListView: React.FC = () => {
           userId: currentUser.uid,
           rowsPerPage,
           sortBy,
-          lastVisible: page > 0 ? pageLastVisible[page - 1] : undefined,
+          lastVisible: page > 0 ? pageLastVisible.current[page - 1] : undefined,
         });
 
         setViolations(result.violations);
         setTotal(result.total);
         if (result.lastVisible) {
-          setLastVisible(result.lastVisible);
-          setPageLastVisible((prev) => ({
-            ...prev,
-            [page]: result.lastVisible,
-          }));
+          pageLastVisible.current[page] = result.lastVisible;
         }
       } catch (err) {
         console.error('Error fetching violations:', err);

@@ -23,7 +23,7 @@ jobs:
         run: cd functions && npm install
 
       - name: Deploy to Firebase
-        uses: w9jds/firebase-action
+        uses: w9jds/firebase-action@develop
         with:
           args: deploy --only functions --force
         env:

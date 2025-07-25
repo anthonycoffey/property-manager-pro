@@ -14,6 +14,7 @@ import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { getFunctions, httpsCallable } from 'firebase/functions';
+import { isAppError } from '../../../utils/errorUtils';
 
 const functions = getFunctions();
 const createPropertyNotificationCallable = httpsCallable(
@@ -75,9 +76,13 @@ const CreatePropertyNotificationModal: React.FC<
       });
       reset();
       onClose();
-    } catch (err: any) {
+    } catch (err) {
       console.error('Error creating property notification:', err);
-      setError(err.message || 'An unexpected error occurred.');
+      if (isAppError(err)) {
+        setError(err.message);
+      } else {
+        setError('An unexpected error occurred.');
+      }
     } finally {
       setLoading(false);
     }

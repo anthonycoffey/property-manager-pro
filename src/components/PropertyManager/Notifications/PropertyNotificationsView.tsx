@@ -31,7 +31,6 @@ const PropertyNotificationsView: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [lastVisible, setLastVisible] = useState<DocumentSnapshot | null>(null);
-  const [firstVisible, setFirstVisible] = useState<DocumentSnapshot | null>(null);
   const [page, setPage] = useState(0);
   const [pageHistory, setPageHistory] = useState<(DocumentSnapshot | null)[]>([null]);
   const [loadingNext, setLoadingNext] = useState(false);
@@ -61,7 +60,6 @@ const PropertyNotificationsView: React.FC = () => {
       );
       setNotifications(result.notifications);
       setLastVisible(result.lastVisible);
-      setFirstVisible(result.firstVisible);
       if (pageIndex >= pageHistory.length) {
         setPageHistory([...pageHistory, result.firstVisible]);
       }

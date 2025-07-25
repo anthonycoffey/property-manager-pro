@@ -62,6 +62,13 @@
 
 ## 2. Recent Changes & Activities (Newest First)
 
+- **ESLint Fixes (Completed 2025-07-25):**
+    - **Objective:** Resolve outstanding ESLint errors in the notifications feature.
+    - **Change:**
+        - Modified `src/components/PropertyManager/Notifications/CreatePropertyNotificationModal.tsx` to use the `isAppError` type guard for safer error handling.
+        - Modified `src/components/PropertyManager/Notifications/PropertyNotificationsView.tsx` to remove an unused state variable (`firstVisible`).
+    - **Details:** This improves code quality and adheres to project best practices for type safety and cleanliness.
+
 - **Property-Wide Notification System (Completed 2025-07-24):**
     - **Objective:** Implement a feature for property managers to create and view property-wide notifications.
     - **Change:** Created a new callable function, modified `createViolationReport`, updated Firestore rules, and built a new UI for property managers.

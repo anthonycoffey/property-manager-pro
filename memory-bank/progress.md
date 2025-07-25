@@ -6,9 +6,16 @@ The project has most recently completed an enhancement to the **Report Violation
 
 Prior to this, a significant **Dashboard Navigation Refactor & UI Enhancements** initiative was completed. This involved moving from a tab-based navigation system to a global, role-aware drawer navigation, implementing breadcrumbs, and enhancing overview pages.
 
-- **Date of this update:** 2025-07-24
+- **Date of this update:** 2025-07-25
 
 ## 2. What Works / Completed (Newest First)
+
+- **ESLint Fixes (Completed 2025-07-25):**
+    - **Objective:** Resolve outstanding ESLint errors in the notifications feature.
+    - **Change:**
+        - Modified `src/components/PropertyManager/Notifications/CreatePropertyNotificationModal.tsx` to use the `isAppError` type guard for safer error handling.
+        - Modified `src/components/PropertyManager/Notifications/PropertyNotificationsView.tsx` to remove an unused state variable (`firstVisible`).
+    - **Details:** This improves code quality and adheres to project best practices for type safety and cleanliness.
 
 - **Property-Wide Notification System (Completed 2025-07-24):**
     - **Objective:** To allow property managers to send and view property-wide notifications, and to automate notifications for unidentified vehicle violations.

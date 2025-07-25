@@ -324,6 +324,22 @@ service cloud.firestore {
           allow read, update: if isResident() &&
                          (request.auth.uid == resource.data.reporterId || request.auth.uid == resource.data.residentId);
         }
+
+        // Subcollection: notifications (Property-wide notifications)
+        match /notifications/{notificationId} {
+          // READ: Admins, Org Managers for the org, PMs for the org, and residents of the specific property can read.
+          allow read: if isAdmin() ||
+                         isOrgManagerForOrg(organizationId) ||
+                         (isPropertyManager() && isOrgUser(organizationId)) ||
+                         isPropertyResident(organizationId, propertyId);
+
+          // CREATE: Admins, Org Managers, and Property Managers can create.
+          // Creation logic is handled by a callable function which also checks roles.
+          allow create: if isAdmin() || isOrgManagerForOrg(organizationId) || (isPropertyManager() && isOrgUser(organizationId));
+
+          // UPDATE, DELETE: Disallowed for now to maintain an immutable record.
+          allow update, delete: if false;
+        }
       } // End of properties subcollection
 
       // Subcollection: invitations

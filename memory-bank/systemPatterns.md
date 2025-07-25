@@ -31,9 +31,27 @@ The application employs a modern web architecture with a React-based frontend an
 
 - **Role-Based Access Control (RBAC):** (No changes from previous version)
 
-- **Data Modeling (Firestore - Multi-Tenant Structure):** (No changes from previous version)
+- **Data Modeling (Firestore - Multi-Tenant Structure):**
+    - **Property-Wide Notifications (New Pattern 2025-07-24):**
+        - A new subcollection `notifications` has been added under each property document: `/organizations/{orgId}/properties/{propId}/notifications/{notificationId}`.
+        - This collection stores notifications that are visible to all managers and residents of a specific property.
+        - **Schema:**
+            - `title` (string)
+            - `message` (string)
+            - `createdAt` (timestamp)
+            - `createdBy` (string - UID of the creator)
+            - `violationId` (string, optional) - Links to a document in the `violations` collection.
+            - `vehicle` (object, optional) - Contains `licensePlate` (string).
+        - This is distinct from user-specific notifications stored under resident or user profiles.
 
-- **API Design (Cloud Functions):** (No changes from previous version for this update, existing functions like `getAdminDashboardStats` are now called by more granular view components)
+- **API Design (Cloud Functions):**
+    - **`createPropertyNotification` (New Function 2025-07-24):**
+        - A new callable function that allows authorized users (`admin`, `organization_manager`, `property_manager`) to create a property-wide notification.
+        - It takes `organizationId`, `propertyId`, and a `notification` object as input.
+    - **`createViolationReport` (Modified 2025-07-24):**
+        - This function was modified to include conditional notification logic.
+        - If a reported license plate is matched to a specific resident, a private notification is sent to that resident.
+        - If no resident is found, a new property-wide notification is created in the `/properties/{propId}/notifications` collection, linking back to the created violation record.
 
 - **Frontend Navigation Pattern (New Pattern 2025-06-09):**
     - **Global Drawer Navigation:** The primary navigation within the authenticated application is handled by a global MUI `Drawer` component located in `src/components/Layout/AppBarComponent.tsx`.
@@ -69,6 +87,7 @@ The application employs a modern web architecture with a React-based frontend an
     - **Examples:**
         - `src/lib/phoenixService.ts`: Handles interactions with the external Phoenix API for service requests.
         - `src/lib/violationsService.ts`: (New as of 2025-07-24) Provides functions for querying violation data directly from Firestore, replacing previous cloud function calls. This pattern is preferred for simple, secure data retrieval that does not require complex backend processing.
+        - `src/lib/notificationsService.ts`: (New as of 2025-07-24) Provides a real-time listener to fetch property-wide notifications for the UI.
 - **Generic Chart Wrapper Components:** (No changes from previous version)
 - **Address Autocompletion (Google Places API):** (No changes from previous version)
 - **Advanced UI Components (`react-select`):** (No changes from previous version)

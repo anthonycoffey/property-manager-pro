@@ -12,8 +12,8 @@ export const createOrganization = createOrganizationFunction;
 import { updateOrganization as updateOrganizationFunction } from './callable/updateOrganization.js';
 export const updateOrganization = updateOrganizationFunction;
 
-import { deleteOrganization as deleteOrganizationFunction } from './callable/deactivateOrganization.js'; // Updated import
-export const deleteOrganization = deleteOrganizationFunction; // Updated export
+import { deleteOrganization as deleteOrganizationFunction } from './callable/deactivateOrganization.js';
+export const deleteOrganization = deleteOrganizationFunction;
 
 import { signUpWithInvitation as signUpWithInvitationFunction } from './callable/signUpWithInvitation.js';
 export const signUpWithInvitation = signUpWithInvitationFunction;
@@ -54,8 +54,8 @@ export const createServiceRequest = createServiceRequestFunction;
 import { updateResidentDetailsByPm as updateResidentDetailsByPmFunction } from './callable/updateResidentDetailsByPm.js';
 export const updateResidentDetailsByPm = updateResidentDetailsByPmFunction;
 
-import { updateResidentDetails as updateResidentDetailsFunction } from './callable/updateResidentDetails.js'; // New export
-export const updateResidentDetails = updateResidentDetailsFunction; // New export
+import { updateResidentDetails as updateResidentDetailsFunction } from './callable/updateResidentDetails.js';
+export const updateResidentDetails = updateResidentDetailsFunction;
 
 import { addOrganizationToManager as addOrganizationToManagerFunction } from './callable/addOrganizationToManager.js';
 export const addOrganizationToManager = addOrganizationToManagerFunction;
@@ -136,10 +136,6 @@ export const getUserProfiles = getUserProfilesFunction;
 import { anonymizeAndDeleteUser as anonymizeAndDeleteUserFunction } from './callable/anonymizeAndDeleteUser.js';
 export const anonymizeAndDeleteUser = anonymizeAndDeleteUserFunction;
 
-// HTTP Functions
-// import { handleCampaignSignUpLink as handleCampaignSignUpLinkFunction } from './http/handleCampaignSignUpLink.js'; // Commented out as it's being decommissioned
-// export const handleCampaignSignUpLink = handleCampaignSignUpLinkFunction; // Commented out
-
 // Scheduled Functions
 import { cleanupProcessedCampaignCSVs as cleanupProcessedCampaignCSVsFunction } from './scheduled/cleanupProcessedCampaignCSVs.js';
 export const cleanupProcessedCampaignCSVs = cleanupProcessedCampaignCSVsFunction;
@@ -180,6 +176,3 @@ import {
 export const initiateGoogleOAuth = initiateGoogleOAuthFunction;
 export const handleGoogleOAuthCallback = handleGoogleOAuthCallbackFunction;
 export const disconnectGoogleAccount = disconnectGoogleAccountFunction;
-
-// Note: The firebaseAdmin.ts and handleHttpsError.ts are not directly exported
-// as they are internal modules used by the functions themselves.

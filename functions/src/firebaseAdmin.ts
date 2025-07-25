@@ -13,4 +13,4 @@ export const adminAuth = getAuth();
 export const db = getFirestore();
 export const storage = getStorage();
 export const messaging = getMessaging();
-export { FieldValue, FieldPath, Timestamp } from 'firebase-admin/firestore'; // Re-export FieldValue, FieldPath, and Timestamp
+export { FieldValue, FieldPath, Timestamp } from 'firebase-admin/firestore';

@@ -81,11 +81,18 @@ export const handleGoogleOAuthCallback = functions.https.onRequest(
         );
       }
 
-      const tokenData = {
+      const tokenData: {
+        accessToken: string | null | undefined;
+        refreshToken?: string | null | undefined;
+        createdAt: Date;
+      } = {
         accessToken: access_token,
-        refreshToken: refresh_token,
         createdAt: new Date(),
       };
+
+      if (refresh_token) {
+        tokenData.refreshToken = refresh_token;
+      }
 
       await db
         .collection('organizations')

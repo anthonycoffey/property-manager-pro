@@ -121,6 +121,51 @@ export const onServiceRequestUpdate = firestore
           }
         });
       }
+
+      // If the service request is complete, send a review request notification
+      if (status === 'complete') {
+        const propertyDocRef = db.doc(
+          `organizations/${organizationId}/properties/${propertyId}`
+        );
+        const propertyDoc = await propertyDocRef.get();
+        const propertyData = propertyDoc.data();
+
+        if (propertyData?.gmb?.placeId) {
+          const reviewNotificationContent =
+            customNotifications?.review;
+
+          if (
+            reviewNotificationContent?.title &&
+            reviewNotificationContent?.message
+          ) {
+            const reviewLink = `https://search.google.com/local/writereview?placeid=${propertyData.gmb.placeId}`;
+            const messageBody = reviewNotificationContent.message.replace(
+              '{{reviewLink}}',
+              reviewLink
+            );
+
+            const reviewPayload = {
+              notification: {
+                title: reviewNotificationContent.title,
+                body: messageBody,
+              },
+            };
+
+            const reviewMulticastMessage = {
+              tokens: tokens,
+              notification: reviewPayload.notification,
+            };
+
+            const reviewResult = await messaging.sendEachForMulticast(
+              reviewMulticastMessage
+            );
+            logger.log(
+              `Sent review request to ${tokens.length} tokens for resident ${residentId}. ` +
+              `Success count: ${reviewResult.successCount}, Failure count: ${reviewResult.failureCount}`
+            );
+          }
+        }
+      }
     } catch (error) {
       logger.error(
         `Error processing service request update for ${change.after.id}:`,

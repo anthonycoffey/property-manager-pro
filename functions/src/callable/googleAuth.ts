@@ -40,6 +40,7 @@ export const initiateGoogleOAuth = onCall(async (request) => {
     access_type: 'offline',
     scope: scopes,
     state: state,
+    prompt: 'consent',
   });
 
   return { authorizationUrl: url };

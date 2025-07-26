@@ -82,6 +82,7 @@ const OrganizationSettingsPage = () => {
     'en-route': { title: '', message: '' },
     complete: { title: '', message: '' },
     cancelled: { title: '', message: '' },
+    review: { title: '', message: '' },
   });
   const [isNotificationsLoading, setIsNotificationsLoading] = useState(true);
   const [notificationsError, setNotificationsError] = useState<string | null>(
@@ -500,6 +501,16 @@ const OrganizationSettingsPage = () => {
                         )
                       }
                     />
+                    {status === 'review' && (
+                      <Typography variant='caption' color='textSecondary'>
+                        Use the placeholder{' '}
+                        <code style={{ backgroundColor: '#f0f0f0' }}>
+                          {'{{reviewLink}}'}
+                        </code>{' '}
+                        to include a direct link to the Google Review form for
+                        the property.
+                      </Typography>
+                    )}
                   </Stack>
                 </Box>
               ))}

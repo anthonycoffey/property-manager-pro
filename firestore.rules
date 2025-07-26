@@ -166,11 +166,16 @@ service cloud.firestore {
 
     match /organizations/{organizationId} {
       // Admins can create, read, update, delete organizations
-      allow create, read, update, delete: if isAdmin();
+      allow create, read, delete: if isAdmin();
+      allow update: if isAdmin() ||
+                       (isOrgManagerForOrg(organizationId) &&
+                        request.resource.data.keys().hasAll(['name', 'notificationSettings'])) ||
+                       (isPropertyManager() && isOrgUser(organizationId) &&
+                        request.resource.data.keys().hasAll(['name', 'notificationSettings']));
 
       // Organization Managers can create, read, update their assigned organizations or those they created
       allow create: if isOrganizationManager(); // OM can create any organization
-      allow read, update: if isOrgManagerForOrg(organizationId) || (isOrganizationManager() && resource.data.createdBy == request.auth.uid);
+      allow read: if isOrgManagerForOrg(organizationId) || (isOrganizationManager() && resource.data.createdBy == request.auth.uid);
       // Organization users (like PMs with single orgId) can read their own organization's document
       allow read: if isOrgUser(organizationId) && (isPropertyManager() /* || isPropertyStaff() */);
 

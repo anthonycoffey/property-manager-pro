@@ -48,6 +48,7 @@ const PropertyManagerDashboardContent: React.FC<
   );
 
   const aiAssistancePath = '/dashboard/property-manager/ai-assistant';
+  const orgSettingsPath = '/dashboard/property-manager/organization-settings';
 
   const [isCreatePropertyModalOpen, setIsCreatePropertyModalOpen] =
     useState(false);
@@ -81,8 +82,8 @@ const PropertyManagerDashboardContent: React.FC<
     );
   }
 
-  // AI Assistant gets a full-screen view without the card wrapper
-  if (pathname === aiAssistancePath) {
+  // AI Assistant and Org Settings get a full-screen view without the card wrapper
+  if (pathname === aiAssistancePath || pathname === orgSettingsPath) {
     return <Outlet />;
   }
 

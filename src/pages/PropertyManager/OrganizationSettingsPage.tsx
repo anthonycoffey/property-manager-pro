@@ -32,6 +32,24 @@ import { Select, MenuItem, FormControl, InputLabel } from '@mui/material';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import GoogleIcon from '@mui/icons-material/Google';
 
+interface GmbLocation {
+  name: string;
+  title: string;
+  storefrontAddress?: {
+    addressLines?: string[];
+  };
+}
+
+interface Property {
+  id: string;
+  name: string;
+  gmb?: {
+    placeId: string;
+    locationName: string;
+  };
+  // Add other property fields as needed
+}
+
 const OrganizationSettingsPage = () => {
   const { currentUser, organizationId } = useAuth();
   const location = useLocation();
@@ -43,11 +61,11 @@ const OrganizationSettingsPage = () => {
   const [googleSuccessMessage, setGoogleSuccessMessage] = useState<
     string | null
   >(null);
-  const [gmbLocations, setGmbLocations] = useState<any[]>([]);
+  const [gmbLocations, setGmbLocations] = useState<GmbLocation[]>([]);
   const [isGmbLoading, setIsGmbLoading] = useState(false);
 
   // State for Properties
-  const [properties, setProperties] = useState<any[]>([]);
+  const [properties, setProperties] = useState<Property[]>([]);
   const [isPropertiesLoading, setIsPropertiesLoading] = useState(true);
   const [propertiesError, setPropertiesError] = useState<string | null>(null);
 
@@ -90,7 +108,7 @@ const OrganizationSettingsPage = () => {
       const props = querySnapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
-      }));
+      })) as Property[];
       setProperties(props);
     } catch (err) {
       console.error('Error fetching properties:', err);
@@ -115,7 +133,7 @@ const OrganizationSettingsPage = () => {
           setNotifications(data.notificationSettings);
         }
       }
-    } catch (err) {
+    } catch {
       setOrgError('Failed to fetch organization details.');
       setNotificationsError('Failed to fetch notification settings.');
     } finally {
@@ -153,10 +171,10 @@ const OrganizationSettingsPage = () => {
     const getGmbLocations = httpsCallable(functions, 'getGmbLocations');
     try {
       const result = await getGmbLocations({ organizationId });
-      const { locations } = result.data as { locations: any[] };
+      const { locations } = result.data as { locations: GmbLocation[] };
       setGmbLocations(locations);
-    } catch (err) {
-      console.error('Error fetching GMB locations:', err);
+    } catch (error) {
+      console.error('Error fetching GMB locations:', error);
       setGoogleError('Failed to fetch your Google My Business locations.');
     } finally {
       setIsGmbLoading(false);
@@ -210,7 +228,7 @@ const OrganizationSettingsPage = () => {
       }
     );
     return () => unsubscribe();
-  }, [currentUser, organizationId, db]);
+  }, [currentUser, organizationId, db, isGoogleConnected]);
 
   const handleGoogleConnect = async () => {
     if (!organizationId) {

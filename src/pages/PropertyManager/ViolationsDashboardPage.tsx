@@ -41,14 +41,18 @@ const ViolationsDashboardPage = () => {
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [totalViolations, setTotalViolations] = useState(0);
 
-  // Get all unique reporter IDs from the violations list
-  const reporterIds = useMemo(() => {
-    const ids = violations.map((v) => v.reporterId).filter(Boolean);
-    return [...new Set(ids)];
+  // Get all unique user IDs from the violations list (reporters and residents)
+  const userIds = useMemo(() => {
+    const ids = new Set<string>();
+    violations.forEach((v) => {
+      if (v.reporterId) ids.add(v.reporterId);
+      if (v.residentId) ids.add(v.residentId);
+    });
+    return [...ids];
   }, [violations]);
 
-  // Fetch user profiles for the reporter IDs
-  const { profiles, isLoading: profilesLoading } = useUserProfiles(reporterIds);
+  // Fetch user profiles for all user IDs
+  const { profiles, isLoading: profilesLoading } = useUserProfiles(userIds);
 
   useEffect(() => {
     const fetchViolations = async () => {
@@ -142,6 +146,7 @@ const ViolationsDashboardPage = () => {
                   <TableRow>
                     <TableCell>Date</TableCell>
                     <TableCell>Reporter</TableCell>
+                    <TableCell>Resident</TableCell>
                     <TableCell align='center'>License Plate</TableCell>
                     <TableCell align='center'>Violation Type</TableCell>
                     <TableCell align="center">Status</TableCell>
@@ -150,7 +155,7 @@ const ViolationsDashboardPage = () => {
                 <TableBody>
                   {violations.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={5} align="center">
+                      <TableCell colSpan={6} align="center">
                         No violations found.
                       </TableCell>
                     </TableRow>
@@ -185,6 +190,21 @@ const ViolationsDashboardPage = () => {
                                 />
                               ) : (
                                 violation.reporterId
+                              )
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            {profilesLoading ? (
+                              <Skeleton variant="text" width={100} />
+                            ) : (
+                              violation.residentId && profiles[violation.residentId] ? (
+                                <Chip
+                                  avatar={<Avatar alt={profiles[violation.residentId].displayName} src={profiles[violation.residentId].photoURL || undefined} />}
+                                  label={profiles[violation.residentId].displayName}
+                                  variant="outlined"
+                                />
+                              ) : (
+                                'N/A'
                               )
                             )}
                           </TableCell>

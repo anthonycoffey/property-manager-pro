@@ -325,9 +325,26 @@ service cloud.firestore {
           // Property Managers can read/update violations in their properties.
           allow read, update: if isPropertyManager() && isOrgUser(organizationId);
 
-          // Residents can read violations they reported OR violations filed against them.
-          allow read, update: if isResident() &&
-                         (request.auth.uid == resource.data.reporterId || request.auth.uid == resource.data.residentId);
+          // Residents can read their own violations (reported or assigned) OR any unclaimed violation in their property.
+          allow read: if isResident() && isPropertyResident(organizationId, propertyId) &&
+                         (resource.data.residentId == null ||
+                          request.auth.uid == resource.data.residentId ||
+                          request.auth.uid == resource.data.reporterId);
+          
+          // Residents can update violations in two cases:
+          // 1. Acknowledging a violation that is assigned to them.
+          // 2. Claiming a violation that is not yet assigned to anyone.
+          allow update: if isResident() && isPropertyResident(organizationId, propertyId) && (
+            // Case 1: Acknowledging an assigned violation
+            (resource.data.residentId == request.auth.uid &&
+             request.resource.data.status == 'acknowledged' &&
+             request.resource.data.keys().hasAll(['status', 'acknowledgedAt'])) ||
+            // Case 2: Claiming an unassigned violation
+            (resource.data.residentId == null &&
+             request.resource.data.residentId == request.auth.uid &&
+             request.resource.data.status == 'claimed' &&
+             request.resource.data.keys().hasAll(['residentId', 'status', 'claimedAt']))
+          );
         }
 
         // Subcollection: notifications (Property-wide notifications)

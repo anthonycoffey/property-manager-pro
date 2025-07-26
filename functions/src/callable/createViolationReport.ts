@@ -104,6 +104,8 @@ export const createViolationReport = https.onCall(async (data, context) => {
         message: `A violation has been reported for an unidentified vehicle with license plate: ${licensePlate}.`,
         violationId: violationRef.id,
         vehicle: { licensePlate },
+        link: `/dashboard/resident/violations/${violationRef.id}`,
+        mobileLink: `amenilink-resident://(resident)/my-violations/${violationRef.id}`,
         createdAt: new Date(),
         createdBy: reporterId,
       };

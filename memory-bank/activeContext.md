@@ -2,6 +2,12 @@
 
 ## 1. Current Work Focus
 
+- **Violation Notification Links (Completed 2025-07-26):**
+    - **Objective:** Add `link` and `mobileLink` to property-wide notifications for unidentified vehicle violations.
+    - **Core Changes:**
+        - **Backend:**
+            - Modified `functions/src/callable/createViolationReport.ts` to include `link` and `mobileLink` in the `propertyNotificationData` object, pointing to the manager's violation detail page.
+
 - **Property-Wide Notification System (Completed 2025-07-24):**
     - **Objective:** Implement a feature for property managers to create and view property-wide notifications, with an automated notification path for unidentified vehicle violations.
     - **Core Changes:**
@@ -68,6 +74,11 @@
         - Modified `src/components/PropertyManager/Notifications/CreatePropertyNotificationModal.tsx` to use the `isAppError` type guard for safer error handling.
         - Modified `src/components/PropertyManager/Notifications/PropertyNotificationsView.tsx` to remove an unused state variable (`firstVisible`).
     - **Details:** This improves code quality and adheres to project best practices for type safety and cleanliness.
+
+- **Violation Notification Links (Completed 2025-07-26):**
+    - **Objective:** Add `link` and `mobileLink` to property-wide notifications for unidentified vehicle violations.
+    - **Change:** Modified `functions/src/callable/createViolationReport.ts`.
+    - **Details:** Added `link` and `mobileLink` to the notification data for unidentified vehicle violations, directing managers to the specific violation details page.
 
 - **Property-Wide Notification System (Completed 2025-07-24):**
     - **Objective:** Implement a feature for property managers to create and view property-wide notifications.

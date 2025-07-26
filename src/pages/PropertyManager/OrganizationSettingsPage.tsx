@@ -94,6 +94,7 @@ const OrganizationSettingsPage = () => {
 
   const fetchProperties = useCallback(async () => {
     if (!organizationId) return;
+    console.log('Fetching properties...');
     setIsPropertiesLoading(true);
     setPropertiesError(null);
     try {
@@ -109,6 +110,7 @@ const OrganizationSettingsPage = () => {
         id: doc.id,
         ...doc.data(),
       })) as Property[];
+      console.log('Properties fetched:', props);
       setProperties(props);
     } catch (err) {
       console.error('Error fetching properties:', err);
@@ -165,6 +167,7 @@ const OrganizationSettingsPage = () => {
 
   const fetchGmbLocations = useCallback(async () => {
     if (!organizationId) return;
+    console.log('Fetching GMB locations...');
     setIsGmbLoading(true);
     setGoogleError(null);
     const functions = getFunctions();
@@ -172,6 +175,7 @@ const OrganizationSettingsPage = () => {
     try {
       const result = await getGmbLocations({ organizationId });
       const { locations } = result.data as { locations: GmbLocation[] };
+      console.log('GMB locations fetched:', locations);
       setGmbLocations(locations);
     } catch (error) {
       console.error('Error fetching GMB locations:', error);
@@ -182,6 +186,7 @@ const OrganizationSettingsPage = () => {
   }, [organizationId]);
 
   useEffect(() => {
+    console.log('isGoogleConnected state changed:', isGoogleConnected);
     if (isGoogleConnected) {
       fetchGmbLocations();
     } else {
@@ -599,6 +604,15 @@ const OrganizationSettingsPage = () => {
             )}
             {isPropertiesLoading || isGmbLoading ? (
               <CircularProgress />
+            ) : properties.length === 0 ? (
+              <Typography>
+                No active properties found in this organization.
+              </Typography>
+            ) : gmbLocations.length === 0 ? (
+              <Typography>
+                No Google My Business locations found for the connected
+                account.
+              </Typography>
             ) : (
               <Stack spacing={3}>
                 {properties.map((prop) => (
@@ -621,7 +635,8 @@ const OrganizationSettingsPage = () => {
                         </MenuItem>
                         {gmbLocations.map((loc) => (
                           <MenuItem key={loc.name} value={loc.name}>
-                            {loc.title} ({loc.storefrontAddress?.addressLines?.join(', ')})
+                            {loc.title} (
+                            {loc.storefrontAddress?.addressLines?.join(', ')})
                           </MenuItem>
                         ))}
                       </Select>

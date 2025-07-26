@@ -49,6 +49,13 @@ export const handleGoogleOAuthCallback = functions.https.onRequest(
   async (req, res) => {
     const { code, state } = req.query;
 
+    const frontendUrl =
+      process.env.FUNCTIONS_EMULATOR === 'true'
+        ? 'http://localhost:5173'
+        : 'https://amenities.24hrcarunlocking.com';
+
+    const redirectPath = '/dashboard/property-manager/organization-settings';
+
     if (!code) {
       res.status(400).send('Missing authorization code.');
       return;
@@ -87,10 +94,10 @@ export const handleGoogleOAuthCallback = functions.https.onRequest(
         .doc(uid)
         .set(tokenData, { merge: true });
 
-      res.redirect('/dashboard/property-manager/my-account?status=success');
+      res.redirect(`${frontendUrl}${redirectPath}?status=success`);
     } catch (error) {
       console.error('Error handling Google OAuth callback:', error);
-      res.redirect('/dashboard/property-manager/my-account?status=error');
+      res.redirect(`${frontendUrl}${redirectPath}?status=error`);
     }
   }
 );

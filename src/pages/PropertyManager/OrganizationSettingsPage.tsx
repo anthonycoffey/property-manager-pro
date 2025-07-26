@@ -309,9 +309,7 @@ const OrganizationSettingsPage = () => {
       // Optimistically update the UI
       setProperties((prev) =>
         prev.map((p) =>
-          p.id === propertyId
-            ? { ...p, gmb: { placeId, locationName } }
-            : p
+          p.id === propertyId ? { ...p, gmb: { placeId, locationName } } : p
         )
       );
     } catch (error) {
@@ -504,22 +502,12 @@ const OrganizationSettingsPage = () => {
                       }
                     />
                     {status === 'review' && (
-                      <Typography variant='caption' color='textSecondary'>
-                        Use the placeholder{' '}
-                        <Box
-                          component='code'
-                          sx={{
-                            backgroundColor: 'action.hover',
-                            px: 1,
-                            py: 0.5,
-                            borderRadius: 1,
-                          }}
-                        >
-                          {'{{reviewLink}}'}
-                        </Box>{' '}
-                        to include a direct link to the Google Review form for
-                        the property.
-                      </Typography>
+                      <Alert severity='info'>
+                        The review notification will include a Google review
+                        link and is only sent if your Google account is
+                        connected and your properties are linked to Google
+                        Business Profiles.
+                      </Alert>
                     )}
                   </Stack>
                 </Box>
@@ -631,8 +619,7 @@ const OrganizationSettingsPage = () => {
               </Typography>
             ) : gmbLocations.length === 0 ? (
               <Typography>
-                No Google My Business locations found for the connected
-                account.
+                No Google My Business locations found for the connected account.
               </Typography>
             ) : (
               <Stack spacing={3}>

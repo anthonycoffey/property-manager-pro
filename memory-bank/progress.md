@@ -10,6 +10,11 @@ Prior to this, a significant **Dashboard Navigation Refactor & UI Enhancements**
 
 ## 2. What Works / Completed (Newest First)
 
+- **Violation Notification Links (Completed 2025-07-26):**
+    - **Objective:** Add `link` and `mobileLink` to property-wide notifications for unidentified vehicle violations to provide direct access for managers.
+    - **Change:** Modified `functions/src/callable/createViolationReport.ts`.
+    - **Details:** In the logic for creating a property-wide notification for an unidentified vehicle, `link` and `mobileLink` properties were added to the notification data. These links point directly to the violation details page, improving manager workflow.
+
 - **ESLint Fixes (Completed 2025-07-25):**
     - **Objective:** Resolve outstanding ESLint errors in the notifications feature.
     - **Change:**

@@ -140,20 +140,21 @@ export const onServiceRequestUpdate = firestore
           ) {
             const reviewLink = `https://search.google.com/local/writereview?placeid=${propertyData.gmb.placeId}`;
             const messageBody = reviewNotificationContent.message.replace(
-              '{{reviewLink}}',
-              reviewLink
-            );
+              /\{\{reviewLink\}\}/g,
+              ''
+            ).trim();
 
-            const reviewPayload = {
+            const reviewMulticastMessage = {
+              tokens: tokens,
               notification: {
                 title: reviewNotificationContent.title,
                 body: messageBody,
               },
-            };
-
-            const reviewMulticastMessage = {
-              tokens: tokens,
-              notification: reviewPayload.notification,
+              webpush: {
+                fcmOptions: {
+                  link: reviewLink,
+                },
+              },
             };
 
             const reviewResult = await messaging.sendEachForMulticast(

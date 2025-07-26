@@ -132,9 +132,11 @@ const OrganizationSettingsPage = () => {
       if (docSnap.exists()) {
         const data = docSnap.data();
         setOrganizationName(data.name || '');
-        if (data.notificationSettings) {
-          setNotifications(data.notificationSettings);
-        }
+        // Merge fetched settings with default to ensure all fields are present
+        setNotifications((prev) => ({
+          ...prev,
+          ...data.notificationSettings,
+        }));
       }
     } catch {
       setOrgError('Failed to fetch organization details.');
@@ -504,9 +506,17 @@ const OrganizationSettingsPage = () => {
                     {status === 'review' && (
                       <Typography variant='caption' color='textSecondary'>
                         Use the placeholder{' '}
-                        <code style={{ backgroundColor: '#f0f0f0' }}>
+                        <Box
+                          component='code'
+                          sx={{
+                            backgroundColor: 'action.hover',
+                            px: 1,
+                            py: 0.5,
+                            borderRadius: 1,
+                          }}
+                        >
                           {'{{reviewLink}}'}
-                        </code>{' '}
+                        </Box>{' '}
                         to include a direct link to the Google Review form for
                         the property.
                       </Typography>

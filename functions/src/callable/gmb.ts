@@ -70,7 +70,13 @@ export const getGmbLocations = onCall(async (request) => {
   }
 
   const oauth2Client = await getOauth2Client(request.auth.uid, organizationId);
-  const myBusiness = google.mybusinessbusinessinformation({
+
+  const accountManagement = google.mybusinessaccountmanagement({
+    version: 'v1',
+    auth: oauth2Client,
+  });
+
+  const businessInformation = google.mybusinessbusinessinformation({
     version: 'v1',
     auth: oauth2Client,
   });
@@ -78,7 +84,7 @@ export const getGmbLocations = onCall(async (request) => {
   try {
     const {
       data: { accounts },
-    } = await myBusiness.accounts.list();
+    } = await accountManagement.accounts.list();
     if (!accounts || accounts.length === 0) {
       return { locations: [] };
     }
@@ -87,7 +93,7 @@ export const getGmbLocations = onCall(async (request) => {
     for (const account of accounts) {
       const {
         data: { locations },
-      } = await myBusiness.accounts.locations.list({
+      } = await businessInformation.accounts.locations.list({
         parent: account.name || '',
         readMask: 'name,title,storefrontAddress,metadata',
       });

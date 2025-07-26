@@ -245,8 +245,8 @@ const OrganizationSettingsPage = () => {
       const result = await initiateGoogleOAuth({ organizationId });
       const { authorizationUrl } = result.data as { authorizationUrl: string };
       window.location.href = authorizationUrl;
-    } catch (err) {
-      console.error('Error initiating Google OAuth:', err);
+    } catch (error) {
+      console.error('Error initiating Google OAuth:', error);
       setGoogleError(
         'Failed to start the connection process. Please try again.'
       );
@@ -271,8 +271,8 @@ const OrganizationSettingsPage = () => {
     try {
       await disconnectGoogleAccount({ organizationId });
       setGoogleSuccessMessage('Successfully disconnected your Google account.');
-    } catch (err) {
-      console.error('Error disconnecting Google account:', err);
+    } catch (error) {
+      console.error('Error disconnecting Google account:', error);
       setGoogleError('Failed to disconnect the account. Please try again.');
     } finally {
       setIsGoogleLoading(false);
@@ -324,8 +324,8 @@ const OrganizationSettingsPage = () => {
     try {
       await updateDoc(orgDocRef, { name: organizationName });
       setOrgSuccessMessage('Organization name updated successfully!');
-    } catch (err) {
-      console.error('Error updating organization name:', err);
+    } catch (error) {
+      console.error('Error updating organization name:', error);
       setOrgError('Failed to update organization name.');
     } finally {
       setIsOrgLoading(false);
@@ -350,8 +350,8 @@ const OrganizationSettingsPage = () => {
       setNotificationsSuccessMessage(
         'Notification settings saved successfully!'
       );
-    } catch (err) {
-      console.error('Error saving notification settings:', err);
+    } catch (error) {
+      console.error('Error saving notification settings:', error);
       setNotificationsError('Failed to save notification settings.');
     } finally {
       setIsNotificationsLoading(false);

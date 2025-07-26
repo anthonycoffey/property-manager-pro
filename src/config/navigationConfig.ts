@@ -12,6 +12,7 @@ import PeopleIcon from '@mui/icons-material/People'; // For PM Residents tab
 import ReportProblemIcon from '@mui/icons-material/ReportProblem';
 import PolicyIcon from '@mui/icons-material/Policy';
 import NotificationsIcon from '@mui/icons-material/Notifications';
+import SettingsIcon from '@mui/icons-material/Settings';
 
 // Define UserRole type if not already globally available
 export type UserRole =
@@ -111,6 +112,12 @@ export const navigationItems: NavItemConfig[] = [
     path: '/dashboard/organization-manager/ai-assistant',
     roles: ['organization_manager'],
   },
+  {
+    text: 'Organization Settings',
+    icon: SettingsIcon,
+    path: '/dashboard/organization-manager/organization-settings',
+    roles: ['organization_manager'],
+  },
 
   // --- Property Manager Links ---
   // Corresponds to PropertyManagerDashboardPanel tabs
@@ -164,12 +171,11 @@ export const navigationItems: NavItemConfig[] = [
     roles: ['property_manager'],
   },
   {
-    text: 'My Account',
-    icon: PersonIcon,
-    path: '/dashboard/property-manager/my-account',
+    text: 'Organization Settings',
+    icon: SettingsIcon,
+    path: '/dashboard/property-manager/organization-settings',
     roles: ['property_manager'],
   },
-
   // --- Resident Links ---
   // Corresponds to ResidentDashboard tabs (Reordered for My Profile to be default)
   {

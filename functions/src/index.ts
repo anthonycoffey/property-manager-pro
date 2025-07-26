@@ -170,6 +170,9 @@ export const onResidentProfileUpdate = onResidentProfileUpdateFunction;
 import { sendPropertyNotification as sendPropertyNotificationFunction } from './triggers/sendPropertyNotification.js';
 export const sendPropertyNotification = sendPropertyNotificationFunction;
 
+import { onServiceRequestUpdate as onServiceRequestUpdateFunction } from './triggers/onServiceRequestUpdate.js';
+export const onServiceRequestUpdate = onServiceRequestUpdateFunction;
+
 import { updateFcmToken as updateFcmTokenFunction } from './callable/updateFcmToken.js';
 export const updateFcmToken = updateFcmTokenFunction;
 
@@ -183,3 +186,12 @@ import {
 export const initiateGoogleOAuth = initiateGoogleOAuthFunction;
 export const handleGoogleOAuthCallback = handleGoogleOAuthCallbackFunction;
 export const disconnectGoogleAccount = disconnectGoogleAccountFunction;
+
+// GMB Functions
+import {
+  getGmbLocations as getGmbLocationsFunction,
+  linkGmbToProperty as linkGmbToPropertyFunction,
+} from './callable/gmb.js';
+
+export const getGmbLocations = getGmbLocationsFunction;
+export const linkGmbToProperty = linkGmbToPropertyFunction;

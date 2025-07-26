@@ -29,7 +29,7 @@ import PropertyManagerOverviewView from './components/Dashboard/PropertyManager/
 import PropertyManagerMyPropertiesView from './components/Dashboard/PropertyManager/PropertyManagerMyPropertiesView';
 import PropertyManagerResidentsView from './components/Dashboard/PropertyManager/PropertyManagerResidentsView';
 import PropertyManagerCampaignsViewWrapper from './components/Dashboard/PropertyManager/PropertyManagerCampaignsViewWrapper';
-import MyAccountPage from './pages/PropertyManager/MyAccountPage';
+import OrganizationSettingsPage from './pages/PropertyManager/OrganizationSettingsPage';
 import ReportViolationPage from './pages/PropertyManager/ReportViolationPage';
 import ViolationsDashboardPage from './pages/PropertyManager/ViolationsDashboardPage';
 import PropertyNotificationsView from './components/PropertyManager/Notifications/PropertyNotificationsView';
@@ -91,6 +91,7 @@ const AppRoutes: React.FC = () => {
           <Route path='staff' element={<OrgManagerStaffView />} />
           <Route path='properties' element={<OrgManagerPropertiesView />} />
           <Route path='campaigns' element={<OrgManagerCampaignsView />} />
+          <Route path='organization-settings' element={<OrganizationSettingsPage />} />
           <Route path='ai-assistant' element={<ChatView />} />
           <Route index element={<Navigate to='overview' replace />} />
         </Route>
@@ -116,12 +117,10 @@ const AppRoutes: React.FC = () => {
             path='property-notifications'
             element={<PropertyNotificationsView />}
           />
+          <Route path='organization-settings' element={<OrganizationSettingsPage />} />
           <Route path='ai-assistant' element={<ChatView />} />
           <Route index element={<Navigate to='overview' replace />} />
         </Route>
-
-        {/* Standalone Property Manager page */}
-        <Route path='property-manager/my-account' element={<MyAccountPage />} />
 
         {/* Resident Routes - Nested under ResidentDashboard */}
         <Route path='resident' element={<ResidentDashboard />}>

@@ -101,7 +101,7 @@ export const createViolationReport = https.onCall(async (data, context) => {
 
       const propertyNotificationData = {
         title: 'Unidentified Vehicle Violation',
-        message: `A violation has been reported for an unidentified vehicle with license plate: ${licensePlate}.`,
+        message: `A violation has been reported for an unidentified vehicle with license plate: ${licensePlate}`,
         violationId: violationRef.id,
         vehicle: { licensePlate },
         link: `/dashboard/resident/violations/${violationRef.id}`,

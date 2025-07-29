@@ -1,6 +1,5 @@
 import { pubsub } from 'firebase-functions/v1';
-import { db } from '../firebaseAdmin.js';
-import * as admin from 'firebase-admin';
+import { db, Timestamp } from '../firebaseAdmin.js';
 
 export const checkUnacknowledgedViolations = pubsub
   .schedule('every 1 minutes')
@@ -18,11 +17,7 @@ export const checkUnacknowledgedViolations = pubsub
 
         const querySnapshot = await violationsRef
           .where('status', '==', 'pending')
-          .where(
-            'createdAt',
-            '<=',
-            admin.firestore.Timestamp.fromDate(fiveMinutesAgo)
-          )
+          .where('createdAt', '<=', Timestamp.fromDate(fiveMinutesAgo))
           .get();
 
         if (querySnapshot.empty) {

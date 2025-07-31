@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useLocation } from 'react-router-dom';
 import {
   Box,
   Button,
@@ -12,12 +11,10 @@ import {
   TextField,
   Stack,
 } from '@mui/material';
-import { getFunctions, httpsCallable } from 'firebase/functions';
 import {
   getFirestore,
   doc,
   getDoc,
-  onSnapshot,
   updateDoc,
   setDoc,
   collection,
@@ -28,41 +25,17 @@ import {
 import { useAuth } from '../../hooks/useAuth';
 import BusinessIcon from '@mui/icons-material/Business';
 import LinkIcon from '@mui/icons-material/Link';
-import { Select, MenuItem, FormControl, InputLabel } from '@mui/material';
 import NotificationsIcon from '@mui/icons-material/Notifications';
-import GoogleIcon from '@mui/icons-material/Google';
-
-interface GmbLocation {
-  name: string;
-  title: string;
-  storefrontAddress?: {
-    addressLines?: string[];
-  };
-}
 
 interface Property {
   id: string;
   name: string;
-  gmb?: {
-    placeId: string;
-    locationName: string;
-  };
+  reviewLink?: string;
   // Add other property fields as needed
 }
 
 const OrganizationSettingsPage = () => {
-  const { currentUser, organizationId } = useAuth();
-  const location = useLocation();
-
-  // State for Google Account connection
-  const [isGoogleConnected, setIsGoogleConnected] = useState(false);
-  const [isGoogleLoading, setIsGoogleLoading] = useState(true);
-  const [googleError, setGoogleError] = useState<string | null>(null);
-  const [googleSuccessMessage, setGoogleSuccessMessage] = useState<
-    string | null
-  >(null);
-  const [gmbLocations, setGmbLocations] = useState<GmbLocation[]>([]);
-  const [isGmbLoading, setIsGmbLoading] = useState(false);
+  const { organizationId } = useAuth();
 
   // State for Properties
   const [properties, setProperties] = useState<Property[]>([]);
@@ -93,9 +66,37 @@ const OrganizationSettingsPage = () => {
 
   const db = getFirestore();
 
+  const handleSaveReviewLink = async (
+    propertyId: string,
+    reviewLink: string
+  ) => {
+    if (!organizationId) {
+      setPropertiesError('Organization ID not found.');
+      return;
+    }
+    const propDocRef = doc(
+      db,
+      'organizations',
+      organizationId,
+      'properties',
+      propertyId
+    );
+    try {
+      await updateDoc(propDocRef, { reviewLink });
+      // Optimistically update the UI
+      setProperties((prev) =>
+        prev.map((p) =>
+          p.id === propertyId ? { ...p, reviewLink: reviewLink } : p
+        )
+      );
+    } catch (error) {
+      console.error('Error saving review link:', error);
+      setPropertiesError('Failed to save review link. Please try again.');
+    }
+  };
+
   const fetchProperties = useCallback(async () => {
     if (!organizationId) return;
-    console.log('Fetching properties...');
     setIsPropertiesLoading(true);
     setPropertiesError(null);
     try {
@@ -111,7 +112,6 @@ const OrganizationSettingsPage = () => {
         id: doc.id,
         ...doc.data(),
       })) as Property[];
-      console.log('Properties fetched:', props);
       setProperties(props);
     } catch (err) {
       console.error('Error fetching properties:', err);
@@ -147,176 +147,10 @@ const OrganizationSettingsPage = () => {
     }
   }, [organizationId, db]);
 
-  // Google Connection Status Check
-  const checkGoogleConnectionStatus = useCallback(async () => {
-    if (!currentUser || !organizationId) return;
-    const tokenDocRef = doc(
-      db,
-      'organizations',
-      organizationId,
-      'googleAuth',
-      currentUser.uid
-    );
-    const docSnap = await getDoc(tokenDocRef);
-    setIsGoogleConnected(docSnap.exists());
-    setIsGoogleLoading(false);
-  }, [currentUser, organizationId, db]);
-
   useEffect(() => {
     fetchOrganizationData();
-    checkGoogleConnectionStatus();
     fetchProperties();
-  }, [fetchOrganizationData, checkGoogleConnectionStatus, fetchProperties]);
-
-  const fetchGmbLocations = useCallback(async () => {
-    if (!organizationId) return;
-    console.log('Fetching GMB locations...');
-    setIsGmbLoading(true);
-    setGoogleError(null);
-    const functions = getFunctions();
-    const getGmbLocations = httpsCallable(functions, 'getGmbLocations');
-    try {
-      const result = await getGmbLocations({ organizationId });
-      const { locations } = result.data as { locations: GmbLocation[] };
-      console.log('GMB locations fetched:', locations);
-      setGmbLocations(locations);
-    } catch (error) {
-      console.error('Error fetching GMB locations:', error);
-      setGoogleError('Failed to fetch your Google My Business locations.');
-    } finally {
-      setIsGmbLoading(false);
-    }
-  }, [organizationId]);
-
-  useEffect(() => {
-    console.log('isGoogleConnected state changed:', isGoogleConnected);
-    if (isGoogleConnected) {
-      fetchGmbLocations();
-    } else {
-      setGmbLocations([]);
-    }
-  }, [isGoogleConnected, fetchGmbLocations]);
-
-  useEffect(() => {
-    const queryParams = new URLSearchParams(location.search);
-    if (queryParams.get('status') === 'success') {
-      setGoogleSuccessMessage('Successfully connected your Google account!');
-      checkGoogleConnectionStatus();
-    } else if (queryParams.get('status') === 'error') {
-      setGoogleError('Failed to connect Google account. Please try again.');
-    }
-  }, [location, checkGoogleConnectionStatus]);
-
-  // Real-time listener for Google connection
-  useEffect(() => {
-    if (!currentUser || !organizationId) {
-      setIsGoogleLoading(false);
-      return;
-    }
-    const tokenDocRef = doc(
-      db,
-      'organizations',
-      organizationId,
-      'googleAuth',
-      currentUser.uid
-    );
-    const unsubscribe = onSnapshot(
-      tokenDocRef,
-      (doc) => {
-        const connected = doc.exists();
-        if (connected !== isGoogleConnected) {
-          setIsGoogleConnected(connected);
-        }
-        setIsGoogleLoading(false);
-      },
-      (error) => {
-        console.error('Snapshot listener error:', error);
-        setGoogleError('Error listening for Google connection status.');
-        setIsGoogleLoading(false);
-      }
-    );
-    return () => unsubscribe();
-  }, [currentUser, organizationId, db, isGoogleConnected]);
-
-  const handleGoogleConnect = async () => {
-    if (!organizationId) {
-      setGoogleError(
-        'Could not determine your organization. Please try again.'
-      );
-      return;
-    }
-    setIsGoogleLoading(true);
-    setGoogleError(null);
-    const functions = getFunctions();
-    const initiateGoogleOAuth = httpsCallable(functions, 'initiateGoogleOAuth');
-    try {
-      const result = await initiateGoogleOAuth({ organizationId });
-      const { authorizationUrl } = result.data as { authorizationUrl: string };
-      window.location.href = authorizationUrl;
-    } catch (error) {
-      console.error('Error initiating Google OAuth:', error);
-      setGoogleError(
-        'Failed to start the connection process. Please try again.'
-      );
-      setIsGoogleLoading(false);
-    }
-  };
-
-  const handleGoogleDisconnect = async () => {
-    if (!organizationId) {
-      setGoogleError(
-        'Could not determine your organization. Please try again.'
-      );
-      return;
-    }
-    setIsGoogleLoading(true);
-    setGoogleError(null);
-    const functions = getFunctions();
-    const disconnectGoogleAccount = httpsCallable(
-      functions,
-      'disconnectGoogleAccount'
-    );
-    try {
-      await disconnectGoogleAccount({ organizationId });
-      setGoogleSuccessMessage('Successfully disconnected your Google account.');
-    } catch (error) {
-      console.error('Error disconnecting Google account:', error);
-      setGoogleError('Failed to disconnect the account. Please try again.');
-    } finally {
-      setIsGoogleLoading(false);
-    }
-  };
-
-  const handleLinkProperty = async (propertyId: string, placeId: string) => {
-    if (!organizationId) {
-      setPropertiesError('Organization ID not found.');
-      return;
-    }
-
-    const location = gmbLocations.find((loc) => loc.name === placeId);
-    const locationName = location ? location.title : '';
-
-    const functions = getFunctions();
-    const linkGmbToProperty = httpsCallable(functions, 'linkGmbToProperty');
-
-    try {
-      await linkGmbToProperty({
-        organizationId,
-        propertyId,
-        placeId,
-        locationName,
-      });
-      // Optimistically update the UI
-      setProperties((prev) =>
-        prev.map((p) =>
-          p.id === propertyId ? { ...p, gmb: { placeId, locationName } } : p
-        )
-      );
-    } catch (error) {
-      console.error('Error linking property:', error);
-      setPropertiesError('Failed to link property. Please try again.');
-    }
-  };
+  }, [fetchOrganizationData, fetchProperties]);
 
   const handleSaveOrgName = async () => {
     if (!organizationId) {
@@ -503,10 +337,8 @@ const OrganizationSettingsPage = () => {
                     />
                     {status === 'review' && (
                       <Alert severity='info'>
-                        The review notification will include a Google review
-                        link and is only sent if your Google account is
-                        connected and your properties are linked to Google
-                        Business Profiles.
+                        The review notification will include a review link if
+                        one is configured for the property.
                       </Alert>
                     )}
                   </Stack>
@@ -526,136 +358,69 @@ const OrganizationSettingsPage = () => {
         </CardContent>
       </Card>
 
-      {/* Google Account Connection Card */}
+      {/* Property Review Links Card */}
       <Card>
         <CardHeader
           avatar={
-            <GoogleIcon
+            <LinkIcon
               color='primary'
               sx={{ width: { xs: 28, md: 32 }, height: { xs: 28, md: 32 } }}
             />
           }
           title={
             <Typography variant='h5' component='div'>
-              Google Account Connection
+              Property Review Links
             </Typography>
           }
-          subheader='Connect your Google account to enable features like importing Google Reviews.'
+          subheader='Configure the Google review link for each property.'
         />
         <CardContent>
-          {googleError && (
+          {propertiesError && (
             <Alert severity='error' sx={{ mb: 2 }}>
-              {googleError}
+              {propertiesError}
             </Alert>
           )}
-          {googleSuccessMessage && (
-            <Alert severity='success' sx={{ mb: 2 }}>
-              {googleSuccessMessage}
-            </Alert>
-          )}
-          {isGoogleLoading ? (
+          {isPropertiesLoading ? (
             <CircularProgress />
-          ) : isGoogleConnected ? (
-            <Stack spacing={2} alignItems='flex-start'>
-              <Typography variant='body1'>
-                Your Google account is connected to this organization.
-              </Typography>
-              <Button
-                variant='contained'
-                color='secondary'
-                onClick={handleGoogleDisconnect}
-                disabled={isGoogleLoading}
-              >
-                Disconnect Google Account
-              </Button>
-            </Stack>
+          ) : properties.length === 0 ? (
+            <Typography>
+              No active properties found in this organization.
+            </Typography>
           ) : (
-            <Stack spacing={2} alignItems='flex-start'>
-              <Typography variant='body1'>
-                Connect your Google account to import reviews for your
-                properties in this organization.
-              </Typography>
-              <Button
-                variant='contained'
-                color='primary'
-                onClick={handleGoogleConnect}
-                disabled={isGoogleLoading}
-              >
-                Connect Google Account
-              </Button>
+            <Stack spacing={3}>
+              {properties.map((prop) => (
+                <Box key={prop.id}>
+                  <Typography variant='h6'>{prop.name}</Typography>
+                  <Stack direction='row' spacing={2} sx={{ mt: 1 }}>
+                    <TextField
+                      fullWidth
+                      label='Google Review Link'
+                      value={prop.reviewLink || ''}
+                      onChange={(e) =>
+                        setProperties((prev) =>
+                          prev.map((p) =>
+                            p.id === prop.id
+                              ? { ...p, reviewLink: e.target.value }
+                              : p
+                          )
+                        )
+                      }
+                    />
+                    <Button
+                      variant='contained'
+                      onClick={() =>
+                        handleSaveReviewLink(prop.id, prop.reviewLink || '')
+                      }
+                    >
+                      Save
+                    </Button>
+                  </Stack>
+                </Box>
+              ))}
             </Stack>
           )}
         </CardContent>
       </Card>
-
-      {/* GMB Linking Card */}
-      {isGoogleConnected && (
-        <Card>
-          <CardHeader
-            avatar={
-              <LinkIcon
-                color='primary'
-                sx={{ width: { xs: 28, md: 32 }, height: { xs: 28, md: 32 } }}
-              />
-            }
-            title={
-              <Typography variant='h5' component='div'>
-                Link Google My Business Profiles
-              </Typography>
-            }
-            subheader='Link your properties to your Google My Business profiles to manage reviews.'
-          />
-          <CardContent>
-            {propertiesError && (
-              <Alert severity='error' sx={{ mb: 2 }}>
-                {propertiesError}
-              </Alert>
-            )}
-            {isPropertiesLoading || isGmbLoading ? (
-              <CircularProgress />
-            ) : properties.length === 0 ? (
-              <Typography>
-                No active properties found in this organization.
-              </Typography>
-            ) : gmbLocations.length === 0 ? (
-              <Typography>
-                No Google My Business locations found for the connected account.
-              </Typography>
-            ) : (
-              <Stack spacing={3}>
-                {properties.map((prop) => (
-                  <Box key={prop.id}>
-                    <Typography variant='h6'>{prop.name}</Typography>
-                    <FormControl fullWidth sx={{ mt: 1 }}>
-                      <InputLabel id={`gmb-select-label-${prop.id}`}>
-                        Google My Business Location
-                      </InputLabel>
-                      <Select
-                        labelId={`gmb-select-label-${prop.id}`}
-                        value={prop.gmb?.placeId || ''}
-                        label='Google My Business Location'
-                        onChange={(e) =>
-                          handleLinkProperty(prop.id, e.target.value)
-                        }
-                      >
-                        <MenuItem value=''>
-                          <em>None</em>
-                        </MenuItem>
-                        {gmbLocations.map((loc) => (
-                          <MenuItem key={loc.name} value={loc.name}>
-                            {loc.title} (
-                            {loc.storefrontAddress?.addressLines?.join(', ')})
-                          </MenuItem>
-                        ))}
-                      </Select>
-                    </FormControl>
-                  </Box>
-                ))}
-              </Stack>
-            )}
-          </CardContent>
-        </Card>
-      )}
     </Stack>
   );
 };

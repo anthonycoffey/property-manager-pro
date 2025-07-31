@@ -316,7 +316,7 @@ service cloud.firestore {
         // Subcollection: violations
         match /violations/{violationId} {
           // Create is handled by a callable function. This rule provides an additional layer of security.
-          allow create: if (isPropertyManager() || isOrganizationManager() || isAdmin()) &&
+          allow create: if ((isPropertyManager() || isOrganizationManager() || isAdmin()) || (isResident() && isPropertyResident(organizationId, propertyId))) &&
                            request.resource.data.reporterId == request.auth.uid;
 
           // Admins and Org Managers can read/update violations in their orgs.

@@ -10,6 +10,7 @@ import {
   Alert,
   TextField,
   Stack,
+  Snackbar,
 } from '@mui/material';
 import {
   getFirestore,
@@ -41,6 +42,14 @@ const OrganizationSettingsPage = () => {
   const [properties, setProperties] = useState<Property[]>([]);
   const [isPropertiesLoading, setIsPropertiesLoading] = useState(true);
   const [propertiesError, setPropertiesError] = useState<string | null>(null);
+  const [
+    snackbar,
+    setSnackbar,
+  ] = useState<{
+    open: boolean;
+    message: string;
+    severity: 'success' | 'error';
+  } | null>(null);
 
   // State for Organization Details
   const [organizationName, setOrganizationName] = useState('');
@@ -83,6 +92,11 @@ const OrganizationSettingsPage = () => {
     );
     try {
       await updateDoc(propDocRef, { reviewLink });
+      setSnackbar({
+        open: true,
+        message: 'Review link saved successfully!',
+        severity: 'success',
+      });
       // Optimistically update the UI
       setProperties((prev) =>
         prev.map((p) =>
@@ -91,7 +105,11 @@ const OrganizationSettingsPage = () => {
       );
     } catch (error) {
       console.error('Error saving review link:', error);
-      setPropertiesError('Failed to save review link. Please try again.');
+      setSnackbar({
+        open: true,
+        message: 'Failed to save review link.',
+        severity: 'error',
+      });
     }
   };
 
@@ -209,8 +227,28 @@ const OrganizationSettingsPage = () => {
     }));
   };
 
+  const handleCloseSnackbar = () => {
+    setSnackbar(null);
+  };
+
   return (
     <Stack spacing={2} sx={{ mb: 6 }}>
+      {snackbar && (
+        <Snackbar
+          open={snackbar.open}
+          autoHideDuration={6000}
+          onClose={handleCloseSnackbar}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        >
+          <Alert
+            onClose={handleCloseSnackbar}
+            severity={snackbar.severity}
+            sx={{ width: '100%' }}
+          >
+            {snackbar.message}
+          </Alert>
+        </Snackbar>
+      )}
       {/* Organization Details Card */}
       <Card>
         <CardHeader
@@ -391,7 +429,7 @@ const OrganizationSettingsPage = () => {
               {properties.map((prop) => (
                 <Box key={prop.id}>
                   <Typography variant='h6'>{prop.name}</Typography>
-                  <Stack direction='row' spacing={2} sx={{ mt: 1 }}>
+                  <Stack spacing={2} sx={{ mt: 1 }} alignItems='flex-start'>
                     <TextField
                       fullWidth
                       label='Google Review Link'
@@ -412,7 +450,7 @@ const OrganizationSettingsPage = () => {
                         handleSaveReviewLink(prop.id, prop.reviewLink || '')
                       }
                     >
-                      Save
+                      Save Link
                     </Button>
                   </Stack>
                 </Box>

@@ -140,6 +140,25 @@ service cloud.firestore {
 
 
     // Rules for top-level collections
+
+    match /reportedMessages/{reportId} {
+      // Allow any authenticated user to create a report.
+      allow create: if isAuthenticated() &&
+                      // Validate the incoming data
+                      request.resource.data.keys().hasAll(['messageId', 'messageContent', 'reporterId', 'reportedAt', 'reporterClaims']) &&
+                      request.resource.data.reporterId == request.auth.uid &&
+                      request.resource.data.messageId is string &&
+                      request.resource.data.messageContent is string &&
+                      request.resource.data.reportedAt == request.time &&
+                      // Ensure the claims being stored match the user's actual claims
+                      request.resource.data.reporterClaims.organizationId == request.auth.token.organizationId &&
+                      request.resource.data.reporterClaims.roles == request.auth.token.roles;
+
+      // Disallow reading, updating, or deleting reports from the client-side
+      // to protect user privacy and data integrity.
+      allow read, update, delete: if false;
+    }
+
     match /mail/{document=**} {
       // Allow authenticated users to create mail documents (e.g., for sending emails)
       // Admins can read/write all mail documents

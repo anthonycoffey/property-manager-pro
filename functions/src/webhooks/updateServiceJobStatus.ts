@@ -8,8 +8,8 @@ dotenv.config();
 
 // Zod schema for request body validation
 const jobStatusUpdateSchema = z.object({
-  FormSubmissionId: z.string(),
-  jobId: z.string(),
+  FormSubmissionId: z.coerce.string(),
+  jobId: z.coerce.string(),
   status: z.string(),
   paymentStatus: z.string(),
   updatedAt: z.string(), // Assuming updatedAt is an ISO string

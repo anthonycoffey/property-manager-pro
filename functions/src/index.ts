@@ -143,8 +143,8 @@ export const anonymizeAndDeleteUser = anonymizeAndDeleteUserFunction;
 import { cleanupProcessedCampaignCSVs as cleanupProcessedCampaignCSVsFunction } from './scheduled/cleanupProcessedCampaignCSVs.js';
 export const cleanupProcessedCampaignCSVs = cleanupProcessedCampaignCSVsFunction;
 
-import { checkUnacknowledgedViolations as checkUnacknowledgedViolationsFunction } from './scheduled/checkUnacknowledgedViolations.js';
-export const checkUnacknowledgedViolations = checkUnacknowledgedViolationsFunction;
+import { processUnassignedViolations as processUnassignedViolationsFunction } from './scheduled/processUnassignedViolations.js';
+export const processUnassignedViolations = processUnassignedViolationsFunction;
 
 // Webhooks
 import { updateServiceJobStatus as updateServiceJobStatusFunction } from './webhooks/updateServiceJobStatus.js';

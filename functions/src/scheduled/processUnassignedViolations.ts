@@ -1,10 +1,10 @@
 import { pubsub } from 'firebase-functions/v1';
 import { db, Timestamp } from '../firebaseAdmin.js';
 
-export const checkUnacknowledgedViolations = pubsub
+export const processUnassignedViolations = pubsub
   .schedule('every 1 minutes')
   .onRun(async () => {
-    console.log('Checking for unacknowledged violations...');
+    console.log('Checking for unassigned violations...');
 
     const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
 
@@ -16,7 +16,12 @@ export const checkUnacknowledgedViolations = pubsub
         const violationsRef = orgDoc.ref.collection('violations');
 
         const querySnapshot = await violationsRef
-          .where('status', '==', 'pending')
+          .where('status', '==', 'reported')
+          .where('violationType', 'in', [
+            'unauthorized_parking',
+            'fire_lane',
+            'double_parked',
+          ])
           .where('createdAt', '<=', Timestamp.fromDate(fiveMinutesAgo))
           .get();
 
@@ -28,17 +33,17 @@ export const checkUnacknowledgedViolations = pubsub
 
         querySnapshot.forEach((doc) => {
           console.log(
-            `Escalating violation ${doc.id} in organization ${organizationId}`
+            `Moving violation ${doc.id} to pending_tow in organization ${organizationId}`
           );
           const violationRef = doc.ref;
-          batch.update(violationRef, { status: 'escalated' });
+          batch.update(violationRef, { status: 'pending_tow' });
 
           // Create a notification for the property manager who reported it
           const violationData = doc.data();
           if (violationData.reporterId) {
             const notification = {
-              title: 'Violation Escalated',
-              body: `A parking violation for license plate ${violationData.licensePlate} has not been acknowledged and requires your attention.`,
+              title: 'Violation Pending Tow',
+              body: `A parking violation for license plate ${violationData.licensePlate} has not been assigned and is now pending tow.`,
               link: `/violations/${doc.id}`, // Link to the specific violation
               createdAt: new Date(),
               read: false,
@@ -52,6 +57,6 @@ export const checkUnacknowledgedViolations = pubsub
         await batch.commit();
       }
     } catch (error) {
-      console.error('Error checking for unacknowledged violations:', error);
+      console.error('Error checking for unassigned violations:', error);
     }
   });

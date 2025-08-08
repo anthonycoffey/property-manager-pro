@@ -13,18 +13,9 @@ import {
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { useAuth } from '../../hooks/useAuth';
 import { getViolationDetailsById } from '../../lib/violationsService';
+import CountdownTimer from '../Violations/CountdownTimer';
 
-// Define the structure of a violation
-// Define the structure of a violation
-interface Violation {
-  id: string;
-  licensePlate: string;
-  violationType: string;
-  photoUrl: string;
-  status: 'pending' | 'acknowledged' | 'escalated' | 'reported';
-  createdAt: Date;
-  acknowledgedAt?: Date;
-}
+import type { Violation } from '../../types';
 
 const ViolationDetailView: React.FC = () => {
   const { violationId } = useParams<{ violationId: string }>();
@@ -117,6 +108,11 @@ const ViolationDetailView: React.FC = () => {
         <Typography variant='h5' gutterBottom>
           Violation Details
         </Typography>
+        {violation.status === 'reported' && (
+          <Box mb={2}>
+            <CountdownTimer createdAt={violation.createdAt} />
+          </Box>
+        )}
         <Typography>
           <strong>License Plate:</strong> {violation.licensePlate}
         </Typography>
@@ -143,7 +139,7 @@ const ViolationDetailView: React.FC = () => {
           />
         </Box>
       </CardContent>
-      {violation.status === 'pending' && (
+      {violation.status === 'reported' && (
         <CardActions>
           <Button
             variant='contained'

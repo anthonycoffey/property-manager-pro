@@ -8,18 +8,18 @@ export interface AppError {
 export interface CreateInvitationResponse {
   success: boolean;
   invitationId?: string; // Present on business logic success
-  message?: string;      // Present on business logic error, or optionally on success
+  message?: string; // Present on business logic error, or optionally on success
 }
 
 export interface CreatePropertyResponse {
   success: boolean;
   propertyId?: string; // Present on business logic success
-  message?: string;    // Present on business logic error, or optionally on success
+  message?: string; // Present on business logic error, or optionally on success
 }
 
 export interface SignUpWithInvitationResponse {
   success: boolean;
-  message?: string;    // Present on business logic error, or optionally on success
+  message?: string; // Present on business logic error, or optionally on success
 }
 
 export interface PropertyAddress {
@@ -65,7 +65,7 @@ export interface Property {
   createdAt?: Timestamp | Date; // Optional, depending on how it's handled client-side
   totalUnits?: number; // Total number of rentable units in the property
   // Add any other relevant property fields
- // other fields
+  // other fields
 }
 export interface Organization {
   id: string; // Firestore document ID
@@ -320,13 +320,12 @@ export interface Job {
   // JobFiles: any[]; // Define if structure is known
 }
 
-
-export type CampaignStatus = 
-  | 'active' 
-  | 'inactive' 
-  | 'completed' 
-  | 'expired' 
-  | 'processing' 
+export type CampaignStatus =
+  | 'active'
+  | 'inactive'
+  | 'completed'
+  | 'expired'
+  | 'processing'
   | 'error';
 
 export type CampaignType = 'csv_import' | 'public_link';
@@ -357,7 +356,7 @@ export interface Invitation {
   id: string; // Firestore document ID
   email?: string; // Email can be undefined for public campaign invites initially
   rolesToAssign: string[];
-  organizationId: string; 
+  organizationId: string;
   targetPropertyId?: string; // If for a resident
   status: InvitationStatus;
   createdBy: string; // UID of the creator
@@ -401,15 +400,14 @@ export interface DeleteCampaignData {
   propertyId: string;
 }
 
-
 export type ServiceRequestStatus =
-  | 'submitted' 
-  | 'in_progress' 
-  | 'completed' 
-  | 'cancelled' 
+  | 'submitted'
+  | 'in_progress'
+  | 'completed'
+  | 'cancelled'
   | 'on_hold';
 
-  export interface ServiceRequest {
+export interface ServiceRequest {
   id?: string;
   propertyId: string;
   residentId: string;
@@ -439,8 +437,19 @@ export type ServiceRequestStatus =
   organizationId: string; // Added for easier querying/rules
 }
 
-export type ViolationStatus = 'reported' | 'claimed' | 'acknowledged' | 'resolved';
-export type ViolationType = 'fire_lane' | 'unauthorized_space' | 'blocking_driveway' | 'double_parked' | 'other';
+export type ViolationStatus =
+  | 'reported'
+  | 'claimed'
+  | 'acknowledged'
+  | 'resolved'
+  | 'pending_tow'
+  | 'towed';
+export type ViolationType =
+  | 'fire_lane'
+  | 'unauthorized_parking'
+  | 'blocking_driveway'
+  | 'double_parked'
+  | 'other';
 
 export interface Violation {
   id: string;
@@ -452,7 +461,8 @@ export interface Violation {
   status: ViolationStatus;
   violationType: ViolationType;
   createdAt: Timestamp | { _seconds: number; _nanoseconds: number }; // Allow for serialized Timestamp
-  claimedAt: Timestamp | { _seconds: number; _nanoseconds: number }; // Allow for serialized Timestamp
+  claimedAt?: Timestamp | { _seconds: number; _nanoseconds: number }; // Allow for serialized Timestamp
+  acknowledgedAt?: Timestamp | { _seconds: number; _nanoseconds: number }; // Allow for serialized Timestamp
   photoUrl: string; // Optional: URL of the violation photo
   // Add other fields from your data structure as needed
 }

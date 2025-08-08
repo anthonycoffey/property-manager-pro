@@ -28,17 +28,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { getMyViolations } from '../../lib/violationsService';
 import type { QueryDocumentSnapshot, DocumentData } from 'firebase/firestore';
 
-// Define the structure of a violation
-type ViolationStatus = 'pending' | 'acknowledged' | 'escalated' | 'reported';
-
-interface Violation {
-  id: string;
-  licensePlate: string;
-  violationType: string;
-  photoUrl: string;
-  status: ViolationStatus;
-  createdAt: Date;
-}
+import type { Violation, ViolationStatus } from '../../types';
 
 // Helper function to format violation type string
 const formatViolationType = (type: string) => {
@@ -50,13 +40,17 @@ const getStatusChipProps = (status: ViolationStatus) => {
   switch (status) {
     case 'acknowledged':
       return { label: 'Acknowledged', color: 'warning' as const };
-    case 'escalated':
-      return { label: 'Escalated', color: 'error' as const };
+    case 'pending_tow':
+      return { label: 'Pending Tow', color: 'error' as const };
+    case 'towed':
+      return { label: 'Towed', color: 'error' as const };
+    case 'resolved':
+      return { label: 'Resolved', color: 'success' as const };
+    case 'claimed':
+      return { label: 'Claimed', color: 'info' as const };
     case 'reported':
-      return { label: 'Reported', color: 'info' as const };
-    case 'pending':
     default:
-      return { label: 'Pending', color: 'default' as const };
+      return { label: 'Reported', color: 'default' as const };
   }
 };
 
@@ -139,7 +133,7 @@ const MyViolationsListView: React.FC = () => {
     switch (violationType) {
       case 'fire_lane':
         return <CarCrashIcon />;
-      case 'unauthorized_space':
+      case 'unauthorized_parking':
         return <BlockIcon />;
       default:
         return <ReportProblemIcon />;

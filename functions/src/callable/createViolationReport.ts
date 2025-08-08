@@ -53,7 +53,7 @@ export const createViolationReport = https.onCall(async (data, context) => {
       photoUrl,
       reporterId,
       residentId, // Can be null if no match is found
-      status: residentId ? 'pending' : 'reported',
+      status: 'reported',
       createdAt: new Date(),
     };
 

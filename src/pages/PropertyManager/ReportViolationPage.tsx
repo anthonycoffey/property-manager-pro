@@ -117,7 +117,7 @@ const ReportViolationPage = () => {
           onChange={(e) => setViolationType(e.target.value)}
         >
           <MenuItem value='fire_lane'>Fire Lane</MenuItem>
-          <MenuItem value='unauthorized_parking'>Unauthorized Space</MenuItem>
+          <MenuItem value='unauthorized_parking'>Unauthorized Parking</MenuItem>
           <MenuItem value='blocking_driveway'>Blocking Driveway</MenuItem>
           <MenuItem value='double_parked'>Double Parked</MenuItem>
           <MenuItem value='other'>Other</MenuItem>

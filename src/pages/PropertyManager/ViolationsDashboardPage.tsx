@@ -161,7 +161,7 @@ const ViolationsDashboardPage = () => {
               </MenuItem>
               <MenuItem value='fire_lane'>Fire Lane</MenuItem>
               <MenuItem value='unauthorized_parking'>
-                Unauthorized Space
+                Unauthorized Parking
               </MenuItem>
               <MenuItem value='blocking_driveway'>Blocking Driveway</MenuItem>
               <MenuItem value='double_parked'>Double Parked</MenuItem>

@@ -6,6 +6,8 @@ import {
   getDocs,
   doc,
   getDoc,
+  updateDoc,
+  Timestamp,
   orderBy,
   limit,
   getCountFromServer,
@@ -17,20 +19,7 @@ import { app } from '../firebaseConfig';
 
 const db = getFirestore(app);
 
-// Define the structure of a violation
-type ViolationStatus = 'pending' | 'acknowledged' | 'escalated' | 'reported';
-
-interface Violation {
-  id: string;
-  licensePlate: string;
-  violationType: string;
-  photoUrl: string;
-  status: ViolationStatus;
-  createdAt: Date;
-  acknowledgedAt?: Date;
-  residentId?: string;
-  reporterId?: string;
-}
+import type { ViolationStatus, Violation } from '../types';
 
 interface GetMyViolationsParams {
   organizationId: string;
@@ -145,6 +134,35 @@ export const getViolationDetailsById = async ({
       : undefined,
     residentId: data.residentId,
     reporterId: data.reporterId,
+    propertyId: data.propertyId,
+    organizationId: data.organizationId,
   };
   return returnData;
+};
+
+export const updateViolationStatus = async (
+  violationId: string,
+  status: ViolationStatus,
+  organizationId: string,
+  propertyId: string
+) => {
+  const violationRef = doc(
+    db,
+    'organizations',
+    organizationId,
+    'properties',
+    propertyId,
+    'violations',
+    violationId
+  );
+
+  const updateData: { status: ViolationStatus; claimedAt?: Timestamp } = {
+    status,
+  };
+
+  if (status === 'claimed') {
+    updateData.claimedAt = Timestamp.now();
+  }
+
+  await updateDoc(violationRef, updateData);
 };

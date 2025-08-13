@@ -208,4 +208,10 @@ export const navigationItems: NavItemConfig[] = [
     path: '/dashboard/resident/ai-assistant',
     roles: ['resident'],
   },
+  {
+    text: 'Notifications',
+    icon: NotificationsIcon,
+    path: '/dashboard/notifications',
+    roles: ['admin', 'organization_manager', 'property_manager', 'resident'],
+  },
 ];

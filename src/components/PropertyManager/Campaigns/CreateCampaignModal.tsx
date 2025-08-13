@@ -17,6 +17,9 @@ import {
   LinearProgress, // Import LinearProgress
   IconButton, // Added for copy icon
   InputAdornment, // Added for copy icon
+  Select,
+  MenuItem,
+  InputLabel,
 } from '@mui/material';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy'; // Added for copy icon
 import DownloadIcon from '@mui/icons-material/Download'; // Added for QR download button
@@ -24,6 +27,9 @@ import DownloadIcon from '@mui/icons-material/Download'; // Added for QR downloa
 import { getFunctions, httpsCallable } from 'firebase/functions'; // For calling Firebase functions
 import { getStorage, ref as storageRef, uploadBytesResumable } from 'firebase/storage'; // For file uploads
 import { QRCodeCanvas } from 'qrcode.react'; // Changed from QRCodeSVG to QRCodeCanvas
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '../../../firebaseConfig';
+import type { Property, Address } from '../../../types';
 
 import { useAuth } from '../../../hooks/useAuth'; // To get current user for createdBy or storage paths
 import { isAppError } from '../../../utils/errorUtils'; // For error handling
@@ -51,6 +57,8 @@ const CreateCampaignModal: React.FC<CreateCampaignModalProps> = ({
   const [maxUses, setMaxUses] = useState<string>(''); // Store as string for TextField
   const [expiresAt, setExpiresAt] = useState<string>(''); // Store as string for TextField (YYYY-MM-DDTHH:mm)
   const [csvFile, setCsvFile] = useState<File | null>(null);
+  const [property, setProperty] = useState<Property | null>(null);
+  const [selectedAddress, setSelectedAddress] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -59,13 +67,24 @@ const CreateCampaignModal: React.FC<CreateCampaignModalProps> = ({
 
 
   useEffect(() => {
-    // Reset form when modal opens or closes, or when key props change
+    const fetchProperty = async () => {
+      if (organizationId && propertyId) {
+        const docRef = doc(db, `organizations/${organizationId}/properties/${propertyId}`);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          setProperty(docSnap.data() as Property);
+        }
+      }
+    };
+
     if (open) {
+      fetchProperty();
       setCampaignName('');
       setCampaignType('public_link');
       setMaxUses('');
       setExpiresAt('');
       setCsvFile(null);
+      setSelectedAddress('');
       setError(null);
       setSuccessMessage(null);
       setAccessUrl(null);
@@ -154,6 +173,7 @@ const CreateCampaignModal: React.FC<CreateCampaignModalProps> = ({
         expiresAt?: number; // timestamp in milliseconds
         storageFilePath?: string;
         sourceFileName?: string;
+        address?: Address;
       }
 
       const params: CreateCampaignFunctionParams = {
@@ -166,6 +186,9 @@ const CreateCampaignModal: React.FC<CreateCampaignModalProps> = ({
 
       if (maxUses) params.maxUses = parseInt(maxUses, 10);
       if (expiresAt) params.expiresAt = new Date(expiresAt).getTime();
+      if (selectedAddress) {
+        params.address = property?.addresses?.find(a => a.street === selectedAddress);
+      }
       if (campaignType === 'csv_import') {
         params.storageFilePath = storageFilePath;
         params.sourceFileName = csvFile?.name;
@@ -325,6 +348,24 @@ const CreateCampaignModal: React.FC<CreateCampaignModalProps> = ({
               />
             </RadioGroup>
           </FormControl>
+
+          {property?.addresses && (
+            <FormControl fullWidth margin="dense" disabled={isLoading || !!successMessage}>
+              <InputLabel id="address-select-label">Address</InputLabel>
+              <Select
+                labelId="address-select-label"
+                value={selectedAddress}
+                onChange={(e) => setSelectedAddress(e.target.value)}
+                label="Address"
+              >
+                {property.addresses.map((addr, index) => (
+                  <MenuItem key={index} value={addr.street}>
+                    {addr.street}, {addr.city}, {addr.state} {addr.zip}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          )}
 
           {campaignType === 'csv_import' && (
             <Box>

@@ -38,23 +38,34 @@ The system is flexible with column header names. It attempts to match common var
     *   *Accepted header examples:* `DisplayName`, `display_name`, `Name`, `Full Name`, `fullname`.
     *   If provided, this name will be used. If omitted, the resident can enter it during sign-up.
 
-*   **Unit Number (Optional):**
+*   **Street (Optional):**
+    *   The street address of the resident.
+    *   *Accepted header examples:* `street`, `streetaddress`, `address`.
+*   **City (Optional):**
+    *   The city of the resident.
+    *   *Accepted header examples:* `city`.
+*   **State (Optional):**
+    *   The state or province of the resident.
+    *   *Accepted header examples:* `state`, `province`.
+*   **Zip (Optional):**
+    *   The zip or postal code of the resident.
+    *   *Accepted header examples:* `zip`, `zipcode`, `postalcode`.
+*   **Unit (Optional):**
     *   The resident's unit or apartment number.
-    *   *Accepted header examples:* `UnitNumber`, `unit_number`, `Unit`, `Apt`, `ApartmentNumber`, `unit_no`.
-    *   If provided, it will be associated with the resident.
+    *   *Accepted header examples:* `unitnumber`, `unit_number`, `unit`, `unitno`, `apt`, `apartmentnumber`, `unit_no`, `apt_number`, `apt_no`.
 
 **Other Columns (Additional Data):**
-*   Any other columns present in your CSV file that don't match the recognized fields above (Email, Display Name, Unit Number) will still be imported.
+*   Any other columns present in your CSV file that don't match the recognized fields above will still be imported.
 *   Their data will be stored as "additional CSV data" associated with the invitation. This allows for future use or reference without requiring immediate system support for those specific fields.
 
 **Example CSV Content (with varied headers):**
 
 ```csv
-email_address,display_name,Unit No,PhoneNumber
-resident.one@example.com,Alice Wonderland,101A,555-1234
-resident.two@example.com,,202B,555-5678
-another.user@example.com,Bob The Builder,,
-,No Name,303C,555-0000
+email_address,display_name,street,city,state,zip,unit,PhoneNumber
+resident.one@example.com,Alice Wonderland,123 Main St,Anytown,CA,12345,101A,555-1234
+resident.two@example.com,,456 Oak Ave,Anytown,CA,12345,202B,555-5678
+another.user@example.com,Bob The Builder,789 Pine Ln,Anytown,CA,12345,,
+,No Name,321 Elm St,Anytown,CA,12345,303C,555-0000
 ```
 
 **Key Considerations:**

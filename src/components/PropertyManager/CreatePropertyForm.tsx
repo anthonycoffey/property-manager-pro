@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState } from 'react';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { useAuth } from '../../hooks/useAuth';
-import { useJsApiLoader } from '@react-google-maps/api';
 import type { CreatePropertyResponse, AppError } from '../../types';
+import AddressAutocompleteInput, { type PropertyAddress } from './AddressAutocompleteInput';
 
 import {
   TextField,
@@ -11,209 +11,56 @@ import {
   Typography,
   CircularProgress,
   Alert,
-  Autocomplete,
   Select,
   MenuItem,
   FormControl,
   InputLabel,
   Stack,
+  IconButton,
 } from '@mui/material';
-import parse from 'autosuggest-highlight/parse'; // Not used if MUI Autocomplete handles rendering
-import LocationOnIcon from '@mui/icons-material/LocationOn';
-import { debounce } from '@mui/material/utils';
+import DeleteIcon from '@mui/icons-material/Delete';
 
 export interface CreatePropertyFormProps {
-  organizationId: string; // Now required
+  organizationId: string;
   onSuccess?: () => void;
-  onCancel?: () => void; // New prop
+  onCancel?: () => void;
 }
-
-interface PropertyAddress {
-  street: string;
-  city: string;
-  state: string;
-  zip: string;
-}
-
-// Define LIBRARIES_TO_LOAD at the top level of the module
-const LIBRARIES_TO_LOAD: ("places" | "routes")[] = ['places', 'routes'];
 
 const CreatePropertyForm: React.FC<CreatePropertyFormProps> = ({
-  organizationId, // Use this prop
+  organizationId,
   onSuccess,
-  onCancel, // Use this prop
+  onCancel,
 }) => {
   const [propertyName, setPropertyName] = useState('');
   const [propertyType, setPropertyType] = useState('');
-  const [address, setAddress] = useState<PropertyAddress>({
-    street: '',
-    city: '',
-    state: '',
-    zip: '',
-  });
-  const [totalUnits, setTotalUnits] = useState<string>(''); // New state for total units
-
-  // MUI Autocomplete specific states
-  const [autocompleteValue, setAutocompleteValue] =
-    useState<google.maps.places.AutocompletePrediction | null>(null);
-  const [autocompleteInputValue, setAutocompleteInputValue] = useState('');
-  const [autocompleteOptions, setAutocompleteOptions] = useState<
-    readonly google.maps.places.AutocompletePrediction[]
-  >([]);
+  const [addresses, setAddresses] = useState<PropertyAddress[]>([
+    { street: '', city: '', state: '', zip: '' },
+  ]);
+  const [totalUnits, setTotalUnits] = useState<string>('');
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const { currentUser } = useAuth(); // Removed roles and userOrgId, will use passed prop
+  const { currentUser } = useAuth();
 
-  const functionsInstance = getFunctions(); // Renamed to avoid conflict with firebase.functions
+  const functionsInstance = getFunctions();
   const createPropertyFn = httpsCallable(functionsInstance, 'createProperty');
-  const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
 
-  const { isLoaded, loadError } = useJsApiLoader({
-    googleMapsApiKey: apiKey || '',
-    libraries: LIBRARIES_TO_LOAD,
-  });
+  const handleAddressChange = (index: number, newAddress: PropertyAddress) => {
+    const updatedAddresses = [...addresses];
+    updatedAddresses[index] = newAddress;
+    setAddresses(updatedAddresses);
+  };
 
-  const autocompleteService =
-    useRef<google.maps.places.AutocompleteService | null>(null);
-  const geocoderService = useRef<google.maps.Geocoder | null>(null);
+  const addAddress = () => {
+    setAddresses([...addresses, { street: '', city: '', state: '', zip: '' }]);
+  };
 
-  useEffect(() => {
-    if (
-      isLoaded &&
-      window.google &&
-      window.google.maps &&
-      window.google.maps.places
-    ) {
-      if (!autocompleteService.current) {
-        autocompleteService.current =
-          new window.google.maps.places.AutocompleteService();
-      }
-      if (!geocoderService.current) {
-        geocoderService.current = new window.google.maps.Geocoder();
-      }
-    }
-  }, [isLoaded]);
-
-  const fetchPlacePredictions = useMemo(
-    () =>
-      debounce(
-        (
-          request: google.maps.places.AutocompletionRequest,
-          callback: (
-            results: google.maps.places.AutocompletePrediction[] | null,
-            status: google.maps.places.PlacesServiceStatus
-          ) => void
-        ) => {
-          if (autocompleteService.current && request.input) {
-            autocompleteService.current.getPlacePredictions(request, callback);
-          } else {
-            callback([], google.maps.places.PlacesServiceStatus.OK);
-          }
-        },
-        400
-      ),
-    []
-  );
-
-  useEffect(() => {
-    let active = true;
-
-    if (!autocompleteService.current || autocompleteInputValue === '') {
-      setAutocompleteOptions(autocompleteValue ? [autocompleteValue] : []);
-      return undefined;
-    }
-
-    fetchPlacePredictions(
-      {
-        input: autocompleteInputValue,
-        componentRestrictions: { country: 'us' },
-      },
-      (results, status) => {
-        if (active && status === google.maps.places.PlacesServiceStatus.OK) {
-          let newOptions: readonly google.maps.places.AutocompletePrediction[] =
-            [];
-          if (autocompleteValue) {
-            newOptions = [autocompleteValue];
-          }
-          if (results) {
-            newOptions = [...newOptions, ...results];
-          }
-          setAutocompleteOptions(newOptions);
-        } else if (
-          active &&
-          status !== google.maps.places.PlacesServiceStatus.ZERO_RESULTS
-        ) {
-          console.error(`Google Maps Autocomplete API error: ${status}`);
-          setAutocompleteOptions(autocompleteValue ? [autocompleteValue] : []);
-        }
-      }
-    );
-
-    return () => {
-      active = false;
-    };
-  }, [autocompleteValue, autocompleteInputValue, fetchPlacePredictions]);
-
-  const handleAutocompleteChange = (
-    _event: React.SyntheticEvent,
-    newValue: google.maps.places.AutocompletePrediction | null
-  ) => {
-    setAutocompleteOptions(
-      newValue ? [newValue, ...autocompleteOptions] : autocompleteOptions
-    );
-    setAutocompleteValue(newValue);
-
-    if (newValue && newValue.place_id && geocoderService.current) {
-      geocoderService.current.geocode(
-        { placeId: newValue.place_id },
-        (results, status) => {
-          if (
-            status === google.maps.GeocoderStatus.OK &&
-            results &&
-            results[0]
-          ) {
-            const place = results[0];
-            let streetNumber = '';
-            let route = '';
-            let city = '';
-            let state = '';
-            let postalCode = '';
-
-            place.address_components?.forEach((component) => {
-              const types = component.types;
-              if (types.includes('street_number'))
-                streetNumber = component.long_name;
-              if (types.includes('route')) route = component.long_name;
-              if (types.includes('locality')) city = component.long_name;
-              if (types.includes('administrative_area_level_1'))
-                state = component.short_name;
-              if (types.includes('postal_code'))
-                postalCode = component.long_name;
-            });
-
-            const fullStreet = streetNumber
-              ? `${streetNumber} ${route}`.trim()
-              : route.trim() || place.formatted_address || '';
-
-            setAddress({
-              street: fullStreet,
-              city: city,
-              state: state,
-              zip: postalCode,
-            });
-            // Optionally set the input value to the formatted address or just the street
-            // setAutocompleteInputValue(fullStreet); // Or newValue.description
-          } else {
-            console.error('Geocoder failed due to: ' + status);
-            setError('Failed to fetch address details.');
-            setAddress({ street: '', city: '', state: '', zip: '' }); // Clear address on error
-          }
-        }
-      );
-    } else if (!newValue) {
-      setAddress({ street: '', city: '', state: '', zip: '' }); // Clear address if selection is cleared
+  const removeAddress = (index: number) => {
+    if (addresses.length > 1) {
+      const updatedAddresses = [...addresses];
+      updatedAddresses.splice(index, 1);
+      setAddresses(updatedAddresses);
     }
   };
 
@@ -234,17 +81,18 @@ const CreatePropertyForm: React.FC<CreatePropertyFormProps> = ({
       return;
     }
 
+    const primaryAddress = addresses[0];
     if (
       !propertyName ||
       !propertyType ||
-      !address.street ||
-      !address.city ||
-      !address.state ||
-      !address.zip ||
-      !totalUnits // Add totalUnits to validation
+      !primaryAddress.street ||
+      !primaryAddress.city ||
+      !primaryAddress.state ||
+      !primaryAddress.zip ||
+      !totalUnits
     ) {
       setError(
-        'Property Name, Type, Total Units, and full Address (Street, City, State, Zip) are required.'
+        'Property Name, Type, Total Units, and at least one full Address are required.'
       );
       return;
     }
@@ -261,14 +109,10 @@ const CreatePropertyForm: React.FC<CreatePropertyFormProps> = ({
       const result = await createPropertyFn({
         propertyName,
         propertyType,
-        address: {
-          street: address.street,
-          city: address.city,
-          state: address.state,
-          zip: address.zip,
-        },
-        totalUnits: parsedTotalUnits, // Pass totalUnits
-        organizationId: organizationId, // Pass the organizationId to the Cloud Function
+        address: addresses[0], // Primary address
+        addresses: addresses, // Full list of addresses
+        totalUnits: parsedTotalUnits,
+        organizationId: organizationId,
       });
 
       const responseData = result.data as CreatePropertyResponse;
@@ -277,10 +121,8 @@ const CreatePropertyForm: React.FC<CreatePropertyFormProps> = ({
         setSuccess(`Property "${propertyName}" created successfully.`);
         setPropertyName('');
         setPropertyType('');
-        setTotalUnits(''); // Reset totalUnits
-        setAddress({ street: '', city: '', state: '', zip: '' });
-        setAutocompleteValue(null);
-        setAutocompleteInputValue('');
+        setTotalUnits('');
+        setAddresses([{ street: '', city: '', state: '', zip: '' }]);
         if (onSuccess) {
           onSuccess();
         }
@@ -297,29 +139,6 @@ const CreatePropertyForm: React.FC<CreatePropertyFormProps> = ({
   };
 
   // Removed the direct permission check based on userRoles.includes('property_manager')
-  // This form will now rely on the parent component to ensure it's rendered for authorized users
-  // and with a valid organizationId.
-
-  if (loadError) {
-    console.error('Google Maps API load error:', loadError);
-    return (
-      <Alert severity='error'>
-        Google Maps API failed to load. Address autocompletion will not work.
-      </Alert>
-    );
-  }
-
-  if (!apiKey) {
-    console.error(
-      'Google Maps API key is missing. Set VITE_GOOGLE_MAPS_API_KEY in your .env file.'
-    );
-    return (
-      <Alert severity='error'>
-        Google Maps API key is missing. Address autocompletion will not work.
-      </Alert>
-    );
-  }
-
   return (
     <Box component='form' onSubmit={handleSubmit}>
       {error && (
@@ -344,13 +163,13 @@ const CreatePropertyForm: React.FC<CreatePropertyFormProps> = ({
         onChange={(e) => setPropertyName(e.target.value)}
         margin='normal'
         required
-        disabled={loading || !isLoaded}
+        disabled={loading}
       />
       <FormControl
         fullWidth
         margin='normal'
         required
-        disabled={loading || !isLoaded}
+        disabled={loading}
       >
         <InputLabel id='property-type-label'>Property Type</InputLabel>
         <Select
@@ -362,7 +181,6 @@ const CreatePropertyForm: React.FC<CreatePropertyFormProps> = ({
         >
           <MenuItem value='Residential'>Residential</MenuItem>
           <MenuItem value='Commercial'>Commercial</MenuItem>
-          {/* Consider adding more types or making this dynamic if needed */}
         </Select>
       </FormControl>
 
@@ -372,164 +190,47 @@ const CreatePropertyForm: React.FC<CreatePropertyFormProps> = ({
         fullWidth
         value={totalUnits}
         onChange={(e) => {
-          // Allow only positive integers, or empty string for clearing
           const val = e.target.value;
           if (val === '' || /^[1-9]\d*$/.test(val)) {
             setTotalUnits(val);
-          } else if (val === '0' && totalUnits === '') { // allow typing '0' if field is empty
-             setTotalUnits(val);
-          } else if (val === '0' && totalUnits !== '0') { // prevent leading zeros if not the only digit
-            // do nothing or set to empty
-          } else if (val !== '' && !/^[1-9]\d*$/.test(val) && val !== '0') {
-            // if it's not a positive integer and not '0', don't update
-          }
-
-
-        }}
-        onBlur={() => { // Remove leading zero if it's the only digit and not intended
-          if (totalUnits === '0') {
-            // Decide if '0' is valid. If not, setTotalUnits('');
           }
         }}
-        inputProps={{ min: 1 }} // HTML5 validation, but JS validation is primary
+        inputProps={{ min: 1 }}
         margin='normal'
         required
-        disabled={loading || !isLoaded}
+        disabled={loading}
       />
 
-      <Typography variant='subtitle1' sx={{ mt: 2 }}>
-        Property Address
+      <Typography variant='subtitle1' sx={{ mt: 2, mb: 1 }}>
+        Property Addresses
       </Typography>
 
-      {!isLoaded && !loadError && (
-        <Box sx={{ display: 'flex', justifyContent: 'center', my: 2 }}>
-          <CircularProgress size={24} />{' '}
-          <Typography sx={{ ml: 1 }}>Loading address search...</Typography>
-        </Box>
-      )}
-
-      {isLoaded && (
-        <Autocomplete
-          id='google-maps-autocomplete'
-          sx={{ width: '100%', mt: 1, mb: 2 }}
-          getOptionLabel={(option) =>
-            typeof option === 'string' ? option : option.description
-          }
-          filterOptions={(x) => x}
-          options={autocompleteOptions}
-          autoComplete
-          includeInputInList
-          filterSelectedOptions
-          value={autocompleteValue}
-          noOptionsText='No locations found'
-          onChange={handleAutocompleteChange}
-          onInputChange={(_event, newInputValue) => {
-            setAutocompleteInputValue(newInputValue);
-          }}
-          slotProps={{
-            popper: {
-              placement: 'bottom-start',
-              modifiers: [
-                {
-                  name: 'flip',
-                  enabled: false,
-                },
-                {
-                  name: 'preventOverflow',
-                  enabled: true,
-                  options: {
-                    boundary: 'clippingParents',
-                  },
-                },
-              ],
-            },
-          }}
-          renderInput={(params) => (
-            <TextField
-              {...params}
-              label='Address'
-              fullWidth
-              required
-              disabled={loading}
-            />
+      {addresses.map((addr, index) => (
+        <Stack key={index} direction="row" spacing={1} sx={{ mb: 2, alignItems: 'center' }}>
+          <AddressAutocompleteInput
+            label={index === 0 ? 'Primary Address' : `Additional Address ${index + 1}`}
+            initialAddress={addr}
+            onAddressChange={(newAddress) => handleAddressChange(index, newAddress)}
+            disabled={loading}
+          />
+          {addresses.length > 1 && (
+            <IconButton onClick={() => removeAddress(index)} color="error" disabled={loading}>
+              <DeleteIcon />
+            </IconButton>
           )}
-          renderOption={(props, option) => {
-            const matches =
-              option.structured_formatting.main_text_matched_substrings || [];
-            const parts = parse(
-              option.structured_formatting.main_text,
-              matches.map((match: { offset: number; length: number }) => [
-                match.offset,
-                match.offset + match.length,
-              ])
-            );
+        </Stack>
+      ))}
 
-            return (
-              <li {...props} key={option.place_id || option.description}>
-                <Box
-                  sx={{ display: 'flex', alignItems: 'center', width: '100%' }}
-                >
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      width: 44,
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                    }}
-                  >
-                    <LocationOnIcon sx={{ color: 'text.secondary' }} />
-                  </Box>
-                  <Box sx={{ flexGrow: 1, wordWrap: 'break-word' }}>
-                    {parts.map(
-                      (
-                        part: { text: string; highlight: boolean },
-                        index: number
-                      ) => (
-                        <Box
-                          key={index}
-                          component='span'
-                          sx={{ fontWeight: part.highlight ? 700 : 400 }}
-                        >
-                          {part.text}
-                        </Box>
-                      )
-                    )}
-                    <Typography variant='body2' color='text.secondary'>
-                      {option.structured_formatting.secondary_text}
-                    </Typography>
-                  </Box>
-                </Box>
-              </li>
-            );
-          }}
-        />
-      )}
-
-      {address.street && (
-        <Box
-          sx={{
-            mt: 1,
-            py: 1,
-            px: 2,
-            border: '1px solid',
-            borderColor: 'divider',
-          }}
-        >
-          <Typography variant='caption'>Selected Address:</Typography>
-          <Typography variant='body2'>{address.street}</Typography>
-          <Typography variant='body2'>{address.city}</Typography>
-          <Typography variant='body2'>{address.state}</Typography>
-          <Typography variant='body2'>{address.zip}</Typography>
-        </Box>
-      )}
+      <Button onClick={addAddress} disabled={loading}>
+        Add Another Address
+      </Button>
 
       <Stack direction="row" spacing={2} sx={{ mt: 3 }}>
         <Button
           type='submit'
           variant='contained'
           color='primary'
-          disabled={loading || !isLoaded}
-          // sx={{ mt: 3, mr: 1 }} // Adjusted by Stack spacing
+          disabled={loading}
         >
           {loading ? <CircularProgress size={24} /> : 'Add Property'}
         </Button>

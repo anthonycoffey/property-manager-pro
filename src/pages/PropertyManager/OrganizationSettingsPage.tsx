@@ -28,6 +28,25 @@ import BusinessIcon from '@mui/icons-material/Business';
 import LinkIcon from '@mui/icons-material/Link';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 
+const defaultNotifications = {
+  'en-route': {
+    title: 'Your Technician is on the Way!',
+    message: 'Your Technician is on the way, please keep an eye out for them!',
+  },
+  complete: {
+    title: 'Your Service Request has been Completed!',
+    message: 'Your Service Request has been completed, thanks for using AmeniLink!',
+  },
+  cancelled: {
+    title: 'Your Service Request has been Cancelled',
+    message: 'Your Service Request has been cancelled, if you still need service please submit another request.',
+  },
+  review: {
+    title: 'Have a positive experience with us? Leave a Review!',
+    message: 'If you\'d like to share your experience using our platform, tap to leave us a review on Google!',
+  },
+};
+
 interface Property {
   id: string;
   name: string;
@@ -60,12 +79,10 @@ const OrganizationSettingsPage = () => {
   );
 
   // State for Notification Settings
-  const [notifications, setNotifications] = useState({
-    'en-route': { title: '', message: '' },
-    complete: { title: '', message: '' },
-    cancelled: { title: '', message: '' },
-    review: { title: '', message: '' },
-  });
+  const [
+    notifications,
+    setNotifications,
+  ] = useState(defaultNotifications);
   const [isNotificationsLoading, setIsNotificationsLoading] = useState(true);
   const [notificationsError, setNotificationsError] = useState<string | null>(
     null
@@ -150,11 +167,29 @@ const OrganizationSettingsPage = () => {
       if (docSnap.exists()) {
         const data = docSnap.data();
         setOrganizationName(data.name || '');
-        // Merge fetched settings with default to ensure all fields are present
-        setNotifications((prev) => ({
-          ...prev,
-          ...data.notificationSettings,
-        }));
+        if (data.notificationSettings) {
+          // Deep merge fetched settings with defaults
+          const mergedNotifications = {
+            ...defaultNotifications,
+            'en-route': {
+              ...defaultNotifications['en-route'],
+              ...data.notificationSettings['en-route'],
+            },
+            complete: {
+              ...defaultNotifications.complete,
+              ...data.notificationSettings.complete,
+            },
+            cancelled: {
+              ...defaultNotifications.cancelled,
+              ...data.notificationSettings.cancelled,
+            },
+            review: {
+              ...defaultNotifications.review,
+              ...data.notificationSettings.review,
+            },
+          };
+          setNotifications(mergedNotifications);
+        }
       }
     } catch {
       setOrgError('Failed to fetch organization details.');

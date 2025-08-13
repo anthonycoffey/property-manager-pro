@@ -16,7 +16,7 @@ import {
 import EditIcon from '@mui/icons-material/Edit';
 import { collection, query, getDocs, orderBy, limit, startAfter, type DocumentData, type QueryDocumentSnapshot, Timestamp } from 'firebase/firestore';
 import { db as firestore } from '../../firebaseConfig';
-import type { Resident } from '../../types';
+import type { Resident, Address } from '../../types';
 
 interface PropertyResidentsTableProps {
   organizationId: string;
@@ -24,6 +24,16 @@ interface PropertyResidentsTableProps {
   onEditResident: (resident: Resident) => void;
   refreshKey?: number;
 }
+
+const formatAddress = (address: Address | undefined): string => {
+  if (!address) return 'N/A';
+  const { street, city, state, zip, unit } = address;
+  let formattedAddress = `${street || ''}, ${city || ''}, ${state || ''} ${zip || ''}`;
+  if (unit) {
+    formattedAddress += `, Unit ${unit}`;
+  }
+  return formattedAddress;
+};
 
 const PropertyResidentsTable: React.FC<PropertyResidentsTableProps> = ({ organizationId, propertyId, onEditResident, refreshKey }) => {
   const [residents, setResidents] = useState<Resident[]>([]);
@@ -166,7 +176,7 @@ const PropertyResidentsTable: React.FC<PropertyResidentsTableProps> = ({ organiz
             <TableRow>
               <TableCell>Name</TableCell>
               <TableCell>Email</TableCell>
-              <TableCell>Unit Number</TableCell>
+              <TableCell>Address</TableCell>
               <TableCell>Lease Start</TableCell>
               <TableCell>Lease End</TableCell>
               <TableCell align="right">Actions</TableCell>
@@ -180,7 +190,7 @@ const PropertyResidentsTable: React.FC<PropertyResidentsTableProps> = ({ organiz
                 <TableRow hover role="checkbox" tabIndex={-1} key={resident.id}>
                   <TableCell>{resident.displayName}</TableCell>
                   <TableCell>{resident.email}</TableCell>
-                  <TableCell>{resident.unitNumber || 'N/A'}</TableCell>
+                  <TableCell>{formatAddress(resident.address)}</TableCell>
                   <TableCell>{leaseStartDate ? new Date(leaseStartDate).toLocaleDateString() : 'N/A'}</TableCell>
                   <TableCell>{leaseEndDate ? new Date(leaseEndDate).toLocaleDateString() : 'N/A'}</TableCell>
                   <TableCell align="right">

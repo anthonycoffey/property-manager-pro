@@ -17,6 +17,8 @@ interface CampaignData {
   sourceFileName?: string;
 }
 
+import { Address } from '../types.js';
+
 interface CreateCampaignParams {
   organizationId: string;
   propertyId: string;
@@ -27,11 +29,12 @@ interface CreateCampaignParams {
   expiresAt?: number;
   storageFilePath?: string;
   sourceFileName?: string;
+  address?: Address;
 }
 
 // Interface for defining how known CSV fields are processed
 interface FieldConfig {
-  canonicalName: 'email' | 'displayName' | 'unitNumber' | string; // Core fields + allows future string keys
+  canonicalName: 'email' | 'displayName' | 'street' | 'city' | 'state' | 'zip' | 'unit' | string; // Core fields + allows future string keys
   expectedCsvHeaders: string[]; // Possible CSV header names (after normalization)
   isRequired?: boolean;
 }
@@ -54,7 +57,23 @@ const KNOWN_FIELDS_CONFIG: FieldConfig[] = [
     ],
   },
   {
-    canonicalName: 'unitNumber',
+    canonicalName: 'street',
+    expectedCsvHeaders: ['street', 'streetaddress', 'address'],
+  },
+  {
+    canonicalName: 'city',
+    expectedCsvHeaders: ['city'],
+  },
+  {
+    canonicalName: 'state',
+    expectedCsvHeaders: ['state', 'province'],
+  },
+  {
+    canonicalName: 'zip',
+    expectedCsvHeaders: ['zip', 'zipcode', 'postalcode'],
+  },
+  {
+    canonicalName: 'unit',
     expectedCsvHeaders: [
       'unitnumber',
       'unit_number',
@@ -411,11 +430,21 @@ export const createCampaign = v1Https.onCall(
             .collection('invitations')
             .doc(invitationToken); // Use UUID as document ID
 
+          const address = campaignParams.address
+            ? { ...campaignParams.address, unit: (processedData['unit'] as string)?.trim() || null }
+            : {
+                street: (processedData['street'] as string)?.trim() || null,
+                city: (processedData['city'] as string)?.trim() || null,
+                state: (processedData['state'] as string)?.trim() || null,
+                zip: (processedData['zip'] as string)?.trim() || null,
+                unit: (processedData['unit'] as string)?.trim() || null,
+              };
+
           const invitationData = {
             email: emailValue.trim(), // Already validated
             displayName:
               (processedData['displayName'] as string)?.trim() || null,
-            unitNumber: (processedData['unitNumber'] as string)?.trim() || null,
+            address: address,
             rolesToAssign: campaignParams.rolesToAssign,
             organizationId: campaignParams.organizationId, // Keep for direct reference if needed
             organizationIds: [campaignParams.organizationId], // Add the array for consistency

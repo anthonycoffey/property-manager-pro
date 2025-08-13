@@ -42,6 +42,11 @@ interface CreateServiceRequestData {
 }
 
 export async function _createServiceRequestLogic(data: CreateServiceRequestData, context: CallableContext) {
+    console.log('--- createServiceRequest data ---');
+    console.log(JSON.stringify(data, null, 2));
+    console.log('--- createServiceRequest context ---');
+    console.log(JSON.stringify(context.auth, null, 2));
+
     if (!context.auth) {
       throw handleHttpsError('unauthenticated', 'User must be authenticated.');
     }
@@ -83,6 +88,16 @@ export async function _createServiceRequestLogic(data: CreateServiceRequestData,
       !data.serviceDateTime ||
       !data.phone?.trim() // Added phone to required check based on frontend form
     ) {
+      console.log('Validation failed. Dumping data parts:');
+      console.log('serviceTypes:', data.serviceTypes);
+      console.log('serviceTypes length:', data.serviceTypes?.length);
+      console.log('serviceLocationAddress:', data.serviceLocationAddress);
+      console.log(
+        'serviceLocationAddress.fullAddress:',
+        data.serviceLocationAddress?.fullAddress
+      );
+      console.log('serviceDateTime:', data.serviceDateTime);
+      console.log('phone:', data.phone);
       throw handleHttpsError(
         'invalid-argument',
         'At least one service type, service location, service date/time, and phone are required.'

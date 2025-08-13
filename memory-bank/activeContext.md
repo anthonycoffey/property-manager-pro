@@ -2,6 +2,17 @@
 
 ## 1. Current Work Focus
 
+- **SMS Tow Warning for Violations (Completed 2025-08-12):**
+    - **Objective:** Implement a system to send an SMS warning to a resident if their vehicle violation has been in a 'reported' state for more than two minutes.
+    - **Core Changes:**
+        - **Backend:**
+            - Added the `twilio` dependency to `functions/package.json`.
+            - Created a new scheduled cloud function `functions/src/scheduled/sendTowWarnings.ts` that runs every minute.
+            - The function loads environment variables using `dotenv/config` and uses `process.env` to access Twilio credentials.
+            - The function queries for violations that are 'reported' and older than two minutes, checks for an `smsTowWarningSent` flag, and sends an SMS via Twilio if conditions are met.
+            - The violation document is updated with `smsTowWarningSent: true` after sending the SMS.
+            - Exported the new function in `functions/src/index.ts`.
+
 - **Violation Notification Links (Completed 2025-07-26):**
     - **Objective:** Add `link` and `mobileLink` to property-wide notifications for unidentified vehicle violations.
     - **Core Changes:**
@@ -67,6 +78,14 @@
     - Service Request Form Auto-select First Vehicle (Completed 2025-06-10): Added functionality to `CreateServiceRequestForm.tsx` to automatically select the first vehicle from the resident's profile if vehicles are present and no vehicle is already selected.
 
 ## 2. Recent Changes & Activities (Newest First)
+
+- **SMS Tow Warning for Violations (Completed 2025-08-12):**
+    - **Objective:** Send an SMS warning for violations that remain in a 'reported' state for over two minutes.
+    - **Change:** Added a new scheduled function `sendTowWarnings`.
+    - **Details:**
+        - Integrated the Twilio SDK.
+        - The new function runs every minute, identifies eligible violations, and sends an SMS to the associated resident's phone number.
+        - It marks the violation with `smsTowWarningSent: true` to prevent duplicate messages.
 
 - **ESLint Fixes (Completed 2025-07-25):**
     - **Objective:** Resolve outstanding ESLint errors in the notifications feature.

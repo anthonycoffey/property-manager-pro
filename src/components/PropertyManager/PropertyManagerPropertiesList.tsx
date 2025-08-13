@@ -29,13 +29,6 @@ import { httpsCallable } from 'firebase/functions';
 import { functions } from '../../firebaseConfig';
 import type { Property as PropertyType } from '../../types';
 
-interface PropertyAddress {
-  street: string;
-  city: string;
-  state: string;
-  zip: string;
-}
-
 interface PropertyManagerPropertiesListProps {
   selectedPropertyId: string | null;
   onPropertySelect: (propertyId: string) => void;

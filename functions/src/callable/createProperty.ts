@@ -9,7 +9,7 @@ export const createProperty = onCall(async (request) => {
 
   const callerUid = request.auth.uid;
   const callerRoles = (request.auth.token?.roles as string[]) || [];
-  const { propertyName, address, addresses, propertyType, organizationId: targetOrganizationId, totalUnits } = request.data as {
+  const { propertyName, addresses, propertyType, organizationId: targetOrganizationId, totalUnits } = request.data as {
     propertyName: string;
     address: { street: string; city: string; state: string; zip: string };
     addresses: { street: string; city: string; state: string; zip: string }[];

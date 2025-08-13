@@ -19,7 +19,7 @@ interface UpdateResidentDetailsByPmData {
       | 'createdAt'
       | 'invitedBy'
     >
-  >;
+  > & { unitNumber?: string };
 }
 
 export const updateResidentDetailsByPm = functions.https.onCall(
@@ -85,7 +85,6 @@ export const updateResidentDetailsByPm = functions.https.onCall(
       // Sanitize updatedData to only allow specific fields
       const allowedFields: Array<keyof typeof updatedData> = [
         'displayName',
-        'unitNumber',
         'leaseStartDate',
         'leaseEndDate',
         'vehicles',
@@ -100,8 +99,7 @@ export const updateResidentDetailsByPm = functions.https.onCall(
           let fieldProcessed = false;
 
           if (key === 'leaseStartDate' || key === 'leaseEndDate') {
-            if (value === null) {
-              // Explicitly set to null
+            if (value === null || value === undefined) {
               sanitizedUpdateData[key] = undefined;
               fieldProcessed = true;
             } else if (
@@ -113,7 +111,6 @@ export const updateResidentDetailsByPm = functions.https.onCall(
               typeof (value as { nanoseconds: unknown }).nanoseconds ===
                 'number'
             ) {
-              // Value is a serialized Timestamp object from the client
               sanitizedUpdateData[key] = new Timestamp(
                 (value as { seconds: number }).seconds,
                 (value as { nanoseconds: number }).nanoseconds
@@ -123,43 +120,42 @@ export const updateResidentDetailsByPm = functions.https.onCall(
               value &&
               (typeof value === 'string' || value instanceof Date)
             ) {
-              // Value is a date string or a JS Date object
-              const dateObj = new Date(value);
+              const dateObj = new Date(value as string | Date);
               if (!isNaN(dateObj.getTime())) {
-                // Check if date is valid
                 sanitizedUpdateData[key] = Timestamp.fromDate(dateObj);
               } else {
                 console.warn(`Invalid date value received for ${key}:`, value);
-                // Optionally throw, or skip by not setting fieldProcessed to true
               }
-              fieldProcessed = true; // Mark as processed even if invalid, to avoid falling into generic handler
+              fieldProcessed = true;
             }
-            // If value is undefined for a date field, it's skipped by hasOwnProperty or handled by !fieldProcessed below
           }
 
           if (!fieldProcessed && value !== undefined) {
-            // Generic handler for non-date fields or date fields not matching above conditions (though they should)
-            // Ensure the key is a valid key of sanitizedUpdateData and value is assignable
-            if (key in sanitizedUpdateData) {
-              // This check might be redundant if sanitizedUpdateData is initially empty
-              (sanitizedUpdateData as Record<string, unknown>)[key] = value;
-            } else {
-              (sanitizedUpdateData as Partial<Record<keyof Resident, unknown>>)[
-                key as keyof Resident
-              ] = value;
-            }
+            (sanitizedUpdateData as Partial<Record<keyof Resident, unknown>>)[
+              key as keyof Resident
+            ] = value;
           }
-          // Note: hasValidUpdate logic might need adjustment if we skip invalid dates silently
-          // For now, assume any processed field (even if set to null) or any defined non-date value means an update.
-          if (value !== undefined || fieldProcessed) {
-            // If value was undefined, it wouldn't be in updatedData due to JSON stringify
+
+          if (
+            value !== undefined ||
+            (fieldProcessed &&
+              (key === 'leaseStartDate' || key === 'leaseEndDate'))
+          ) {
             hasValidUpdate = true;
           }
         }
       }
 
+      if (Object.prototype.hasOwnProperty.call(updatedData, 'unitNumber')) {
+        const unitNumber = updatedData.unitNumber as string | undefined;
+        if (unitNumber !== undefined) {
+          (sanitizedUpdateData as Record<string, unknown>)['address.unit'] =
+            unitNumber;
+          hasValidUpdate = true;
+        }
+      }
+
       if (!hasValidUpdate) {
-        // This error might be hit if only invalid date strings were provided and skipped.
         throw handleHttpsError(
           'invalid-argument',
           'No valid fields or actual changes provided for update.'

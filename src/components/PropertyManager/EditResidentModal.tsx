@@ -74,13 +74,19 @@ interface ResidentFormData
   extends Omit<
     Partial<Resident>,
     | 'displayName'
-    | 'unitNumber'
+    | 'address'
     | 'leaseStartDate'
     | 'leaseEndDate'
     | 'vehicles'
   > {
   displayName: string;
-  unitNumber: string;
+  address: {
+    street: string;
+    city: string;
+    state: string;
+    zip: string;
+    unit: string;
+  };
   leaseStartDate: Date | null;
   leaseEndDate: Date | null;
   vehicles: Vehicle[]; // vehicles is required in the form state, even if empty
@@ -96,7 +102,13 @@ const EditResidentModal: React.FC<EditResidentModalProps> = ({
 }) => {
   const [formData, setFormData] = useState<ResidentFormData>({
     displayName: '',
-    unitNumber: '',
+    address: {
+      street: '',
+      city: '',
+      state: '',
+      zip: '',
+      unit: '',
+    },
     leaseStartDate: null,
     leaseEndDate: null,
     vehicles: [],
@@ -113,7 +125,13 @@ const EditResidentModal: React.FC<EditResidentModalProps> = ({
     if (residentData && open) {
       setFormData({
         displayName: residentData.displayName || '',
-        unitNumber: residentData.unitNumber || '',
+        address: {
+          street: residentData.address?.street || '',
+          city: residentData.address?.city || '',
+          state: residentData.address?.state || '',
+          zip: residentData.address?.zip || '',
+          unit: residentData.address?.unit || '',
+        },
         leaseStartDate: convertToDateOrNull(residentData.leaseStartDate),
         leaseEndDate: convertToDateOrNull(residentData.leaseEndDate),
         vehicles: Array.isArray(residentData.vehicles)
@@ -123,7 +141,13 @@ const EditResidentModal: React.FC<EditResidentModalProps> = ({
     } else if (!open) {
       setFormData({
         displayName: '',
-        unitNumber: '',
+        address: {
+          street: '',
+          city: '',
+          state: '',
+          zip: '',
+          unit: '',
+        },
         leaseStartDate: null,
         leaseEndDate: null,
         vehicles: [],
@@ -136,7 +160,15 @@ const EditResidentModal: React.FC<EditResidentModalProps> = ({
     event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = event.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    if (name.startsWith('address.')) {
+      const field = name.split('.')[1];
+      setFormData((prev) => ({
+        ...prev,
+        address: { ...prev.address, [field]: value },
+      }));
+    } else {
+      setFormData((prev) => ({ ...prev, [name]: value }));
+    }
   };
 
   const handleDateChange = (
@@ -233,10 +265,10 @@ const EditResidentModal: React.FC<EditResidentModalProps> = ({
       changed = true;
     }
     if (
-      formData.unitNumber !== undefined &&
-      formData.unitNumber !== (residentData.unitNumber || '')
+      JSON.stringify(formData.address) !==
+      JSON.stringify(residentData.address || {})
     ) {
-      updatedDetails.unitNumber = formData.unitNumber;
+      updatedDetails.address = formData.address;
       changed = true;
     }
 
@@ -409,15 +441,71 @@ const EditResidentModal: React.FC<EditResidentModalProps> = ({
                 }}
               >
                 <TextField
-                  label='Unit Number'
-                  name='unitNumber'
-                  value={formData.unitNumber || ''}
+                  label='Street Address'
+                  name='address.street'
+                  value={formData.address.street || ''}
                   onChange={handleInputChange}
                   fullWidth
                   margin='dense'
                   disabled={loading}
                   sx={{ flex: 1 }}
                 />
+                <TextField
+                  label='City'
+                  name='address.city'
+                  value={formData.address.city || ''}
+                  onChange={handleInputChange}
+                  fullWidth
+                  margin='dense'
+                  disabled={loading}
+                  sx={{ flex: 1 }}
+                />
+              </Box>
+              <Box
+                sx={{
+                  display: 'flex',
+                  flexDirection: { xs: 'column', sm: 'row' },
+                  gap: 2,
+                }}
+              >
+                <TextField
+                  label='State'
+                  name='address.state'
+                  value={formData.address.state || ''}
+                  onChange={handleInputChange}
+                  fullWidth
+                  margin='dense'
+                  disabled={loading}
+                  sx={{ flex: 1 }}
+                />
+                <TextField
+                  label='Zip Code'
+                  name='address.zip'
+                  value={formData.address.zip || ''}
+                  onChange={handleInputChange}
+                  fullWidth
+                  margin='dense'
+                  disabled={loading}
+                  sx={{ flex: 1 }}
+                />
+                <TextField
+                  label='Unit'
+                  name='address.unit'
+                  value={formData.address.unit || ''}
+                  onChange={handleInputChange}
+                  fullWidth
+                  margin='dense'
+                  disabled={loading}
+                  sx={{ flex: 1 }}
+                />
+              </Box>
+              <Box
+                sx={{
+                  display: 'flex',
+                  flexDirection: { xs: 'column', sm: 'row' },
+                  gap: 2,
+                }}
+              >
                 <DatePicker
                   label='Lease Start Date'
                   value={formData.leaseStartDate}

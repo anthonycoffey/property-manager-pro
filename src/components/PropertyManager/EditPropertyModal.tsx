@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogActions,
@@ -15,47 +15,25 @@ import {
   InputLabel,
   Typography,
   Box,
-  Autocomplete,
   Divider,
   IconButton,
+  Stack,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
+import DeleteIcon from '@mui/icons-material/Delete';
 import { httpsCallable } from 'firebase/functions';
 import { functions } from '../../firebaseConfig';
-import { useJsApiLoader } from '@react-google-maps/api';
-import type {
-  Property,
-  // PropertyAddress will be handled by using Property['address']
-  AppError, // This is now exported from types.ts
-} from '../../types';
+import type { Property, AppError } from '../../types';
 import { useAuth } from '../../hooks/useAuth';
-import parse from 'autosuggest-highlight/parse';
-import LocationOnIcon from '@mui/icons-material/LocationOn';
-import { debounce } from '@mui/material/utils';
+import AddressAutocompleteInput, { type PropertyAddress } from './AddressAutocompleteInput';
 
 interface EditPropertyModalProps {
   open: boolean;
   onClose: () => void;
   propertyData: Property | null;
   onSuccess: () => void;
-  organizationId?: string; // Optional: for Admin/OM to specify target org
+  organizationId?: string;
 }
-
-interface PlaceType {
-  description: string;
-  structured_formatting: {
-    main_text: string;
-    secondary_text: string;
-    main_text_matched_substrings?: readonly {
-      offset: number;
-      length: number;
-    }[];
-  };
-  place_id?: string;
-}
-
-// Define LIBRARIES_TO_LOAD at the top level of the module
-const LIBRARIES_TO_LOAD: ("places" | "routes")[] = ['places', 'routes'];
 
 const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
   open,
@@ -67,172 +45,49 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
   const { currentUser, organizationId: authUserOrganizationId } = useAuth();
   const [name, setName] = useState('');
   const [propertyType, setPropertyType] = useState('');
-  // Define FullPropertyAddress using the type from Property
-  type FullPropertyAddress = NonNullable<Property['address']>;
-  const [address, setAddress] = useState<FullPropertyAddress>({
-    street: '',
-    city: '',
-    state: '',
-    zip: '',
-  });
+  const [addresses, setAddresses] = useState<PropertyAddress[]>([]);
   const [totalUnits, setTotalUnits] = useState<string>('');
-  const [autocompleteValue, setAutocompleteValue] = useState<PlaceType | null>(null);
-  const [autocompleteInputValue, setAutocompleteInputValue] = useState('');
-  const [autocompleteOptions, setAutocompleteOptions] = useState<readonly PlaceType[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error' | 'info'>('success');
 
-  const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
-  const { isLoaded, loadError } = useJsApiLoader({
-    googleMapsApiKey: apiKey || '',
-    libraries: LIBRARIES_TO_LOAD, 
-  });
-
-  const autocompleteService = useRef<google.maps.places.AutocompleteService | null>(null);
-  const geocoderService = useRef<google.maps.Geocoder | null>(null);
-
   useEffect(() => {
     if (propertyData && open) {
-      setName(propertyData.name || ''); // Fallback for undefined
-      setPropertyType(propertyData.type || ''); // Fallback for undefined
-      setAddress({ 
-        street: propertyData.address?.street || '',
-        city: propertyData.address?.city || '',
-        state: propertyData.address?.state || '',
-        zip: propertyData.address?.zip || '',
-      });
+      setName(propertyData.name || '');
+      setPropertyType(propertyData.type || '');
       setTotalUnits(propertyData.totalUnits?.toString() || '');
-      setAutocompleteInputValue(propertyData.address?.street || ''); // Optional chaining
-      setAutocompleteValue(null); // Reset autocomplete selection when new property data comes in
+      // Ensure there's at least one address field to show
+      const initialAddresses = propertyData.addresses && propertyData.addresses.length > 0
+        ? propertyData.addresses
+        : [{ street: '', city: '', state: '', zip: '' }];
+      setAddresses(initialAddresses);
     } else if (!open) {
       // Reset form when modal is closed
       setName('');
       setPropertyType('');
       setTotalUnits('');
-      setAddress({ street: '', city: '', state: '', zip: '' });
-      setAutocompleteInputValue('');
-      setAutocompleteValue(null);
+      setAddresses([]);
       setError(null);
     }
   }, [propertyData, open]);
 
-  useEffect(() => {
-    if (isLoaded && window.google && window.google.maps && window.google.maps.places) {
-      if (!autocompleteService.current) {
-        autocompleteService.current = new window.google.maps.places.AutocompleteService();
-      }
-      if (!geocoderService.current) {
-        geocoderService.current = new window.google.maps.Geocoder();
-      }
-    }
-  }, [isLoaded]);
+  const handleAddressChange = (index: number, newAddress: PropertyAddress) => {
+    const updatedAddresses = [...addresses];
+    updatedAddresses[index] = newAddress;
+    setAddresses(updatedAddresses);
+  };
 
-  const fetchPlacePredictions = useMemo(
-    () =>
-      debounce(
-        (
-          request: google.maps.places.AutocompletionRequest,
-          callback: (
-            results: google.maps.places.AutocompletePrediction[] | null,
-            status: google.maps.places.PlacesServiceStatus
-          ) => void
-        ) => {
-          if (autocompleteService.current && request.input) {
-            autocompleteService.current.getPlacePredictions(request, callback);
-          } else {
-            callback([], google.maps.places.PlacesServiceStatus.OK);
-          }
-        },
-        400
-      ),
-    []
-  );
+  const addAddress = () => {
+    setAddresses([...addresses, { street: '', city: '', state: '', zip: '' }]);
+  };
 
-  useEffect(() => {
-    let active = true;
-    if (
-      !autocompleteService.current ||
-      autocompleteInputValue === '' ||
-      (autocompleteValue && autocompleteInputValue === autocompleteValue.description)
-    ) {
-      setAutocompleteOptions(autocompleteValue ? [autocompleteValue] : []);
-      return undefined;
-    }
-
-    fetchPlacePredictions(
-      { input: autocompleteInputValue, componentRestrictions: { country: 'us' } },
-      (results, status) => {
-        if (active && status === google.maps.places.PlacesServiceStatus.OK) {
-          let newOptions: readonly PlaceType[] = [];
-          if (autocompleteValue) {
-            newOptions = [autocompleteValue];
-          }
-          if (results) {
-            const mappedResults: PlaceType[] = results.map((p) => ({
-              description: p.description,
-              structured_formatting: p.structured_formatting,
-              place_id: p.place_id,
-            }));
-            newOptions = [...newOptions, ...mappedResults];
-          }
-          setAutocompleteOptions(newOptions);
-        } else if (active && status !== google.maps.places.PlacesServiceStatus.ZERO_RESULTS) {
-          setAutocompleteOptions(autocompleteValue ? [autocompleteValue] : []);
-        }
-      }
-    );
-    return () => {
-      active = false;
-    };
-  }, [autocompleteValue, autocompleteInputValue, fetchPlacePredictions]);
-
-  const handleAutocompleteChange = (
-    _event: React.SyntheticEvent,
-    newValue: PlaceType | null
-  ) => {
-    setAutocompleteOptions(newValue ? [newValue, ...autocompleteOptions] : autocompleteOptions);
-    setAutocompleteValue(newValue);
-
-    if (newValue && newValue.place_id && geocoderService.current) {
-      geocoderService.current.geocode(
-        { placeId: newValue.place_id },
-        (results, geocodeStatus) => {
-          if (geocodeStatus === google.maps.GeocoderStatus.OK && results && results[0]) {
-            const place = results[0];
-            let streetNumber = '';
-            let route = '';
-            let currentCity = '';
-            let currentState = '';
-            let currentPostalCode = '';
-
-            place.address_components?.forEach((component) => {
-              const types = component.types;
-              if (types.includes('street_number')) streetNumber = component.long_name;
-              if (types.includes('route')) route = component.long_name;
-              if (types.includes('locality')) currentCity = component.long_name;
-              if (types.includes('administrative_area_level_1')) currentState = component.short_name;
-              if (types.includes('postal_code')) currentPostalCode = component.long_name;
-            });
-            const fullStreet = streetNumber ? `${streetNumber} ${route}`.trim() : route.trim() || place.formatted_address || '';
-            setAddress({
-              street: fullStreet,
-              city: currentCity,
-              state: currentState,
-              zip: currentPostalCode,
-            });
-            setAutocompleteInputValue(fullStreet); // Update input to reflect geocoded address
-          } else {
-            setError('Failed to fetch address details.');
-            setAddress({ street: autocompleteInputValue, city: '', state: '', zip: '' }); // Fallback
-          }
-        }
-      );
-    } else if (!newValue) {
-      // If autocomplete is cleared, keep current input value for manual street editing
-      setAddress((prev) => ({ ...prev, street: autocompleteInputValue, city: '', state: '', zip: '' }));
+  const removeAddress = (index: number) => {
+    if (addresses.length > 1) {
+      const updatedAddresses = [...addresses];
+      updatedAddresses.splice(index, 1);
+      setAddresses(updatedAddresses);
     }
   };
 
@@ -252,8 +107,9 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
       return;
     }
 
-    if (!name || !propertyType || !address.street || !address.city || !address.state || !address.zip || !totalUnits) {
-      setSnackbarMessage('All fields including Total Units and full address are required.');
+    const primaryAddress = addresses[0];
+    if (!name || !propertyType || !primaryAddress?.street || !primaryAddress?.city || !primaryAddress?.state || !primaryAddress?.zip || !totalUnits) {
+      setSnackbarMessage('All fields including Total Units and at least one full address are required.');
       setSnackbarSeverity('error');
       setSnackbarOpen(true);
       return;
@@ -269,26 +125,21 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
 
     setLoading(true);
 
-    const updatedPropertyDetails: Partial<Property> & { address?: Partial<FullPropertyAddress> } = {};
-    if (name !== propertyData.name) updatedPropertyDetails.name = name;
-    if (propertyType !== propertyData.type) updatedPropertyDetails.type = propertyType;
-    if (parsedTotalUnits !== (propertyData.totalUnits ?? 0)) updatedPropertyDetails.totalUnits = parsedTotalUnits;
+    const updatedPropertyDetails: Partial<Property> = {};
+    if (name !== propertyData.name) {
+      updatedPropertyDetails.name = name;
+    }
+    if (propertyType !== propertyData.type) {
+      updatedPropertyDetails.type = propertyType;
+    }
+    if (parsedTotalUnits !== (propertyData.totalUnits ?? 0)) {
+      updatedPropertyDetails.totalUnits = parsedTotalUnits;
+    }
 
-
-    const currentFullAddress: FullPropertyAddress = {
-      street: address.street.trim(),
-      city: address.city.trim(),
-      state: address.state.trim(),
-      zip: address.zip.trim(),
-    };
-
-    if (
-      currentFullAddress.street !== (propertyData.address?.street || '') ||
-      currentFullAddress.city !== (propertyData.address?.city || '') ||
-      currentFullAddress.state !== (propertyData.address?.state || '') ||
-      currentFullAddress.zip !== (propertyData.address?.zip || '')
-    ) {
-      updatedPropertyDetails.address = currentFullAddress;
+    const originalAddresses = propertyData.addresses || [];
+    if (JSON.stringify(addresses) !== JSON.stringify(originalAddresses)) {
+      updatedPropertyDetails.addresses = addresses;
+      updatedPropertyDetails.address = addresses[0];
     }
 
     if (Object.keys(updatedPropertyDetails).length === 0) {
@@ -338,14 +189,6 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
         <form onSubmit={handleSubmit}>
           <DialogContent sx={{ pt: 1 }} dividers>
             {error && <Alert severity='error' sx={{ mb: 2 }}>{error}</Alert>}
-            {!isLoaded && !loadError && !apiKey && (
-              <Alert severity='warning' sx={{ mb: 2 }}>Address search is unavailable or API key is missing.</Alert>
-            )}
-            {!isLoaded && !loadError && apiKey && (
-              <Box sx={{ display: 'flex', justifyContent: 'center', my: 2 }}>
-                <CircularProgress size={24} /> <Typography sx={{ ml: 1 }}>Loading address search...</Typography>
-              </Box>
-            )}
             <Typography variant='subtitle1' sx={{ mt: 2 }}>Property Details</Typography>
             <TextField
               label='Property Name'
@@ -354,9 +197,9 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
               fullWidth
               required
               margin='dense'
-              disabled={loading || !isLoaded}
+              disabled={loading}
             />
-            <FormControl fullWidth margin='dense' required disabled={loading || !isLoaded}>
+            <FormControl fullWidth margin='dense' required disabled={loading}>
               <InputLabel id='edit-property-type-label'>Property Type</InputLabel>
               <Select
                 labelId='edit-property-type-label'
@@ -374,124 +217,42 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
               value={totalUnits}
               onChange={(e) => {
                 const val = e.target.value;
-                // Allow empty string, or positive integers. Prevent leading zeros unless it's just "0".
                 if (val === '' || /^[1-9]\d*$/.test(val)) {
                   setTotalUnits(val);
-                } else if (val === '0' && totalUnits === '') { // Allow typing '0' if field is empty
-                  setTotalUnits(val);
                 }
               }}
-              onBlur={() => { // If '0' is left and it's not valid (e.g. must be >0), clear or set error
-                if (totalUnits === '0') {
-                  // For this form, 0 is invalid, so we could set an error or clear it.
-                  // Let's rely on submit validation for now.
-                }
-              }}
-              inputProps={{ min: 1 }} // HTML5 min attribute
+              inputProps={{ min: 1 }}
               fullWidth
               required
               margin='dense'
-              disabled={loading || !isLoaded}
+              disabled={loading}
             />
             <Divider sx={{ my: 2 }} />
-            <Typography variant='subtitle1' sx={{ mt: 2 }}>Property Address</Typography>
-            {isLoaded && apiKey && (
-              <Autocomplete
-                id='edit-google-maps-autocomplete'
-                sx={{ width: '100%', mb: 1 }}
-                getOptionLabel={(option) => typeof option === 'string' ? option : option.description}
-                filterOptions={(x) => x}
-                options={autocompleteOptions}
-                autoComplete
-                includeInputInList
-                filterSelectedOptions
-                value={autocompleteValue}
-                inputValue={autocompleteInputValue}
-                noOptionsText='No locations found'
-                onChange={handleAutocompleteChange}
-                onInputChange={(_event, newInputValue) => {
-                  setAutocompleteInputValue(newInputValue);
-                }}
-                slotProps={{
-                  popper: {
-                    placement: 'bottom-start',
-                    modifiers: [
-                      { name: 'flip', enabled: false },
-                      { name: 'preventOverflow', enabled: true, options: { boundary: 'clippingParents' } },
-                    ],
-                  },
-                }}
-                renderInput={(params) => (
-                  <TextField {...params} label='Search Full Address' fullWidth margin='dense' disabled={loading} />
+            <Typography variant='subtitle1' sx={{ mb: 1 }}>
+              Property Addresses
+            </Typography>
+            {addresses.map((addr, index) => (
+              <Stack key={index} direction="row" spacing={1} sx={{ mb: 2, alignItems: 'center' }}>
+                <AddressAutocompleteInput
+                  label={index === 0 ? 'Primary Address' : `Additional Address ${index + 1}`}
+                  initialAddress={addr}
+                  onAddressChange={(newAddress) => handleAddressChange(index, newAddress)}
+                  disabled={loading}
+                />
+                {addresses.length > 1 && (
+                  <IconButton onClick={() => removeAddress(index)} color="error" disabled={loading}>
+                    <DeleteIcon />
+                  </IconButton>
                 )}
-                renderOption={(props, option) => {
-                  const matches = option.structured_formatting.main_text_matched_substrings || [];
-                  const parts = parse(
-                    option.structured_formatting.main_text,
-                    matches.map((match) => [match.offset, match.offset + match.length])
-                  );
-                  return (
-                    <li {...props} key={option.place_id || option.description}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
-                        <Box sx={{ display: 'flex', width: 44, justifyContent: 'center', alignItems: 'center' }}>
-                          <LocationOnIcon sx={{ color: 'text.secondary' }} />
-                        </Box>
-                        <Box sx={{ flexGrow: 1, wordWrap: 'break-word' }}>
-                          {parts.map((part, index) => (
-                            <Box key={index} component='span' sx={{ fontWeight: part.highlight ? 700 : 400 }}>
-                              {part.text}
-                            </Box>
-                          ))}
-                          <Typography variant='body2' color='text.secondary'>
-                            {option.structured_formatting.secondary_text}
-                          </Typography>
-                        </Box>
-                      </Box>
-                    </li>
-                  );
-                }}
-              />
-            )}
-            <TextField
-              label='Street'
-              value={address.street}
-              onChange={(e) => setAddress((a) => ({ ...a, street: e.target.value }))}
-              fullWidth
-              margin='dense'
-              required
-              disabled={loading || !isLoaded}
-            />
-            <TextField
-              label='City'
-              value={address.city}
-              onChange={(e) => setAddress((a) => ({ ...a, city: e.target.value }))}
-              fullWidth
-              margin='dense'
-              required
-              disabled={loading || !isLoaded}
-            />
-            <TextField
-              label='State'
-              value={address.state}
-              onChange={(e) => setAddress((a) => ({ ...a, state: e.target.value }))}
-              fullWidth
-              margin='dense'
-              required
-              disabled={loading || !isLoaded}
-            />
-            <TextField
-              label='Zip Code'
-              value={address.zip}
-              onChange={(e) => setAddress((a) => ({ ...a, zip: e.target.value }))}
-              fullWidth
-              margin='dense'
-              required
-              disabled={loading || !isLoaded}
-            />
+              </Stack>
+            ))}
+            <Button onClick={addAddress} disabled={loading}>
+              Add Another Address
+            </Button>
           </DialogContent>
           <DialogActions sx={{ p: '16px 24px' }}>
             <Button onClick={onClose} variant="outlined" color="error">Cancel</Button>
-            <Button type='submit' variant='contained' disabled={loading || !isLoaded}>
+            <Button type='submit' variant='contained' disabled={loading}>
               {loading ? <CircularProgress size={24} /> : 'Save Changes'}
             </Button>
           </DialogActions>

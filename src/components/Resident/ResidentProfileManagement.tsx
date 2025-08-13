@@ -118,7 +118,7 @@ const ResidentProfileManagement: React.FC = () => {
               displayName: data.displayName || currentUser.displayName || '',
               email: data.email || currentUser.email || '',
               phone: formatPhoneNumberOnInput(data.phone || ''), // Format on load
-              unitNumber: data.unitNumber || '',
+              address: data.address || { street: '', city: '', state: '', zip: '', unit: '' },
             });
             setVehicles(data.vehicles || []);
           } else {
@@ -149,6 +149,12 @@ const ResidentProfileManagement: React.FC = () => {
       setResidentData((prev) => ({
         ...prev,
         [name]: formatPhoneNumberOnInput(value),
+      }));
+    } else if (name.startsWith('address.')) {
+      const field = name.split('.')[1];
+      setResidentData((prev) => ({
+        ...prev,
+        address: { ...(prev.address || {}), [field]: value },
       }));
     } else {
       setResidentData((prev) => ({ ...prev, [name]: value }));
@@ -359,11 +365,40 @@ const ResidentProfileManagement: React.FC = () => {
                 onChange={handleInputChange}
               />
               <TextField
-                disabled
                 fullWidth
-                label='Unit Number'
-                name='unitNumber'
-                value={residentData.unitNumber || ''}
+                label='Street Address'
+                name='address.street'
+                value={residentData.address?.street || ''}
+                onChange={handleInputChange}
+              />
+            </Stack>
+            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+              <TextField
+                fullWidth
+                label='City'
+                name='address.city'
+                value={residentData.address?.city || ''}
+                onChange={handleInputChange}
+              />
+              <TextField
+                fullWidth
+                label='State'
+                name='address.state'
+                value={residentData.address?.state || ''}
+                onChange={handleInputChange}
+              />
+              <TextField
+                fullWidth
+                label='Zip Code'
+                name='address.zip'
+                value={residentData.address?.zip || ''}
+                onChange={handleInputChange}
+              />
+              <TextField
+                fullWidth
+                label='Unit'
+                name='address.unit'
+                value={residentData.address?.unit || ''}
                 onChange={handleInputChange}
               />
             </Stack>

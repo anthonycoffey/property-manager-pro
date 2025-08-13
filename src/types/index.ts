@@ -37,13 +37,21 @@ export interface Vehicle {
   plate: string;
 }
 
+export interface Address {
+  street: string;
+  city: string;
+  state: string;
+  zip: string;
+  unit?: string;
+}
+
 export interface Resident {
   id: string; // Firestore document ID (matches Firebase Auth UID)
   displayName: string;
   email: string; // Should match Firebase Auth email
   organizationId: string;
   propertyId: string;
-  unitNumber?: string;
+  address?: Address;
   roles: string[]; // Should include "resident"
   leaseStartDate?: Timestamp | Date | null;
   leaseEndDate?: Timestamp | Date | null;
@@ -59,6 +67,7 @@ export interface Property {
   id: string; // Firestore document ID
   name: string;
   address: PropertyAddress;
+  addresses?: Address[];
   type: string; // e.g., "residential", "commercial"
   managedBy?: string; // UID of the property manager
   organizationId: string; // ID of the organization this property belongs to
@@ -412,7 +421,6 @@ export interface ServiceRequest {
   propertyId: string;
   residentId: string;
   residentName?: string;
-  unitNumber?: string;
   requestType: string; // Comma-separated string of service names
   description: string;
   residentNotes?: string;
@@ -472,13 +480,37 @@ export interface GetViolationsResponse {
   total: number;
 }
 
-export interface Notification {
+export interface UserNotification {
   id: string;
   userId: string;
   title: string;
   body: string;
   link?: string;
+  mobileLink?: string;
   status?: 'pending' | 'sent' | 'failed';
-  sentAt?: Timestamp;
-  read?: boolean;
+  createdAt: Timestamp;
+  read: boolean;
+}
+
+export interface PropertyNotification {
+  id: string;
+  title: string;
+  message: string; // Maps to 'body'
+  createdAt: Timestamp;
+  createdBy: string;
+  link?: string;
+  mobileLink?: string;
+  violationId?: string;
+  vehicle?: {
+    licensePlate: string;
+  };
+  // This type won't have a 'read' status in its own document,
+  // it will be managed in a user-specific subcollection.
+}
+
+// This is the unified type that the UI will work with.
+export interface Notification extends Omit<UserNotification, 'userId' | 'status'> {
+  // All fields from UserNotification except userId and status
+  // It can represent either a UserNotification or a PropertyNotification
+  // after being processed by the context.
 }

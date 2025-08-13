@@ -246,24 +246,20 @@ service cloud.firestore {
           allow read, write: if isPropertyManager() && isOrgUser(organizationId);
 
           // Residents can read their own profile
-          allow read, write: if isResident() && request.auth.uid == residentId && isPropertyResident(organizationId, propertyId);
+          allow read: if isResident() && request.auth.uid == residentId && isPropertyResident(organizationId, propertyId);
+          // Admins, Org Managers, and Property Managers have full write access
+          allow write: if isAdmin() || isOrgManagerForOrg(organizationId) || (isPropertyManager() && isOrgUser(organizationId));
+          
           // Residents can update specific fields of their own profile
           allow update: if isResident() && request.auth.uid == residentId && isPropertyResident(organizationId, propertyId) &&
-                           request.resource.data.keys().hasOnly(['displayName', 'vehicleMake', 'vehicleModel', 'vehicleColor', 'licensePlate'
-                           // Add other resident-updatable fields here, e.g. 'contactPreferences'
-                           // Critical fields like email, roles, organizationId, propertyId should NOT be updatable by resident directly here.
-                           // Ensure that fields not listed here cannot be changed by comparing request.resource.data to resource.data for unchanged fields.
-                           ]) &&
+                           request.resource.data.keys().hasOnly(['displayName', 'phone', 'vehicles', 'address']) &&
                            // Ensure non-updatable fields remain unchanged
                            request.resource.data.email == resource.data.email &&
                            request.resource.data.organizationId == resource.data.organizationId &&
                            request.resource.data.propertyId == resource.data.propertyId &&
-                           request.resource.data.roles == resource.data.roles &&
+                           request.resource.data.roles.size() == resource.data.roles.size() &&
                            request.resource.data.invitedBy == resource.data.invitedBy &&
-                           request.resource.data.createdAt == resource.data.createdAt &&
-                           (request.resource.data.unitNumber == resource.data.unitNumber || resource.data.unitNumber == null) && // unitNumber might be set by PM
-                           (request.resource.data.leaseStartDate == resource.data.leaseStartDate || resource.data.leaseStartDate == null) &&
-                           (request.resource.data.leaseEndDate == resource.data.leaseEndDate || resource.data.leaseEndDate == null);
+                           request.resource.data.createdAt == resource.data.createdAt;
         } // End of residents subcollection
 
         // Subcollection: campaigns

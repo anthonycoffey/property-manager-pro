@@ -146,6 +146,9 @@ export const cleanupProcessedCampaignCSVs = cleanupProcessedCampaignCSVsFunction
 import { processUnassignedViolations as processUnassignedViolationsFunction } from './scheduled/processUnassignedViolations.js';
 export const processUnassignedViolations = processUnassignedViolationsFunction;
 
+import { sendTowWarnings as sendTowWarningsFunction } from './scheduled/sendTowWarnings.js';
+export const sendTowWarnings = sendTowWarningsFunction;
+
 // Webhooks
 import { updateServiceJobStatus as updateServiceJobStatusFunction } from './webhooks/updateServiceJobStatus.js';
 export const updateServiceJobStatus = updateServiceJobStatusFunction;

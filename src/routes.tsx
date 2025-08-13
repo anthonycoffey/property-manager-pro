@@ -49,6 +49,7 @@ import CampaignDetailsPage from './pages/CampaignDetailsPage';
 import JoinCampaignPage from './pages/JoinCampaignPage';
 import PublicCampaignHandlerPage from './pages/PublicCampaignHandlerPage';
 import DeleteAccountPage from './pages/DeleteAccountPage';
+import NotificationsPage from './pages/NotificationsPage';
 
 const AppRoutes: React.FC = () => {
   return (
@@ -144,6 +145,7 @@ const AppRoutes: React.FC = () => {
           index
           element={<div>Loading dashboard or no applicable view...</div>}
         />
+        <Route path='notifications' element={<NotificationsPage />} />
       </Route>
 
       <Route

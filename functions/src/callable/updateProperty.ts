@@ -14,11 +14,11 @@ interface UpdatePropertyData {
   propertyId: string;
   updatedData: {
     name?: string;
-    address?: FullPropertyAddress; // Updated to full address
+    address?: FullPropertyAddress;
+    addresses?: FullPropertyAddress[];
     type?: string;
     managedBy?: string;
-    totalUnits?: number; // Added totalUnits
-    // Add other property fields as necessary
+    totalUnits?: number;
   };
 }
 
@@ -96,32 +96,20 @@ export const updateProperty = onCall(async (request) => {
       }
     }
 
-    // Handle address updates carefully to update individual fields or the whole object
-    if (updatedData.address) {
-      if (updatedData.address.street !== undefined)
-        cleanUpdateData['address.street'] = updatedData.address.street;
-      if (updatedData.address.city !== undefined)
-        cleanUpdateData['address.city'] = updatedData.address.city;
-      if (updatedData.address.state !== undefined)
-        cleanUpdateData['address.state'] = updatedData.address.state;
-      if (updatedData.address.zip !== undefined)
-        cleanUpdateData['address.zip'] = updatedData.address.zip;
-      // If you intend to replace the whole address object, use:
-      // cleanUpdateData.address = updatedData.address;
-      // However, updating specific fields with dot notation is often safer
-      // to avoid accidentally removing fields not included in the update.
-      // For this to work, ensure `updatedData.address` only contains fields to be changed.
-      // If the frontend always sends the full address object when any part of it changes,
-      // then `cleanUpdateData.address = updatedData.address;` is fine.
-      // Given EditPropertyModal sends the full address if changed, this should be okay:
-      // cleanUpdateData.address = updatedData.address;
-      // Let's stick to dot notation for explicit field updates if they are partial.
-      // If the frontend guarantees a full address object on any address change, then:
+    // Handle address updates. Prioritize the `addresses` array if it exists.
+    if (updatedData.addresses) {
+      if (Array.isArray(updatedData.addresses) && updatedData.addresses.length > 0) {
+        cleanUpdateData.addresses = updatedData.addresses;
+        cleanUpdateData.address = updatedData.addresses[0]; // Update primary address from the array
+      } else {
+        console.warn(`Invalid addresses array received for property ${propertyId}. Skipping update for this field.`);
+      }
+    } else if (updatedData.address) {
+      // Fallback for old clients or if only the primary address object is sent
       if (Object.keys(updatedData.address).length > 0) {
-        cleanUpdateData.address = updatedData.address; // Replace the whole address map
+        cleanUpdateData.address = updatedData.address;
       }
     }
-    // Add other fields as needed, ensuring they are valid property fields
 
     if (Object.keys(cleanUpdateData).length === 0) {
       throw new HttpsError(

@@ -31,6 +31,7 @@ export interface PropertyData {
   id: string; // Firestore document ID
   name: string;
   address: PropertyAddressData;
+  addresses?: Address[];
   type: string; // e.g., "residential", "commercial"
   managedBy?: string; // UID of the property manager
   organizationId: string; // ID of the organization this property belongs to
@@ -149,13 +150,21 @@ export interface Vehicle {
   plate: string;
 }
 
+export interface Address {
+  street: string;
+  city: string;
+  state: string;
+  zip: string;
+  unit?: string;
+}
+
 export interface Resident {
   id: string; 
   displayName: string;
   email: string; 
   organizationId: string;
   propertyId: string;
-  unitNumber?: string;
+  address?: Address;
   roles: string[]; 
   leaseStartDate?: Timestamp | Date;
   leaseEndDate?: Timestamp | Date;
@@ -179,7 +188,6 @@ export interface ServiceRequest {
   propertyId: string;
   residentId: string; 
   residentName?: string; 
-  unitNumber?: string; 
   requestType: string; 
   description: string;
   status: ServiceRequestStatus;

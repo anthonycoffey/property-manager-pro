@@ -9,13 +9,13 @@ export const createProperty = onCall(async (request) => {
 
   const callerUid = request.auth.uid;
   const callerRoles = (request.auth.token?.roles as string[]) || [];
-  // Destructure totalUnits from request.data
-  const { propertyName, address, propertyType, organizationId: targetOrganizationId, totalUnits } = request.data as {
+  const { propertyName, addresses, propertyType, organizationId: targetOrganizationId, totalUnits } = request.data as {
     propertyName: string;
     address: { street: string; city: string; state: string; zip: string };
+    addresses: { street: string; city: string; state: string; zip: string }[];
     propertyType: string;
     organizationId?: string;
-    totalUnits: number; // Added totalUnits
+    totalUnits: number;
   };
 
   let operationOrgId: string | undefined;
@@ -48,14 +48,11 @@ export const createProperty = onCall(async (request) => {
   if (
     !propertyName ||
     !propertyType ||
-    !address ||
-    typeof address.street !== 'string' || !address.street ||
-    typeof address.city !== 'string' || !address.city ||
-    typeof address.state !== 'string' || !address.state ||
-    typeof address.zip !== 'string' || !address.zip ||
-    typeof totalUnits !== 'number' || totalUnits <= 0 // Validate totalUnits
+    !Array.isArray(addresses) || addresses.length === 0 ||
+    !addresses[0].street || !addresses[0].city || !addresses[0].state || !addresses[0].zip ||
+    typeof totalUnits !== 'number' || totalUnits <= 0
   ) {
-    throw new HttpsError('invalid-argument', 'Missing required fields: propertyName, propertyType, totalUnits (must be a positive number), and a valid address object with street, city, state, and zip.');
+    throw new HttpsError('invalid-argument', 'Missing required fields: propertyName, propertyType, totalUnits, and at least one valid address.');
   }
 
   try {
@@ -65,16 +62,12 @@ export const createProperty = onCall(async (request) => {
     const propertyData = {
       id: newPropertyRef.id,
       name: propertyName,
-      address: {
-        street: address.street,
-        city: address.city,
-        state: address.state,
-        zip: address.zip,
-      },
+      address: addresses[0], // Primary address
+      addresses: addresses,   // Full list of addresses
       type: propertyType,
       organizationId: operationOrgId,
-      managedBy: callerUid, // Consider if 'managedBy' should always be the creator or explicitly passed
-      totalUnits: totalUnits, // Add totalUnits to the property data
+      managedBy: callerUid,
+      totalUnits: totalUnits,
       createdAt: FieldValue.serverTimestamp(),
       status: 'active',
     };

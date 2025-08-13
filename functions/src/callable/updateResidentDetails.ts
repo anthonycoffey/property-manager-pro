@@ -19,7 +19,7 @@ interface UpdateResidentData {
       | 'createdAt'
       | 'invitedBy'
     >
-  >;
+  > & { unitNumber?: string };
 }
 
 export const updateResidentDetails = onCall(async (request) => {
@@ -108,7 +108,6 @@ export const updateResidentDetails = onCall(async (request) => {
 
     const allowedFields: Array<keyof typeof updatedData> = [
       'displayName',
-      'unitNumber',
       'leaseStartDate',
       'leaseEndDate',
       'vehicles',
@@ -170,11 +169,24 @@ export const updateResidentDetails = onCall(async (request) => {
       }
     }
 
+    if (Object.prototype.hasOwnProperty.call(updatedData, 'unitNumber')) {
+      const unitNumber = updatedData.unitNumber as string | undefined;
+      if (unitNumber !== undefined) {
+        (sanitizedUpdateData as Record<string, unknown>)['address.unit'] =
+          unitNumber;
+        hasValidUpdate = true;
+      }
+    }
+
     if (Object.prototype.hasOwnProperty.call(updatedData, 'vehicles')) {
       const vehicles = updatedData.vehicles as Vehicle[] | undefined; // Cast for type safety
 
-      if (vehicles !== undefined) { // Check if vehicles is explicitly provided (could be null or an array)
-        if (vehicles === null || (Array.isArray(vehicles) && vehicles.length === 0)) {
+      if (vehicles !== undefined) {
+        // Check if vehicles is explicitly provided (could be null or an array)
+        if (
+          vehicles === null ||
+          (Array.isArray(vehicles) && vehicles.length === 0)
+        ) {
           // If vehicles is explicitly set to null or an empty array, treat as clearing vehicles
           sanitizedUpdateData.vehicles = []; // Store empty array
           hasValidUpdate = true; // This is a valid update

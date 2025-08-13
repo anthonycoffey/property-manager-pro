@@ -43,8 +43,9 @@ interface PropertyManagerPropertiesListProps {
   onPropertiesUpdate: () => void;
 }
 
-const formatAddress = (address: PropertyAddress | undefined): string => {
-  if (!address) return 'N/A';
+const formatAddress = (property: PropertyType): string => {
+  const address = property.addresses && property.addresses.length > 0 ? property.addresses[0] : property.address;
+  if (!address || !address.street) return 'N/A';
   return `${address.street}, ${address.city}, ${address.state} ${address.zip}`;
 };
 
@@ -83,14 +84,9 @@ const PropertyManagerPropertiesList: React.FC<PropertyManagerPropertiesListProps
         const fetchedProperties: PropertyType[] = [];
         querySnapshot.forEach((doc) => {
           const data = doc.data();
-          fetchedProperties.push({ 
+          fetchedProperties.push({
             id: doc.id,
-            name: data.name || 'Unnamed Property',
-            address: data.address || { street: '', city: '', state: '', zip: '' },
-            type: data.type || '',
-            organizationId: authOrganizationId, 
-            managedBy: data.managedBy,
-            createdAt: data.createdAt,
+            ...data,
           } as PropertyType);
         });
         setProperties(fetchedProperties);
@@ -201,7 +197,7 @@ const PropertyManagerPropertiesList: React.FC<PropertyManagerPropertiesListProps
                   onClick={() => onPropertySelect(property.id)}
                   sx={{ cursor: 'pointer' }}
                 >
-                  {formatAddress(property.address)}
+                  {formatAddress(property)}
                 </TableCell>
                 <TableCell align="right">
                   <IconButton 

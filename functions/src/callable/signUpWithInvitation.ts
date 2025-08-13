@@ -3,6 +3,8 @@ import * as logger from 'firebase-functions/logger';
 import { adminAuth, db, FieldValue } from '../firebaseAdmin.js';
 import { handleHttpsError } from '../helpers/handleHttpsError.js';
 
+import { Address } from '../types.js';
+
 interface UserProfileData {
   uid: string;
   email: string;
@@ -14,6 +16,7 @@ interface UserProfileData {
   roles?: string[];
   organizationRoles?: string[];
   propertyId?: string;
+  address?: Address;
 }
 
 interface CustomClaims {
@@ -176,6 +179,7 @@ export const signUpWithInvitation = onCall(async (request) => {
         | string
         | undefined;
       const invitedBy = invitationData.createdBy as string | undefined;
+      const address = invitationData.address;
 
       logger.info('[signUpWithInvitation] Extracted from invitationData:', {
         invOrganizationIds,
@@ -398,6 +402,7 @@ export const signUpWithInvitation = onCall(async (request) => {
           organizationId: singleOrgIdForResidentProfile,
           roles: ['resident'], // Explicitly set roles array
           propertyId: targetPropertyId,
+          address: address || null,
         };
         logger.info(
           `[signUpWithInvitation] Writing Resident profile to path: ${userProfilePath} with data:`,

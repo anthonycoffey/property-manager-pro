@@ -6,9 +6,19 @@ The project has most recently completed an enhancement to the **Report Violation
 
 Prior to this, a significant **Dashboard Navigation Refactor & UI Enhancements** initiative was completed. This involved moving from a tab-based navigation system to a global, role-aware drawer navigation, implementing breadcrumbs, and enhancing overview pages.
 
-- **Date of this update:** 2025-07-25
+- **Date of this update:** 2025-08-12
 
 ## 2. What Works / Completed (Newest First)
+
+- **SMS Tow Warning for Violations (Completed 2025-08-12):**
+    - **Objective:** To automatically send an SMS warning to a resident if their vehicle violation remains in a 'reported' state for more than two minutes.
+    - **Change:**
+        - Integrated the Twilio SDK for SMS functionality.
+        - Created a new scheduled cloud function, `sendTowWarnings`, that runs every minute.
+        - The function uses `dotenv/config` to load environment variables and accesses Twilio credentials via `process.env`.
+        - It queries for violations that are 'reported', older than two minutes, and have not had a warning sent.
+        - It sends an SMS to the resident's phone number and updates the violation with an `smsTowWarningSent: true` flag to prevent duplicates.
+    - **Details:** This feature adds a critical, time-sensitive notification to the violation workflow, helping to prevent tows by giving residents a final warning. The implementation was updated to follow the existing pattern of using `dotenv` for environment variable management.
 
 - **Violation Notification Links (Completed 2025-07-26):**
     - **Objective:** Add `link` and `mobileLink` to property-wide notifications for unidentified vehicle violations to provide direct access for managers.

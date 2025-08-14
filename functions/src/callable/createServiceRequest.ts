@@ -39,6 +39,7 @@ interface CreateServiceRequestData {
   car_make?: string;
   car_model?: string;
   car_color?: string;
+  car_plate?: string;
 }
 
 export async function _createServiceRequestLogic(data: CreateServiceRequestData, context: CallableContext) {
@@ -206,6 +207,7 @@ export async function _createServiceRequestLogic(data: CreateServiceRequestData,
         { name: 'car_make', value: data.car_make || '' },
         { name: 'car_model', value: data.car_model || '' },
         { name: 'car_color', value: data.car_color || '' },
+        { name: 'car_plate', value: data.car_plate || '' },
         {
           name: 'service_type',
           value: data.serviceTypes, // Directly use the array of {id, value} from frontend

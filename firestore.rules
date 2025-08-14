@@ -252,15 +252,19 @@ service cloud.firestore {
           
           // Residents can update specific fields of their own profile
           allow update: if isResident() && request.auth.uid == residentId && isPropertyResident(organizationId, propertyId) &&
-                           request.resource.data.keys().hasOnly(['displayName', 'phone', 'vehicles', 'address']) &&
-                           // Ensure non-updatable fields remain unchanged
-                           request.resource.data.email == resource.data.email &&
-                           request.resource.data.organizationId == resource.data.organizationId &&
-                           request.resource.data.propertyId == resource.data.propertyId &&
-                           request.resource.data.roles.size() == resource.data.roles.size() &&
-                           request.resource.data.invitedBy == resource.data.invitedBy &&
-                           request.resource.data.createdAt == resource.data.createdAt;
+            // CORRECTED LINE: Check only the fields being written in this operation
+            request.writeFields.hasOnly(['displayName', 'phone', 'vehicles', 'address']) &&
+            // Ensure non-updatable fields remain unchanged (this part is now redundant but harmless)
+            request.resource.data.email == resource.data.email &&
+            request.resource.data.organizationId == resource.data.organizationId &&
+            request.resource.data.propertyId == resource.data.propertyId &&
+            request.resource.data.roles.size() == resource.data.roles.size() &&
+            request.resource.data.invitedBy == resource.data.invitedBy &&
+            request.resource.data.createdAt == resource.data.createdAt;
         } // End of residents subcollection
+
+
+
 
         // Subcollection: campaigns
         // Path: /organizations/{organizationId}/properties/{propertyId}/campaigns/{campaignId}

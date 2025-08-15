@@ -35,10 +35,24 @@ const AddressAutocompleteInput: React.FC<AddressAutocompleteInputProps> = ({
 
   const [autocompleteValue, setAutocompleteValue] =
     useState<google.maps.places.AutocompletePrediction | null>(null);
-  const [autocompleteInputValue, setAutocompleteInputValue] = useState(initialAddress.street || '');
+  const [autocompleteInputValue, setAutocompleteInputValue] = useState('');
   const [autocompleteOptions, setAutocompleteOptions] = useState<
     readonly google.maps.places.AutocompletePrediction[]
   >([]);
+  const [isFocused, setIsFocused] = useState(false);
+
+  const formatFullAddress = (addr: PropertyAddress) => {
+    if (!addr || !addr.street) return '';
+    return `${addr.street}, ${addr.city}, ${addr.state} ${addr.zip}`;
+  };
+
+  useEffect(() => {
+    if (!isFocused) {
+      setAutocompleteInputValue(formatFullAddress(initialAddress));
+    } else {
+      setAutocompleteInputValue(initialAddress.street || '');
+    }
+  }, [initialAddress, isFocused]);
 
   const autocompleteService = useRef<google.maps.places.AutocompleteService | null>(null);
   const geocoderService = useRef<google.maps.Geocoder | null>(null);
@@ -187,7 +201,15 @@ const AddressAutocompleteInput: React.FC<AddressAutocompleteInputProps> = ({
         setAutocompleteInputValue(newInputValue);
       }}
       renderInput={(params) => (
-        <TextField {...params} label={label} fullWidth required disabled={disabled} />
+        <TextField 
+          {...params} 
+          label={label} 
+          fullWidth 
+          required 
+          disabled={disabled} 
+          onFocus={() => setIsFocused(true)}
+          onBlur={() => setIsFocused(false)}
+        />
       )}
       renderOption={(props, option) => {
         const matches = option.structured_formatting.main_text_matched_substrings || [];

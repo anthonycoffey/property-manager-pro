@@ -154,7 +154,14 @@ const ResidentProfileManagement: React.FC = () => {
       const field = name.split('.')[1];
       setResidentData((prev) => ({
         ...prev,
-        address: { ...(prev.address || {}), [field]: value },
+        address: {
+          street: '',
+          city: '',
+          state: '',
+          zip: '',
+          ...prev.address,
+          [field]: value,
+        },
       }));
     } else {
       setResidentData((prev) => ({ ...prev, [name]: value }));
@@ -597,7 +604,7 @@ const ResidentProfileManagement: React.FC = () => {
           <DialogActions>
             <Button onClick={handleCloseVehicleDialog}>Cancel</Button>
             <Button onClick={handleSaveVehicle} variant='contained'>
-              Add Vehicle
+              {editingVehicleIndex !== null ? 'Save Changes' : 'Add Vehicle'}
             </Button>
           </DialogActions>
         </Dialog>

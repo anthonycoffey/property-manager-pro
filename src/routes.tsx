@@ -104,7 +104,7 @@ const AppRoutes: React.FC = () => {
         >
           <Route path='overview' element={<PropertyManagerOverviewView />} />
           <Route
-            path='my-properties'
+            path='properties'
             element={<PropertyManagerMyPropertiesView />}
           />
           <Route path='residents' element={<PropertyManagerResidentsView />} />

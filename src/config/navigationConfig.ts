@@ -129,9 +129,9 @@ export const navigationItems: NavItemConfig[] = [
     roles: ['property_manager'],
   },
   {
-    text: 'My Properties',
+    text: 'Properties',
     icon: HomeWorkIcon,
-    path: '/dashboard/property-manager/my-properties',
+    path: '/dashboard/property-manager/properties',
     roles: ['property_manager'],
   },
   {

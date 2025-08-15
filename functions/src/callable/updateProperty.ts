@@ -107,7 +107,9 @@ export const updateProperty = onCall(async (request) => {
     } else if (updatedData.address) {
       // Fallback for old clients or if only the primary address object is sent
       if (Object.keys(updatedData.address).length > 0) {
+        // Aggressively migrate to the new structure
         cleanUpdateData.address = updatedData.address;
+        cleanUpdateData.addresses = [updatedData.address];
       }
     }
 

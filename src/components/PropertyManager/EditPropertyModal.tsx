@@ -14,7 +14,6 @@ import {
   FormControl,
   InputLabel,
   Typography,
-  Box,
   Divider,
   IconButton,
   Stack,
@@ -58,11 +57,13 @@ const EditPropertyModal: React.FC<EditPropertyModalProps> = ({
       setName(propertyData.name || '');
       setPropertyType(propertyData.type || '');
       setTotalUnits(propertyData.totalUnits?.toString() || '');
-      // Ensure there's at least one address field to show
-      const initialAddresses = propertyData.addresses && propertyData.addresses.length > 0
+
+      const newAddresses = propertyData.addresses && propertyData.addresses.length > 0
         ? propertyData.addresses
-        : [{ street: '', city: '', state: '', zip: '' }];
-      setAddresses(initialAddresses);
+        : propertyData.address ? [propertyData.address] : [{ street: '', city: '', state: '', zip: '' }];
+      
+      setAddresses(newAddresses);
+
     } else if (!open) {
       // Reset form when modal is closed
       setName('');

@@ -29,16 +29,9 @@ import { httpsCallable } from 'firebase/functions';
 import { functions } from '../../firebaseConfig';
 import type { Property as PropertyType } from '../../types';
 
-interface PropertyAddress {
-  street: string;
-  city: string;
-  state: string;
-  zip: string;
-}
-
 interface PropertyManagerPropertiesListProps {
   selectedPropertyId: string | null;
-  onPropertySelect: (propertyId: string) => void;
+  onPropertySelect: (propertyId: string, propertyName?: string) => void;
   onEditProperty: (property: PropertyType) => void;
   onPropertiesUpdate: () => void;
 }
@@ -188,13 +181,13 @@ const PropertyManagerPropertiesList: React.FC<PropertyManagerPropertiesListProps
                 <TableCell 
                   component="th" 
                   scope="row"
-                  onClick={() => onPropertySelect(property.id)}
+                  onClick={() => onPropertySelect(property.id, property.name)}
                   sx={{ cursor: 'pointer' }}
                 >
                   {property.name}
                 </TableCell>
                 <TableCell 
-                  onClick={() => onPropertySelect(property.id)}
+                  onClick={() => onPropertySelect(property.id, property.name)}
                   sx={{ cursor: 'pointer' }}
                 >
                   {formatAddress(property)}

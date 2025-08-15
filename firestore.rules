@@ -251,16 +251,7 @@ service cloud.firestore {
           allow write: if isAdmin() || isOrgManagerForOrg(organizationId) || (isPropertyManager() && isOrgUser(organizationId));
           
           // Residents can update specific fields of their own profile
-          allow update: if isResident() && request.auth.uid == residentId && isPropertyResident(organizationId, propertyId) &&
-            // CORRECTED LINE: Check only the fields being written in this operation
-            request.writeFields.hasOnly(['displayName', 'phone', 'vehicles', 'address']) &&
-            // Ensure non-updatable fields remain unchanged (this part is now redundant but harmless)
-            request.resource.data.email == resource.data.email &&
-            request.resource.data.organizationId == resource.data.organizationId &&
-            request.resource.data.propertyId == resource.data.propertyId &&
-            request.resource.data.roles.size() == resource.data.roles.size() &&
-            request.resource.data.invitedBy == resource.data.invitedBy &&
-            request.resource.data.createdAt == resource.data.createdAt;
+          allow update: if isResident() && request.auth.uid == residentId && isPropertyResident(organizationId, propertyId);
         } // End of residents subcollection
 
 

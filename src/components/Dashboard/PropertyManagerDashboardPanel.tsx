@@ -49,6 +49,7 @@ const PropertyManagerDashboardContent: React.FC<
 
   const aiAssistancePath = '/dashboard/property-manager/ai-assistant';
   const orgSettingsPath = '/dashboard/property-manager/organization-settings';
+  const myPropertiesPath = '/dashboard/property-manager/properties';
 
   const [isCreatePropertyModalOpen, setIsCreatePropertyModalOpen] =
     useState(false);
@@ -130,18 +131,20 @@ const PropertyManagerDashboardContent: React.FC<
               </Button>
             </Box>
 
-            <PropertySelectorDropdown
-              organizationId={organizationId}
-              selectedPropertyId={selectedPropertyId}
-              onPropertyChange={handlePropertySelect}
-              key={`prop-selector-${refreshPropertiesKey}`}
-              label='Select Property to Manage'
-            />
+            {pathname !== myPropertiesPath && (
+              <PropertySelectorDropdown
+                organizationId={organizationId}
+                selectedPropertyId={selectedPropertyId}
+                onPropertyChange={handlePropertySelect}
+                key={`prop-selector-${refreshPropertiesKey}`}
+                label='Select Property to Manage'
+              />
+            )}
           </>
 
           <Box sx={{ mt: 2 }}>
-            {selectedPropertyId ? (
-              <Outlet /> // For other routes, render Outlet only if a property is selected
+            {selectedPropertyId || pathname === myPropertiesPath ? (
+              <Outlet />
             ) : (
               <Alert severity='info' sx={{ mt: 2 }}>
                 Please select a property from the dropdown to see more options.

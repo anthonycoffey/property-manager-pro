@@ -139,7 +139,7 @@ const JobDetailsDisplay: React.FC<JobDetailsDisplayProps> = ({ job }) => {
               <MuiButton
                 variant='contained'
                 color='success'
-                href={`https://staging--phoenix-ui.netlify.app/invoices/${relevantInvoice.linkCode}`}
+                href={`${process.env.VITE_PHOENIX_CLIENT_URL}/invoices/${relevantInvoice.linkCode}`}
                 target='_blank'
                 rel='noopener noreferrer'
               >

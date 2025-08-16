@@ -3,12 +3,9 @@ import {  Alert } from '@mui/material';
 import PropertyManagerPropertiesList from '../../PropertyManager/PropertyManagerPropertiesList';
 import EditPropertyModal from '../../PropertyManager/EditPropertyModal'; // If edit is triggered from here
 import type { Property as PropertyType } from '../../../types';
-import { usePropertyManagerContext } from '../../../hooks/usePropertyManagerContext';
 import { useAuth } from '../../../hooks/useAuth';
 
 const PropertyManagerMyPropertiesView: React.FC = () => {
-  const { selectedPropertyId, setSelectedPropertyId, setSelectedPropertyName } =
-    usePropertyManagerContext();
   const { organizationId } = useAuth();
 
   // State for EditPropertyModal if it's managed by this view
@@ -17,15 +14,6 @@ const PropertyManagerMyPropertiesView: React.FC = () => {
     null
   );
   const [refreshPropertiesKey, setRefreshPropertiesKey] = useState(0); // To re-trigger list fetch if needed
-
-  const handlePropertySelect = (
-    propertyId: string | null,
-    propertyName?: string | null
-  ) => {
-    setSelectedPropertyId(propertyId);
-    setSelectedPropertyName(propertyName ?? null);
-    // Potentially navigate or update other state if a property is "selected" for viewing details elsewhere
-  };
 
   const handleOpenEditPropertyModal = (property: PropertyType) => {
     setPropertyToEdit(property);
@@ -56,8 +44,6 @@ const PropertyManagerMyPropertiesView: React.FC = () => {
       <PropertyManagerPropertiesList
         key={refreshPropertiesKey} // Use key to force re-render if properties list changes externally
         // organizationId is implicitly handled by PropertyManagerPropertiesList via useAuth or props if needed
-        selectedPropertyId={selectedPropertyId} // To highlight selected property in the list
-        onPropertySelect={handlePropertySelect} // To update context if selection happens in the list
         onEditProperty={handleOpenEditPropertyModal} // To trigger edit modal from the list
         onPropertiesUpdate={() => setRefreshPropertiesKey((prev) => prev + 1)} // If list has delete/archive actions
       />

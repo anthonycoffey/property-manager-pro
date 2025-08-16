@@ -30,8 +30,8 @@ import { functions } from '../../firebaseConfig';
 import type { Property as PropertyType } from '../../types';
 
 interface PropertyManagerPropertiesListProps {
-  selectedPropertyId: string | null;
-  onPropertySelect: (propertyId: string, propertyName?: string) => void;
+  selectedPropertyId?: string | null;
+  onPropertySelect?: (propertyId: string, propertyName?: string) => void;
   onEditProperty: (property: PropertyType) => void;
   onPropertiesUpdate: () => void;
 }
@@ -181,14 +181,14 @@ const PropertyManagerPropertiesList: React.FC<PropertyManagerPropertiesListProps
                 <TableCell 
                   component="th" 
                   scope="row"
-                  onClick={() => onPropertySelect(property.id, property.name)}
-                  sx={{ cursor: 'pointer' }}
+                  onClick={() => onPropertySelect?.(property.id, property.name)}
+                  sx={{ cursor: onPropertySelect ? 'pointer' : 'default' }}
                 >
                   {property.name}
                 </TableCell>
                 <TableCell 
-                  onClick={() => onPropertySelect(property.id, property.name)}
-                  sx={{ cursor: 'pointer' }}
+                  onClick={() => onPropertySelect?.(property.id, property.name)}
+                  sx={{ cursor: onPropertySelect ? 'pointer' : 'default' }}
                 >
                   {formatAddress(property)}
                 </TableCell>

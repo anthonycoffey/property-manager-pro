@@ -44,6 +44,7 @@ export const updateServiceJobStatus = functions.https.onRequest(async (req, res)
   // 3. Validate the request body
   const validationResult = jobStatusUpdateSchema.safeParse(req.body);
   if (!validationResult.success) {
+    console.error("payload:", req.body);
     console.error("Invalid request body:", validationResult.error);
     res.status(400).send({ message: "Bad Request", errors: validationResult.error.flatten() });
     return;

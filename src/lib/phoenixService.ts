@@ -43,7 +43,7 @@ export async function getPhoenixServices(includeInternal: boolean = false): Prom
 
   try {
     // Using limit=100 as per your example to fetch all services in one go if possible
-    const response = await fetch(`${PHOENIX_API_URL}/services?limit=100&isResidentApp=true`); 
+    const response = await fetch(`${PHOENIX_API_URL}/services?limit=50&isAmeniLink=true`); 
 
     if (!response.ok) {
       let errorDetails = response.statusText;
